@@ -8,6 +8,8 @@ BRIDGE = (ROOT / "firmware/src/boot/FirstBootBridge.cpp").read_text()
 POLICY = (ROOT / "tools/generate_shino_device_policy.py").read_text()
 WEB = (ROOT / "firmware/src/web/Webserver.cpp").read_text()
 RECOVERY = (ROOT / "firmware/src/recovery/FactoryRollback.cpp").read_text()
+API = (ROOT / "firmware/src/web/Api.cpp").read_text()
+API_HEADER = (ROOT / "firmware/include/web/Api.h").read_text()
 
 
 class FirstBootGate(unittest.TestCase):
@@ -52,6 +54,30 @@ class FirstBootGate(unittest.TestCase):
         self.assertIn('FactoryRollback::status(', BRIDGE)
         self.assertIn('SHINO_FACTORY_BYTES == 494144', RECOVERY)
         self.assertIn('Update.setMD5(SHINO_FACTORY_MD5)', RECOVERY)
+
+    def test_fs_migration_is_informational_only_and_compile_disabled(self):
+        self.assertIn('SHINO_ENABLE_FS_MIGRATION == 0', BRIDGE)
+        self.assertIn('SHINO_FS_BYTES == 2072576', BRIDGE)
+        self.assertIn('SHINO_FS_SHA256', BRIDGE)
+        self.assertIn('server.on("/api/v1/bridge/fs-plan", HTTP_GET', BRIDGE)
+        self.assertIn('standard_updater_erases_and_writes_active_fs_BEFORE_MD5_validation', BRIDGE)
+        self.assertIn('filesystem_writer_compiled', BRIDGE)
+        self.assertNotIn('server.on("/api/v1/bridge/fs-plan", HTTP_POST', BRIDGE)
+        self.assertNotIn('Update.begin(', BRIDGE)
+        self.assertNotIn('U_FS', BRIDGE)
+        self.assertIn("'#define SHINO_ENABLE_FS_MIGRATION 0", POLICY)
+        self.assertIn('fs_image', POLICY)
+
+    def test_old_generic_application_and_filesystem_updater_is_removed_entirely(self):
+        # An unregistered writer in the inherited source can be accidentally
+        # routed again in a later refactor: remove its implementation too.
+        for forbidden in ("U_FS", "Update.begin(", "Update.end(", "handleOtaUpload(",
+                          "otaHandleStart(", "otaInProgress"):
+            self.assertNotIn(forbidden, API)
+        for forbidden in ("handleOtaUpload(", "handleOtaFinished(",
+                          "handleOtaStatus(", "handleOtaCancel("):
+            self.assertNotIn(forbidden, API_HEADER)
+        self.assertIn("FactoryRollback::upload(", API)
 
     def test_no_automatic_format_in_legacy_mount_helper(self):
         self.assertIn("LittleFS.setConfig(LittleFSConfig(false))", WEB)

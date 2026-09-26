@@ -1,7 +1,5 @@
 document.addEventListener("alpine:init", () => {
   Alpine.data("themeSwitcher", themeSwitcher);
-  if (typeof otaUploadHandler !== "undefined")
-    Alpine.data("otaUploadHandler", otaUploadHandler);
   if (typeof gifUploadHandler !== "undefined")
     Alpine.data("gifUploadHandler", gifUploadHandler);
   if (typeof wifiHandler !== "undefined")

@@ -22,12 +22,27 @@ class ShinoDevicePolicyTests(unittest.TestCase):
         with ZipFile(self.zip, "w", compression=ZIP_DEFLATED) as z:
             z.writestr("FW-Smalltv-Ultra-V9.0.44.bin", self.image)
         self.manifest.write_text(json.dumps(inspect_archive(self.zip)))
+        self.fsroot = self.root / "data"
+        (self.fsroot / "web").mkdir(parents=True)
+        (self.fsroot / "web" / "index.html").write_text("<h1>SHINO</h1>")
+        (self.fsroot / "config.json").write_text(json.dumps({
+            "wifi_ssid": "", "wifi_password": "", "api_token": "", "lcd_rotation": 0
+        }))
+        self.fsimage = self.root / "littlefs.bin"
+        self.fsimage.write_bytes(b"x" * 2072576)
+        self.fsini = self.root / "platformio.ini"
+        self.fsini.write_text(
+            "[env:esp12e]\nboard=esp12e\nboard_build.flash_size=4MB\n"
+            "board_build.flash_mode=dio\nboard_build.filesystem=littlefs\n"
+            "board_build.ldscript=eagle.flash.4m2m.ld\n"
+        )
 
     def tearDown(self):
         self.tmp.cleanup()
 
     def test_exact_pinned_reference_produces_distinct_private_secrets(self):
-        report = generate(self.zip, self.manifest, self.header, self.cred)
+        report = generate(self.zip, self.manifest, self.header, self.cred,
+                          fs_image=self.fsimage, fs_source_root=self.fsroot, fs_ini=self.fsini)
         self.assertEqual(report["device_operation"], "none")
         text = self.header.read_text()
         self.assertIn(hashlib.md5(self.image, usedforsecurity=False).hexdigest(), text)
@@ -35,30 +50,50 @@ class ShinoDevicePolicyTests(unittest.TestCase):
         self.assertIn("SHINO_RESCUE_HTTP_PASSWORD", text)
         self.assertIn("#define SHINO_BOOT_PROFILE 0", text)
         self.assertIn("#define SHINO_ENABLE_FACTORY_RESTORE 0", text)
+        self.assertIn("#define SHINO_ENABLE_FS_MIGRATION 0", text)
+        self.assertIn('#define SHINO_FS_BYTES 2072576', text)
+        self.assertIn(hashlib.sha256(self.fsimage.read_bytes()).hexdigest(), text)
         self.assertTrue(self.cred.exists())
         self.assertNotIn("Initial API bearer token:", json.dumps(report))
         self.assertNotIn("SHINO_SETUP_AP_PSK", json.dumps(report))
 
     def test_experimental_return_does_not_enable_full_boot_or_fs_format(self):
-        result = generate(self.zip, self.manifest, self.header, self.cred, enable_restore=True)
+        result = generate(self.zip, self.manifest, self.header, self.cred, enable_restore=True,
+                          fs_image=self.fsimage, fs_source_root=self.fsroot, fs_ini=self.fsini)
         policy = self.header.read_text()
         self.assertIn("#define SHINO_ENABLE_FACTORY_RESTORE 1", policy)
         self.assertIn("#define SHINO_BOOT_PROFILE 0", policy)
         self.assertEqual(result["boot_profile"], "FIRST_BOOT_BRIDGE_ONLY")
+
+    def test_refuses_missing_fs_image_and_does_not_create_keys(self):
+        from verify_fs_provisioning import FsInspectionError
+        with self.assertRaisesRegex(FsInspectionError, "fs-image"):
+            generate(self.zip, self.manifest, self.header, self.cred)
+        self.assertFalse(self.header.exists())
+
+    def test_refuses_changed_fs_image_size(self):
+        from verify_fs_provisioning import FsInspectionError
+        self.fsimage.write_bytes(b"x" * 4096)
+        with self.assertRaisesRegex(FsInspectionError, "length"):
+            generate(self.zip, self.manifest, self.header, self.cred,
+                     fs_image=self.fsimage, fs_source_root=self.fsroot, fs_ini=self.fsini)
+        self.assertFalse(self.header.exists())
 
     def test_rejects_wrong_oem_digest_without_creating_credentials(self):
         pin = json.loads(self.manifest.read_text())
         pin["firmware_sha256"] = "0" * 64
         self.manifest.write_text(json.dumps(pin))
         with self.assertRaisesRegex(FactoryOtaError, "PIN MISMATCH"):
-            generate(self.zip, self.manifest, self.header, self.cred)
+            generate(self.zip, self.manifest, self.header, self.cred,
+                          fs_image=self.fsimage, fs_source_root=self.fsroot, fs_ini=self.fsini)
         self.assertFalse(self.header.exists())
 
     def test_never_overwrites_existing_keys(self):
         self.cred.parent.mkdir(parents=True)
         self.cred.write_text("retain original secret")
         with self.assertRaisesRegex(FactoryOtaError, "already exists"):
-            generate(self.zip, self.manifest, self.header, self.cred)
+            generate(self.zip, self.manifest, self.header, self.cred,
+                          fs_image=self.fsimage, fs_source_root=self.fsroot, fs_ini=self.fsini)
         self.assertEqual(self.cred.read_text(), "retain original secret")
         self.assertFalse(self.header.exists())
 
@@ -67,8 +102,10 @@ class ShinoDevicePolicyTests(unittest.TestCase):
         first_private = self.root / "first.txt"
         second = self.root / "second.h"
         second_private = self.root / "second.txt"
-        generate(self.zip, self.manifest, first, first_private)
-        generate(self.zip, self.manifest, second, second_private)
+        generate(self.zip, self.manifest, first, first_private,
+                 fs_image=self.fsimage, fs_source_root=self.fsroot, fs_ini=self.fsini)
+        generate(self.zip, self.manifest, second, second_private,
+                 fs_image=self.fsimage, fs_source_root=self.fsroot, fs_ini=self.fsini)
         self.assertNotEqual(first.read_text(), second.read_text())
 
 

@@ -22,6 +22,14 @@ static_assert(SHINO_BOOT_PROFILE == 0 || SHINO_BOOT_PROFILE == 1,
               "Only conservative bridge (0) or separately reviewed normal profile (1) is supported.");
 static_assert(sizeof(SHINO_SETUP_AP_PSK) >= 13, "Missing private per-build WPA2 key");
 static_assert(sizeof(SHINO_RESCUE_HTTP_PASSWORD) >= 21, "Missing private Digest secret");
+#ifndef SHINO_ENABLE_FS_MIGRATION
+#error "Missing explicit FS migration safety gate"
+#endif
+static_assert(SHINO_ENABLE_FS_MIGRATION == 0,
+              "In-place LittleFS migration is forbidden in this single-device bridge build.");
+static_assert(SHINO_FS_BYTES == 2072576, "Unreviewed LittleFS partition length.");
+static_assert(sizeof(SHINO_FS_SHA256) == 65, "Missing pinned full-image SHA-256.");
+static_assert(sizeof(SHINO_FS_MD5) == 33, "Missing pinned FS Updater compatibility checksum.");
 
 namespace {
 ESP8266WebServer server(80);
@@ -37,7 +45,8 @@ const char LANDING[] PROGMEM = R"HTML(<!doctype html><html lang="en"><meta chars
 or initialized by the SHINO application. This is not proof that a full flash
 backup or a nonbooting rescue is available.</p>
 <p>Authenticated diagnostics: <a href="/api/v1/bridge/status">status</a>,
-<a href="/api/v1/bridge/factory-return">original application reference</a>.</p>
+<a href="/api/v1/bridge/factory-return">original application reference</a>,
+<a href="/api/v1/bridge/fs-plan">LittleFS impact (read only)</a>.</p>
 <p>No filesystem provisioning or arbitrary update control is installed.</p>
 </html>)HTML";
 
@@ -51,6 +60,26 @@ void respond(int code, const String& data) {
     server.sendHeader(F("X-Content-Type-Options"), F("nosniff"));
     server.send(code, "application/json", data);
 }
+void sendFsPlan() {
+    if (!requireAuth()) return;
+    JsonDocument doc;
+    doc["mode"] = "READ_ONLY_FS_MIGRATION_PLAN";
+    doc["pinned_image_sha256"] = SHINO_FS_SHA256;
+    doc["pinned_image_bytes"] = SHINO_FS_BYTES;
+    doc["linked_shino_fs_start"] = "0x200000";
+    doc["linked_shino_fs_end_exclusive"] = "0x3fa000";
+    doc["stock_fs_start_inferred_NOT_PROVEN"] = "0x100000";
+    doc["stock_fs_bytes_at_risk_under_inferred_layout"] = SHINO_FS_BYTES;
+    doc["standard_updater_erases_and_writes_active_fs_BEFORE_MD5_validation"] = true;
+    doc["atomic_full_image_staging_available_with_current_app"] = false;
+    doc["OEM_application_image_cannot_restore_stock_filesystem"] = true;
+    doc["first_boot_fs_mount_or_migration_performed"] = false;
+    doc["filesystem_writer_compiled"] = false;
+    doc["owner_migration_authorized"] = false;
+    String result;
+    serializeJson(doc, result);
+    respond(200, result);
+}
 void sendStatus() {
     if (!requireAuth()) return;
     JsonDocument doc;
@@ -61,6 +90,9 @@ void sendStatus() {
     doc["application_eeprom_commit_called"] = false;
     doc["sdk_wifi_persistence_enabled"] = false;
     doc["filesystem_provisioning_route"] = false;
+    doc["filesystem_impact_report_route"] = "/api/v1/bridge/fs-plan";
+    doc["pinned_littlefs_image_available_off_device"] = SHINO_FS_BYTES == 2072576;
+    doc["filesystem_migration_writes_compiled"] = false;
     doc["manufacturer_original_flash_backup_available"] = false;
     doc["linked_shino_FS_start_offset"] = "0x200000";
     doc["inferred_stock_FS_start_offset_UNVERIFIED"] = "0x100000";
@@ -105,6 +137,7 @@ void run() {
         server.send_P(200, PSTR("text/html; charset=utf-8"), LANDING);
     });
     server.on("/api/v1/bridge/status", HTTP_GET, sendStatus);
+    server.on("/api/v1/bridge/fs-plan", HTTP_GET, sendFsPlan);
     server.on("/api/v1/bridge/factory-return", HTTP_GET, []() {
         if (!requireAuth()) return;
         FactoryRollback::status(server);

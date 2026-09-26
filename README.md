@@ -115,3 +115,8 @@ The separate `recovery_loader/` PlatformIO project compiles two **offline-only**
 ## Owner-only stock V9.0.44 diagnostic — no flash
 
 A no-install/no-flash Windows report tool is available on the stacked `research/stock-v9044-readonly-report` branch: double-click `run-stock-readonly.cmd`, enter your SmallTV's current private LAN IPv4, and optionally enable **GET-only** `/update` page inspection. It writes a sanitized, gitignored `research-local/stock-report.json`. It never POSTs, uploads firmware, collects Wi-Fi credentials or claims to measure the stock OTA slot. See [read-only diagnostic guide](docs/STOCK_READONLY_WIFI_REPORT.md).
+
+
+## Verified LittleFS package: source-only
+
+The [LittleFS migration safety report](docs/VERIFIED_FS_PROVISIONING.md) explains why a full 2,072,576-byte image of our 4m2m FS is **not an atomic OTA operation** on this ESP8266. The new offline tooling verifies and pins the exact FS image and safely reports the old-data overlap; the bridge has only an authenticated GET impact page. Automatic formatting, filesystem writer and on-device upload remain disabled. The original V9.0.44 application ZIP does not restore stock filesystem data.
