@@ -45,9 +45,11 @@ jobs:
           }) + '\n')
           PY
       - name: Compile source (ESP8266, no upload)
-        run: pio run -d firmware -e esp12e
+        working-directory: firmware
+        run: pio run -e esp12e
       - name: Build LittleFS image (no upload)
-        run: pio run -d firmware -e esp12e -t buildfs
+        working-directory: firmware
+        run: pio run -e esp12e -t buildfs
       - name: Report binary sizes without publishing images
         run: |
           python - <<'PY'
