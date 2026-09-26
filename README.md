@@ -54,3 +54,32 @@ Upstream software will be evaluated **before** code reuse, with attribution and 
 Start with read-only investigation and a PC-side simulator. Keep original firmware binaries, local credentials, backups, and personal data out of Git. Firmware and any update mechanism are out of scope until the safety gate is passed.
 
 See [ROADMAP](docs/ROADMAP.md) and [device baseline](docs/DEVICE_BASELINE.md) on the planning branch.
+
+## Try the offline simulator
+
+Requires Python 3 and a modern browser. This serves **only local demo files** and never reaches the SmallTV:
+
+```bash
+python -m http.server 8080 --directory simulator
+```
+
+Open http://localhost:8080, select PC HEALTH / MUSIC / CODEX / RELEASE, edit the JSON, apply, or export a 240 × 240 PNG. Values are explicitly **demo placeholders**; real PC telemetry is not implemented yet.
+
+## Offline firmware research tooling
+
+Download the desired official ZIP package yourself from the manufacturer repository and inspect it offline:
+
+```bash
+python tools/inspect_factory.py "path/to/FW-Smalltv-Ultra-V9.0.46.zip" --json
+```
+
+This outputs archive/firmware SHA-256 hashes, conservative ESP8266 header fields and a limited sample of printable route strings; no hardware access, uploading, flashing or automatic web requests. Candidate route strings are not proof of a callable route on stock V9.0.44.
+
+## Local tests
+
+```bash
+python -m unittest discover -s tools -p 'test_*.py' -v
+node --test simulator/scene.test.mjs
+```
+
+See also [firmware audit](docs/FIRMWARE_AUDIT_01.md) and [scene protocol](docs/SCENE_PROTOCOL.md).
