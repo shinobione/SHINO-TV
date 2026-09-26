@@ -39,10 +39,11 @@ class MetricsTests(unittest.TestCase):
         self.assertTrue(data["ok"])
         self.assertFalse(data["gpu_available"])
         self.assertEqual(data["memory_used_gb"], 10.0)
+        self.assertEqual(data["memory_total_gb"], 16.0)
         self.assertEqual(data["gpu_usage"], 0)
         self.assertEqual(
             set(("ok", "gpu_usage", "cpu_usage", "gpu_vram_mb",
-                 "memory_used_gb", "gpu_power", "gpu_temp_c")) - set(data), set()
+                 "memory_used_gb", "memory_total_gb", "gpu_power", "gpu_temp_c")) - set(data), set()
         )
 
     def test_http_is_read_only_and_json(self):
