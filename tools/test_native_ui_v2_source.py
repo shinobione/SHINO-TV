@@ -36,7 +36,7 @@ class NativeV2SourceTests(unittest.TestCase):
         self.assertIn("gfx->drawCircle(degreeX, valueY + 4, 2", BRIDGE)
         self.assertIn("gfx->print('C')", BRIDGE)
         self.assertIn("strlen(card.number) * 12 <= 90 ? 2 : 1", BRIDGE)
-        self.assertIn("gfx->fillScreen(DashboardV2::BACKGROUND)", BRIDGE)
+        self.assertIn("DisplayManager::getGfx()->fillScreen(DashboardV2::BACKGROUND)", BRIDGE)
         self.assertNotIn("new uint16_t[240", BRIDGE)
 
     def test_flash_browser_mirrors_native_layout_and_safe_ram_contract(self):
