@@ -59,6 +59,29 @@ test('four native-sized browser cards and dynamic example values', () => {
   assert.equal(node('tempFill').style.backgroundColor, '#D8C35E');
   assert.equal(node('ramTrack').attr('aria-valuenow'), '70.0');
 });
+test('zero fill is truly invisible, with crisp integer tiny bars and no ghost animation', () => {
+  assert.match(source, /\.fill\{display:none;width:0;height:6px;border-radius:3px;[^\n]*transition:none\}/);
+  const {m,node}=harness();
+  m.render({...normal,gpu_usage:23});
+  assert.equal(node('gpuFill').style.display,'block');
+  assert.equal(node('gpuFill').style.width,'21px');
+  assert.equal(node('gpuFill').style.borderRadius,'3px');
+  m.render({...normal,gpu_usage:0});
+  assert.equal(node('gpuV').textContent,'0.0%');
+  assert.equal(node('gpuFill').style.width,'0px');
+  assert.equal(node('gpuFill').style.display,'none');
+  m.render({...normal,gpu_usage:0.1});
+  assert.equal(node('gpuFill').style.width,'1px');
+  assert.equal(node('gpuFill').style.display,'block');
+  assert.equal(node('gpuFill').style.borderRadius,'0');
+  m.render({...normal,gpu_usage:0});
+  assert.equal(node('gpuFill').style.display,'none');
+  m.render({...normal,stale:true});
+  for (const id of ['cpu','gpu','ram','temp']) {
+    assert.equal(node(id+'Fill').style.display,'none');
+    assert.equal(node(id+'Fill').style.width,'0px');
+  }
+});
 test('all threshold boundaries and 2pp hysteresis', () => {
   const {m, node} = harness();
   for (const [v,b] of [[0,0],[19.9,0],[20,1],[49.9,1],[50,2],[79.9,2],[80,3],[100,3]]) {
