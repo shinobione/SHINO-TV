@@ -53,6 +53,19 @@ class FirstBootGate(unittest.TestCase):
         self.assertIn('SHINO_FACTORY_BYTES == 494144', RECOVERY)
         self.assertIn('Update.setMD5(SHINO_FACTORY_MD5)', RECOVERY)
 
+    def test_fs_migration_is_informational_only_and_compile_disabled(self):
+        self.assertIn('SHINO_ENABLE_FS_MIGRATION == 0', BRIDGE)
+        self.assertIn('SHINO_FS_BYTES == 2072576', BRIDGE)
+        self.assertIn('SHINO_FS_SHA256', BRIDGE)
+        self.assertIn('server.on("/api/v1/bridge/fs-plan", HTTP_GET', BRIDGE)
+        self.assertIn('standard_updater_erases_and_writes_active_fs_BEFORE_MD5_validation', BRIDGE)
+        self.assertIn('filesystem_writer_compiled', BRIDGE)
+        self.assertNotIn('server.on("/api/v1/bridge/fs-plan", HTTP_POST', BRIDGE)
+        self.assertNotIn('Update.begin(', BRIDGE)
+        self.assertNotIn('U_FS', BRIDGE)
+        self.assertIn("'#define SHINO_ENABLE_FS_MIGRATION 0", POLICY)
+        self.assertIn('fs_image', POLICY)
+
     def test_no_automatic_format_in_legacy_mount_helper(self):
         self.assertIn("LittleFS.setConfig(LittleFSConfig(false))", WEB)
         self.assertIn("if (formatIfFailed)", WEB)
