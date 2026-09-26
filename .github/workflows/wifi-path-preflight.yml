@@ -76,6 +76,18 @@ jobs:
         run: |
           test -s recovery_loader/.pio/build/esp12e_recovery/firmware.bin
           cp recovery_loader/.pio/build/esp12e_recovery/firmware.bin /tmp/shino-preflight-loader.bin
+      - name: Independently inspect all three ESP8266 image structures (no serial connection)
+        run: |
+          python -m pip install 'esptool>=5,<6'
+          python -m esptool image-info /tmp/shino-preflight-loader.bin
+          python -m esptool image-info /tmp/shino-preflight-candidate.bin
+          python - <<'PY'
+          from pathlib import Path
+          import zipfile
+          with zipfile.ZipFile('reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip') as z:
+              Path('/tmp/shino-preflight-original.bin').write_bytes(z.read('FW-Smalltv-Ultra-V9.0.44.bin'))
+          PY
+          python -m esptool image-info /tmp/shino-preflight-original.bin
       - name: Evaluate factory to loader to SHINO to original path OFFLINE
         run: |
           python tools/wifi_flash_preflight.py             --official-zip reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip             --manifest recovery/factory_ota_v9_0_44.json             --loader /tmp/shino-preflight-loader.bin             --candidate /tmp/shino-preflight-candidate.bin             --loader-ini recovery_loader/platformio.ini             --candidate-ini firmware/platformio.ini > /tmp/shino-preflight-result.json
@@ -115,4 +127,4 @@ jobs:
         run: |
           rm -rf reference-geekmagic recovery_loader/private recovery_loader/.pio firmware/.pio
           rm -f recovery_loader/include/local_policy.h firmware/data/config.json
-          rm -f /tmp/shino-preflight-candidate.bin /tmp/shino-preflight-loader.bin /tmp/shino-preflight-result.json
+          rm -f /tmp/shino-preflight-candidate.bin /tmp/shino-preflight-loader.bin /tmp/shino-preflight-original.bin /tmp/shino-preflight-result.json
