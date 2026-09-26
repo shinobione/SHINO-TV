@@ -27,6 +27,12 @@ class FactoryReturnSourceGate(unittest.TestCase):
         self.assertNotIn('Access-Control-Allow-Origin", "*"' , APP)
         self.assertNotIn('Access-Control-Allow-Origin", "*"' , WEB)
 
+    def test_static_file_fallback_has_explicit_allowlist(self):
+        self.assertIn('Static file not allowed', WEB)
+        self.assertIn('uri == "/header.html"', WEB)
+        self.assertIn('uri.indexOf("..")', WEB)
+        self.assertIn('uri.indexOf(\'%\')', WEB)
+
     def test_rescue_has_private_auth_and_no_generic_writes(self):
         self.assertIn('SHINO_RESCUE_HTTP_PASSWORD', RESCUE)
         self.assertIn('DIGEST_AUTH', RESCUE)
