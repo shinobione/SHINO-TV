@@ -110,6 +110,12 @@ jobs:
           assert d['status']=='OFFLINE_PREFLIGHT_ONLY__OWNER_FLASH_NOT_AUTHORIZED'
           assert d['permission_to_flash'] is False
           assert d['device_access_performed'] is False
+          assert d['source_layouts']['candidate']=='eagle.flash.4m3m.ld'
+          assert d['transitions']['factory_to_candidate_direct']['nominal_no_overlap'] is True
+          assert d['transitions']['factory_to_candidate_direct']['inferred_stock_FS_staging_sector_overlap_bytes']==0
+          assert d['transitions']['shino_to_factory']['inferred_stock_FS_staging_sector_overlap_bytes']==0
+          assert d['transitions']['loader_to_shino']['inferred_stock_FS_staging_sector_overlap_bytes']>0
+          assert d['transitions']['factory_to_candidate_direct']['original_stock_OTA_image_acceptance'].startswith('UNKNOWN')
           assert b'FIRST_BOOT_BRIDGE' in Path('/tmp/shino-preflight-candidate.bin').read_bytes()
           assert b'READ_ONLY_FS_MIGRATION_PLAN' in Path('/tmp/shino-preflight-candidate.bin').read_bytes()
           assert b'FSLESS_PC_TELEMETRY_RAM_ONLY' in Path('/tmp/shino-preflight-candidate.bin').read_bytes()
@@ -123,6 +129,9 @@ jobs:
           lines += [
               '| OEM original archive + image | Exact hash PASS |',
               '| Current SHINO firmware + its own OEM pin | PASS |',
+              '| Direct stock -> SHINO (inferred 4m3m model) | '+str(d['transitions']['factory_to_candidate_direct']['nominal_no_overlap'])+'; actual OEM acceptance UNKNOWN |',
+              '| Direct first stage / return stage stock-FS overlap (model) | 0 / 0 bytes; actual stock layout unproven |',
+              '| Loader -> SHINO stock-FS overwrite (inferred model) | '+str(d['transitions']['loader_to_shino']['inferred_stock_FS_staging_sector_overlap_bytes'])+' bytes; two-hop is NOT stock-data-preserving |',
               '| First-hop loader exact candidate + OEM pins | PASS |',
               '| Nominal loader -> SHINO staging | '+str(d['transitions']['loader_to_shino']['nominal_no_overlap'])+' |',
               '| Nominal SHINO -> OEM staging | '+str(d['transitions']['shino_to_factory']['nominal_no_overlap'])+' |',
