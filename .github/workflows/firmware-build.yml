@@ -6,19 +6,49 @@ on:
       - main
       - 'planning/**'
       - 'feature/**'
+      - 'safety/**'
     paths:
       - 'firmware/**'
+      - 'recovery/**'
+      - 'tools/verify_factory_ota.py'
       - '.github/workflows/firmware-build.yml'
   pull_request:
     paths:
       - 'firmware/**'
+      - 'recovery/**'
+      - 'tools/verify_factory_ota.py'
       - '.github/workflows/firmware-build.yml'
 
 permissions:
   contents: read
 
 jobs:
+  verify-factory-ota:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Fetch exact OEM recovery reference, not an approximate version
+        uses: actions/checkout@v4
+        with:
+          repository: GeekMagicClock/smalltv-ultra
+          ref: 55d7877fcba8b1cb7a66a0830d35d5b374bc8540
+          path: reference-geekmagic
+          persist-credentials: false
+          sparse-checkout: |
+            Ultra-V9.0.44
+      - name: Reject any source/ZIP/firmware mismatch
+        run: |
+          test "$(git -C reference-geekmagic rev-parse HEAD)" = "55d7877fcba8b1cb7a66a0830d35d5b374bc8540"
+          test "$(git -C reference-geekmagic rev-parse HEAD:Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip)" = "a829d48766cbd2f4f62656523cc9646ba67017d3"
+          python tools/verify_factory_ota.py --manifest recovery/factory_ota_v9_0_44.json reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip
+      - name: Confirm no manufacturer firmware is published by this workflow
+        run: echo 'OEM reference inspected only in ephemeral CI checkout. No proprietary binary uploaded or distributed.'
+
   compile-esp8266:
+    needs: verify-factory-ota
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:

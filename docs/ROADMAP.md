@@ -15,6 +15,8 @@ This roadmap deliberately separates **analysis**, **PC-side simulation**, and **
 
 **Gate 0:** No firmware upload or flash write until baseline, backup and recovery plan have been verified.
 
+**Pinned OEM rollback reference available (offline only):** the exact V9.0.44 official archive has been recovered from GeekMagic's historical commit, inspected, and pinned by outer/inner SHA-256 in `recovery/factory_ota_v9_0_44.json`. Every candidate build must pass the OEM reference integrity prerequisite in CI. This does **not** complete Gate 0: no owner-unit full-flash image, custom Wi-Fi loader-to-OEM physical restore test, or reliable no-boot recovery path has been established. See [recovery/README.md](../recovery/README.md).
+
 ## Phase 1 — Static firmware and API research
 
 - Build a manifest of official firmware packages, archive hashes, image headers, layouts, embedded web resources and printable strings.
