@@ -24,3 +24,10 @@ Restrict Windows Firewall inbound TCP 8765 to the specific SmallTV IP; do not fo
 Returns the keys required by upstream: `ok`, `gpu_usage`, `cpu_usage`, `gpu_vram_mb`, `memory_used_gb`, `gpu_power`, `gpu_temp_c`. An extra `gpu_available` indicates whether NVIDIA telemetry succeeded. GPU readings are zero if unavailable; CPU/RAM still report. Sensor sampling runs in the background every second to keep HTTP GET responsive to the upstream firmware's 800 ms timeout. No API keys, listening on every interface, writes to the TV, remote command execution or CORS.
 
 Tests: `python -m unittest discover -s companion -p 'test_*.py' -v` (the tests do not require psutil or a real NVIDIA GPU).
+
+
+## New: RAM-only telemetry push to FS-less native SHINO bridge
+
+The source-only first-boot bridge now includes a flash-resident 240×240 CPU/GPU/RAM display and native Web UI. Unlike the existing localhost `GET /metrics` service, `push_fsless_metrics.py` is an **explicit client** which sends short numeric PC samples to `POST /api/v1/bridge/metrics` on the bridge's private AP using per-build HTTP Digest credentials. Never point it at the factory TV's `/update` URL.
+
+PC-only dry-run: `py companion/push_fsless_metrics.py --dry-run` (requires `psutil`, never reads secrets or contacts device). Real sending is only meaningful after a separately authorized SHINO firmware installation: connect Windows to SHINO's private AP and supply the private, *matching-build* `firmware/private/credentials.txt` file. Example: `py companion/push_fsless_metrics.py --host 192.168.4.1 --credentials-file firmware/private/credentials.txt --once`. This is **not a flash/install operation**. Metrics remain in device RAM and expire in six seconds. If the PC has only one Wi-Fi adapter, joining the private AP can disrupt home Wi-Fi/Internet; an Ethernet connection may help. More detail: [FS-less native dashboard](../docs/FSLESS_NATIVE_DASHBOARD.md).
