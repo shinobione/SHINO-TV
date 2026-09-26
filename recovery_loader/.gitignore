@@ -1,0 +1,6 @@
+include/local_policy.h
+private/
+.pio/
+.vscode/
+*.bin
+*.zip
