@@ -53,6 +53,7 @@ static void otaHandleWrite(HTTPUpload& upload);
 static void otaHandleEnd(HTTPUpload& upload, int mode);
 static void otaHandleAborted(HTTPUpload& upload);
 void handleDeleteGif(Webserver* webserver);
+static auto validateBearerToken(Webserver* webserver) -> bool;
 static auto requireBearerToken(Webserver* webserver) -> bool;
 static void handleSceneGet(Webserver* webserver);
 static void handleScenePost(Webserver* webserver);
