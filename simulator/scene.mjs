@@ -17,7 +17,9 @@ export function normalizeScene(raw) {
   const kind = raw.kind;
   const result = {kind, title: trim(raw.title, PRESETS[kind].title, 24)};
   if (kind === 'metrics') {
-    for (const field of LIMITS.metrics) result[field] = number(raw[field], PRESETS.metrics[field], 0, field === 'gpuTemp' ? 120 : 100);
+    for (const field of LIMITS.metrics) result[field] = number(raw[field], PRESETS.metrics[field], field === 'gpuTemp' ? -40 : 0, field === 'gpuTemp' ? 130 : 100);
+    result.source = ['demo', 'live', 'offline', 'manual'].includes(raw.source) ? raw.source : 'demo';
+    result.gpuAvailable = raw.gpuAvailable !== false;
   } else if (kind === 'music') {
     result.artist = trim(raw.artist, 'UNKNOWN ARTIST', 32);
     result.track = trim(raw.track, 'UNKNOWN TRACK', 48);
@@ -44,8 +46,8 @@ function label(ctx, str,x,y,size=11,color=C.white,weight=500,maxWidth=202) {
   ctx.fillStyle=color;ctx.font=`${weight} ${size}px system-ui, sans-serif`;ctx.fillText(str,x,y,maxWidth);
 }
 function bar(ctx, name, v, y, color=C.gold, unit='%') {
-  label(ctx,name,19,y,11,C.muted,700);ctx.textAlign='right';label(ctx,`${Math.round(v)}${unit}`,221,y,12,C.white,700,65);ctx.textAlign='left';
-  round(ctx,19,y+8,202,7,3,C.line);if(v>0)round(ctx,19,y+8,202*Math.min(1,v/100),7,3,color);
+  label(ctx,name,19,y,11,C.muted,700);ctx.textAlign='right';label(ctx,v===null?'N/A':`${Math.round(v)}${unit}`,221,y,12,C.white,700,65);ctx.textAlign='left';
+  round(ctx,19,y+8,202,7,3,C.line);if(v !== null && v>0)round(ctx,19,y+8,202*Math.min(1,v/100),7,3,color);
 }
 export function renderScene(ctx, input) {
   const scene=normalizeScene(input);
@@ -55,9 +57,15 @@ export function renderScene(ctx, input) {
   label(ctx,'//',23,34,12,C.gold,800);label(ctx,scene.title,46,34,12,C.white,800,165);
   ctx.fillStyle=C.gold;ctx.fillRect(17,53,36,2);
   if(scene.kind==='metrics'){
-    label(ctx,'LIVE SYSTEM / DEMO',19,77,9,C.muted,700);
-    for(const [i,key] of ['cpu','gpu','ram'].entries())bar(ctx,key.toUpperCase(),scene[key],98+i*34,i===1?C.purple:C.gold);
-    label(ctx,`GPU TEMP  ${Math.round(scene.gpuTemp)}°C`,19,215,12,C.lime,700);
+    if (scene.source === 'offline') {
+      label(ctx,'PC OFFLINE',19,107,22,C.gold,800);
+      label(ctx,'Start the companion service',19,140,11,C.muted,600);
+      label(ctx,'No SmallTV connection required',19,163,10,C.muted,500);
+    } else {
+      label(ctx,scene.source === 'live'?'LIVE SYSTEM / THIS PC':scene.source === 'manual'?'MANUAL SNAPSHOT':'SYSTEM / DEMO DATA',19,77,9,C.muted,700);
+      for(const [i,key] of ['cpu','gpu','ram'].entries())bar(ctx,key.toUpperCase(),key==='gpu'&&!scene.gpuAvailable?null:scene[key],98+i*34,i===1?C.purple:C.gold);
+      label(ctx,`GPU TEMP  ${scene.gpuAvailable?`${Math.round(scene.gpuTemp)}°C`:'N/A'}`,19,215,12,C.lime,700);
+    }
   } else if(scene.kind==='music'){
     round(ctx,19,68,80,80,12,C.panel);label(ctx,'S',45,120,47,C.gold,800);
     label(ctx,scene.artist.toUpperCase(),111,91,10,C.gold,700,110);
