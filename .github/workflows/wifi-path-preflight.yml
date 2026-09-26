@@ -7,7 +7,6 @@ on:
       - 'tools/wifi_flash_preflight.py'
       - 'tools/test_wifi_flash_preflight.py'
       - 'tools/generate_shino_device_policy.py'
-      - 'tools/verify_fs_provisioning.py'
       - '.github/workflows/wifi-path-preflight.yml'
       - 'firmware/**'
       - 'recovery_loader/**'
@@ -57,42 +56,16 @@ jobs:
           python tools/verify_factory_ota.py --manifest recovery/factory_ota_v9_0_44.json reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip
       - name: Install PlatformIO and esptool (no serial operations)
         run: python -m pip install 'platformio>=6.1,<7' 'esptool>=5,<6'
-      - name: Generate throwaway BLANK source config, never owner credentials
-        run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          p=Path('firmware/data/config.json')
-          assert not p.exists()
-          p.write_text(json.dumps({'wifi_ssid':'','wifi_password':'','api_token':'','lcd_rotation':0})+'\n')
-          PY
-      - name: Build exact LittleFS image offline, NEVER provision on a device
-        working-directory: firmware
-        run: pio run -e esp12e -t buildfs
-      - name: Inspect source/image and keep ephemeral exact copy
-        run: |
-          python tools/verify_fs_provisioning.py --image firmware/.pio/build/esp12e/littlefs.bin --source-root firmware/data --platformio firmware/platformio.ini > /tmp/shino-fs-preflight.json
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          result=json.loads(Path('/tmp/shino-fs-preflight.json').read_text())
-          assert result['image_bytes']==2072576
-          assert result['non_atomic_esp8266_U_FS_writes_active_FS_in_place'] is True
-          assert result['owner_FS_migration_permission'] is False
-          assert result['first_boot_migration_writer_compiled'] is False
-          print('Offline FS pin:',result['image_sha256'],'(NOT a firmware upload)')
-          PY
-          cp firmware/.pio/build/esp12e/littlefs.bin /tmp/shino-exact-fs.bin
-      - name: Generate ephemeral experimental OEM app return + READ-ONLY FS policy
+      - name: Generate ephemeral exact-OEM experimental app-return; no filesystem image
         run: |
           python tools/generate_shino_device_policy.py \
             --oem-zip reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip \
-            --fs-image /tmp/shino-exact-fs.bin \
             --enable-restore
           grep -q '^#define SHINO_ENABLE_FACTORY_RESTORE 1$' firmware/include/shino_private_policy.h
           grep -q '^#define SHINO_ENABLE_FS_MIGRATION 0$' firmware/include/shino_private_policy.h
-          grep -q '^#define SHINO_FS_BYTES 2072576$' firmware/include/shino_private_policy.h
+          grep -q '^#define SHINO_FS_IMAGE_PRESENT 0$' firmware/include/shino_private_policy.h
           grep -q '^#define SHINO_BOOT_PROFILE 0$' firmware/include/shino_private_policy.h
+          test ! -f firmware/data/config.json
       - name: Compile actual experimental SHINO candidate (no upload)
         working-directory: firmware
         run: pio run -e esp12e
@@ -139,6 +112,9 @@ jobs:
           assert d['device_access_performed'] is False
           assert b'FIRST_BOOT_BRIDGE' in Path('/tmp/shino-preflight-candidate.bin').read_bytes()
           assert b'READ_ONLY_FS_MIGRATION_PLAN' in Path('/tmp/shino-preflight-candidate.bin').read_bytes()
+          assert b'FSLESS_PC_TELEMETRY_RAM_ONLY' in Path('/tmp/shino-preflight-candidate.bin').read_bytes()
+          assert Path('/tmp/shino-preflight-candidate.bin').stat().st_size < 494144
+          assert not Path('firmware/.pio/build/esp12e/littlefs.bin').exists()
           print('PASS: exactly pinned OEM, actual compiled SHINO + its own OEM rollback, candidate-locked loader.')
           print('Original stock OTA acceptance, OEM filesystem and nonbooting Wi-Fi recovery remain unknown.')
           for image in d['images']:
@@ -163,4 +139,4 @@ jobs:
         run: |
           rm -rf reference-geekmagic recovery_loader/private recovery_loader/.pio firmware/.pio firmware/private
           rm -f recovery_loader/include/local_policy.h firmware/data/config.json firmware/include/shino_private_policy.h
-          rm -f /tmp/shino-preflight-candidate.bin /tmp/shino-preflight-loader.bin /tmp/shino-preflight-original.bin /tmp/shino-preflight-result.json /tmp/shino-exact-fs.bin /tmp/shino-fs-preflight.json
+          rm -f /tmp/shino-preflight-candidate.bin /tmp/shino-preflight-loader.bin /tmp/shino-preflight-original.bin /tmp/shino-preflight-result.json
