@@ -11,7 +11,8 @@ from wifi_flash_preflight import (PreflightError, evaluate, inspect_image,
 
 
 def fake_image(size: int, mode: int = 2, sizeflag: int = 4) -> bytes:
-    return bytes([0xE9, 2, mode, sizeflag << 4, 0x40, 0xF4, 0x10, 0x40]) + bytes(range(256)) * ((size - 8) // 256) + bytes(range((size - 8) % 256))
+    body = b"".join(hashlib.sha256(i.to_bytes(4, "little")).digest() for i in range((size + 31) // 32))
+    return bytes([0xE9, 2, mode, sizeflag << 4, 0x40, 0xF4, 0x10, 0x40]) + body[:size - 8]
 
 
 class WiFiPreflightTests(unittest.TestCase):
