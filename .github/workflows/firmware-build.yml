@@ -47,12 +47,7 @@ jobs:
           test "$(git -C reference-geekmagic rev-parse HEAD)" = "55d7877fcba8b1cb7a66a0830d35d5b374bc8540"
           test "$(git -C reference-geekmagic rev-parse HEAD:Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip)" = "a829d48766cbd2f4f62656523cc9646ba67017d3"
           python tools/verify_factory_ota.py --manifest recovery/factory_ota_v9_0_44.json reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip
-      - name: Generate one-use private device policy — restore writes disabled
-        run: |
-          python tools/generate_shino_device_policy.py --oem-zip reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip
-          grep -q '^#define SHINO_ENABLE_FACTORY_RESTORE 0$' firmware/include/shino_private_policy.h
-          grep -q '^#define SHINO_BOOT_PROFILE 0$' firmware/include/shino_private_policy.h
-      - name: Create blank disposable configuration
+      - name: Create blank disposable source configuration (no credentials)
         run: |
           python - <<'PY'
           import json
@@ -63,7 +58,34 @@ jobs:
           PY
       - name: Install PlatformIO
         run: python -m pip install 'platformio>=6.1,<7'
-      - name: Compile read-only candidate and verify BIN immediately, never upload
+      - name: Build full LittleFS source package OFFLINE — NO upload
+        working-directory: firmware
+        run: pio run -e esp12e -t buildfs
+      - name: Independently verify exact source, image geometry and SHA-256
+        run: |
+          python tools/verify_fs_provisioning.py --image firmware/.pio/build/esp12e/littlefs.bin --source-root firmware/data --platformio firmware/platformio.ini > /tmp/shino-fs-inspection.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          result=json.loads(Path('/tmp/shino-fs-inspection.json').read_text())
+          assert result['image_bytes']==2072576
+          assert result['first_boot_migration_writer_compiled'] is False
+          assert result['owner_FS_migration_permission'] is False
+          assert result['non_atomic_esp8266_U_FS_writes_active_FS_in_place'] is True
+          print('Offline inspected LittleFS:',result['image_bytes'],'bytes; SHA-256:',result['image_sha256'])
+          print('Risk: original stock filesystem would be overwritten; actual migration NOT enabled.')
+          PY
+          cp firmware/.pio/build/esp12e/littlefs.bin /tmp/shino-inspected-fs.bin
+      - name: Generate one-use OEM+exact-FS pinned private READ-ONLY device policy
+        run: |
+          python tools/generate_shino_device_policy.py \
+            --oem-zip reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip \
+            --fs-image /tmp/shino-inspected-fs.bin
+          grep -q '^#define SHINO_ENABLE_FACTORY_RESTORE 0$' firmware/include/shino_private_policy.h
+          grep -q '^#define SHINO_ENABLE_FS_MIGRATION 0$' firmware/include/shino_private_policy.h
+          grep -q '^#define SHINO_FS_BYTES 2072576$' firmware/include/shino_private_policy.h
+          grep -q '^#define SHINO_BOOT_PROFILE 0$' firmware/include/shino_private_policy.h
+      - name: Compile conservative first-boot bridge, never upload
         working-directory: firmware
         run: |
           pio run -e esp12e
@@ -72,21 +94,21 @@ jobs:
           from pathlib import Path
           p=Path('.pio/build/esp12e/firmware.bin')
           assert p.is_file() and p.stat().st_size>0, f'Compiler produced no firmware BIN at {p}'
-          print('Offline read-only candidate:',p.stat().st_size,'bytes')
+          b=p.read_bytes()
+          assert b'FIRST_BOOT_BRIDGE' in b
+          assert b'READ_ONLY_FS_MIGRATION_PLAN' in b
+          print('Offline read-only first-boot bridge:',p.stat().st_size,'bytes')
           with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as f:
-              f.write('Offline read-only application: '+str(p.stat().st_size)+' bytes; no upload.\n')
+              f.write('Offline read-only bridge: '+str(p.stat().st_size)+' bytes; FS writer absent.\n')
           PY
-      - name: Build filesystem, never upload
-        working-directory: firmware
-        run: pio run -e esp12e -t buildfs
       - name: Confirm both images built; report metadata only
         run: |
           python - <<'PY'
           import os
           from pathlib import Path
           base=Path('firmware/.pio/build/esp12e')
-          filesystem=base/'littlefs.bin'
-          assert filesystem.is_file() and filesystem.stat().st_size>0, f'Missing/empty LittleFS: {filesystem}'
+          filesystem=Path('/tmp/shino-inspected-fs.bin')
+          assert filesystem.is_file() and filesystem.stat().st_size>0, f'Missing/empty verified LittleFS copy: {filesystem}'
           lines=['### Firmware baseline: offline-only PASS', '', '| Output | Size (bytes) |', '|---|---:|']
           lines += [f'| littlefs.bin | {filesystem.stat().st_size:,} |']
           lines += ['', 'Factory return POST NOT compiled. No physical validation or flash permission.']
@@ -99,3 +121,4 @@ jobs:
         run: |
           rm -f firmware/data/config.json firmware/include/shino_private_policy.h
           rm -rf firmware/private firmware/.pio reference-geekmagic
+          rm -f /tmp/shino-inspected-fs.bin /tmp/shino-fs-inspection.json
