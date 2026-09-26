@@ -87,7 +87,7 @@ class UpdateFormParser(HTMLParser):
                 "file_field_names": [],
             }
             self.forms.append(self.active)
-        elif tag == "input" and self.active is not None and data.get("type", "").lower() == "file":
+        elif tag == "input" and self.active is not None and (data.get("type") or "").lower() == "file":
             name = data.get("name") or ""
             if SAFE_FIELD.fullmatch(name) and len(self.active["file_field_names"]) < 16:
                 self.active["file_field_names"].append(name)
