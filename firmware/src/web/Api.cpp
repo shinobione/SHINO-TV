@@ -26,6 +26,8 @@
 #include "web/Api.h"
 #include "display/DisplayManager.h"
 #include "scenes/SceneManager.h"
+#include "recovery/FactoryRollback.h"
+#include "shino_private_policy.h"
 
 #include "config/ConfigManager.h"
 #include "wireless/WiFiManager.h"
@@ -112,25 +114,27 @@ void registerApiEndpoints(Webserver* webserver) {
     // responses=200:application/json,401:application/json
     webserver->raw().on("/api/v1/reboot", HTTP_POST, [webserver]() { handleReboot(webserver); });
 
-    // @openapi {post} /ota/fw version=v1 group=OTA summary="Upload firmware (OTA)" requiresAuth=true
-    // requestBody=multipart/form-data responses=200:application/json,401:application/json
-    webserver->raw().on(
-        "/api/v1/ota/fw", HTTP_POST, [webserver]() { handleOtaFinished(webserver); },
-        [webserver]() { handleOtaUpload(webserver, U_FLASH); });
-
-    // @openapi {post} /ota/fs version=v1 group=OTA summary="Upload filesystem (OTA)" requiresAuth=true
-    // requestBody=multipart/form-data responses=200:application/json,401:application/json
-    webserver->raw().on(
-        "/api/v1/ota/fs", HTTP_POST, [webserver]() { handleOtaFinished(webserver); },
-        [webserver]() { handleOtaUpload(webserver, U_FS); });
-
-    // @openapi {get} /ota/status version=v1 group=OTA summary="Get OTA status" requiresAuth=true
-    // responses=200:application/json,401:application/json
-    webserver->raw().on("/api/v1/ota/status", HTTP_GET, [webserver]() { handleOtaStatus(webserver); });
-
-    // @openapi {post} /ota/cancel version=v1 group=OTA summary="Cancel OTA" requiresAuth=true
-    // responses=200:application/json,401:application/json
-    webserver->raw().on("/api/v1/ota/cancel", HTTP_POST, [webserver]() { handleOtaCancel(webserver); });
+    // Upstream generic firmware and filesystem OTA endpoints have been REMOVED:
+    // no arbitrary image/FS uploads on a firmware intended for a single device.
+    // Pinned OEM application-only return is a separate, authenticated route.
+    webserver->raw().on("/api/v1/shino/factory-restore", HTTP_GET, [webserver]() {
+        if (!requireBearerToken(webserver)) return;
+        FactoryRollback::status(webserver->raw());
+    });
+#if SHINO_ENABLE_FACTORY_RESTORE
+    webserver->raw().on("/api/v1/shino/factory-restore", HTTP_POST,
+        [webserver]() {
+            const bool authenticated = validateBearerToken(webserver);
+            if (!authenticated) {
+                requireBearerToken(webserver);
+                return;
+            }
+            FactoryRollback::complete(webserver->raw(), authenticated);
+        },
+        [webserver]() {
+            FactoryRollback::upload(webserver->raw(), validateBearerToken(webserver));
+        });
+#endif
 
     // @openapi {post} /gif version=v1 group=GIF summary="Upload a GIF" requiresAuth=true
     // requestBody=multipart/form-data responses=200:application/json,401:application/json
@@ -196,10 +200,9 @@ void registerApiEndpoints(Webserver* webserver) {
  * @return void
  */
 void setCorsHeaders(Webserver* webserver) {
-    webserver->raw().sendHeader("Access-Control-Allow-Origin", "*");
-    webserver->raw().sendHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
-    webserver->raw().sendHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    webserver->raw().sendHeader("Access-Control-Max-Age", "3600");
+    // No wildcard CORS: first-party interface and API are same-origin.
+    webserver->raw().sendHeader("Cache-Control", "no-store");
+    webserver->raw().sendHeader("X-Content-Type-Options", "nosniff");
 }
 
 /**
