@@ -37,6 +37,8 @@ The owner-observed `/space.json.total=3121152` matches the official `4m3m` **to 
 | smalltv-mod v2.16.0 lean | 654,464 | **-130,176** |
 | smalltv-mod v2.16.0 full | 780,352 | **-256,064** |
 
+The older manufacturer samples already inspected in [audit 01](FIRMWARE_AUDIT_01.md) reinforce this pattern: V9.0.40 **510,496 B**, V9.0.46 **501,040 B**, and V9.0.50 **505,200 B**, all under nominal 512 KiB. These come from different manufacturer OTA packages and illustrate that the vendor itself keeps these applications small. They do not disclose the updater's precise allocation logic.
+
 **Important distinction:** The 512-KiB comparison is a useful *nominal* half of the inferred ~1-MiB pre-filesystem region. It is not a measured stock OTA setting. The ESP8266 Arduino updater derives free sketch staging from the **currently running sketch size** and linked `FS_start`, aligns to flash sectors and also has implementation-specific checks. If (1) the stock really uses `4m3m`/equivalent, (2) its active sketch really occupies approximately the 494,144-byte OEM BIN and (3) it uses a compatible Arduino-style update path, the simple rounded geometry predicts:
 
 ```
