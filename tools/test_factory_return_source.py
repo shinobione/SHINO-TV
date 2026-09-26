@@ -33,6 +33,10 @@ class FactoryReturnSourceGate(unittest.TestCase):
         self.assertIn('uri.indexOf("..")', WEB)
         self.assertIn('uri.indexOf(\'%\')', WEB)
 
+    def test_api_token_rotation_persists_before_switching_active_token(self):
+        self.assertIn('configManager.secure.put("api_token", newToken)', APP)
+        self.assertIn('token must contain 24 to 128 characters', APP)
+
     def test_rescue_has_private_auth_and_no_generic_writes(self):
         self.assertIn('SHINO_RESCUE_HTTP_PASSWORD', RESCUE)
         self.assertIn('DIGEST_AUTH', RESCUE)
