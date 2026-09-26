@@ -45,7 +45,7 @@ def printable_strings(data, length=10, limit=30):
     result = []
     for match in re.finditer(rb'[ -~]{%d,}' % length, data):
         string = match.group().decode('ascii')
-        if re.search(r'https?://|/(?:api|update|upload|image|gif|set|.*\\.json)|ESP|LittleFS|SPIFFS', string, re.I):
+        if re.search(r'https?://|/(?:api|update|upload|image|gif|set|.*[.]json)|ESP|LittleFS|SPIFFS', string, re.I):
             result.append({'offset': f'0x{match.start():x}', 'text': string[:160]})
             if len(result) >= limit:
                 break
