@@ -7,6 +7,7 @@ APP = (ROOT / "firmware" / "src" / "web" / "Api.cpp").read_text()
 MAIN = (ROOT / "firmware" / "src" / "main.cpp").read_text()
 RESCUE = (ROOT / "firmware" / "src" / "boot" / "RescueMode.cpp").read_text()
 RESTORE = (ROOT / "firmware" / "src" / "recovery" / "FactoryRollback.cpp").read_text()
+WEB = (ROOT / "firmware" / "src" / "web" / "Webserver.cpp").read_text()
 
 
 class FactoryReturnSourceGate(unittest.TestCase):
@@ -23,6 +24,8 @@ class FactoryReturnSourceGate(unittest.TestCase):
         self.assertNotIn('"$str0ngPa$$w0rd"', MAIN)
         self.assertIn('SHINO_SETUP_AP_PSK', MAIN)
         self.assertIn('SHINO_BOOTSTRAP_API_TOKEN', MAIN)
+        self.assertNotIn('Access-Control-Allow-Origin", "*"' , APP)
+        self.assertNotIn('Access-Control-Allow-Origin", "*"' , WEB)
 
     def test_rescue_has_private_auth_and_no_generic_writes(self):
         self.assertIn('SHINO_RESCUE_HTTP_PASSWORD', RESCUE)
