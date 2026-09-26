@@ -19,7 +19,7 @@ background:#101318;display:grid;grid-template-columns:108px 108px;grid-template-
 .value{position:absolute;top:47px;left:9px;color:#f6f3ef;font:700 19px/21px ui-monospace,Consolas,monospace;
 letter-spacing:-1px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .track{position:absolute;left:8px;bottom:10px;width:90px;height:6px;border-radius:3px;background:#536277;overflow:hidden}
-.fill{display:block;width:0;height:6px;border-radius:3px;background:#66d39a;transition:width .2s linear,background-color .15s linear}
+.fill{display:none;width:0;height:6px;border-radius:3px;background:#66d39a;transition:none}
 footer{font-size:12px;line-height:1.55;color:#aab6c3;max-width:720px;margin:15px auto 0}
 footer a{color:#b9d9fb}a:focus-visible{outline:2px solid #66d39a}
 @media(max-width:760px){.viewport{width:480px;height:480px}.screen{transform:scale(2)}}
@@ -65,11 +65,21 @@ function setCard(i,text,pct){
 const key=ids[i],fill=el(key+'Fill'),track=el(key+'Track');
 el(key+'V').textContent=text;
 if(!Number.isFinite(pct)||pct<0){
-previous[i]=null;fill.style.width='0px';track.removeAttribute('aria-valuenow');return;
+previous[i]=null;
+fill.style.width='0px';
+fill.style.display='none';
+fill.style.borderRadius='0';
+track.removeAttribute('aria-valuenow');return;
 }
 const p=clamp100(pct);
 previous[i]=stableBand(previous[i],p);
-fill.style.width=fillPixels(p)+'px';
+const pixels=fillPixels(p);
+// Discrete whole-device-pixel updates match the native LCD and avoid a
+// lingering colored fragment when the metric falls to precisely 0.0%.
+fill.style.width=pixels+'px';
+fill.style.display=pixels===0?'none':'block';
+// Native draws tiny 1..5px fills as plain rectangles, not malformed pills.
+fill.style.borderRadius=pixels<6?'0':'3px';
 fill.style.backgroundColor=colors[previous[i]];
 track.setAttribute('aria-valuenow',p.toFixed(1));
 }
