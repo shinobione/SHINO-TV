@@ -114,6 +114,10 @@ def evaluate(official_zip: Path, manifest: Path, loader: Path, candidate: Path,
     second = inspect_image(candidate_bytes, "shino_candidate")
     if oem["md5_for_arduino_updater"].encode("ascii") not in candidate_bytes:
         raise PreflightError("SHINO application lacks its own exact compiled OEM factory-return digest")
+    # A smaller BIN alone must never authorize the old full-app startup:
+    # require the actual application to embed the conservatively linked mode.
+    if b"FIRST_BOOT_BRIDGE" not in candidate_bytes:
+        raise PreflightError("SHINO application is not the approved conservative first-boot bridge image")
     if oem["size_bytes"] != OEM_SIZE:
         raise PreflightError("OEM V9.0.44 image size changed")
     if first["size_bytes"] > COMMUNITY_LOADER_COMPARISON:
@@ -157,9 +161,11 @@ def evaluate(official_zip: Path, manifest: Path, loader: Path, candidate: Path,
         },
         "still_unproven": [
             "Owner actual physical flash ID/capacity and OEM free OTA slot size",
+            "Conservative first-boot bridge runtime boot/display/AP/auth not physically verified",
             "Current owner's OTA handler accepting custom loader application",
             "Loader booting, WPA2 AP, authentication and tested upload on owner board",
             "OEM filesystem/data layout after changing from SHINO 4m2m map",
+            "First-boot bridge does not mount or migrate stock FS or initialize EEPROM; no full dashboard in this build",
             "A nonbooting SHINO/loader cannot be recovered via this transient Wi-Fi trampoline",
             "End-to-end restore and power-interruption behavior cannot be proven via CI",
         ],
