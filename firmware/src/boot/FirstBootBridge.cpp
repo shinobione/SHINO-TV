@@ -73,10 +73,13 @@ void sendFsPlan() {
     doc["fs_research_image_present"] = SHINO_FS_IMAGE_PRESENT == 1;
     doc["pinned_image_sha256"] = SHINO_FS_IMAGE_PRESENT ? SHINO_FS_SHA256 : "NONE__NO_LITTLEFS_IMAGE_BUILT";
     doc["pinned_image_bytes"] = SHINO_FS_IMAGE_PRESENT ? SHINO_FS_BYTES : 0;
-    doc["linked_shino_fs_start"] = "0x200000";
-    doc["linked_shino_fs_end_exclusive"] = "0x3fa000";
+    doc["active_fs_mount_or_write"] = false;
+    doc["linked_shino_OTA_ceiling_not_mounted_fs_start"] = "0x100000";
     doc["stock_fs_start_inferred_NOT_PROVEN"] = "0x100000";
-    doc["stock_fs_bytes_at_risk_under_inferred_layout"] = SHINO_FS_BYTES;
+    doc["legacy_research_only_4m2m_fs_start"] = "0x200000";
+    doc["legacy_research_fs_bytes_at_risk_if_written"] = SHINO_FS_BYTES;
+    doc["modeled_direct_first_ota_overlaps_inferred_stock_fs_bytes"] = 0;
+    doc["model_only_not_owner_stock_OTA_acceptance"] = true;
     doc["standard_updater_erases_and_writes_active_fs_BEFORE_MD5_validation"] = true;
     doc["atomic_full_image_staging_available_with_current_app"] = false;
     doc["OEM_application_image_cannot_restore_stock_filesystem"] = true;
@@ -104,7 +107,8 @@ void sendStatus() {
     doc["pc_metrics_route"] = "/api/v1/bridge/metrics";
     doc["filesystem_migration_writes_compiled"] = false;
     doc["manufacturer_original_flash_backup_available"] = false;
-    doc["linked_shino_FS_start_offset"] = "0x200000";
+    doc["linked_shino_FS_start_offset"] = "0x100000";
+    doc["linked_boundary_for_U_FLASH_without_FS_mount"] = true;
     doc["inferred_stock_FS_start_offset_UNVERIFIED"] = "0x100000";
     doc["physical_flash_bytes_observed_at_runtime"] = ESP.getFlashChipRealSize();
     doc["running_application_bytes"] = ESP.getSketchSize();
