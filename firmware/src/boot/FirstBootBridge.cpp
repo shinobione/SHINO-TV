@@ -46,10 +46,10 @@ bool requireAuth() {
     server.requestAuthentication(DIGEST_AUTH, "SHINO-FirstBoot");
     return false;
 }
-void respond(int code, const String& data, const __FlashStringHelper* mime = F("application/json")) {
+void respond(int code, const String& data) {
     server.sendHeader(F("Cache-Control"), F("no-store"));
     server.sendHeader(F("X-Content-Type-Options"), F("nosniff"));
-    server.send(code, mime, data);
+    server.send(code, "application/json", data);
 }
 void sendStatus() {
     if (!requireAuth()) return;
@@ -90,6 +90,11 @@ void run() {
         // Never silently start an open AP or enter a storage-writing fallback.
         WiFi.mode(WIFI_OFF);
         Logger::error("FirstBoot private AP failed; no fallback and no storage writes", "FirstBoot");
+        DisplayManager::begin();
+        DisplayManager::clearScreen();
+        DisplayManager::drawTextWrapped(8, 14, F("FIRST BOOT"), 2, LCD_RED, LCD_BLACK, false);
+        DisplayManager::drawTextWrapped(8, 65, F("PRIVATE AP FAILED"), 1, LCD_WHITE, LCD_BLACK, false);
+        DisplayManager::drawTextWrapped(8, 110, F("NO STORAGE WRITE"), 1, LCD_WHITE, LCD_BLACK, false);
         return;
     }
     server.on("/", HTTP_GET, []() {
