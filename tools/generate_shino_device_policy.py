@@ -23,7 +23,7 @@ DEFAULT_HEADER = ROOT / "firmware" / "include" / "shino_private_policy.h"
 DEFAULT_SECRETS = ROOT / "firmware" / "private" / "credentials.txt"
 
 
-def generate(oem_zip: Path, manifest: Path, output: Path, secrets_file: Path) -> dict:
+def generate(oem_zip: Path, manifest: Path, output: Path, secrets_file: Path,\n             enable_restore: bool = False) -> dict:
     reference = verify_archive(Path(oem_zip), Path(manifest))
     with zipfile.ZipFile(oem_zip) as archive:
         original = archive.read(reference["firmware_member"])
@@ -73,7 +73,7 @@ def generate(oem_zip: Path, manifest: Path, output: Path, secrets_file: Path) ->
         raise
     return {
         "oem_sha256": reference["firmware_sha256"],
-        "oem_size": len(original),
+        "oem_size": len(original),\n        "restore_mode": "EXPERIMENTAL_OEM_ONLY" if enable_restore else "DISABLED",
         "header": str(output),
         "credential_file": str(secrets_file),
         "device_operation": "none",
@@ -83,12 +83,12 @@ def generate(oem_zip: Path, manifest: Path, output: Path, secrets_file: Path) ->
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--oem-zip", type=Path, required=True)
-    parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
+    parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)\n    parser.add_argument("--enable-restore", action="store_true",\n                        help="Compile experimental OEM-only restore; NOT permission for any actual upload")
     parser.add_argument("--out", type=Path, default=DEFAULT_HEADER)
     parser.add_argument("--credentials-out", type=Path, default=DEFAULT_SECRETS)
     args = parser.parse_args()
     try:
-        report = generate(args.oem_zip, args.manifest, args.out, args.credentials_out)
+        report = generate(args.oem_zip, args.manifest, args.out, args.credentials_out, args.enable_restore)
     except (FactoryOtaError, OSError, ValueError, KeyError) as error:
         parser.exit(1, f"SECURE FIRMWARE BUILD GATE CLOSED: {error}\n")
     print(json.dumps(report, indent=2))
