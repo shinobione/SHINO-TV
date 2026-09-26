@@ -55,11 +55,12 @@ jobs:
           python - <<'PY'
           import os
           from pathlib import Path
-          base = Path('firmware/.pio/build/esp12e')
           lines = ['### Offline firmware build outputs', '', 'File | Size (bytes)', ':-- | --:']
           for name in ('firmware.bin', 'littlefs.bin'):
-              path = base / name
-              assert path.exists() and path.stat().st_size > 0, f'Missing build output: {path}'
+              matches = [p for p in Path.cwd().rglob(name) if '.pio' in p.parts and 'esp12e' in p.parts]
+              assert len(matches) == 1, f'Expected one ESP8266 output for {name}, found: {matches}'
+              path = matches[0]
+              assert path.stat().st_size > 0, f'Empty build output: {path}'
               lines.append(f'{name} | {path.stat().st_size:,}')
           lines += ['', '**Not validated on hardware. Do not flash these CI outputs.**']
           summary = '\n'.join(lines) + '\n'
