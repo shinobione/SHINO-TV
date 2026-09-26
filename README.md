@@ -105,3 +105,7 @@ See [native scene protocol and examples](docs/NATIVE_SCENES.md). The independent
 - [Offline verifier](tools/verify_flash_backup.py): validates two readback files, their expected byte counts, exact equality and SHA-256 without connecting to a device.
 
 **Hardware state unchanged.** No owner-unit dump or restoration test has taken place. A compiled build is not authorization to flash.
+
+## Live Windows preview (no hardware required)
+
+On the `feature/local-live-preview` branch, install `psutil` once with `py -m pip install -r companion/requirements.txt`, double-click **`start-preview.cmd`** and open **http://127.0.0.1:8765/**. The **CONNECT LIVE PC METRICS** button shows actual CPU/RAM/NVIDIA sensor values in the desktop 240×240 simulator; other scenes remain illustrative. The included service binds to loopback and never contacts or flashes the SmallTV. Full details in [LIVE_PREVIEW.md](docs/LIVE_PREVIEW.md).
