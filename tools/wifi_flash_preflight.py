@@ -31,10 +31,15 @@ FOUR_MB = 4 * 1024 * 1024
 SINGLE_SECTOR = 4096
 COMMUNITY_LOADER_COMPARISON = 315920  # Research comparison; NOT measured stock OTA capacity.
 OEM_SIZE = 494144
-# Preflight only models layouts selected in our exact committed PlatformIO configs:
-# eagle.flash.4m1m.ld -> 3 MiB until FS; eagle.flash.4m2m.ld -> 2 MiB.
+# The FS-less production candidate intentionally uses a 4m3m linker
+# OTA ceiling to model the owner's observed 3,121,152-B manufacturer FS.
+# Our inactive legacy LittleFS experiment used 4m2m; loader remains 4m1m.
+# Stock layout is only an inference until independently measured.
 LAYOUT_END = {"eagle.flash.4m1m.ld": 3 * 1024 * 1024,
-              "eagle.flash.4m2m.ld": 2 * 1024 * 1024}
+              "eagle.flash.4m2m.ld": 2 * 1024 * 1024,
+              "eagle.flash.4m3m.ld": 1 * 1024 * 1024}
+INFERRED_STOCK_FS_START = 0x100000
+INFERRED_STOCK_FS_END = 0x3FA000
 
 
 class PreflightError(ValueError):
@@ -102,6 +107,14 @@ def staging_model(current_bytes: int, incoming_bytes: int, flash_end: int) -> di
     }
 
 
+def inferred_stock_fs_staging_overlap(model: dict) -> int:
+    """Sector-range overlap under the unproven stock 4m3m-like FS hypothesis."""
+    start = int(model["OTA_staging_start"], 16)
+    end = int(model["OTA_staging_end"], 16)
+    return max(0, min(end, INFERRED_STOCK_FS_END) -
+                  max(start, INFERRED_STOCK_FS_START))
+
+
 def evaluate(official_zip: Path, manifest: Path, loader: Path, candidate: Path,
              loader_ini: Path, candidate_ini: Path) -> dict:
     metadata = verify_archive(official_zip, manifest)
@@ -134,12 +147,20 @@ def evaluate(official_zip: Path, manifest: Path, loader: Path, candidate: Path,
         raise PreflightError("Experimental loader lacks exact compiled candidate digest")
     loader_layout, loader_end = platformio_layout(loader_ini, "env:esp12e_recovery")
     shino_layout, shino_end = platformio_layout(candidate_ini, "env:esp12e")
-    if loader_layout != "eagle.flash.4m1m.ld" or shino_layout != "eagle.flash.4m2m.ld":
-        raise PreflightError("Unexpected source layout for staged SHINO update")
+    if loader_layout != "eagle.flash.4m1m.ld" or shino_layout != "eagle.flash.4m3m.ld":
+        raise PreflightError("Unexpected source layout: FS-less SHINO must link as stock-like 4m3m")
+    direct = staging_model(oem["size_bytes"], second["size_bytes"], 0x100000)
     into_shino = staging_model(first["size_bytes"], second["size_bytes"], loader_end)
     into_oem = staging_model(second["size_bytes"], oem["size_bytes"], shino_end)
-    if not into_shino["nominal_no_overlap"] or not into_oem["nominal_no_overlap"]:
-        raise PreflightError("Modeled OTA sketch space overlaps; do not prepare a physical install")
+    for model in (direct, into_shino, into_oem):
+        model["inferred_stock_FS_staging_sector_overlap_bytes"] = inferred_stock_fs_staging_overlap(model)
+    if not (direct["nominal_no_overlap"] and into_shino["nominal_no_overlap"] and
+            into_oem["nominal_no_overlap"]):
+        raise PreflightError("Modeled application OTA staging overlaps current running app")
+    if direct["inferred_stock_FS_staging_sector_overlap_bytes"] != 0 or into_oem["inferred_stock_FS_staging_sector_overlap_bytes"] != 0:
+        raise PreflightError("Direct or factory return stage intersects the inferred manufacturer filesystem")
+    if into_shino["inferred_stock_FS_staging_sector_overlap_bytes"] == 0:
+        raise PreflightError("Expected known loader second-hop original-data overlap not detected; re-audit layout")
 
     return {
         "status": "OFFLINE_PREFLIGHT_ONLY__OWNER_FLASH_NOT_AUTHORIZED",
@@ -148,8 +169,14 @@ def evaluate(official_zip: Path, manifest: Path, loader: Path, candidate: Path,
         "source_layouts": {
             "loader": loader_layout, "candidate": shino_layout,
             "OEM_internal_FS_layout": "UNKNOWN_FROM_APPLICATION_IMAGE_ALONE",
+            "stock_FS_start_inferred_from_owner_total": "0x100000__NOT_PROVEN",
         },
         "transitions": {
+            "factory_to_candidate_direct": {
+                **direct,
+                "source_stock_layout_status": "INFERRED_4m3m_NOT_MEASURED",
+                "original_stock_OTA_image_acceptance": "UNKNOWN_DO_NOT_UPLOAD_TO_PROBE",
+            },
             "factory_to_loader": {
                 "loader_bytes": first["size_bytes"],
                 "below_public_community_loader_benchmark": first["size_bytes"] <= COMMUNITY_LOADER_COMPARISON,
@@ -164,8 +191,10 @@ def evaluate(official_zip: Path, manifest: Path, loader: Path, candidate: Path,
             "Conservative first-boot bridge runtime boot/display/AP/auth not physically verified",
             "Current owner's OTA handler accepting custom loader application",
             "Loader booting, WPA2 AP, authentication and tested upload on owner board",
-            "OEM filesystem/data layout after changing from SHINO 4m2m map",
-            "First-boot bridge does not mount or migrate stock FS or initialize EEPROM; no full dashboard in this build",
+            "Owner OEM FS boundary is inferred from /space.json, not verified flash dump",
+            "FS-less 4m3m bridge does not mount/migrate OEM FS or initialize EEPROM, but SDK/ROM writes are unmeasured",
+            "Even a size-fitting direct first OTA can still fail to boot irrecoverably without independent serial access",
+            "Loader->SHINO 4m1m stage overwrites sectors within inferred stock files despite fitting mathematically",
             "A nonbooting SHINO/loader cannot be recovered via this transient Wi-Fi trampoline",
             "End-to-end restore and power-interruption behavior cannot be proven via CI",
         ],
