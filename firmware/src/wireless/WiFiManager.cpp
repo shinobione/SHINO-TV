@@ -162,10 +162,14 @@ auto WiFiManager::getConnectedSSID() -> String { return WiFi.SSID(); }
  */
 auto WiFiManager::startAccessPointMode() -> bool {
     WiFi.mode(WIFI_AP);
-    WiFi.softAP(_apSsid, _apPass);
+    if (!WiFi.softAP(_apSsid, _apPass, 6, false, 2)) {
+        Logger::error("Secure Wi-Fi AP startup failed; refusing open AP fallback", "WiFiManager");
+        WiFi.mode(WIFI_OFF);
+        _apMode = false;
+        return false;
+    }
 
     _apMode = true;
-
     return true;
 }
 
