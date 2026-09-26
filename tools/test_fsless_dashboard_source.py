@@ -18,7 +18,8 @@ class FslessDashboardSafetyTests(unittest.TestCase):
                 self.assertNotIn(forbidden, content)
         self.assertIn("FslessWebUI::PAGE", BRIDGE)
         self.assertIn("FslessWebUI::SCRIPT", BRIDGE)
-        self.assertIn("DisplayManager::drawLoadingBar(", BRIDGE)
+        self.assertIn("DashboardV2::fillPixels(", BRIDGE)
+        self.assertIn("gfx->fillRoundRect(trackX, trackY, 90, 6, 3", BRIDGE)
 
     def test_ui_requires_digest_and_no_external_scripts_or_submit_forms(self):
         self.assertIn("DIGEST_AUTH", BRIDGE)
@@ -38,6 +39,8 @@ class FslessDashboardSafetyTests(unittest.TestCase):
         self.assertIn("if (!requireAuth()) return;", BRIDGE)
         self.assertIn("RAM_SAMPLE_ACCEPTED", BRIDGE)
         self.assertIn("std::isfinite(numeric)", METRICS)
+        self.assertIn('"memory_total_gb"', METRICS)
+        self.assertIn('"memory_total_available"', METRICS)
         self.assertIn("Snapshot next{}", METRICS)
         self.assertIn("state = next;", METRICS)
         self.assertIn("METRICS_STALE_MS = 6000", METRICS)
