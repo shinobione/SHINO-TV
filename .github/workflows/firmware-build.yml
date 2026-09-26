@@ -62,9 +62,19 @@ jobs:
           PY
       - name: Install PlatformIO
         run: python -m pip install 'platformio>=6.1,<7'
-      - name: Compile read-only candidate, never upload
+      - name: Compile read-only candidate and verify BIN immediately, never upload
         working-directory: firmware
-        run: pio run -e esp12e
+        run: |
+          pio run -e esp12e
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          p=Path('.pio/build/esp12e/firmware.bin')
+          assert p.is_file() and p.stat().st_size>0, f'Compiler produced no firmware BIN at {p}'
+          print('Offline read-only candidate:',p.stat().st_size,'bytes')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as f:
+              f.write('Offline read-only application: '+str(p.stat().st_size)+' bytes; no upload.\n')
+          PY
       - name: Build filesystem, never upload
         working-directory: firmware
         run: pio run -e esp12e -t buildfs
@@ -74,12 +84,10 @@ jobs:
           import os
           from pathlib import Path
           base=Path('firmware/.pio/build/esp12e')
-          names=('firmware.bin','littlefs.bin')
-          for name in names:
-              path=base/name
-              assert path.is_file() and path.stat().st_size>0, f'Missing/empty: {path}'
+          filesystem=base/'littlefs.bin'
+          assert filesystem.is_file() and filesystem.stat().st_size>0, f'Missing/empty LittleFS: {filesystem}'
           lines=['### Firmware baseline: offline-only PASS', '', '| Output | Size (bytes) |', '|---|---:|']
-          lines += [f'| {name} | {(base/name).stat().st_size:,} |' for name in names]
+          lines += [f'| littlefs.bin | {filesystem.stat().st_size:,} |']
           lines += ['', 'Factory return POST NOT compiled. No physical validation or flash permission.']
           with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as f:
               f.write('\n'.join(lines)+'\n')
