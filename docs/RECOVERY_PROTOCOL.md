@@ -76,3 +76,15 @@ Store an offline duplicate in encrypted/private storage, with SHA-256 values and
 - [Espressif: UART connections / 3.3 V logic](https://docs.espressif.com/projects/esptool/en/latest/esp8266/esptool/serial-connection.html)
 - [Espressif: boot mode selection](https://docs.espressif.com/projects/esptool/en/latest/esp8266/advanced-topics/boot-mode-selection.html)
 - [Times-Z: original backup readme](https://github.com/Times-Z/GeekMagic-Open-Firmware/blob/a0c2ddcef4e76fa6eb040f6f544124763a2d85f5/backup/readme.md) (requires board-specific verification)
+
+## Historical official matching OTA image located (correction, 2026-09-26)
+
+**Important correction:** the official GeekMagic repository's current `main` directory list does NOT show Ultra-V9.0.44, but **Git history retains the exact package** at historical commit `55d7877fcba8b1cb7a66a0830d35d5b374bc8540`:
+
+- [Official V9.0.44 ZIP at pinned commit](https://github.com/GeekMagicClock/smalltv-ultra/blob/55d7877fcba8b1cb7a66a0830d35d5b374bc8540/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip), Git blob `a829d48766cbd2f4f62656523cc9646ba67017d3`, 349,377 ZIP bytes as reported by Git tree.
+- [Official V9.0.44 changelog at the same commit](https://github.com/GeekMagicClock/smalltv-ultra/blob/55d7877fcba8b1cb7a66a0830d35d5b374bc8540/Ultra-V9.0.44/update_history.txt).
+- Version removed from present-day `main` listing, **not unavailable in historical source control**. Earlier documentation stating the exact package could not be found is superseded by this correction.
+
+This is the **matching OTA application update** for the owner-reported firmware `Ultra-V9.0.44`, NOT a confirmed 4 MiB owner-specific full-flash backup. It can be investigated as a potential **Wi-Fi rollback package only while a compatible updater remains accessible and accepting that image**. It does not restore factory files, settings, flash partitions or boot/recovery access by itself and does not save a device whose loader fails to boot. Before any live use, inspect the archived ZIP/inner image, identify required unpacking/upload method, verify checksum and test rollback with a separately owned compatible test unit or other acceptable recovery assurance. **No uploads performed.**
+
+An independent project [smalltv-mod](https://github.com/giovi321/smalltv-mod) documents a two-hop SmallTV-Ultra install: ~316 KiB minimal loader accepted by stock limited OTA slot, then a larger final firmware via the loader's own Wi-Fi update page. That documented path does not yet prove a reversible SHINO-TV installation on the owner's board and the public loader creates an unprotected Wi-Fi AP/update endpoint; SHINO integration needs explicit security and cross-layout assessment first.
