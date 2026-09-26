@@ -8,10 +8,13 @@ from __future__ import annotations
 import argparse
 import csv
 import io
+import ipaddress
 import json
+import math
 import shutil
 import subprocess
 import threading
+from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit
 
@@ -28,6 +31,8 @@ def parse_nvidia_row(text: str) -> dict | None:
     try:
         values = [float(v.strip()) for v in rows[0]]
     except ValueError:
+        return None
+    if not all(math.isfinite(value) for value in values):
         return None
     return {
         "gpu_usage": bounded(values[0], 0, 100),
@@ -59,6 +64,7 @@ def collect_metrics(psutil_module, gpu_supplier=query_nvidia) -> dict:
     usage = bounded(psutil_module.cpu_percent(interval=None), 0, 100)
     mem = psutil_module.virtual_memory()
     used_gb = bounded((mem.total - mem.available) / (1024 ** 3), 0, 65536)
+    total_gb = bounded(mem.total / (1024 ** 3), 0, 65536)
     gpu = gpu_supplier()
     # Keep CPU/RAM available even when NVIDIA telemetry is temporarily absent.
     return {
@@ -67,6 +73,7 @@ def collect_metrics(psutil_module, gpu_supplier=query_nvidia) -> dict:
         "cpu_usage": round(usage, 1),
         "gpu_vram_mb": round(gpu["gpu_vram_mb"], 1) if gpu else 0,
         "memory_used_gb": round(used_gb, 2),
+        "memory_total_gb": round(total_gb, 2),
         "gpu_power": round(gpu["gpu_power"], 1) if gpu else 0,
         "gpu_temp_c": round(gpu["gpu_temp_c"], 1) if gpu else 0,
         "gpu_available": gpu is not None,
@@ -99,21 +106,54 @@ class MetricsSampler:
             return dict(self.current)
 
 
-def make_handler(sampler):
+# Explicit allowlist: no directory traversal, file upload or device proxy routes.
+PREVIEW_FILES = {
+    "/": ("index.html", "text/html; charset=utf-8"),
+    "/index.html": ("index.html", "text/html; charset=utf-8"),
+    "/scene.mjs": ("scene.mjs", "text/javascript; charset=utf-8"),
+    "/live.mjs": ("live.mjs", "text/javascript; charset=utf-8"),
+}
+
+
+def make_handler(sampler, preview_root: Path | None = None):
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
             path = urlsplit(self.path).path
-            if path == "/health":
-                status, payload = 200, {"status": "running"}
-            elif path == "/metrics":
-                status, payload = 200, sampler.snapshot()
-            else:
-                status, payload = 404, {"error": "not found"}
-            body = json.dumps(payload, separators=(",", ":"), allow_nan=False).encode("utf-8")
+            if path in ("/health", "/metrics"):
+                if path == "/health":
+                    status, payload = 200, {"status": "running"}
+                else:
+                    status, payload = 200, sampler.snapshot()
+                body = json.dumps(payload, separators=(",", ":"), allow_nan=False).encode("utf-8")
+                return self._send(status, body, "application/json; charset=utf-8")
+
+            # Only the server explicitly bound to loopback can serve a browser UI.
+            # A separate --bind PC_LAN_IP process exposes only metrics and health.
+            if preview_root is not None and path in PREVIEW_FILES:
+                try:
+                    peer_is_local = ipaddress.ip_address(self.client_address[0]).is_loopback
+                    listening_local = ipaddress.ip_address(self.server.server_address[0]).is_loopback
+                except ValueError:
+                    peer_is_local = listening_local = False
+                if not (peer_is_local and listening_local):
+                    return self._send(403, b"Forbidden", "text/plain; charset=utf-8")
+                filename, content_type = PREVIEW_FILES[path]
+                try:
+                    body = (preview_root / filename).read_bytes()
+                except OSError:
+                    return self._send(404, b"Missing preview asset", "text/plain; charset=utf-8")
+                if len(body) > 256_000:
+                    return self._send(500, b"Preview asset exceeds limit", "text/plain; charset=utf-8")
+                return self._send(200, body, content_type)
+
+            return self._send(404, b'{"error":"not found"}', "application/json; charset=utf-8")
+
+        def _send(self, status, body, content_type):
             self.send_response(status)
-            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Type", content_type)
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("Referrer-Policy", "no-referrer")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
@@ -132,12 +172,22 @@ def main():
     args = parser.parse_args()
     if not 1 <= args.port <= 65535:
         parser.error("port must be between 1 and 65535")
+    try:
+        addr = ipaddress.IPv4Address(args.bind)
+    except ipaddress.AddressValueError:
+        parser.error("--bind requires a literal IPv4 address")
+    if not (addr.is_loopback or (addr.is_private and not addr.is_unspecified and not addr.is_link_local)):
+        parser.error("--bind must specify localhost or a private PC LAN interface")
     import psutil  # third-party package intentionally loaded only by the running server
     sampler = MetricsSampler(psutil)
     worker = threading.Thread(target=sampler.run, daemon=True)
     worker.start()
-    server = ThreadingHTTPServer((args.bind, args.port), make_handler(sampler))
+    preview_root = Path(__file__).resolve().parent.parent / "simulator" if addr.is_loopback else None
+    server = ThreadingHTTPServer((args.bind, args.port), make_handler(sampler, preview_root=preview_root))
+    server.daemon_threads = True
     print(f"SHINO // TV read-only bridge: http://{args.bind}:{args.port}/metrics")
+    if preview_root is not None:
+        print(f"Local PC preview: http://{args.bind}:{args.port}/")
     if args.bind != "127.0.0.1":
         print("LAN bind enabled: restrict inbound TCP port to your SmallTV device in Windows Firewall.")
     try:
