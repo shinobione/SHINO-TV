@@ -1,6 +1,6 @@
 # SHINO // TV — Native UI V2 / 240×240 contract
 
-**Status:** approved design specification; implementation and hardware rendering NOT yet validated. Derived from owner's four-card screenshot (CPU usage, GPU usage, RAM in use, GPU temperature), and their requirement for uniform dynamically colored progress bars. This document does not enable OTA, FS/EEPROM writes or first hardware flash.
+**Status:** V2 implemented on stacked source branch `feature/native-ui-v2-four-cards`; PC/browser and native C++ calculations are exercised by offline tests. Physical ESP8266 LCD, Wi-Fi and OEM first-flash behavior are NOT validated. No physical device touched. Derived from owner's four-card screenshot (CPU usage, GPU usage, RAM in use, GPU temperature), and their requirement for uniform dynamically colored progress bars. This document does not enable OTA, FS/EEPROM writes or first hardware flash.
 
 ## Canvas, layout, reading order
 
