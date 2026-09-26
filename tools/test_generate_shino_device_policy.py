@@ -52,6 +52,7 @@ class ShinoDevicePolicyTests(unittest.TestCase):
         self.assertIn("#define SHINO_ENABLE_FACTORY_RESTORE 0", text)
         self.assertIn("#define SHINO_ENABLE_FS_MIGRATION 0", text)
         self.assertIn('#define SHINO_FS_BYTES 2072576', text)
+        self.assertIn("#define SHINO_FS_IMAGE_PRESENT 1", text)
         self.assertIn(hashlib.sha256(self.fsimage.read_bytes()).hexdigest(), text)
         self.assertTrue(self.cred.exists())
         self.assertNotIn("Initial API bearer token:", json.dumps(report))
@@ -65,11 +66,16 @@ class ShinoDevicePolicyTests(unittest.TestCase):
         self.assertIn("#define SHINO_BOOT_PROFILE 0", policy)
         self.assertEqual(result["boot_profile"], "FIRST_BOOT_BRIDGE_ONLY")
 
-    def test_refuses_missing_fs_image_and_does_not_create_keys(self):
-        from verify_fs_provisioning import FsInspectionError
-        with self.assertRaisesRegex(FsInspectionError, "fs-image"):
-            generate(self.zip, self.manifest, self.header, self.cred)
-        self.assertFalse(self.header.exists())
+    def test_default_fsless_policy_needs_no_image_and_no_writer(self):
+        report = generate(self.zip, self.manifest, self.header, self.cred)
+        policy = self.header.read_text()
+        self.assertEqual(report["fs_image_present"], False)
+        self.assertEqual(report["fs_image_sha256"], None)
+        self.assertIn("#define SHINO_FS_IMAGE_PRESENT 0", policy)
+        self.assertIn('#define SHINO_FS_SHA256 ""', policy)
+        self.assertIn("#define SHINO_ENABLE_FS_MIGRATION 0", policy)
+        self.assertNotIn("littlefs.bin", policy)
+
 
     def test_refuses_changed_fs_image_size(self):
         from verify_fs_provisioning import FsInspectionError
