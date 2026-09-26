@@ -35,11 +35,11 @@ jobs:
           persist-credentials: false
           sparse-checkout: |
             Ultra-V9.0.44
-      - name: Verify exact source commit and archive integrity
+      - name: Verify exact source commit and pinned archive integrity
         run: |
           test "$(git -C reference-geekmagic rev-parse HEAD)" = "55d7877fcba8b1cb7a66a0830d35d5b374bc8540"
           test "$(git -C reference-geekmagic rev-parse HEAD:Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip)" = "a829d48766cbd2f4f62656523cc9646ba67017d3"
-          python tools/verify_factory_ota.py --inspect reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip
+          python tools/verify_factory_ota.py --manifest recovery/factory_ota_v9_0_44.json reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip
       - name: Unit tests (synthetic archives only)
         run: python -m unittest discover -s tools -p 'test_verify_factory_ota.py' -v
       - name: Do not publish or install manufacturer binary
