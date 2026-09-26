@@ -37,3 +37,9 @@ Sources:
 - Owner's photographs (conversation, not reproduced).
 - Times-Z readback guide: https://github.com/Times-Z/GeekMagic-Open-Firmware/blob/a0c2ddcef4e76fa6eb040f6f544124763a2d85f5/backup/readme.md
 - Espressif ESP8266 serial and boot mode reference: https://docs.espressif.com/projects/esptool/en/latest/esp8266/esptool/serial-connection.html
+
+## Windows USB-C observation (owner test, 2026-09-26)
+
+The owner connected and disconnected the powered SmallTV via USB-C while monitoring Windows Device Manager. **No device category or entry changed**. The only visible serial interface was pre-existing `Communications Port (COM1)`, not a newly enumerated SmallTV COM port. No USB serial bridge is demonstrated by this test. The module is ESP8266-class (without native USB), but these observations alone do not prove that the USB-C wiring is power-only: a charge-only cable or faulty data path could produce the same result.
+
+Next non-invasive check, if desired: use a USB-C data cable *already verified* to transfer phone files to this PC and compare Device Manager before/after. If still unchanged, document as 'no USB data interface detected' and stop USB investigations rather than inferring a UART pinout or recommending blind wiring. Continue PC simulator and stock HTTP read-only exploration independently; full factory readback remains blocked pending positive UART/pad/power identification and proper equipment.
