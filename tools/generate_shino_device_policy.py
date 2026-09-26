@@ -23,7 +23,8 @@ DEFAULT_HEADER = ROOT / "firmware" / "include" / "shino_private_policy.h"
 DEFAULT_SECRETS = ROOT / "firmware" / "private" / "credentials.txt"
 
 
-def generate(oem_zip: Path, manifest: Path, output: Path, secrets_file: Path,\n             enable_restore: bool = False) -> dict:
+def generate(oem_zip: Path, manifest: Path, output: Path, secrets_file: Path,
+             enable_restore: bool = False) -> dict:
     reference = verify_archive(Path(oem_zip), Path(manifest))
     with zipfile.ZipFile(oem_zip) as archive:
         original = archive.read(reference["firmware_member"])
@@ -44,6 +45,7 @@ def generate(oem_zip: Path, manifest: Path, output: Path, secrets_file: Path,\n 
         f"#define SHINO_FACTORY_BYTES {len(original)}\n"
         f'#define SHINO_FACTORY_MD5 "{hashlib.md5(original, usedforsecurity=False).hexdigest()}"\n'
         f'#define SHINO_FACTORY_SHA256 "{reference["firmware_sha256"]}"\n'
+        f'#define SHINO_ENABLE_FACTORY_RESTORE {1 if enable_restore else 0}\n'
         f'#define SHINO_SETUP_AP_PSK "{ap_psk}"\n'
         f'#define SHINO_BOOTSTRAP_API_TOKEN "{token}"\n'
         '#define SHINO_RESCUE_HTTP_USER "shino"\n'
@@ -57,6 +59,7 @@ def generate(oem_zip: Path, manifest: Path, output: Path, secrets_file: Path,\n 
         "Rescue HTTP Digest user: shino\n"
         f"Rescue HTTP Digest password: {rescue_password}\n"
         "If a firmware was built with different secrets, use that build's own private file.\n"
+        f"Experimental factory restore endpoint compiled: {enable_restore}\n"
         "This credential file is not a full flash recovery mechanism.\n"
     )
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -73,7 +76,8 @@ def generate(oem_zip: Path, manifest: Path, output: Path, secrets_file: Path,\n 
         raise
     return {
         "oem_sha256": reference["firmware_sha256"],
-        "oem_size": len(original),\n        "restore_mode": "EXPERIMENTAL_OEM_ONLY" if enable_restore else "DISABLED",
+        "oem_size": len(original),
+        "restore_mode": "EXPERIMENTAL_OEM_ONLY" if enable_restore else "DISABLED",
         "header": str(output),
         "credential_file": str(secrets_file),
         "device_operation": "none",
@@ -83,7 +87,9 @@ def generate(oem_zip: Path, manifest: Path, output: Path, secrets_file: Path,\n 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--oem-zip", type=Path, required=True)
-    parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)\n    parser.add_argument("--enable-restore", action="store_true",\n                        help="Compile experimental OEM-only restore; NOT permission for any actual upload")
+    parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
+    parser.add_argument("--enable-restore", action="store_true",
+                        help="Compile experimental OEM-only restore; NOT permission for any actual upload")
     parser.add_argument("--out", type=Path, default=DEFAULT_HEADER)
     parser.add_argument("--credentials-out", type=Path, default=DEFAULT_SECRETS)
     args = parser.parse_args()
