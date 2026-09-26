@@ -48,3 +48,8 @@ The owner's `/space.json.total=3,121,152` bytes matches the official Arduino ESP
 Related: [comparative 4m3m / 4m2m audit](COMPARATIVE_FLASH_LAYOUT_AUDIT.md), [single-device plan](ONE_DEVICE_WIFI_PATH.md), [pinned official OTA](../recovery/README.md).
 
 **Physical installation remains NO-GO. Do not upload any of these images to the owner's SmallTV until the owner separately authorizes an exact build, understands the remaining stock-slot/FS/boot risks and a complete operational plan is documented.**
+
+
+## Exact 4m2m asset packaging (subsequent offline-only PR)
+
+The [verified LittleFS provisioning analysis](VERIFIED_FS_PROVISIONING.md) now builds and hashes the complete **2,072,576-byte** filesystem independently, pins its SHA-256 into the private bridge policy, rejects credentials and inherited arbitrary OTA scripts, and exposes an authenticated **GET-only** `/api/v1/bridge/fs-plan` impact report. The entire 2-MiB range overlaps the inferred manufacturer filesystem. Default ESP8266 `U_FS` writes directly into the active region before its checksum verdict; full-image atomic staging is not possible under the reviewed 4m2m geometry with a running application. Therefore **`SHINO_ENABLE_FS_MIGRATION 0` is required by compilation**, no FS POST or format exists, and physical provisioning is explicitly held for a separate owner decision. Neither a verified hash nor the OEM app ZIP creates a stock FS backup.
