@@ -120,3 +120,8 @@ A no-install/no-flash Windows report tool is available on the stacked `research/
 ## Verified LittleFS package: source-only
 
 The [LittleFS migration safety report](docs/VERIFIED_FS_PROVISIONING.md) explains why a full 2,072,576-byte image of our 4m2m FS is **not an atomic OTA operation** on this ESP8266. The new offline tooling verifies and pins the exact FS image and safely reports the old-data overlap; the bridge has only an authenticated GET impact page. Automatic formatting, filesystem writer and on-device upload remain disabled. The original V9.0.44 application ZIP does not restore stock filesystem data.
+
+
+## FS-less native display and Web UI — source-only
+
+The latest stacked [FS-less dashboard work](docs/FSLESS_NATIVE_DASHBOARD.md) removes the runtime need for LittleFS: native 240×240 CPU/GPU/RAM gauges, a flash-embedded same-origin Web page and an opt-in Windows-to-device RAM-only telemetry sender. Firmware CI now builds **no LittleFS image or config seed** for this first-boot profile; automatic format and storage migration remain forbidden. Original manufacturer flash layout, first OTA acceptance and no-boot rescue remain unproven, so **do not upload a custom BIN to the owner TV** without a separate explicit go/no-go process.
