@@ -20,7 +20,6 @@ if errorlevel 1 (
  exit /b 1
 )
 echo.
-echo Opening preview in browser...
-start "" "http://127.0.0.1:8766/"
-py -3 tools\preview_fsless_dashboard.py --port 8766
+echo Starting local server, then opening browser...
+py -3 tools\preview_fsless_dashboard.py --port 8766 --open-browser
 pause
