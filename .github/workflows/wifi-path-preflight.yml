@@ -88,11 +88,18 @@ jobs:
           assert d['device_access_performed'] is False
           print('PASS: PINNED OEM ZIP, LIVE-COMPILED CANDIDATE + GUARDED LOADER, TWO STAGING DIRECTIONS.')
           print('Owner stock free OTA space is NOT MEASURED. No Wi-Fi rollback runtime proof. No flash permission.')
+          for image in d['images']:
+              print(f"IMAGE {image['name']}: {image['size_bytes']} bytes; {image['flash_mode']}; {image['flash_size_flag']}; {image['flash_frequency']}")
+          print('Modeled loader to SHINO OTA gap:', d['transitions']['loader_to_shino']['free_gap_bytes'], 'bytes')
+          print('Modeled SHINO to OEM OTA gap:', d['transitions']['shino_to_factory']['free_gap_bytes'], 'bytes')
           summary = (
             '### Single-device offline Wi-Fi preflight\n\n'
             '| Check | Status |\n|---|---|\n'
             '| Official V9.0.44 ZIP + inner BIN SHA-256 | PASS |\n'
             '| Current SHINO + protected loader compiled | PASS |\n'
+            f"| Official OEM image header | {d['images'][0]['flash_mode']}, {d['images'][0]['flash_size_flag']}, {d['images'][0]['flash_frequency']} |\n"
+            f"| Current candidate image | {d['images'][2]['size_bytes']:,} bytes |\n"
+            f"| Exact candidate-locked loader | {d['images'][1]['size_bytes']:,} bytes |\n"
             '| Loader contains exact OEM and SHINO image MD5 | PASS |\n'
             '| Modeled loader -> SHINO OTA spacing | '+('PASS' if d['transitions']['loader_to_shino']['nominal_no_overlap'] else 'FAIL')+' |\n'
             '| Modeled SHINO -> OEM OTA spacing | '+('PASS' if d['transitions']['shino_to_factory']['nominal_no_overlap'] else 'FAIL')+' |\n'
