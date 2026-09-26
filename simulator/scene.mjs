@@ -18,7 +18,7 @@ export function normalizeScene(raw) {
   const result = {kind, title: trim(raw.title, PRESETS[kind].title, 24)};
   if (kind === 'metrics') {
     for (const field of LIMITS.metrics) result[field] = number(raw[field], PRESETS.metrics[field], field === 'gpuTemp' ? -40 : 0, field === 'gpuTemp' ? 130 : 100);
-    result.source = ['demo', 'live', 'offline'].includes(raw.source) ? raw.source : 'demo';
+    result.source = ['demo', 'live', 'offline', 'manual'].includes(raw.source) ? raw.source : 'demo';
     result.gpuAvailable = raw.gpuAvailable !== false;
   } else if (kind === 'music') {
     result.artist = trim(raw.artist, 'UNKNOWN ARTIST', 32);
@@ -62,7 +62,7 @@ export function renderScene(ctx, input) {
       label(ctx,'Start the companion service',19,140,11,C.muted,600);
       label(ctx,'No SmallTV connection required',19,163,10,C.muted,500);
     } else {
-      label(ctx,scene.source === 'live'?'LIVE SYSTEM / THIS PC':'SYSTEM / DEMO DATA',19,77,9,C.muted,700);
+      label(ctx,scene.source === 'live'?'LIVE SYSTEM / THIS PC':scene.source === 'manual'?'MANUAL SNAPSHOT':'SYSTEM / DEMO DATA',19,77,9,C.muted,700);
       for(const [i,key] of ['cpu','gpu','ram'].entries())bar(ctx,key.toUpperCase(),key==='gpu'&&!scene.gpuAvailable?null:scene[key],98+i*34,i===1?C.purple:C.gold);
       label(ctx,`GPU TEMP  ${scene.gpuAvailable?`${Math.round(scene.gpuTemp)}°C`:'N/A'}`,19,215,12,C.lime,700);
     }
