@@ -2,6 +2,10 @@
 
 Status: **preliminary/documentary review**, 2026-09-26. The owner's reported firmware is **Ultra-V9.0.44**, and we do not have its full flash image. No device was contacted, reflashed, or physically inspected in this review.
 
+## Correction and follow-up (26 September 2026)
+
+This initial document preserves its original observations below as history, but the claim that V9.0.44 was not available is **superseded**. Its exact official ZIP survives in manufacturer Git history at commit `55d7877fcba8b1cb7a66a0830d35d5b374bc8540`, with verified original SHA-256 in [our factory reference manifest](../recovery/factory_ota_v9_0_44.json). The owner's newer, sanitized read-only report confirms photo/GIF storage `total=3,121,152`, `free=1,056,268`, and a GET page at `/update` containing a POST multipart `firmware` form; it does **not** expose OTA staging size. Crucially, `3,121,152` equals the official ESP8266 Arduino `eagle.flash.4m3m.ld` filesystem region exactly. This strongly fingerprints a 4m3m-like manufacturer FS layout, though it does not prove proprietary updater code. See [Comparative flash/layout audit](COMPARATIVE_FLASH_LAYOUT_AUDIT.md) for exact stock, Times-Z, smalltv-mod full/lean/loader and SHINO sizes, nominal geometry, source-backed FS relocation risks and our currently unsafe autoformat-on-first-boot behavior. No UART/second board/soldering is included in the owner's chosen development path.
+
 ## Verified from owner-provided read-only observations
 
 | Route | Reply at the time sampled | Meaning |
