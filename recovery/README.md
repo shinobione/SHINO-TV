@@ -27,7 +27,7 @@ The hashes and file properties are checked strictly against `factory_ota_v9_0_44
 3. The OEM ZIP must not be silently redistributed as if it were part of the GPL-licensed Times-Z-derived project; an original-source link plus locally verified user-provided copy is the appropriate approach.
 4. A rollback from an *alternative* flash layout back to OEM still needs a running updater compatible with its 494-KB app image. An image's correct SHA is **not** an OTA compatibility test.
 
-The recovery design is therefore a **dedicated minimal, authenticated recovery/update environment** plus a local copy of the manufacturer application image, rather than placing the whole binary inside the on-device SHINO app. We have not implemented/deployed that environment yet.
+The recovery design is therefore a **dedicated minimal, authenticated recovery/update environment** plus a local copy of the manufacturer application image, rather than placing the whole binary inside the on-device SHINO app. A protected transient mini-loader and exact-OEM-only return handler in SHINO and its boot-loop Rescue mode are implemented as offline source prototypes in stacked PRs #7 and #9, but **no image has been deployed or validated on the owner's TV**. The app loader is overwritten by the final firmware, not a persistent independent recovery environment.
 
 ## Preparing the reference locally — NO device contact
 
