@@ -35,15 +35,19 @@ This roadmap deliberately separates **analysis**, **PC-side simulation**, and **
 
 **Exit:** Working simulated widget pipeline and tests.
 
-## Phase 3 — Firmware prototype
+## Phase 3 — Firmware prototype (Times-Z upstream as proposed baseline)
 
-- Choose the approved upstream baseline or a clean implementation after licensing review.
-- Build with PlatformIO in CI, assert binary size, memory/flash constraints and board configuration.
-- Implement ST7789 initialization and a minimal recoverable HTTP status interface.
+- Review and preserve Times-Z GeekMagic-Open-Firmware's GPL-3.0-or-later notices and pin an audited upstream commit; do not confuse referencing it with having imported/compiled it.
+- Build the unmodified upstream `esp12e` PlatformIO firmware and LittleFS assets offline first; record sizes and tests.
+- Reuse upstream `DisplayManager`, `DashboardManager`, `Webserver`, `Api`, `WiFiManager`, `ConfigManager` and `RescueMode`, rather than rebuilding their existing functionality.
+- Extend the existing optional metrics mode into a bounded scene/widget engine with a Windows data bridge.
+- Review rescue-mode unauthenticated operations, setup AP defaults, memory/flash constraints and the stock Ultra OTA slot before any device write.
 - Run any hardware deployment only after Gate 0 has passed and with owner approval.
 - Establish rollback path and keep the factory backup private.
 
-**Exit:** A basic screen + local control prototype, with tested recovery.
+**Exit:** A source-built upstream-derived, desktop-validated firmware candidate. Physical screen and recovery tests are a separate owner-approved gate.
+
+See [UPSTREAM_INTEGRATION.md](UPSTREAM_INTEGRATION.md) for the architectural decision and real existing metrics JSON contract.
 
 ## Phase 4 — SHINO // TV product features
 
