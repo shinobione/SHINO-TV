@@ -59,3 +59,32 @@ References:
 - [ ] Run full owner-unit readback and independently validate the backup before even contemplating any flash write.
 
 **Gate remains closed:** documentation-only phase. No upgrade/loader/erase/write-flash operation approved.
+
+## Static analysis of released ZIP payloads (update after initial review)
+
+The V9.0.40, V9.0.46 and V9.0.50 archives were decoded from the manufacturer GitHub repository, ZIP members DEFLATE-decompressed in memory, and the first ESP8266 headers and visible printable strings inspected **without contacting or modifying the owner's SmallTV**.
+
+| Version | BIN bytes | ESP header | Segments declared | Mode | Entrypoint | ZIP CRC32 of BIN |
+|---|---:|---|---:|---|---|---|
+| 9.0.40 | 510,496 | 0xE9 | 2 | DIO | 0x4010f480 | 7af5814d |
+| 9.0.46 | 501,040 | 0xE9 | 2 | DIO | 0x4010f480 | 29428c9b |
+| 9.0.50 | 505,200 | 0xE9 | 2 | DIO | 0x4010f480 | 06da984d |
+
+All three begin with a segment loaded at 0x4010f000 (3,424 bytes), followed by a segment at 0x3fff20b8 (40 bytes). Additional image data follows these headers; it is **not** necessarily free space or an error. Full ESP8266 image map / SDK-specific tail interpretation remains pending.
+
+### Extracted representative strings
+
+- Common themes/config references: `/theme_list.json`, `/album.json`, `/brt.json`, `/gif.json`, `/app.json`, `/dst.json`, `/config.json`, `/ntp.json`, `/space.json`, `/doUpload`, and `/image/boot.gif`.
+- V9.0.40 includes `/timecolor2.json`, visible WeatherAPI and OpenWeather URLs.
+- V9.0.46 includes `/rotation.json`, `/wifi.json`, `/image.html`, and an Open-Meteo API URL.
+- V9.0.50 includes `/tz.json`, `/rotation.json`, `/wifi.json`, and an Open-Meteo API URL.
+- ZIP `md5sum.txt` contains an expected MD5 for V9.0.46 and V9.0.50; no separate MD5 member was present in V9.0.40 archive.
+
+**Caveat:** strings inside firmware are candidate route names or resources, *not* proof that they are remotely callable on the owner's V9.0.44, nor that GET is read-only for every route. Avoid blind endpoint scanning or parameter guessing.
+
+Official source archives:
+- https://github.com/GeekMagicClock/smalltv-ultra/tree/main/Ultra-V9.0.40
+- https://github.com/GeekMagicClock/smalltv-ultra/tree/main/Ultra-V9.0.46
+- https://github.com/GeekMagicClock/smalltv-ultra/tree/main/Ultra-V9.0.50
+
+A reproducible offline Python inspector and tests are being added under `tools/`. Its ESP8266 header parser is deliberately conservative, and must not be used to assert measured flash capacity or a recoverable full backup.
