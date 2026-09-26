@@ -97,3 +97,11 @@ The device still has its stock Ultra-V9.0.44 firmware. No hardware deployment or
 The proposed ESP8266 firmware now contains a RAM-only scene renderer supporting `music`, `agent`, `release`, and Times-Z's existing optional `metrics` screen. A Bearer-protected `/api/v1/shino/scene` endpoint accepts bounded JSON, and custom scenes display `DATA STALE` after 60 seconds without fresh input.
 
 See [native scene protocol and examples](docs/NATIVE_SCENES.md). The independent [PC scene client](companion/scene_client.py) **previews only by default**. The device is still on factory Ultra-V9.0.44; these routes do not exist there until a separately approved firmware installation.
+
+## Before any physical access: verified recovery gate
+
+- [Full-flash readback protocol](docs/RECOVERY_PROTOCOL.md): requires owner PCB/pad/voltage identification, two independent read-only esptool acquisitions and an offline/private backup.
+- [Static security audit](docs/SECURITY_AUDIT_01.md): identifies fixed setup/rescue AP credentials, unauthenticated rescue actions, fallback updater and configuration exposure as deployment blockers.
+- [Offline verifier](tools/verify_flash_backup.py): validates two readback files, their expected byte counts, exact equality and SHA-256 without connecting to a device.
+
+**Hardware state unchanged.** No owner-unit dump or restoration test has taken place. A compiled build is not authorization to flash.

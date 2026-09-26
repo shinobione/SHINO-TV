@@ -2,7 +2,7 @@ name: Offline audit and simulator tests
 
 on:
   push:
-    branches: [main, 'planning/**']
+    branches: [main, 'planning/**', 'feature/**', 'safety/**']
   pull_request:
 
 permissions:
