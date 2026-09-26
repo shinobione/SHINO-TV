@@ -46,6 +46,12 @@ The blank `firmware/data/config.json` source is created by CI only. On a local s
 
 No migration upload instructions, upload URLs, or arbitrary write handlers are supplied in this PR.
 
+## Per-build reproducibility and custody of the exact FS image
+
+The two successful independent CI jobs on this PR head built same-sized 2,072,576-byte LittleFS images but reported **different SHA-256 values** (default bridge build `d609b4d59ceee1f0b328fde25e3044699b36b5cc776bfc3c7c2f61ca0cb18c43`; experimental app-return build `4de804afba872297085b810914c688d19065b8401d62f5582fe655943747e1a2`). We have **not isolated the cause** of this variation. Therefore the SHA-256 in the private header identifies the **exact bytes built and checked in that specific run**, not a universal hash for the same source tree.
+
+The CI cleanup deliberately deletes those disposable FS images and private credentials instead of making a public release artifact. Consequently **neither CI output is a usable future migration package**. If a later migration is separately approved, its exact pairing of application BIN, FS BIN, generated private secrets and their manifest must be produced and privately retained on the owner's PC, and its hashes rechecked as a complete set before any operation. Do not rebuild `littlefs.bin` later and assume it still matches the old compiled image pin.
+
 ## Decisions needed before an actual device migration could ever be approved
 
 - **Asset strategy first:** Consider serving the SHINO UI/assets from program flash or from the existing Windows companion, avoiding a new on-device LittleFS entirely. The desktop is already a required telemetry partner. This is a legitimate alternative to losing OEM GIF/photo data.
