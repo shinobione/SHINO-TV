@@ -16,6 +16,7 @@ import zipfile
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from verify_factory_ota import FactoryOtaError, verify_archive  # noqa: E402
+from verify_fs_provisioning import FsInspectionError, inspect as inspect_fs  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_MANIFEST = ROOT / "recovery" / "factory_ota_v9_0_44.json"
@@ -24,12 +25,19 @@ DEFAULT_SECRETS = ROOT / "firmware" / "private" / "credentials.txt"
 
 
 def generate(oem_zip: Path, manifest: Path, output: Path, secrets_file: Path,
-             enable_restore: bool = False) -> dict:
+             enable_restore: bool = False, *, fs_image: Path | None = None,
+             fs_source_root: Path | None = None, fs_ini: Path | None = None) -> dict:
     reference = verify_archive(Path(oem_zip), Path(manifest))
     with zipfile.ZipFile(oem_zip) as archive:
         original = archive.read(reference["firmware_member"])
     if hashlib.sha256(original).hexdigest() != reference["firmware_sha256"]:
         raise FactoryOtaError("OEM inner SHA-256 mismatch after extraction")
+    # Pin the actual, separately built 4m2m filesystem in the application.
+    # The pin is informational only: NO FS writer is compiled by this generator.
+    if fs_image is None:
+        raise FsInspectionError("An independently built and checked --fs-image is required")
+    fs = inspect_fs(fs_image, fs_source_root or ROOT / "firmware" / "data",
+                    fs_ini or ROOT / "firmware" / "platformio.ini")
     if output.exists() or secrets_file.exists():
         raise FactoryOtaError("Output already exists; refusing credential overwrite")
     if output.resolve() == secrets_file.resolve():
@@ -47,6 +55,10 @@ def generate(oem_zip: Path, manifest: Path, output: Path, secrets_file: Path,
         f'#define SHINO_FACTORY_SHA256 "{reference["firmware_sha256"]}"\n'
         f'#define SHINO_ENABLE_FACTORY_RESTORE {1 if enable_restore else 0}\n'
         '#define SHINO_BOOT_PROFILE 0\n'
+        f'#define SHINO_FS_BYTES {fs["image_bytes"]}\n'
+        f'#define SHINO_FS_SHA256 "{fs["image_sha256"]}"\n'
+        f'#define SHINO_FS_MD5 "{fs["image_md5_for_esp8266_updater"]}"\n'
+        '#define SHINO_ENABLE_FS_MIGRATION 0\n'
 
         f'#define SHINO_SETUP_AP_PSK "{ap_psk}"\n'
         f'#define SHINO_BOOTSTRAP_API_TOKEN "{token}"\n'
@@ -63,6 +75,7 @@ def generate(oem_zip: Path, manifest: Path, output: Path, secrets_file: Path,
         "If a firmware was built with different secrets, use that build's own private file.\n"
         f"Experimental factory restore endpoint compiled: {enable_restore}\n"
         "First boot mode: isolated WPA2/Digest diagnostics, no filesystem/EEPROM setup.\n"
+        "Pinned full-size LittleFS metadata: informational only, FS writer NOT compiled.\n"
         "This credential file is not a full flash recovery mechanism.\n"
     )
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -82,6 +95,9 @@ def generate(oem_zip: Path, manifest: Path, output: Path, secrets_file: Path,
         "oem_size": len(original),
         "restore_mode": "EXPERIMENTAL_OEM_ONLY" if enable_restore else "DISABLED",
         "boot_profile": "FIRST_BOOT_BRIDGE_ONLY",
+        "fs_image_sha256": fs["image_sha256"],
+        "fs_bytes": fs["image_bytes"],
+        "fs_migration_writer_compiled": False,
         "header": str(output),
         "credential_file": str(secrets_file),
         "device_operation": "none",
@@ -92,14 +108,20 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--oem-zip", type=Path, required=True)
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
+    parser.add_argument("--fs-image", type=Path, required=True,
+                        help="Exact 4m2m littlefs.bin built independently before compiling the firmware")
+    parser.add_argument("--fs-source-root", type=Path, default=ROOT / "firmware" / "data")
+    parser.add_argument("--fs-platformio", type=Path, default=ROOT / "firmware" / "platformio.ini")
     parser.add_argument("--enable-restore", action="store_true",
                         help="Compile experimental OEM-only restore; NOT permission for any actual upload")
     parser.add_argument("--out", type=Path, default=DEFAULT_HEADER)
     parser.add_argument("--credentials-out", type=Path, default=DEFAULT_SECRETS)
     args = parser.parse_args()
     try:
-        report = generate(args.oem_zip, args.manifest, args.out, args.credentials_out, args.enable_restore)
-    except (FactoryOtaError, OSError, ValueError, KeyError) as error:
+        report = generate(args.oem_zip, args.manifest, args.out, args.credentials_out, args.enable_restore,
+                          fs_image=args.fs_image, fs_source_root=args.fs_source_root,
+                          fs_ini=args.fs_platformio)
+    except (FactoryOtaError, FsInspectionError, OSError, ValueError, KeyError) as error:
         parser.exit(1, f"SECURE FIRMWARE BUILD GATE CLOSED: {error}\n")
     print(json.dumps(report, indent=2))
     print("Generated credentials are local/private; no OEM binary or device writes occurred.")
