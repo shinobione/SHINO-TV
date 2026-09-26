@@ -156,6 +156,7 @@ void paintNativeDashboard() {
         DisplayManager::drawTextWrapped(9, 87, F("Connect Windows"), 1, LCD_WHITE, LCD_BLACK, false);
         DisplayManager::drawTextWrapped(9, 104, F("to the private AP"), 1, LCD_WHITE, LCD_BLACK, false);
         DisplayManager::drawTextWrapped(9, 122, F("and run sender"), 1, LCD_WHITE, LCD_BLACK, false);
+        DisplayManager::drawTextWrapped(9, 148, ssid, 1, LCD_WHITE, LCD_BLACK, false);
     } else {
         snprintf(text, sizeof(text), "CPU %3.0f%%", m.cpu);
         DisplayManager::drawTextWrapped(9, 43, text, 2, LCD_GREEN, LCD_BLACK, false);
