@@ -49,3 +49,17 @@ Upstream references:
 - [ESP8266 Arduino flash filesystem layout](https://arduino-esp8266.readthedocs.io/en/latest/filesystem.html)
 - [Arduino ESP8266 Updater OTA staging implementation](https://github.com/esp8266/Arduino/blob/master/cores/esp8266/Updater.cpp)
 - [smalltv-mod two-stage SmallTV Ultra procedure](https://github.com/giovi321/smalltv-mod/blob/main/docs/src/content/docs/getting-started/flashing.md)
+
+## First real offline three-image run (2026-09-26)
+
+The workflow built the **actual source code at the then-current PR head** and matched both OEM and candidate MD5 against the generated experimental loader; the 9 synthetic regressions and full offline transition analysis passed.
+
+| Image | Actual BIN size | SPI header |
+|---|---:|---|
+| Official Ultra-V9.0.44 | 494,144 bytes | DIO, 4 MB, 40 MHz |
+| Candidate-locked SHINO mini-loader | 312,256 bytes | DIO, 4 MB, 40 MHz |
+| Current SHINO firmware candidate | 464,448 bytes | DIO, 4 MB, 40 MHz |
+
+Using the **committed** `4m1m` and `4m2m` source layouts, and 4096-byte sector rounding, the simple model estimates **2,363,392 bytes** between the active mini-loader and the SHINO staging start, and **1,134,592 bytes** between active SHINO and the OEM staging start. This is a geometry check of the source assumptions, **not a physical acceptance/restore proof**, and does not establish the manufacturer's live original OTA size or full original filesystem map.
+
+The original stage's capacity and recovery when neither application boots remain **UNKNOWN**; the device upload gate is closed. [CI run](https://github.com/shinobione/SHINO-TV/actions/runs/36265717160).
