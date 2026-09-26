@@ -83,6 +83,7 @@ def make_handler(static: dict[str, bytes], sampler):
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", type=int, default=8766)
+    parser.add_argument("--open-browser", action="store_true", help="Open localhost UI only after local preview is listening")
     args = parser.parse_args()
     if not 1024 <= args.port <= 65535:
         parser.error("Choose an unprivileged local TCP port")
@@ -95,6 +96,9 @@ def main() -> int:
     server = ThreadingHTTPServer(("127.0.0.1", args.port), make_handler(view, sampler))
     print(f"PC-only preview: http://127.0.0.1:{args.port}/")
     print("Shows the exact C++ embedded HTML and JS with PC metrics. No TV, flash or FS upload.")
+    if args.open_browser:
+        import webbrowser
+        webbrowser.open(f"http://127.0.0.1:{args.port}/")
     try:
         server.serve_forever(0.4)
     except KeyboardInterrupt:
