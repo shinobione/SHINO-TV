@@ -52,7 +52,7 @@ def validate_source(root: Path) -> dict:
                 raise FsInspectionError("Invalid blank build-only config.json") from exc
             if type(config) is not dict or config != EXPECTED_BLANK_CONFIG:
                 raise FsInspectionError("Build-only config.json must contain no credentials or other settings")
-        elif not re.fullmatch(r"web/(?:[a-zA-Z0-9_-]+\.html|css/[a-zA-Z0-9_-]+\.css|js/[a-zA-Z0-9_-]+\.js)", relative):
+        elif not re.fullmatch(r"web/(?:[a-zA-Z0-9._-]+\.html|css/[a-zA-Z0-9._-]+\.css|js/[a-zA-Z0-9._-]+\.js)", relative):
             raise FsInspectionError("Unreviewed or private file in LittleFS source tree")
         if relative == "web/js/otaUploadHandler.js":
             raise FsInspectionError("Legacy arbitrary-OTA JavaScript must not be packaged")
