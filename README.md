@@ -105,3 +105,9 @@ See [native scene protocol and examples](docs/NATIVE_SCENES.md). The independent
 - [Offline verifier](tools/verify_flash_backup.py): validates two readback files, their expected byte counts, exact equality and SHA-256 without connecting to a device.
 
 **Hardware state unchanged.** No owner-unit dump or restoration test has taken place. A compiled build is not authorization to flash.
+
+## Protected Wi-Fi recovery loader prototype — no flash approved
+
+The separate `recovery_loader/` PlatformIO project compiles two **offline-only** variants: read-only by default, and an explicitly enabled experimental upload handler that accepts only per-build pinned SHINO and official V9.0.44 application images. It generates private WPA2/Digest credentials locally, does not publish binaries and does not contact the owner's device. See [loader safety and setup notes](recovery_loader/README.md) and the [pinned original OTA reference](recovery/README.md).
+
+**The intermediate loader is overwritten by the final firmware**, so it is not a persistent rescue partition. A no-solder Wi-Fi install still has residual brick risk and remains subject to a separate end-to-end test and owner approval.

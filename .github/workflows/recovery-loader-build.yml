@@ -1,0 +1,102 @@
+name: SHINO Wi-Fi Recovery Loader — build only, no upload
+
+on:
+  push:
+    branches: ['feature/**', 'safety/**']
+    paths:
+      - 'recovery_loader/**'
+      - 'recovery/**'
+      - 'tools/make_loader_policy.py'
+      - 'tools/verify_factory_ota.py'
+      - 'tools/test_make_loader_policy.py'
+      - '.github/workflows/recovery-loader-build.yml'
+  pull_request:
+    paths:
+      - 'recovery_loader/**'
+      - 'recovery/**'
+      - 'tools/make_loader_policy.py'
+      - 'tools/verify_factory_ota.py'
+      - 'tools/test_make_loader_policy.py'
+      - '.github/workflows/recovery-loader-build.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-loader:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout SHINO source (no saved credentials)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Read exact historical official manufacturer source
+        uses: actions/checkout@v4
+        with:
+          repository: GeekMagicClock/smalltv-ultra
+          ref: 55d7877fcba8b1cb7a66a0830d35d5b374bc8540
+          path: reference-geekmagic
+          persist-credentials: false
+          sparse-checkout: |
+            Ultra-V9.0.44
+      - name: Python toolchain
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Validate pinned factory reference and generate ephemeral read-only policy
+        run: |
+          test "$(git -C reference-geekmagic rev-parse HEAD)" = "55d7877fcba8b1cb7a66a0830d35d5b374bc8540"
+          test "$(git -C reference-geekmagic rev-parse HEAD:Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip)" = "a829d48766cbd2f4f62656523cc9646ba67017d3"
+          python tools/verify_factory_ota.py --manifest recovery/factory_ota_v9_0_44.json reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip
+          python tools/make_loader_policy.py --official-zip reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip
+      - name: Loader policy unit tests (synthetic test images only)
+        run: python -m unittest discover -s tools -p 'test_make_loader_policy.py' -v
+      - name: Install PlatformIO
+        run: python -m pip install 'platformio>=6.1,<7'
+      - name: Compile default read-only recovery loader
+        working-directory: recovery_loader
+        run: pio run -e esp12e_recovery
+      - name: Check read-only image against conservative loader-size benchmark
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          candidates = [p for p in Path('recovery_loader').rglob('firmware.bin') if p.parent.name == 'esp12e_recovery']
+          assert len(candidates) == 1, f'Expected one read-only compiled loader image; found {candidates}'
+          size = candidates[0].stat().st_size
+          print(f'Read-only loader image: {size} bytes')
+          assert size <= 315920, 'Exceeds documented independent Ultra trampoline binary size; review image/slot before any physical test'
+          PY
+      - name: Build a disposable synthetic candidate input for compile-only guarded code path
+        run: |
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          image = bytearray([0xE9, 2, 0, 0x40, 0x40, 0, 0, 0])
+          for i in range(3100):
+              image += hashlib.sha256(i.to_bytes(4,'little')).digest()
+          Path('/tmp/shino-ci-synthetic-candidate.bin').write_bytes(image)
+          PY
+          rm -f recovery_loader/include/local_policy.h recovery_loader/private/credentials.txt
+          python tools/make_loader_policy.py --official-zip reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip --candidate-bin /tmp/shino-ci-synthetic-candidate.bin --enable-writes
+      - name: Compile experimental digest-gated upload paths — NO device upload
+        working-directory: recovery_loader
+        run: |
+          pio run -e esp12e_recovery -t clean
+          pio run -e esp12e_recovery
+      - name: Report test-only image size, no release asset
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          candidates = [p for p in Path('recovery_loader').rglob('firmware.bin') if p.parent.name == 'esp12e_recovery']
+          assert len(candidates) == 1, f'Expected one compiled experiment, found {candidates}'
+          size = candidates[0].stat().st_size
+          print(f'Experimental loader image: {size} bytes; no upload, release or physical validation')
+          assert size <= 315920, 'Loader bigger than documented public Ultra loader; NO-GO for deployment'
+          PY
+      - name: Delete throwaway credentials, binaries and OEM reference
+        if: always()
+        run: |
+          rm -f recovery_loader/include/local_policy.h recovery_loader/private/credentials.txt
+          rm -f /tmp/shino-ci-synthetic-candidate.bin
+          rm -rf recovery_loader/.pio reference-geekmagic
