@@ -21,6 +21,8 @@ jobs:
           node-version: '22'
       - name: Test static firmware inspector
         run: python -m unittest discover -s tools -p 'test_*.py' -v
+      - name: Test Windows telemetry bridge without hardware
+        run: python -m unittest discover -s companion -p 'test_*.py' -v
       - name: Test 240x240 scene renderer
         run: node --test simulator/scene.test.mjs
       - name: Check JS syntax
