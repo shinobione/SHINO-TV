@@ -111,3 +111,7 @@ See [native scene protocol and examples](docs/NATIVE_SCENES.md). The independent
 The separate `recovery_loader/` PlatformIO project compiles two **offline-only** variants: read-only by default, and an explicitly enabled experimental upload handler that accepts only per-build pinned SHINO and official V9.0.44 application images. It generates private WPA2/Digest credentials locally, does not publish binaries and does not contact the owner's device. See [loader safety and setup notes](recovery_loader/README.md) and the [pinned original OTA reference](recovery/README.md).
 
 **The intermediate loader is overwritten by the final firmware**, so it is not a persistent rescue partition. A no-solder Wi-Fi install still has residual brick risk and remains subject to a separate end-to-end test and owner approval.
+
+## Owner-only stock V9.0.44 diagnostic — no flash
+
+A no-install/no-flash Windows report tool is available on the stacked `research/stock-v9044-readonly-report` branch: double-click `run-stock-readonly.cmd`, enter your SmallTV's current private LAN IPv4, and optionally enable **GET-only** `/update` page inspection. It writes a sanitized, gitignored `research-local/stock-report.json`. It never POSTs, uploads firmware, collects Wi-Fi credentials or claims to measure the stock OTA slot. See [read-only diagnostic guide](docs/STOCK_READONLY_WIFI_REPORT.md).
