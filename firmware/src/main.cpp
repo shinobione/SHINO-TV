@@ -32,7 +32,7 @@
 #include "web/Api.h"
 #include "ntp/NTPClient.h"
 #include "boot/RescueMode.h"
-#include "dashboard/DashboardManager.h"
+#include "scenes/SceneManager.h"
 #include <array>
 
 #ifndef METRICS_URL
@@ -181,9 +181,7 @@ void setup() {
 
     DisplayManager::drawStartup(wifiManager->getIP().toString());
 
-    if (METRICS_ENDPOINT[0] != '\0' && WiFiManager::isConnected() && !wifiManager->isApMode()) {
-        DashboardManager::begin(METRICS_ENDPOINT);
-    }
+    SceneManager::begin(METRICS_ENDPOINT);
 
     // enable watchdog before going to loop()
     // 2 seconds should be way more than the main loop needs to do stuff
@@ -212,10 +210,7 @@ void loop() {
 
     DisplayManager::update();
 
-    if (METRICS_ENDPOINT[0] != '\0' && wifiManager != nullptr && WiFiManager::isConnected() &&
-        !wifiManager->isApMode()) {
-        DashboardManager::update();
-    }
+    SceneManager::update();
 
     static unsigned long last_free_heap_log = 0;
     static constexpr unsigned long FREE_HEAP_LOG_INTERVAL_MS = 10000UL;

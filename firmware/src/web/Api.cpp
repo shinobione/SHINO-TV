@@ -25,6 +25,7 @@
 #include "web/Webserver.h"
 #include "web/Api.h"
 #include "display/DisplayManager.h"
+#include "scenes/SceneManager.h"
 
 #include "config/ConfigManager.h"
 #include "wireless/WiFiManager.h"
@@ -50,6 +51,9 @@ static void otaHandleWrite(HTTPUpload& upload);
 static void otaHandleEnd(HTTPUpload& upload, int mode);
 static void otaHandleAborted(HTTPUpload& upload);
 void handleDeleteGif(Webserver* webserver);
+static auto requireBearerToken(Webserver* webserver) -> bool;
+static void handleSceneGet(Webserver* webserver);
+static void handleScenePost(Webserver* webserver);
 
 static constexpr int WIFI_CONNECT_TIMEOUT_MS = 15000;
 static constexpr size_t NTP_CONFIG_DOC_SIZE = 512;
@@ -172,6 +176,10 @@ void registerApiEndpoints(Webserver* webserver) {
     // @openapi {post} /logs/clear version=v1 group=System summary="Clear log buffer" requiresAuth=true
     // responses=200:application/json,401:application/json
     webserver->raw().on("/api/v1/logs/clear", HTTP_POST, [webserver]() { handleLogsClear(webserver); });
+
+    // SHINO // TV: authenticated, RAM-only scene updates. No filesystem writes.
+    webserver->raw().on("/api/v1/shino/scene", HTTP_GET, [webserver]() { handleSceneGet(webserver); });
+    webserver->raw().on("/api/v1/shino/scene", HTTP_POST, [webserver]() { handleScenePost(webserver); });
 
     webserver->raw().onNotFound([webserver]() {
         if (webserver->raw().method() == HTTP_OPTIONS) {
@@ -1545,6 +1553,62 @@ void handleLogsClear(Webserver* webserver) {
     String json;
     serializeJson(doc, json);
 
+    setCorsHeaders(webserver);
+    webserver->raw().send(HTTP_CODE_OK, "application/json", json);
+}
+
+// SHINO // TV additions; the upstream requireBearerToken() check protects both
+// reads and writes and rejects an unconfigured/missing bearer token.
+static void handleSceneGet(Webserver* webserver) {
+    if (!requireBearerToken(webserver)) return;
+    JsonDocument doc;
+    doc["status"] = "ok";
+    SceneManager::describe(doc);
+    String json;
+    serializeJson(doc, json);
+    setCorsHeaders(webserver);
+    webserver->raw().send(HTTP_CODE_OK, "application/json", json);
+}
+
+static void handleScenePost(Webserver* webserver) {
+    if (!requireBearerToken(webserver)) return;
+    if (!webserver->raw().hasArg("plain") || webserver->raw().arg("plain").length() == 0) {
+        setCorsHeaders(webserver);
+        webserver->raw().send(HTTP_CODE_BAD_REQUEST, "application/json",
+                              "{\"status\":\"error\",\"message\":\"Missing JSON body\"}");
+        return;
+    }
+    const String& body = webserver->raw().arg("plain");
+    if (body.length() > 512) {
+        setCorsHeaders(webserver);
+        webserver->raw().send(413, "application/json",
+                              "{\"status\":\"error\",\"message\":\"Maximum 512 bytes\"}");
+        return;
+    }
+    JsonDocument document;
+    const DeserializationError parseError = deserializeJson(document, body);
+    if (parseError) {
+        setCorsHeaders(webserver);
+        webserver->raw().send(HTTP_CODE_BAD_REQUEST, "application/json",
+                              "{\"status\":\"error\",\"message\":\"Invalid JSON\"}");
+        return;
+    }
+    String error;
+    if (!SceneManager::apply(document.as<JsonVariantConst>(), error)) {
+        JsonDocument rejection;
+        rejection["status"] = "error";
+        rejection["message"] = error;
+        String json;
+        serializeJson(rejection, json);
+        setCorsHeaders(webserver);
+        webserver->raw().send(HTTP_CODE_BAD_REQUEST, "application/json", json);
+        return;
+    }
+    JsonDocument accepted;
+    accepted["status"] = "ok";
+    SceneManager::describe(accepted);
+    String json;
+    serializeJson(accepted, json);
     setCorsHeaders(webserver);
     webserver->raw().send(HTTP_CODE_OK, "application/json", json);
 }
