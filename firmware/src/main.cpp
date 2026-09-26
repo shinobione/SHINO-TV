@@ -32,6 +32,7 @@
 #include "web/Api.h"
 #include "ntp/NTPClient.h"
 #include "boot/RescueMode.h"
+#include "boot/FirstBootBridge.h"
 #include "scenes/SceneManager.h"
 #include "recovery/FactoryRollback.h"
 #include "shino_private_policy.h"
@@ -48,6 +49,15 @@ const char* AP_PASSWORD = SHINO_SETUP_AP_PSK;
 static_assert(sizeof(SHINO_SETUP_AP_PSK) >= 13, "Per-build setup AP WPA2 password missing");
 static_assert(sizeof(SHINO_BOOTSTRAP_API_TOKEN) >= 25, "Per-build initial API secret missing");
 static_assert(sizeof(SHINO_RESCUE_HTTP_PASSWORD) >= 21, "Per-build rescue HTTP secret missing");
+#ifndef SHINO_BOOT_PROFILE
+#error "Generated private profile required before compiling SHINO firmware"
+#endif
+// Initial install only. A normal boot with a different flash/FS map needs a
+// separately reviewed migration and is NOT exposed by this source revision.
+#if SHINO_BOOT_PROFILE != 0
+#error "Normal SHINO boot is prohibited until a reviewed FS/data migration gate exists."
+#endif
+
 WiFiManager* wifiManager = nullptr;
 static constexpr const char* KV_SALT_STR = "GeekMagicOpenFirmwareIsAwesome";
 static size_t initial_free_heap = 0;
@@ -108,6 +118,22 @@ void setup() {
     delay(BOOT_DELAY_MS);
     Serial.println("");
     Logger::info(("GeekMagic Open Firmware " + String(PROJECT_VER_STR)).c_str());
+
+#if SHINO_BOOT_PROFILE == 0
+    // FIRST instruction path after serial startup: never mount/format LittleFS,
+    // initialize EEPROM, migrate config, write boot counters, or use WiFi STA.
+    FirstBootBridge::run();
+    EspClass::wdtEnable(WDTO_2S);
+    return;
+#else
+    // Held, non-deployable normal path. A future explicit FS migration review
+    // must clear the compile-time error above BEFORE this path can be built.
+    // The shared FS object must never autoformat when the owner's data remains.
+    if (!LittleFS.setConfig(LittleFSConfig(false))) {
+        Logger::error("Could not disable LittleFS autoformat; stopping startup", "FirstBoot");
+        while (true) { delay(1000); }
+    }
+
 
     constexpr int TOTAL_STEPS = 5;
     int step = 0;
@@ -200,9 +226,14 @@ void setup() {
     // enable watchdog before going to loop()
     // 2 seconds should be way more than the main loop needs to do stuff
     EspClass::wdtEnable(WDTO_2S);
+#endif // SHINO_BOOT_PROFILE == 0
 }
 
 void loop() {
+#if SHINO_BOOT_PROFILE == 0
+    FirstBootBridge::loop();
+    return;
+#else
     if (RescueMode::isActive()) {
         RescueMode::loop();
         return;
@@ -246,4 +277,5 @@ void loop() {
     }
 
     EspClass::wdtFeed();  // kick watchdog
+#endif // SHINO_BOOT_PROFILE == 0
 }
