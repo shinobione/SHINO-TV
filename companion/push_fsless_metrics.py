@@ -128,10 +128,10 @@ def main() -> int:
         host = validate_host(args.host)
         import psutil
         if args.dry_run:
-            print("OFFLINE ONLY. Sample schema: " + ",".join(encode_sample(
-                collect_metrics(psutil, query_nvidia) and
-                {key: collect_metrics(psutil, query_nvidia)[key] for key in FIELDS}
-            ) and FIELDS))
+            sample = collect_metrics(psutil, query_nvidia)
+            encoded = encode_sample(sample)
+            print("OFFLINE ONLY; no device request or credentials read.")
+            print("Validated bounded sample:", len(encoded), "bytes; fields:", ",".join(FIELDS))
             return 0
         if args.credentials_file is None:
             raise SenderError("--credentials-file is required for real, manually initiated RAM telemetry")
