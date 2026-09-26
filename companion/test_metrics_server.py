@@ -1,0 +1,69 @@
+import json
+import threading
+import unittest
+from http.server import ThreadingHTTPServer
+from urllib.error import HTTPError
+from urllib.request import urlopen
+
+from metrics_server import collect_metrics, make_handler, parse_nvidia_row
+
+
+class FakePsutil:
+    @staticmethod
+    def cpu_percent(interval=None):
+        return 32.4
+
+    @staticmethod
+    def virtual_memory():
+        class Memory:
+            total = 16 * 1024 ** 3
+            available = 6 * 1024 ** 3
+        return Memory()
+
+
+class FakeSampler:
+    def snapshot(self):
+        return {"ok": True, "gpu_usage": 50, "cpu_usage": 32.4}
+
+
+class MetricsTests(unittest.TestCase):
+    def test_parses_nvidia_csv(self):
+        result = parse_nvidia_row("44, 6034, 81.2, 68\n")
+        self.assertEqual(result["gpu_usage"], 44)
+        self.assertEqual(result["gpu_vram_mb"], 6034)
+        self.assertEqual(result["gpu_temp_c"], 68)
+        self.assertIsNone(parse_nvidia_row("N/A, 123, 10, 40"))
+
+    def test_schema_and_gpu_fallback(self):
+        data = collect_metrics(FakePsutil, lambda: None)
+        self.assertTrue(data["ok"])
+        self.assertFalse(data["gpu_available"])
+        self.assertEqual(data["memory_used_gb"], 10.0)
+        self.assertEqual(data["gpu_usage"], 0)
+        self.assertEqual(
+            set(("ok", "gpu_usage", "cpu_usage", "gpu_vram_mb",
+                 "memory_used_gb", "gpu_power", "gpu_temp_c")) - set(data), set()
+        )
+
+    def test_http_is_read_only_and_json(self):
+        server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(FakeSampler()))
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        base = f"http://127.0.0.1:{server.server_port}"
+        try:
+            with urlopen(base + "/metrics", timeout=2) as response:
+                self.assertEqual(response.headers["Content-Type"], "application/json; charset=utf-8")
+                self.assertEqual(json.load(response)["gpu_usage"], 50)
+            with urlopen(base + "/health", timeout=2) as response:
+                self.assertEqual(json.load(response)["status"], "running")
+            with self.assertRaises(HTTPError) as raised:
+                urlopen(base + "/something-else", timeout=2)
+            self.assertEqual(raised.exception.code, 404)
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
+
+
+if __name__ == "__main__":
+    unittest.main()
