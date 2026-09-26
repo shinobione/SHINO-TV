@@ -36,6 +36,16 @@ bool apply(JsonVariantConst input, String& error) {
         error = F("Missing, nonfinite or out-of-range numeric PC telemetry");
         return false;
     }
+    // Older companion samples may omit RAM total. Show used GB with an
+    // unavailable bar rather than inventing a 16GB denominator.
+    JsonVariantConst total = input["memory_total_gb"];
+    if (!total.isNull()) {
+        if (!bounded(input, "memory_total_gb", 0.01F, 256.0F, next.memoryTotalGb) ||
+            next.memoryGb > next.memoryTotalGb) {
+            error = F("Invalid total RAM or used RAM exceeds installed RAM");
+            return false;
+        }
+    }
     next.gpuAvailable = input["gpu_available"].as<bool>();
     next.received = true;
     next.lastReceivedMs = millis();
@@ -58,6 +68,9 @@ void describe(JsonDocument& out) {
     out["cpu_usage"] = state.cpu;
     out["gpu_usage"] = state.gpu;
     out["memory_used_gb"] = state.memoryGb;
+    out["memory_total_gb"] = state.memoryTotalGb;
+    out["memory_total_available"] = state.memoryTotalGb > 0.0F;
+    out["schema_version"] = 2;
     out["gpu_vram_mb"] = state.vramMb;
     out["gpu_temp_c"] = state.gpuTempC;
     out["gpu_power"] = state.gpuPowerW;
