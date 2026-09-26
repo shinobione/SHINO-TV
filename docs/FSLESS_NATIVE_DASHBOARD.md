@@ -21,6 +21,19 @@ The device runs an **isolated WPA2 AP**, `SHINO-FirstBoot-<chip ID>`, ordinarily
 
 Metrics schema matches the existing companion collector: `ok`, `cpu_usage`, `gpu_usage`, `memory_used_gb`, `gpu_vram_mb`, `gpu_temp_c`, `gpu_power`, `gpu_available`. Device validates all required numeric fields, sensible ranges and finite values in a small JSON payload; rejects invalid updates without replacing the last accepted sample. A sample expires after **6 seconds** and the screen/browser show stale/unavailable rather than indefinitely displaying an old measurement. No scene, data, script, configuration or device credential is accepted through this endpoint.
 
+## See the actual new interface on Windows now — no TV needed
+
+From a ZIP of this GitHub branch, double-click **`start-fsless-preview.cmd`**. It installs the existing `psutil` companion dependency if needed, then opens **`http://127.0.0.1:8766/`** after its local server starts.
+
+The localhost-only Python preview extracts the **exact HTML and JavaScript strings from the C++ `PROGMEM` implementation** and supplies your current Windows CPU/RAM and NVIDIA GPU stats through the same GET schema. It marks diagnostic pages as `PC_ONLY_PREVIEW`, refuses all POST requests, never reads private firmware keys and has **no connection to the SmallTV**. This exercises the browser UI, not the device’s physical 240 × 240 display or ESP8266 Wi-Fi stack.
+
+Manual equivalent:
+
+```powershell
+py -m pip install -r companion/requirements.txt
+py tools/preview_fsless_dashboard.py --port 8766 --open-browser
+```
+
 ## PC-only commands — no device flash
 
 The software cannot currently connect to an owner's physical TV: it is still running untouched OEM Ultra-V9.0.44 and does **not** provide SHINO routes. Do not run the telemetry sender against `http://192.168.1.70/update` or any factory upload endpoint.
