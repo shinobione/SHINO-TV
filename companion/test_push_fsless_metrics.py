@@ -104,9 +104,11 @@ class SenderSafetyTests(unittest.TestCase):
         names = {type(handler).__name__ for handler in opener.handlers}
         self.assertIn("HTTPDigestAuthHandler", names)
         self.assertIn("NoRedirect", names)
-        # The proxy handler is intentionally configured with {}.
-        proxy = next(h for h in opener.handlers if type(h).__name__ == "ProxyHandler")
-        self.assertEqual(proxy.proxies, {})
+        # urllib may omit a ProxyHandler({}) from opener.handlers entirely,
+        # because an empty handler registers no protocol methods. In both
+        # cases no inherited HTTP(S) proxy must be installed.
+        proxies = [h for h in opener.handlers if type(h).__name__ == "ProxyHandler"]
+        self.assertTrue(all(proxy.proxies == {} for proxy in proxies))
 
 
 if __name__ == "__main__":
