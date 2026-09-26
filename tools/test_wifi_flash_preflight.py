@@ -26,9 +26,10 @@ class WiFiPreflightTests(unittest.TestCase):
         self.manifest = self.root / "pin.json"
         self.manifest.write_text(json.dumps(inspect_archive(self.oem_zip)))
         self.candidate = self.root / "candidate.bin"
-        self.candidate.write_bytes(fake_image(470000))
-        self.loader = self.root / "loader.bin"
         oem_md5 = hashlib.md5(self.oem, usedforsecurity=False).hexdigest().encode()
+        # Synthetic candidate explicitly embeds the OEM image pin as our C++ route must.
+        self.candidate.write_bytes(fake_image(469968) + oem_md5)
+        self.loader = self.root / "loader.bin"
         candidate_md5 = hashlib.md5(self.candidate.read_bytes(), usedforsecurity=False).hexdigest().encode()
         self.loader.write_bytes(fake_image(300000) + oem_md5 + candidate_md5)
         self.loader_ini = self.root / "loader.ini"
@@ -57,6 +58,11 @@ class WiFiPreflightTests(unittest.TestCase):
         with self.assertRaisesRegex(PreflightError, "OEM image digest"):
             self.check()
 
+    def test_shino_application_missing_own_factory_return_is_rejected(self):
+        self.candidate.write_bytes(fake_image(470000))
+        with self.assertRaisesRegex(PreflightError, "own exact compiled OEM"):
+            self.check()
+
     def test_reject_unpinned_candidate(self):
         b = bytearray(self.candidate.read_bytes())
         b[99] ^= 1
@@ -65,10 +71,11 @@ class WiFiPreflightTests(unittest.TestCase):
             self.check()
 
     def test_reject_wrong_flash_mode_or_size(self):
-        self.candidate.write_bytes(fake_image(470000, mode=0))
+        original_pin = hashlib.md5(self.oem, usedforsecurity=False).hexdigest().encode()
+        self.candidate.write_bytes(fake_image(469968, mode=0) + original_pin)
         with self.assertRaisesRegex(PreflightError, "DIO"):
             self.check()
-        self.candidate.write_bytes(fake_image(470000, sizeflag=2))
+        self.candidate.write_bytes(fake_image(469968, sizeflag=2) + original_pin)
         with self.assertRaisesRegex(PreflightError, "4-MiB"):
             self.check()
 

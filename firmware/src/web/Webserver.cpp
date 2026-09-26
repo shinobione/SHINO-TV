@@ -248,11 +248,8 @@ void Webserver::registerGenericStaticFallback(  // NOLINT(readability-convert-me
 
     _server.onNotFound([this, basePath, excludeRoot]() {
         if (_server.method() == HTTP_OPTIONS) {
-            _server.sendHeader("Access-Control-Allow-Origin", "*");
-            _server.sendHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
-            _server.sendHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-            _server.sendHeader("Access-Control-Max-Age", "3600");
-            _server.send(HTTP_CODE_OK);
+            // Static fallback is strictly same-origin; do not advertise wildcard API CORS.
+            _server.send(HTTP_CODE_NOT_FOUND, "text/plain", "Cross-origin access disabled");
             return;
         }
 
@@ -270,6 +267,28 @@ void Webserver::registerGenericStaticFallback(  // NOLINT(readability-convert-me
 
         if (uri.startsWith("/api/")) {
             _server.send(HTTP_CODE_NOT_FOUND, "text/plain", "Not found");
+            return;
+        }
+
+        // Closed static allowlist, no arbitrary LittleFS paths. In particular,
+        // /config.json and traversal/encoded traversal must never be served.
+        if (uri.length() >= URI_BUF_SIZE || uri.indexOf("..") >= 0 ||
+            uri.indexOf('%') >= 0 || uri.indexOf('\\') >= 0 ||
+            uri.indexOf("//") >= 0) {
+            _server.send(HTTP_CODE_NOT_FOUND, "text/plain", "Not found");
+            return;
+        }
+        const bool html = uri == "/index.html" || uri == "/header.html" ||
+                          uri == "/footer.html" || uri == "/wifi.html" ||
+                          uri == "/ntp.html" || uri == "/rotation.html" ||
+                          uri == "/update.html" || uri == "/gif_upload.html" ||
+                          uri == "/token.html" || uri == "/logs.html";
+        const bool css = uri.startsWith("/css/") && uri.endsWith(".css") &&
+                         uri.indexOf('/', 5) < 0;
+        const bool js = uri.startsWith("/js/") && uri.endsWith(".js") &&
+                        uri.indexOf('/', 4) < 0;
+        if (!html && !css && !js) {
+            _server.send(HTTP_CODE_NOT_FOUND, "text/plain", "Static file not allowed");
             return;
         }
 

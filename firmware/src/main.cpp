@@ -21,7 +21,7 @@
 #include <LittleFS.h>
 #include <Arduino_GFX_Library.h>
 #include <SPI.h>
-#include <ESP8266HTTPUpdateServer.h>
+// The public unauthenticated /legacyupdate path is deliberately removed.
 
 #include <Logger.h>
 #include "project_version.h"
@@ -33,6 +33,8 @@
 #include "ntp/NTPClient.h"
 #include "boot/RescueMode.h"
 #include "scenes/SceneManager.h"
+#include "recovery/FactoryRollback.h"
+#include "shino_private_policy.h"
 #include <array>
 
 #ifndef METRICS_URL
@@ -40,10 +42,13 @@
 #endif
 
 ConfigManager configManager;
-const char* AP_SSID = "GeekMagic";
-const char* AP_PASSWORD = "$str0ngPa$$w0rd";
+static String shinoApName;
+const char* AP_SSID = nullptr;
+const char* AP_PASSWORD = SHINO_SETUP_AP_PSK;
+static_assert(sizeof(SHINO_SETUP_AP_PSK) >= 13, "Per-build setup AP WPA2 password missing");
+static_assert(sizeof(SHINO_BOOTSTRAP_API_TOKEN) >= 25, "Per-build initial API secret missing");
+static_assert(sizeof(SHINO_RESCUE_HTTP_PASSWORD) >= 21, "Per-build rescue HTTP secret missing");
 WiFiManager* wifiManager = nullptr;
-ESP8266HTTPUpdateServer httpUpdater;
 static constexpr const char* KV_SALT_STR = "GeekMagicOpenFirmwareIsAwesome";
 static size_t initial_free_heap = 0;
 static constexpr size_t FREE_BUF_SIZE = 32;
@@ -117,6 +122,10 @@ void setup() {
         Logger::warn("LittleFS mounted but empty, static web UI disabled", "Global");
     }
 
+    shinoApName = String(F("SHINO-TV-")) + String(ESP.getChipId(), HEX);
+    AP_SSID = shinoApName.c_str();
+    WiFi.persistent(false);
+
     SecureStorage::setSalt(KV_SALT_STR);
 
     if (configManager.secure.begin()) {
@@ -125,6 +134,12 @@ void setup() {
 
     if (configManager.load()) {
         Logger::info("Configuration loaded successfully");
+    }
+
+    if (configManager.getApiToken()[0] == '\0') {
+        configManager.setApiToken(SHINO_BOOTSTRAP_API_TOKEN);
+        configManager.secure.put("api_token", SHINO_BOOTSTRAP_API_TOKEN);
+        Logger::info("Provisioned the generated per-build API token; secret not logged", "Global");
     }
 
     if (RescueMode::checkBootLoop()) {
@@ -167,11 +182,10 @@ void setup() {
     registerApiEndpoints(webserver);
 
     if (!littleFsReadyForStatic) {
-        httpUpdater.setup(&webserver->raw(), "/legacyupdate");
-        Logger::warn("Enabled legacy OTA route because LittleFS is unavailable or empty", "Global");
+        Logger::warn("LittleFS unavailable; NO unauthenticated fallback firmware updater", "Global");
     } else {
         webserver->serveStaticC("/", "/web/index.html", "text/html");
-        webserver->serveStaticC("/config.json", "/config.json", "application/json");
+        // Deliberately do NOT expose /config.json, even during credential migration.
         webserver->registerGenericStaticFallback("/web", true);
     }
 
@@ -211,6 +225,7 @@ void loop() {
     DisplayManager::update();
 
     SceneManager::update();
+    FactoryRollback::tick();
 
     static unsigned long last_free_heap_log = 0;
     static constexpr unsigned long FREE_HEAP_LOG_INTERVAL_MS = 10000UL;

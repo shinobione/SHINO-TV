@@ -20,3 +20,7 @@ node_modules/
 firmware/.pio/
 firmware/data/config.json
 firmware/include/project_version.h
+
+# Per-build private SHINO firmware policy, keys and temporary artifacts
+firmware/include/shino_private_policy.h
+firmware/private/

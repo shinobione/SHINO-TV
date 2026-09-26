@@ -28,6 +28,8 @@
 #include "config/ConfigManager.h"
 #include "display/DisplayManager.h"
 #include "web/Webserver.h"
+#include "recovery/FactoryRollback.h"
+#include "shino_private_policy.h"
 
 extern ConfigManager configManager;
 
@@ -167,15 +169,20 @@ auto RescueMode::markBootStable() -> void {
 auto RescueMode::isActive() -> bool { return _active; }
 
 /**
- * @brief Start rescue mode: AP + debug screen + minimal API (no auth)
+ * @brief Start rescue mode: private WPA2 AP + Digest-protected, OEM-only routes.
  */
 auto RescueMode::run() -> void {
     _active = true;
 
     DisplayManager::begin();
 
+    WiFi.persistent(false);
     WiFi.mode(WIFI_AP);
-    WiFi.softAP(AP_SSID, AP_PASSWORD);
+    if (!WiFi.softAP(AP_SSID, AP_PASSWORD, 6, false, 2)) {
+        Logger::error("Private rescue AP failed; refusing open fallback", "RescueMode");
+        drawDebugScreen();
+        return; // No network recovery interface is exposed on AP failure.
+    }
     delay(RESCUE_AP_DELAY_MS);
 
     IPAddress rescueApIp = WiFi.softAPIP();
@@ -199,6 +206,7 @@ auto RescueMode::loop() -> void {
         rescueWebserver->handleClient();
     }
 
+    FactoryRollback::tick();
     ESP.wdtFeed();  // NOLINT(readability-static-accessed-through-instance)
 }
 
@@ -283,247 +291,57 @@ auto RescueMode::drawDebugScreen() -> void {
     gfx->print(WiFi.softAPIP().toString());
 }
 
-/**
- * @brief Set CORS headers for rescue API responses
- */
-static void rescueCors() {
-    rescueWebserver->raw().sendHeader("Access-Control-Allow-Origin", "*");
-    rescueWebserver->raw().sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    rescueWebserver->raw().sendHeader("Access-Control-Allow-Headers", "Content-Type");
+// No generic OTA, password reset, reboot or unauthenticated counter-reset endpoints.
+// Failure to mount LittleFS does not unlock a public recovery writer.
+static bool requireRescueAuth() {
+    if (rescueWebserver->raw().authenticate(SHINO_RESCUE_HTTP_USER,
+                                            SHINO_RESCUE_HTTP_PASSWORD)) return true;
+    rescueWebserver->raw().requestAuthentication(DIGEST_AUTH, "SHINO-Rescue");
+    return false;
 }
 
-/**
- * @brief Handle GET /api/v1/rescue/status – return JSON with system info
- */
-static void handleRescueStatus() {
+static void sendRescueStatus() {
+    if (!requireRescueAuth()) return;
     JsonDocument doc;
-
     doc["status"] = "rescue";
     doc["firmware"] = PROJECT_VER_STR;
-    doc["free_heap"] = ESP.getFreeHeap();                    // NOLINT(readability-static-accessed-through-instance)
-    doc["heap_fragmentation"] = ESP.getHeapFragmentation();  // NOLINT(readability-static-accessed-through-instance)
-    doc["cpu_mhz"] = ESP.getCpuFreqMHz();                    // NOLINT(readability-static-accessed-through-instance)
-
-    auto* gfx = DisplayManager::getGfx();
-
-    if (gfx != nullptr) {
-        doc["screen_width"] = gfx->width();
-        doc["screen_height"] = gfx->height();
-    }
-
-    doc["flash_size"] = ESP.getFlashChipRealSize();  // NOLINT(readability-static-accessed-through-instance)
-    doc["reset_reason"] = ESP.getResetReason();      // NOLINT(readability-static-accessed-through-instance)
-
+    doc["free_heap"] = ESP.getFreeHeap();
+    doc["flash_bytes"] = ESP.getFlashChipRealSize();
+    doc["generic_ota_enabled"] = false;
+    doc["token_reset_enabled"] = false;
+    doc["oem_only_restore_writes_enabled"] = SHINO_ENABLE_FACTORY_RESTORE == 1;
+    doc["filesystem_restore_supported"] = false;
     RtcBootData data{};
-    const uint32_t rtcBootCounter = (readRtcBoot(data) && data.magic == RTC_MAGIC) ? data.crashCount : 0;
-    doc["boot_counter_rtc"] = rtcBootCounter;
-
-    String persistentStr = configManager.secure.get("rescue_persistent_crash_count", "0");
-    doc["boot_counter_persistent"] = persistentStr.toInt();
-    doc["last_boot_clean"] = configManager.secure.get("rescue_last_boot_clean", "1");
-
+    doc["boot_counter_rtc"] = (readRtcBoot(data) && data.magic == RTC_MAGIC) ? data.crashCount : 0;
     String json;
     serializeJson(doc, json);
-
-    rescueCors();
+    rescueWebserver->raw().sendHeader("Cache-Control", "no-store");
     rescueWebserver->raw().send(HTTP_CODE_OK, "application/json", json);
 }
 
-/**
- * @brief Handle POST /api/v1/rescue/token – reset API token
- *        Expects JSON body: { "token": "newtoken" }
- */
-static void handleRescueTokenReset() {
-    if (!rescueWebserver->raw().hasArg("plain") || rescueWebserver->raw().arg("plain").length() == 0) {
-        JsonDocument doc;
-
-        doc["status"] = "error";
-        doc["message"] = "Missing JSON body";
-
-        String json;
-        serializeJson(doc, json);
-
-        rescueCors();
-        rescueWebserver->raw().send(HTTP_CODE_BAD_REQUEST, "application/json", json);
-
-        return;
-    }
-
-    String body = rescueWebserver->raw().arg("plain");
-    JsonDocument ddoc;
-    DeserializationError err = deserializeJson(ddoc, body);
-
-    if (err) {
-        JsonDocument doc;
-
-        doc["status"] = "error";
-        doc["message"] = "Invalid JSON";
-
-        String json;
-        serializeJson(doc, json);
-
-        rescueCors();
-        rescueWebserver->raw().send(HTTP_CODE_BAD_REQUEST, "application/json", json);
-
-        return;
-    }
-
-    const char* newToken = ddoc["token"] | "";
-
-    if (strlen(newToken) == 0) {
-        JsonDocument doc;
-
-        doc["status"] = "error";
-        doc["message"] = "token field is required";
-
-        String json;
-        serializeJson(doc, json);
-
-        rescueCors();
-        rescueWebserver->raw().send(HTTP_CODE_BAD_REQUEST, "application/json", json);
-
-        return;
-    }
-
-    configManager.setApiToken(newToken);
-    configManager.save();
-
-    JsonDocument doc;
-    doc["status"] = "ok";
-    doc["message"] = "Token reset successfully";
-
-    String json;
-    serializeJson(doc, json);
-
-    rescueCors();
-    rescueWebserver->raw().send(HTTP_CODE_OK, "application/json", json);
-
-    Logger::info("API token reset via rescue mode", "RescueMode");
-}
-
-/**
- * @brief Handle POST /api/v1/rescue/reboot – reboot device immediately
- */
-static void handleRescueReboot() {
-    JsonDocument doc;
-
-    doc["status"] = "ok";
-    doc["message"] = "Rebooting...";
-
-    String json;
-    serializeJson(doc, json);
-
-    RescueMode::markBootStable();
-
-    rescueCors();
-    rescueWebserver->raw().send(HTTP_CODE_OK, "application/json", json);
-
-    delay(REBOOT_DELAY_MS);
-    ESP.restart();  // NOLINT(readability-static-accessed-through-instance)
-}
-
-/**
- * @brief Handle POST /api/v1/rescue/ota – firmware upload
- *        Expects multipart/form-data with file field "firmware"
- */
-static void handleRescueOtaUpload() {
-    HTTPUpload& upload = rescueWebserver->raw().upload();
-
-    if (upload.status == UPLOAD_FILE_START) {
-        uint32_t maxSize =
-            (ESP.getFreeSketchSpace() - OTA_OFFSET) & OTA_MASK;  // NOLINT(readability-static-accessed-through-instance)
-        Logger::info("Rescue OTA upload started", "RescueMode");
-        Update.begin(maxSize, U_FLASH);
-    } else if (upload.status == UPLOAD_FILE_WRITE) {
-        Update.write(upload.buf, upload.currentSize);
-    } else if (upload.status == UPLOAD_FILE_END) {
-        Update.end(true);
-        Logger::info("Rescue OTA upload finished", "RescueMode");
-    }
-}
-
-/**
- * @brief Handle POST /api/v1/rescue/ota – send JSON response and reboot if successful
- */
-static void handleRescueOtaFinished() {
-    JsonDocument doc;
-
-    doc["status"] = "ok";
-    doc["message"] = "OTA update successful, rebooting...";
-
-    if (Update.hasError()) {
-        doc["status"] = "error";
-        doc["message"] = "OTA update failed";
-    }
-
-    String json;
-    serializeJson(doc, json);
-
-    rescueCors();
-    rescueWebserver->raw().send(HTTP_CODE_OK, "application/json", json);
-
-    if (!Update.hasError()) {
-        delay(REBOOT_DELAY_MS);
-        ESP.restart();  // NOLINT(readability-static-accessed-through-instance)
-    }
-}
-
-/**
- * @brief Handle POST /api/v1/rescue/reset – reset rescue counters (RTC + persistent)
- */
-static void handleRescueReset() {
-    JsonDocument doc;
-
-    // Reset RTC
-    RtcBootData data{};
-    data.magic = RTC_MAGIC;
-    data.crashCount = 0;
-    writeRtcBoot(data);
-
-    // Reset persistent storage
-    configManager.secure.put("rescue_persistent_crash_count", "0");
-    configManager.secure.put("rescue_last_boot_clean", "1");
-
-    doc["status"] = "ok";
-    doc["message"] = "Rescue counters reset";
-
-    String json;
-    serializeJson(doc, json);
-
-    rescueCors();
-    rescueWebserver->raw().send(HTTP_CODE_OK, "application/json", json);
-
-    Logger::info("Rescue counters reset via rescue API", "RescueMode");
-}
-
-/**
- * @brief Register rescue API endpoints (no auth)
- */
 auto RescueMode::registerRescueApi() -> void {
-    // GET /api/v1/rescue/status — debug info (no auth)
-    rescueWebserver->raw().on("/api/v1/rescue/status", HTTP_GET, handleRescueStatus);
-
-    // POST /api/v1/rescue/token — reset API token (no auth)
-    rescueWebserver->raw().on("/api/v1/rescue/token", HTTP_POST, handleRescueTokenReset);
-
-    // POST /api/v1/rescue/reboot — reboot device (no auth)
-    rescueWebserver->raw().on("/api/v1/rescue/reboot", HTTP_POST, handleRescueReboot);
-
-    // POST /api/v1/rescue/reset — reset rescue counters (no auth)
-    rescueWebserver->raw().on("/api/v1/rescue/reset", HTTP_POST, handleRescueReset);
-
-    // POST /api/v1/rescue/ota — firmware upload (no auth)
-    rescueWebserver->raw().on("/api/v1/rescue/ota", HTTP_POST, handleRescueOtaFinished, handleRescueOtaUpload);
-
-    // CORS preflight
-    rescueWebserver->raw().onNotFound([]() {
-        if (rescueWebserver->raw().method() == HTTP_OPTIONS) {
-            rescueCors();
-            rescueWebserver->raw().send(HTTP_CODE_OK);
-        } else {
-            rescueWebserver->raw().send(HTTP_CODE_NOT_FOUND, "text/plain", "Not found");
-        }
+    rescueWebserver->raw().on("/api/v1/rescue/status", HTTP_GET, sendRescueStatus);
+    rescueWebserver->raw().on("/api/v1/rescue/factory-restore", HTTP_GET, []() {
+        if (!requireRescueAuth()) return;
+        FactoryRollback::status(rescueWebserver->raw());
     });
-
-    Logger::info("Rescue API endpoints registered", "RescueMode");
+#if SHINO_ENABLE_FACTORY_RESTORE
+    rescueWebserver->raw().on("/api/v1/rescue/factory-restore", HTTP_POST,
+        []() {
+            if (!requireRescueAuth()) return;
+            FactoryRollback::complete(rescueWebserver->raw(), true);
+        },
+        []() {
+            const bool authenticated =
+                rescueWebserver->raw().authenticate(SHINO_RESCUE_HTTP_USER,
+                                                     SHINO_RESCUE_HTTP_PASSWORD);
+            FactoryRollback::upload(rescueWebserver->raw(), authenticated);
+        });
+#endif
+    rescueWebserver->raw().onNotFound([]() {
+        if (!requireRescueAuth()) return;
+        rescueWebserver->raw().sendHeader("Cache-Control", "no-store");
+        rescueWebserver->raw().send(HTTP_CODE_NOT_FOUND, "text/plain", "Not found");
+    });
+    Logger::info("Digest-protected rescue status and gated factory-only restore registered", "RescueMode");
 }
