@@ -1,0 +1,349 @@
+{
+  "upstream_repo": "Times-Z/GeekMagic-Open-Firmware",
+  "pinned_commit": "a0c2ddcef4e76fa6eb040f6f544124763a2d85f5",
+  "license": "GPL-3.0-or-later",
+  "imported_files": [
+    {
+      "source_path": "LICENSE",
+      "destination_path": "firmware/LICENSE",
+      "source_blob_sha": "a5eae1527c5eadf27de0874ded503475baa6420f",
+      "size": 34888
+    },
+    {
+      "source_path": "data/config-hellocubic.example",
+      "destination_path": "firmware/data/config-hellocubic.example",
+      "source_blob_sha": "decc5d960f3b2ddf683becac3677ebe0a536d677",
+      "size": 107
+    },
+    {
+      "source_path": "data/config-smartTV.example",
+      "destination_path": "firmware/data/config-smartTV.example",
+      "source_blob_sha": "63daa1d29253df5e42771587e26284be760ac07f",
+      "size": 107
+    },
+    {
+      "source_path": "data/web/css/pico.min.css",
+      "destination_path": "firmware/data/web/css/pico.min.css",
+      "source_blob_sha": "e10ec26dd4f8959f533f22a93c9fadd0459b4ae3",
+      "size": 83319
+    },
+    {
+      "source_path": "data/web/css/style.css",
+      "destination_path": "firmware/data/web/css/style.css",
+      "source_blob_sha": "86626872300dc7f1f85c5ca5f2daffbf99e75984",
+      "size": 3583
+    },
+    {
+      "source_path": "data/web/footer.html",
+      "destination_path": "firmware/data/web/footer.html",
+      "source_blob_sha": "f156d4beb9122e3f954b8fbb13a6be2699531f1d",
+      "size": 178
+    },
+    {
+      "source_path": "data/web/gif_upload.html",
+      "destination_path": "firmware/data/web/gif_upload.html",
+      "source_blob_sha": "fa3b6ddfa20dd9a20954a65d9f4e7e6001ea2c80",
+      "size": 3060
+    },
+    {
+      "source_path": "data/web/header.html",
+      "destination_path": "firmware/data/web/header.html",
+      "source_blob_sha": "82b26b3b20f4b4330a66210df03e634f33b3b4bd",
+      "size": 1889
+    },
+    {
+      "source_path": "data/web/index.html",
+      "destination_path": "firmware/data/web/index.html",
+      "source_blob_sha": "32040018a63f52106951ee9599bdfb65482e800d",
+      "size": 2134
+    },
+    {
+      "source_path": "data/web/js/alpinejs.min.js",
+      "destination_path": "firmware/data/web/js/alpinejs.min.js",
+      "source_blob_sha": "2a6849c219a39851dd913ac3497ddee1147e2dce",
+      "size": 45764
+    },
+    {
+      "source_path": "data/web/js/gifUploadHandler.js",
+      "destination_path": "firmware/data/web/js/gifUploadHandler.js",
+      "source_blob_sha": "05d086a1e5474c2026872dfcd62546edaf42e1a0",
+      "size": 3589
+    },
+    {
+      "source_path": "data/web/js/logsHandler.js",
+      "destination_path": "firmware/data/web/js/logsHandler.js",
+      "source_blob_sha": "6643ca24b338ad952897f1e5511bff7e64c70140",
+      "size": 2108
+    },
+    {
+      "source_path": "data/web/js/main.js",
+      "destination_path": "firmware/data/web/js/main.js",
+      "source_blob_sha": "7efb4e9f1643af3b46bb355109faf321aa1afd8e",
+      "size": 753
+    },
+    {
+      "source_path": "data/web/js/ntpHandler.js",
+      "destination_path": "firmware/data/web/js/ntpHandler.js",
+      "source_blob_sha": "4cd71a6e914b777d8481d0559bbcfb44cffd8843",
+      "size": 2197
+    },
+    {
+      "source_path": "data/web/js/otaUploadHandler.js",
+      "destination_path": "firmware/data/web/js/otaUploadHandler.js",
+      "source_blob_sha": "1c16a6126780adaffc7d1886cfaa657130a88462",
+      "size": 3025
+    },
+    {
+      "source_path": "data/web/js/rebootHandler.js",
+      "destination_path": "firmware/data/web/js/rebootHandler.js",
+      "source_blob_sha": "34aa54879d01f7544ad916778a39d5ab860bf3bb",
+      "size": 540
+    },
+    {
+      "source_path": "data/web/js/rotationHandler.js",
+      "destination_path": "firmware/data/web/js/rotationHandler.js",
+      "source_blob_sha": "28918ef7227a3d5a46fd31d4eefef2dbd876dca0",
+      "size": 1482
+    },
+    {
+      "source_path": "data/web/js/themeSwitcher.js",
+      "destination_path": "firmware/data/web/js/themeSwitcher.js",
+      "source_blob_sha": "9271a53a77acee2a9fe0e7e94957eb9043b3c624",
+      "size": 4476
+    },
+    {
+      "source_path": "data/web/js/tokenHandler.js",
+      "destination_path": "firmware/data/web/js/tokenHandler.js",
+      "source_blob_sha": "8abb5b12754bd1cc7aea26b38478745d773f0b6f",
+      "size": 3014
+    },
+    {
+      "source_path": "data/web/js/utils.js",
+      "destination_path": "firmware/data/web/js/utils.js",
+      "source_blob_sha": "dfcb62f65415d9782f4194f666f82eaac7077785",
+      "size": 1583
+    },
+    {
+      "source_path": "data/web/js/wifiHandler.js",
+      "destination_path": "firmware/data/web/js/wifiHandler.js",
+      "source_blob_sha": "1f75f6b1a681ae9ef0bbea8eafbfaf4d5d1afa16",
+      "size": 3005
+    },
+    {
+      "source_path": "data/web/logs.html",
+      "destination_path": "firmware/data/web/logs.html",
+      "source_blob_sha": "d758e65b5b80902a1822ca48a17744f316fba097",
+      "size": 2783
+    },
+    {
+      "source_path": "data/web/ntp.html",
+      "destination_path": "firmware/data/web/ntp.html",
+      "source_blob_sha": "37eee6d6aa22fc8f15919dadca23404e5e2207c5",
+      "size": 2068
+    },
+    {
+      "source_path": "data/web/rotation.html",
+      "destination_path": "firmware/data/web/rotation.html",
+      "source_blob_sha": "aecc9ba5e041c930aade97161bbf161d8daf079e",
+      "size": 2323
+    },
+    {
+      "source_path": "data/web/token.html",
+      "destination_path": "firmware/data/web/token.html",
+      "source_blob_sha": "17e622144feee51d2458027054eefdcb031dd746",
+      "size": 5077
+    },
+    {
+      "source_path": "data/web/update.html",
+      "destination_path": "firmware/data/web/update.html",
+      "source_blob_sha": "2512cebdb812a3266f3d4616fddd93ee5ce3c1ae",
+      "size": 2191
+    },
+    {
+      "source_path": "data/web/wifi.html",
+      "destination_path": "firmware/data/web/wifi.html",
+      "source_blob_sha": "48a3d9092a32a126af0412d3a8802c9219f73c58",
+      "size": 4833
+    },
+    {
+      "source_path": "include/README",
+      "destination_path": "firmware/include/README",
+      "source_blob_sha": "29f2a99e5f18dc4252918e402bd4d02596bd3358",
+      "size": 1263
+    },
+    {
+      "source_path": "include/boot/RescueMode.h",
+      "destination_path": "firmware/include/boot/RescueMode.h",
+      "source_blob_sha": "7a51883288144580be5c1fcb48d05d89a510055e",
+      "size": 1367
+    },
+    {
+      "source_path": "include/config/ConfigManager.h",
+      "destination_path": "firmware/include/config/ConfigManager.h",
+      "source_blob_sha": "0bd9d16dae2b0d71f0b32af0edf681658bd15bb1",
+      "size": 2365
+    },
+    {
+      "source_path": "include/config/SecureStorage.h",
+      "destination_path": "firmware/include/config/SecureStorage.h",
+      "source_blob_sha": "302da654bf9c68732f725dc7b9c80a94c1c7bc39",
+      "size": 1382
+    },
+    {
+      "source_path": "include/dashboard/DashboardManager.h",
+      "destination_path": "firmware/include/dashboard/DashboardManager.h",
+      "source_blob_sha": "0f5b538cf13be65ae981a01b835278938d0666bd",
+      "size": 193
+    },
+    {
+      "source_path": "include/display/DisplayManager.h",
+      "destination_path": "firmware/include/display/DisplayManager.h",
+      "source_blob_sha": "87485e84c7228a77ea9f2d49292d3b9425e66432",
+      "size": 1948
+    },
+    {
+      "source_path": "include/display/Gif.h",
+      "destination_path": "firmware/include/display/Gif.h",
+      "source_blob_sha": "36c6fda919e9d1806ba95719b8c6c3bb89d44df2",
+      "size": 2598
+    },
+    {
+      "source_path": "include/ntp/NTPClient.h",
+      "destination_path": "firmware/include/ntp/NTPClient.h",
+      "source_blob_sha": "9b952f3352eb86a8989353d9d94eb337daa2183b",
+      "size": 1358
+    },
+    {
+      "source_path": "include/web/Api.h",
+      "destination_path": "firmware/include/web/Api.h",
+      "source_blob_sha": "bbfb9dc32d4f365da425ece12b3160c628e10e49",
+      "size": 1974
+    },
+    {
+      "source_path": "include/web/Webserver.h",
+      "destination_path": "firmware/include/web/Webserver.h",
+      "source_blob_sha": "6a5f09403110ed5f1998f5f3ab1924f38bc9cc43",
+      "size": 2223
+    },
+    {
+      "source_path": "include/wireless/WiFiManager.h",
+      "destination_path": "firmware/include/wireless/WiFiManager.h",
+      "source_blob_sha": "d2e6610cb06cd0a0f6e231c12d62da980856a47c",
+      "size": 1522
+    },
+    {
+      "source_path": "lib/Logger/Logger.cpp",
+      "destination_path": "firmware/lib/Logger/Logger.cpp",
+      "source_blob_sha": "b8f6530ab1d91a5b156a1fb24471ead86856c641",
+      "size": 5683
+    },
+    {
+      "source_path": "lib/Logger/Logger.h",
+      "destination_path": "firmware/lib/Logger/Logger.h",
+      "source_blob_sha": "f73d451d12b2bac968e495d2d83f68ecb45cb2b8",
+      "size": 1895
+    },
+    {
+      "source_path": "lib/Logger/readme.md",
+      "destination_path": "firmware/lib/Logger/readme.md",
+      "source_blob_sha": "b1424b3438e20b064acc519b2a5867fc1c3479b8",
+      "size": 749
+    },
+    {
+      "source_path": "lib/README",
+      "destination_path": "firmware/lib/README",
+      "source_blob_sha": "93793971ffcaedf70668ba0d17d84315c350f9f7",
+      "size": 1054
+    },
+    {
+      "source_path": "platformio.ini",
+      "destination_path": "firmware/platformio.ini",
+      "source_blob_sha": "6b0787eda999d6cd66dc4a2f1997b463fcbaefe2",
+      "size": 1113
+    },
+    {
+      "source_path": "readme.md",
+      "destination_path": "firmware/UPSTREAM_README.md",
+      "source_blob_sha": "ade9fc150b9894bde28110b78aa419a67768fd32",
+      "size": 19581
+    },
+    {
+      "source_path": "scripts/git_version.py",
+      "destination_path": "firmware/scripts/git_version.py",
+      "source_blob_sha": "09fb72576ccbdf8f0d852ae61d7a60f875dfa06b",
+      "size": 1625
+    },
+    {
+      "source_path": "src/boot/RescueMode.cpp",
+      "destination_path": "firmware/src/boot/RescueMode.cpp",
+      "source_blob_sha": "5e9af0a205c9191aeb944c7ec2e3a5ac9a8a4849",
+      "size": 16514
+    },
+    {
+      "source_path": "src/config/ConfigManager.cpp",
+      "destination_path": "firmware/src/config/ConfigManager.cpp",
+      "source_blob_sha": "561e5634be9809fa091af070d44f7715e1daf73d",
+      "size": 6333
+    },
+    {
+      "source_path": "src/config/SecureStorage.cpp",
+      "destination_path": "firmware/src/config/SecureStorage.cpp",
+      "source_blob_sha": "8befc94283ace8a276b700109758e13f2bd2e585",
+      "size": 7304
+    },
+    {
+      "source_path": "src/dashboard/DashboardManager.cpp",
+      "destination_path": "firmware/src/dashboard/DashboardManager.cpp",
+      "source_blob_sha": "5230bb4712f3e9687fd97dc4da3a4b21510a9771",
+      "size": 6137
+    },
+    {
+      "source_path": "src/display/DisplayManager.cpp",
+      "destination_path": "firmware/src/display/DisplayManager.cpp",
+      "source_blob_sha": "d32dd6e68ca427ae90448db05bed665e8e7dcd72",
+      "size": 22797
+    },
+    {
+      "source_path": "src/display/Gif.cpp",
+      "destination_path": "firmware/src/display/Gif.cpp",
+      "source_blob_sha": "4d7b819f29c02f409ffb9b1f4f066deb6679a25f",
+      "size": 18899
+    },
+    {
+      "source_path": "src/main.cpp",
+      "destination_path": "firmware/src/main.cpp",
+      "source_blob_sha": "ac84e781c1ac2a8e73e284de4d37b690f9ef75ad",
+      "size": 7330
+    },
+    {
+      "source_path": "src/ntp/NTPClient.cpp",
+      "destination_path": "firmware/src/ntp/NTPClient.cpp",
+      "source_blob_sha": "3498a0ea1ab3ca578e33fb98f4b332e77c81f07d",
+      "size": 5686
+    },
+    {
+      "source_path": "src/web/Api.cpp",
+      "destination_path": "firmware/src/web/Api.cpp",
+      "source_blob_sha": "eda42aa7bba93ef1591e9a70078715540176a167",
+      "size": 45479
+    },
+    {
+      "source_path": "src/web/Webserver.cpp",
+      "destination_path": "firmware/src/web/Webserver.cpp",
+      "source_blob_sha": "72a4284f98af39225b38fe6f03804e8173e029f3",
+      "size": 10861
+    },
+    {
+      "source_path": "src/wireless/WiFiManager.cpp",
+      "destination_path": "firmware/src/wireless/WiFiManager.cpp",
+      "source_blob_sha": "e0921572e267a3001517912a1080483887f95923",
+      "size": 6005
+    }
+  ],
+  "excluded": [
+    "backup/**",
+    ".github/assets/**",
+    "data/gif/**"
+  ],
+  "reproducibility_note": "Source paths were imported under firmware/. readme.md renamed UPSTREAM_README.md."
+}
