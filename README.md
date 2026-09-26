@@ -91,3 +91,9 @@ See also [firmware audit](docs/FIRMWARE_AUDIT_01.md) and [scene protocol](docs/S
 - [Windows telemetry bridge](companion/README.md): opt-in, read-only local HTTP JSON metrics for the upstream six-tile dashboard. Runs locally by default; LAN exposure requires a specific address and firewall restriction.
 
 The device still has its stock Ultra-V9.0.44 firmware. No hardware deployment or V9.0.44 full-flash backup has occurred.
+
+## Native scene engine — PR #3
+
+The proposed ESP8266 firmware now contains a RAM-only scene renderer supporting `music`, `agent`, `release`, and Times-Z's existing optional `metrics` screen. A Bearer-protected `/api/v1/shino/scene` endpoint accepts bounded JSON, and custom scenes display `DATA STALE` after 60 seconds without fresh input.
+
+See [native scene protocol and examples](docs/NATIVE_SCENES.md). The independent [PC scene client](companion/scene_client.py) **previews only by default**. The device is still on factory Ultra-V9.0.44; these routes do not exist there until a separately approved firmware installation.
