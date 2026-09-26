@@ -45,7 +45,8 @@ def generate(oem_zip: Path, manifest: Path, output: Path, secrets_file: Path,
         f"#define SHINO_FACTORY_BYTES {len(original)}\n"
         f'#define SHINO_FACTORY_MD5 "{hashlib.md5(original, usedforsecurity=False).hexdigest()}"\n'
         f'#define SHINO_FACTORY_SHA256 "{reference["firmware_sha256"]}"\n'
-        f'#define SHINO_ENABLE_FACTORY_RESTORE {1 if enable_restore else 0}\n'        '#define SHINO_BOOT_PROFILE 0\n'
+        f'#define SHINO_ENABLE_FACTORY_RESTORE {1 if enable_restore else 0}\n'
+        '#define SHINO_BOOT_PROFILE 0\n'
 
         f'#define SHINO_SETUP_AP_PSK "{ap_psk}"\n'
         f'#define SHINO_BOOTSTRAP_API_TOKEN "{token}"\n'
