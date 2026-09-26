@@ -83,3 +83,11 @@ node --test simulator/scene.test.mjs
 ```
 
 See also [firmware audit](docs/FIRMWARE_AUDIT_01.md) and [scene protocol](docs/SCENE_PROTOCOL.md).
+
+## Imported firmware baseline and Windows bridge
+
+- [Firmware source](firmware/UPSTREAM.md): pinned Times-Z ESP8266 baseline; GPL-3.0-or-later, with full imported source in `firmware/`.
+- [Firmware build guide](docs/FIRMWARE_BUILD.md): offline PlatformIO + LittleFS compile and explicitly closed hardware-flash gate.
+- [Windows telemetry bridge](companion/README.md): opt-in, read-only local HTTP JSON metrics for the upstream six-tile dashboard. Runs locally by default; LAN exposure requires a specific address and firewall restriction.
+
+The device still has its stock Ultra-V9.0.44 firmware. No hardware deployment or V9.0.44 full-flash backup has occurred.
