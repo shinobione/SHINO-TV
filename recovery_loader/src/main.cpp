@@ -38,6 +38,34 @@ void sendSafe(int code, const __FlashStringHelper* message) {
   server.send(code, F("text/plain; charset=utf-8"), message);
 }
 
+#if SHINO_ENABLE_LOADER_WRITES
+const char installPage[] PROGMEM = R"HTML(<!doctype html><html lang="en"><meta charset="utf-8">
+<title>SHINO Recovery / Install</title><body>
+<h1>SHINO // Recovery: approved application</h1>
+<p>Only the exact, separately pinned SHINO application BIN can be uploaded.
+This loader disappears after the update. It is not permanent recovery.</p>
+<form method="post" action="/install" enctype="multipart/form-data">
+<input type="file" name="firmware" accept=".bin" required>
+<button type="submit">Stage approved SHINO image</button></form>
+<p><a href="/">Back</a></p></body></html>)HTML";
+const char restorePage[] PROGMEM = R"HTML(<!doctype html><html lang="en"><meta charset="utf-8">
+<title>SHINO Recovery / OEM V9.0.44</title><body>
+<h1>SHINO // Original application V9.0.44</h1>
+<p>Only the exact manufacturer 494144-byte application BIN is accepted.
+It is not a full flash backup and may not restore original filesystem/settings.</p>
+<form method="post" action="/restore" enctype="multipart/form-data">
+<input type="file" name="firmware" accept=".bin" required>
+<button type="submit">Stage verified OEM V9.0.44</button></form>
+<p><a href="/">Back</a></p></body></html>)HTML";
+void sendSafeHtml(const char* page) {
+  server.sendHeader(F("Cache-Control"), F("no-store"));
+  server.sendHeader(F("X-Content-Type-Options"), F("nosniff"));
+  server.sendHeader(F("Content-Security-Policy"),
+                    F("default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'"));
+  server.send_P(200, PSTR("text/html; charset=utf-8"), page);
+}
+#endif
+
 bool requireAuth() {
   if (server.authenticate(SHINO_RECOVERY_HTTP_USER, SHINO_RECOVERY_HTTP_PASSWORD))
     return true;
@@ -164,9 +192,9 @@ void beginRoutes() {
     if (!requireAuth()) return;
 #if SHINO_ENABLE_LOADER_WRITES
     sendSafe(200, F("SHINO Recovery Loader: experimental, write-enabled build.\n"
-                    "POST only a preapproved raw .bin to /install or /restore.\n"
+                    "Authenticated browser upload forms: /install and /restore.\n"
                     "Any other binary fails the fixed per-build length/MD5 check.\n"
-                    "This trampoline is replaced by the final application; it is NOT persistent.\n"));
+                    "This trampoline disappears after the OTA; it is NOT persistent.\n"));
 #else
     sendSafe(200, F("SHINO Recovery Loader: SAFE READ-ONLY BUILD.\n"
                     "No OTA upload routes compiled into this firmware.\n"
@@ -182,6 +210,14 @@ void beginRoutes() {
 #endif
   });
 #if SHINO_ENABLE_LOADER_WRITES
+  server.on("/install", HTTP_GET, []() {
+    if (!requireAuth()) return;
+    sendSafeHtml(installPage);
+  });
+  server.on("/restore", HTTP_GET, []() {
+    if (!requireAuth()) return;
+    sendSafeHtml(restorePage);
+  });
   server.on("/install", HTTP_POST,
             []() { uploadComplete(Image::SHINO); },
             []() { onUpload(Image::SHINO); });
