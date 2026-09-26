@@ -12,7 +12,7 @@ from push_fsless_metrics import (
 
 SAMPLE = {
     "ok": True, "cpu_usage": 31.5, "gpu_usage": 76.0,
-    "memory_used_gb": 10.1, "gpu_vram_mb": 5000.0,
+    "memory_used_gb": 10.1, "memory_total_gb": 16.0, "gpu_vram_mb": 5000.0,
     "gpu_temp_c": 64.0, "gpu_power": 125.0, "gpu_available": True,
 }
 
@@ -60,6 +60,13 @@ class SenderSafetyTests(unittest.TestCase):
         self.assertEqual(set(data), set(FIELDS))
         self.assertTrue(data["gpu_available"])
         self.assertEqual(data["cpu_usage"], 31.5)
+        self.assertEqual(data["memory_total_gb"], 16.0)
+        with self.assertRaises(SenderError):
+            encode_sample(dict(SAMPLE, memory_total_gb=0))
+        with self.assertRaises(SenderError):
+            encode_sample(dict(SAMPLE, memory_total_gb=9))
+        with self.assertRaises(SenderError):
+            encode_sample({k: v for k, v in SAMPLE.items() if k != "memory_total_gb"})
         with self.assertRaises(SenderError):
             encode_sample(dict(SAMPLE, ok=False))
         with self.assertRaises(SenderError):

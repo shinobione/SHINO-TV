@@ -1,59 +1,108 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// All UI bytes live in application program flash. No LittleFS is mounted.
+// Real 240x240 four-card browser mirror. All bytes live in application
+// PROGMEM; no LittleFS, external font, CDN, images or writes.
 #include "boot/FslessWebUI.h"
 namespace FslessWebUI {
-const char PAGE[] PROGMEM = R"SHINO(<!doctype html><html lang="en"><meta charset="utf-8">
+const char PAGE[] PROGMEM = R"SHINO(<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SHINO // TV — RAM Dashboard</title>
+<title>SHINO // TV · Native UI V2</title>
 <style>
-:root{font-family:system-ui,sans-serif;color:#e9edf1;background:#0d1118}
-*{box-sizing:border-box}body{margin:0;padding:clamp(16px,4vw,35px)}
-main{max-width:720px;margin:auto}header{display:flex;justify-content:space-between;gap:12px;align-items:center}
-h1{font-size:clamp(24px,5vw,38px);letter-spacing:-1.4px;margin:10px 0 3px}
-small,.muted{color:#a4aebf}p{line-height:1.5}
-.pill{font-size:12px;border:1px solid #536273;border-radius:22px;padding:6px 12px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px;margin:26px 0}
-article{border:1px solid #303b4a;background:linear-gradient(135deg,#202b3b,#141b27);
-border-radius:19px;padding:18px;min-height:118px}
-article strong{display:block;font-size:31px;margin-top:13px;letter-spacing:-1px}
-article label{color:#b9c6d2;font-size:13px}
-meter{width:100%;margin-top:8px}
-footer{border-top:1px solid #303b4a;padding-top:17px;color:#a4aebf;font-size:13px}
-a{color:#b6d8fc}a:focus-visible{outline:2px solid #7dbaf4}
-</style>
-<main><header><small>SHINO // CONTROL</small><span class="pill" id="state">WAITING FOR PC</span></header>
-<h1>SHINO // TV</h1><p class="muted">ESP8266 live telemetry. Display and Web UI run from application flash. No filesystem provisioning.</p>
-<section class="grid" aria-label="PC telemetry">
-<article><label for="cpu">CPU usage</label><strong id="cpuV">—</strong><meter id="cpu" min="0" max="100" value="0"></meter></article>
-<article><label for="gpu">GPU usage</label><strong id="gpuV">—</strong><meter id="gpu" min="0" max="100" value="0"></meter></article>
-<article><label>RAM in use</label><strong id="ramV">—</strong></article>
-<article><label>GPU temperature</label><strong id="tempV">—</strong></article>
-</section>
-<footer>RAM only · PC samples expire after six seconds. No native FS mount or automatic format.
-<p><a href="/api/v1/bridge/status">Bridge diagnostics</a> ·
-<a href="/api/v1/bridge/fs-plan">FS impact</a> ·
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#101318;color:#f6f3ef}
+*{box-sizing:border-box}body{margin:0;padding:20px 12px}
+main{max-width:760px;margin:auto}header{display:flex;align-items:center;justify-content:space-between;margin:0 0 16px;gap:12px}
+header strong{letter-spacing:.12em;font-size:13px}#state{color:#bfc9d4;border:1px solid #394755;border-radius:18px;padding:5px 10px;font-size:11px}
+.viewport{width:720px;height:720px;margin:auto}
+.screen{width:240px;height:240px;transform:scale(3);transform-origin:top left;
+background:#101318;display:grid;grid-template-columns:108px 108px;grid-template-rows:108px 108px;gap:8px;padding:8px}
+.card{width:108px;height:108px;position:relative;border:1px solid #394755;border-radius:12px;background:#222933}
+.label{position:absolute;top:10px;left:9px;color:#bfc9d4;font-size:11px;line-height:11px;font-weight:400;white-space:nowrap}
+.value{position:absolute;top:47px;left:9px;color:#f6f3ef;font:700 19px/21px ui-monospace,Consolas,monospace;
+letter-spacing:-1px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.track{position:absolute;left:8px;bottom:10px;width:90px;height:6px;border-radius:3px;background:#536277;overflow:hidden}
+.fill{display:none;width:0;height:6px;border-radius:3px;background:#66d39a;transition:none}
+footer{font-size:12px;line-height:1.55;color:#aab6c3;max-width:720px;margin:15px auto 0}
+footer a{color:#b9d9fb}a:focus-visible{outline:2px solid #66d39a}
+@media(max-width:760px){.viewport{width:480px;height:480px}.screen{transform:scale(2)}}
+@media(max-width:520px){.viewport{width:240px;height:240px}.screen{transform:scale(1)}}
+</style></head><body><main>
+<header><strong>SHINO // TV</strong><span id="state" role="status">WAITING FOR PC</span></header>
+<div class="viewport"><section class="screen" aria-label="240 by 240 pixel four-metric device display">
+<article class="card"><span class="label">CPU usage</span><output id="cpuV" class="value">—</output>
+<div class="track" role="progressbar" aria-label="CPU usage" aria-valuemin="0" aria-valuemax="100" id="cpuTrack"><span class="fill" id="cpuFill"></span></div></article>
+<article class="card"><span class="label">GPU usage</span><output id="gpuV" class="value">—</output>
+<div class="track" role="progressbar" aria-label="GPU usage" aria-valuemin="0" aria-valuemax="100" id="gpuTrack"><span class="fill" id="gpuFill"></span></div></article>
+<article class="card"><span class="label">RAM in use</span><output id="ramV" class="value">—</output>
+<div class="track" role="progressbar" aria-label="RAM percentage in use" aria-valuemin="0" aria-valuemax="100" id="ramTrack"><span class="fill" id="ramFill"></span></div></article>
+<article class="card"><span class="label">GPU<br>temperature</span><output id="tempV" class="value">—</output>
+<div class="track" role="progressbar" aria-label="GPU temperature visual scale 30 to 90 Celsius" aria-valuemin="0" aria-valuemax="100" id="tempTrack"><span class="fill" id="tempFill"></span></div></article>
+</section></div>
+<footer>Exact 240×240 grid · 4 permanent values · colors reflect bar fill, not GPU danger thresholds.
+PC measurements live only in RAM and expire after six seconds. No filesystem is provisioned.
+<p><a href="/api/v1/bridge/status">Diagnostics</a> · <a href="/api/v1/bridge/fs-plan">Filesystem impact</a> ·
 <a href="/api/v1/bridge/factory-return">Factory application reference</a></p>
-<p>Only the optional separately compiled OEM application return writes flash. Neither a functioning dashboard nor an OEM app BIN guarantees full original filesystem recovery.</p></footer></main>
-<script src="/ui.js" defer></script></html>)SHINO";
+Only a separately compiled exact-OEM application return may write flash; an OEM application BIN does not restore the original filesystem.</footer>
+</main><script src="/ui.js" defer></script></body></html>)SHINO";
 
 const char SCRIPT[] PROGMEM = R"SHINO((function(){
 'use strict';
+const colors=['#66D39A','#D8C35E','#D9894A','#8E394B'];
+const thresholds=[20,50,80];
+const ids=['cpu','gpu','ram','temp'];
+const previous=[null,null,null,null];
 const el=id=>document.getElementById(id);
-const number=(v,units)=>Number.isFinite(v)?v.toFixed(1)+units:'—';
+const clamp100=v=>Math.max(0,Math.min(100,v));
+function band(p){return p<20?0:p<50?1:p<80?2:3;}
+function stableBand(prior,p){
+if(prior===null)return band(p);
+let b=prior;
+while(b<3&&p>=thresholds[b]+2)b++;
+while(b>0&&p<thresholds[b-1]-2)b--;
+return b;
+}
+function fillPixels(p){return !Number.isFinite(p)||p<=0?0:Math.max(1,Math.min(90,Math.floor(90*clamp100(p)/100+0.5)));}
+function fixed(v,unit){return Number.isFinite(v)?v.toFixed(1)+unit:'—';}
+function setCard(i,text,pct){
+const key=ids[i],fill=el(key+'Fill'),track=el(key+'Track');
+el(key+'V').textContent=text;
+if(!Number.isFinite(pct)||pct<0){
+previous[i]=null;
+fill.style.width='0px';
+fill.style.display='none';
+fill.style.borderRadius='0';
+track.removeAttribute('aria-valuenow');return;
+}
+const p=clamp100(pct);
+previous[i]=stableBand(previous[i],p);
+const pixels=fillPixels(p);
+// Discrete whole-device-pixel updates match the native LCD and avoid a
+// lingering colored fragment when the metric falls to precisely 0.0%.
+fill.style.width=pixels+'px';
+fill.style.display=pixels===0?'none':'block';
+// Native draws tiny 1..5px fills as plain rectangles, not malformed pills.
+fill.style.borderRadius=pixels<6?'0':'3px';
+fill.style.backgroundColor=colors[previous[i]];
+track.setAttribute('aria-valuenow',p.toFixed(1));
+}
+function render(m){
+const live=Boolean(m&&m.received&&!m.stale);
+const gpu=live&&m.gpu_available===true;
+el('state').textContent=live?'LIVE · PC':'WAITING / STALE';
+if(!live){for(let i=0;i<4;i++)setCard(i,'—',null);return;}
+const ram=Number.isFinite(m.memory_used_gb)?m.memory_used_gb:null;
+const total=m.memory_total_gb;
+const ramPct=Number.isFinite(total)&&total>0&&ram!==null&&ram<=total?clamp100(100*ram/total):null;
+setCard(0,fixed(m.cpu_usage,'%'),Number.isFinite(m.cpu_usage)?m.cpu_usage:null);
+setCard(1,gpu?fixed(m.gpu_usage,'%'):'—',gpu&&Number.isFinite(m.gpu_usage)?m.gpu_usage:null);
+setCard(2,ram===null?'—':fixed(ram,' GB'),ramPct);
+setCard(3,gpu?fixed(m.gpu_temp_c,'°C'):'—',gpu&&Number.isFinite(m.gpu_temp_c)?
+clamp100(100*(m.gpu_temp_c-30)/60):null);
+}
 async function poll(){
 try{
-const reply=await fetch('/api/v1/bridge/metrics',{cache:'no-store',credentials:'same-origin'});
-if(!reply.ok)throw Error('HTTP '+reply.status);
-const m=await reply.json();
-const live=Boolean(m.received&&!m.stale);
-el('state').textContent=live?'LIVE · PC':'WAITING / STALE';
-el('cpuV').textContent=live?number(m.cpu_usage,'%'):'—';
-el('gpuV').textContent=live&&m.gpu_available?number(m.gpu_usage,'%'):'—';
-el('ramV').textContent=live?number(m.memory_used_gb,' GB'):'—';
-el('tempV').textContent=live&&m.gpu_available?number(m.gpu_temp_c,'°C'):'—';
-el('cpu').value=live?m.cpu_usage:0;
-el('gpu').value=live&&m.gpu_available?m.gpu_usage:0;
-}catch(_){el('state').textContent='DEVICE OFFLINE';}
+const response=await fetch('/api/v1/bridge/metrics',{cache:'no-store',credentials:'same-origin'});
+if(!response.ok)throw Error('Metrics request failed');
+render(await response.json());
+}catch(_){render(null);el('state').textContent='DEVICE OFFLINE';}
 }
 poll();setInterval(poll,2000);
 })();)SHINO";

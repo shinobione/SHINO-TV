@@ -23,7 +23,7 @@ ALLOWED_NETWORKS = tuple(ipaddress.ip_network(x) for x in (
 ))
 ENDPOINT = "/api/v1/bridge/metrics"
 FIELDS = (
-    "ok", "cpu_usage", "gpu_usage", "memory_used_gb",
+    "ok", "cpu_usage", "gpu_usage", "memory_used_gb", "memory_total_gb",
     "gpu_vram_mb", "gpu_temp_c", "gpu_power", "gpu_available",
 )
 
@@ -76,6 +76,8 @@ def encode_sample(sample: dict) -> bytes:
         if key not in ("ok", "gpu_available") and (type(payload[key]) not in (float, int) or
                 not -40 <= payload[key] <= 65536):
             raise SenderError("Numeric PC sample is invalid")
+    if payload["memory_total_gb"] <= 0 or payload["memory_used_gb"] > payload["memory_total_gb"]:
+        raise SenderError("RAM total must be positive and RAM used cannot exceed total")
     body = json.dumps(payload, separators=(",", ":"), allow_nan=False).encode("utf-8")
     if not 16 <= len(body) <= 384:
         raise SenderError("PC telemetry exceeds ESP8266 bounded JSON limit")

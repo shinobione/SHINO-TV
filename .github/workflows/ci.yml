@@ -25,5 +25,7 @@ jobs:
         run: python -m unittest discover -s companion -p 'test_*.py' -v
       - name: Test 240x240 scene renderer
         run: node --test simulator/scene.test.mjs
+      - name: Exercise exact PROGMEM UI V2 math and browser four-card states
+        run: node --test tools/test_native_ui_v2.cjs
       - name: Check JS syntax
         run: node --check simulator/scene.mjs

@@ -2,6 +2,10 @@
 
 **Status:** source-only / GitHub CI prototype, not uploaded to the owner's working factory Ultra-V9.0.44. Builds remain draft. No soldering, spare board, serial adapter or second device required for development.
 
+## Native UI V2 (the 240×240 single-screen specification)
+
+The follow-on source branch implements the [fixed four-card native V2](NATIVE_UI_V2_240_SPEC.md) on the physical 240×240 coordinate system, mirrored by the exact flash-embedded browser UI. CPU/GPU usage, used/total RAM and true GPU temperature are all visible at once; **all four have 90×6-pixel dynamically colored bars** with mint/yellow/dark-orange/burgundy bands and ±2-percentage-point hysteresis. RAM normalization uses the PC-reported new `memory_total_gb` field, not an inferred 16 GB; GPU temperature is mapped to 30–90 °C for the visual bar only. Invalid/old data leave cards visible with neutral bars. Initial bridge startup and LittleFS/EEPROM bans are unchanged.
+
 ## Objective and architecture
 
 Our stock read-only report strongly fingerprints the manufacturer's original roughly 3-MiB file area: its `/space.json.total=3,121,152` matches ESP8266 Arduino `4m3m` exactly. A replacement 4m2m LittleFS `U_FS` would rewrite a 2,072,576-byte suffix of that region and is not atomic. The prior verified-LittleFS package therefore remains **separate optional offline research**, not a runtime prerequisite. The SHINO dashboard does not mount, initialize, write, provision or format LittleFS or EEPROM from the first-boot application path.

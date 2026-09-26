@@ -26,6 +26,8 @@ class FslessPreviewTests(unittest.TestCase):
         html = result["PAGE"].decode()
         script = result["SCRIPT"].decode()
         self.assertIn("SHINO // TV", html)
+        self.assertIn("grid-template-columns:108px 108px", html)
+        self.assertEqual(html.count('<article class="card">'), 4)
         self.assertIn('/ui.js', html)
         self.assertIn('/api/v1/bridge/metrics', script)
         self.assertNotIn("<form", html)
@@ -48,6 +50,8 @@ class FslessPreviewTests(unittest.TestCase):
             with urlopen(base + "/api/v1/bridge/metrics", timeout=2) as reply:
                 payload = json.load(reply)
                 self.assertEqual(payload["cpu_usage"], 41.0)
+                self.assertEqual(payload["memory_total_gb"], 0)
+                self.assertEqual(payload["schema_version"], 2)
                 self.assertEqual(payload["mode"], "PC_ONLY_PREVIEW_NOT_DEVICE")
             req = Request(base + "/api/v1/bridge/metrics", method="POST", data=b"{}")
             with self.assertRaises(HTTPError) as raised:

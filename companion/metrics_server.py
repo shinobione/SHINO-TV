@@ -59,6 +59,7 @@ def collect_metrics(psutil_module, gpu_supplier=query_nvidia) -> dict:
     usage = bounded(psutil_module.cpu_percent(interval=None), 0, 100)
     mem = psutil_module.virtual_memory()
     used_gb = bounded((mem.total - mem.available) / (1024 ** 3), 0, 65536)
+    total_gb = bounded(mem.total / (1024 ** 3), 0, 65536)
     gpu = gpu_supplier()
     # Keep CPU/RAM available even when NVIDIA telemetry is temporarily absent.
     return {
@@ -67,6 +68,7 @@ def collect_metrics(psutil_module, gpu_supplier=query_nvidia) -> dict:
         "cpu_usage": round(usage, 1),
         "gpu_vram_mb": round(gpu["gpu_vram_mb"], 1) if gpu else 0,
         "memory_used_gb": round(used_gb, 2),
+        "memory_total_gb": round(total_gb, 2),
         "gpu_power": round(gpu["gpu_power"], 1) if gpu else 0,
         "gpu_temp_c": round(gpu["gpu_temp_c"], 1) if gpu else 0,
         "gpu_available": gpu is not None,

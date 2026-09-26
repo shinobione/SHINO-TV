@@ -10,6 +10,7 @@ struct Snapshot {
     float cpu = 0.0F;
     float gpu = 0.0F;
     float memoryGb = 0.0F;
+    float memoryTotalGb = 0.0F; // zero means unknown; never infer a denominator.
     float vramMb = 0.0F;
     float gpuTempC = 0.0F;
     float gpuPowerW = 0.0F;
