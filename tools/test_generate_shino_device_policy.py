@@ -33,9 +33,18 @@ class ShinoDevicePolicyTests(unittest.TestCase):
         self.assertIn(hashlib.md5(self.image, usedforsecurity=False).hexdigest(), text)
         self.assertIn(hashlib.sha256(self.image).hexdigest(), text)
         self.assertIn("SHINO_RESCUE_HTTP_PASSWORD", text)
+        self.assertIn("#define SHINO_BOOT_PROFILE 0", text)
+        self.assertIn("#define SHINO_ENABLE_FACTORY_RESTORE 0", text)
         self.assertTrue(self.cred.exists())
         self.assertNotIn("Initial API bearer token:", json.dumps(report))
         self.assertNotIn("SHINO_SETUP_AP_PSK", json.dumps(report))
+
+    def test_experimental_return_does_not_enable_full_boot_or_fs_format(self):
+        result = generate(self.zip, self.manifest, self.header, self.cred, enable_restore=True)
+        policy = self.header.read_text()
+        self.assertIn("#define SHINO_ENABLE_FACTORY_RESTORE 1", policy)
+        self.assertIn("#define SHINO_BOOT_PROFILE 0", policy)
+        self.assertEqual(result["boot_profile"], "FIRST_BOOT_BRIDGE_ONLY")
 
     def test_rejects_wrong_oem_digest_without_creating_credentials(self):
         pin = json.loads(self.manifest.read_text())

@@ -82,15 +82,17 @@ Webserver::Webserver(uint16_t port) : _server(port) {}
  * @return true if filesystem is mounted false otherwise
  */
 auto Webserver::beginFS(bool formatIfFailed) -> bool {
-    if (LittleFS.begin()) {
-        return true;
-    };
-
+    // Never silently format a potentially manufacturer-owned data region.
+    // Explicit migration/provisioning will require a separate, reviewed flow.
     if (formatIfFailed) {
-        return LittleFS.begin();
-    };
-
-    return false;
+        Logger::error("Automatic filesystem formatting is prohibited", "Webserver");
+        return false;
+    }
+    if (!LittleFS.setConfig(LittleFSConfig(false))) {
+        Logger::error("Unable to disable LittleFS autoformat before mount", "Webserver");
+        return false;
+    }
+    return LittleFS.begin();
 }
 
 // NOLINTBEGIN(readability-convert-member-functions-to-static)

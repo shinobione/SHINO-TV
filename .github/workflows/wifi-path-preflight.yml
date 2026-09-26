@@ -59,6 +59,7 @@ jobs:
         run: |
           python tools/generate_shino_device_policy.py --oem-zip reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip --enable-restore
           grep -q '^#define SHINO_ENABLE_FACTORY_RESTORE 1$' firmware/include/shino_private_policy.h
+          grep -q '^#define SHINO_BOOT_PROFILE 0$' firmware/include/shino_private_policy.h
       - name: Generate throwaway blank settings
         run: |
           python - <<'PY'
@@ -112,6 +113,7 @@ jobs:
           assert d['status']=='OFFLINE_PREFLIGHT_ONLY__OWNER_FLASH_NOT_AUTHORIZED'
           assert d['permission_to_flash'] is False
           assert d['device_access_performed'] is False
+          assert b'FIRST_BOOT_BRIDGE' in Path('/tmp/shino-preflight-candidate.bin').read_bytes()
           print('PASS: exactly pinned OEM, actual compiled SHINO + its own OEM rollback, candidate-locked loader.')
           print('Original stock OTA acceptance, OEM filesystem and nonbooting Wi-Fi recovery remain unknown.')
           for image in d['images']:

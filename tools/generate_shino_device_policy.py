@@ -46,6 +46,8 @@ def generate(oem_zip: Path, manifest: Path, output: Path, secrets_file: Path,
         f'#define SHINO_FACTORY_MD5 "{hashlib.md5(original, usedforsecurity=False).hexdigest()}"\n'
         f'#define SHINO_FACTORY_SHA256 "{reference["firmware_sha256"]}"\n'
         f'#define SHINO_ENABLE_FACTORY_RESTORE {1 if enable_restore else 0}\n'
+        '#define SHINO_BOOT_PROFILE 0\n'
+
         f'#define SHINO_SETUP_AP_PSK "{ap_psk}"\n'
         f'#define SHINO_BOOTSTRAP_API_TOKEN "{token}"\n'
         '#define SHINO_RESCUE_HTTP_USER "shino"\n'
@@ -60,6 +62,7 @@ def generate(oem_zip: Path, manifest: Path, output: Path, secrets_file: Path,
         f"Rescue HTTP Digest password: {rescue_password}\n"
         "If a firmware was built with different secrets, use that build's own private file.\n"
         f"Experimental factory restore endpoint compiled: {enable_restore}\n"
+        "First boot mode: isolated WPA2/Digest diagnostics, no filesystem/EEPROM setup.\n"
         "This credential file is not a full flash recovery mechanism.\n"
     )
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -78,6 +81,7 @@ def generate(oem_zip: Path, manifest: Path, output: Path, secrets_file: Path,
         "oem_sha256": reference["firmware_sha256"],
         "oem_size": len(original),
         "restore_mode": "EXPERIMENTAL_OEM_ONLY" if enable_restore else "DISABLED",
+        "boot_profile": "FIRST_BOOT_BRIDGE_ONLY",
         "header": str(output),
         "credential_file": str(secrets_file),
         "device_operation": "none",

@@ -51,6 +51,7 @@ jobs:
         run: |
           python tools/generate_shino_device_policy.py --oem-zip reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip
           grep -q '^#define SHINO_ENABLE_FACTORY_RESTORE 0$' firmware/include/shino_private_policy.h
+          grep -q '^#define SHINO_BOOT_PROFILE 0$' firmware/include/shino_private_policy.h
       - name: Create blank disposable configuration
         run: |
           python - <<'PY'
