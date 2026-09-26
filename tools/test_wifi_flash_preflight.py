@@ -26,9 +26,10 @@ class WiFiPreflightTests(unittest.TestCase):
         self.manifest = self.root / "pin.json"
         self.manifest.write_text(json.dumps(inspect_archive(self.oem_zip)))
         self.candidate = self.root / "candidate.bin"
-        self.candidate.write_bytes(fake_image(470000))
-        self.loader = self.root / "loader.bin"
         oem_md5 = hashlib.md5(self.oem, usedforsecurity=False).hexdigest().encode()
+        # Synthetic candidate explicitly embeds the OEM image pin as our C++ route must.
+        self.candidate.write_bytes(fake_image(469968) + oem_md5)
+        self.loader = self.root / "loader.bin"
         candidate_md5 = hashlib.md5(self.candidate.read_bytes(), usedforsecurity=False).hexdigest().encode()
         self.loader.write_bytes(fake_image(300000) + oem_md5 + candidate_md5)
         self.loader_ini = self.root / "loader.ini"
@@ -55,6 +56,11 @@ class WiFiPreflightTests(unittest.TestCase):
     def test_reject_readonly_loader_missing_pinned_oem(self):
         self.loader.write_bytes(fake_image(300000))
         with self.assertRaisesRegex(PreflightError, "OEM image digest"):
+            self.check()
+
+    def test_shino_application_missing_own_factory_return_is_rejected(self):
+        self.candidate.write_bytes(fake_image(470000))
+        with self.assertRaisesRegex(PreflightError, "own exact compiled OEM"):
             self.check()
 
     def test_reject_unpinned_candidate(self):
