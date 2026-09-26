@@ -71,10 +71,11 @@ class WiFiPreflightTests(unittest.TestCase):
             self.check()
 
     def test_reject_wrong_flash_mode_or_size(self):
-        self.candidate.write_bytes(fake_image(470000, mode=0))
+        original_pin = hashlib.md5(self.oem, usedforsecurity=False).hexdigest().encode()
+        self.candidate.write_bytes(fake_image(469968, mode=0) + original_pin)
         with self.assertRaisesRegex(PreflightError, "DIO"):
             self.check()
-        self.candidate.write_bytes(fake_image(470000, sizeflag=2))
+        self.candidate.write_bytes(fake_image(469968, sizeflag=2) + original_pin)
         with self.assertRaisesRegex(PreflightError, "4-MiB"):
             self.check()
 
