@@ -16,7 +16,7 @@
 |---|---|---|
 | Factory 9.0.44 → SHINO mini-loader | Original ZIP verified; mini-loader build checked against independently published community loader-size benchmark | **Actual OTA free size and acceptance on THIS V9.0.44**. Screenshot of `/update` proves the route exists, not that any specific BIN fits or boots. |
 | SHINO mini-loader → SHINO application | Both actual images compiled against reviewed ESP8266 4 MiB DIO configs; model staging free space for `4m1m` | Loader AP, HTTP upload, boot behavior and update staging only compiled/simulated, not hardware tested. |
-| SHINO application → OEM V9.0.44 | Original app pinned; nominal OTA staging arithmetic under `4m2m` can be modelled | Generic upstream `/api/v1/ota/fw` lacks the **mandatory original-image pinning** we want. Need a dedicated authenticated rollback path and integrity checks before any deployment. OEM original filesystem layout and preferences under our new FS map are still unknown. |
+| SHINO application → OEM V9.0.44 | Original app pinned; nominal OTA staging arithmetic under `4m2m` can be modelled | PR #9 implements an authenticated, exact-OEM-only return in both the running SHINO app and boot-loop Rescue mode, with generic OTA removed. Runtime restoration remains untested; OEM filesystem layout and preferences under the custom FS map remain unknown. |
 | Loader or SHINO becomes nonbootable | No software-only verification can demonstrate reliable Wi-Fi recovery from a nonbooting application | **No recovery via Wi-Fi** if neither code nor an independent resident rescue service starts. Hardware recovery remains unavailable by owner choice. |
 
 ## Interpretation of the preflight result
@@ -27,14 +27,14 @@ The official 9.0.44 ESP8266 8-byte image header contains SPI flash size/mode/fre
 
 ### Why we do not embed the OEM BIN inside every SHINO build
 
-It consumes about 494 KiB of valuable application storage, increases OTA-fit problems, duplicates OEM-proprietary code and is inaccessible after a hard boot failure. We instead preserve a user-supplied local verified OEM binary plus a future authenticated factory-return endpoint on the working SHINO app. Even then, only a working app/recovery route can receive it.
+It consumes about 494 KiB of valuable application storage, increases OTA-fit problems, duplicates OEM-proprietary code and is inaccessible after a hard boot failure. We instead preserve a user-supplied local verified OEM binary plus an authenticated factory-return endpoint now implemented in SHINO's source (normal and boot-loop Rescue modes), disabled for writes in the default build. Even then, only a working app/recovery route can receive it.
 
 ## Preparatory work, no device contact
 
 1. Keep both official V9.0.44 ZIP and its extracted, verified BIN privately on your Windows PC outside GitHub.
 2. Compile and inspect the exact current SHINO + loader pair in ephemeral CI, not arbitrary mismatched binaries.
-3. Close security issues in the normal SHINO app: publicly shared setup AP password, unauthenticated rescue endpoints, `/legacyupdate` when LittleFS fails, unrestricted `/config.json`, and generic OTA without per-image controls.
-4. Add an authenticated, exact-OEM-image-only restore route to SHINO app itself (the transient loader is gone after second hop), and independently verify candidate and factory application bytes before staged install.
+3. Review PR #9's source hardening and validate it at runtime: per-build AP/API/Rescue secrets, no generic OTA or open `/legacyupdate`, no direct or traversal-based `/config.json` serving.
+4. Confirm the exact-OEM-only return compiled in **both** SHINO app and its boot-loop Rescue mode. It is default read-only; the experimental path must remain offline until separately approved. Neither mode survives an unbootable CPU/flash/bootloader.
 5. Review **original factory filesystem/data layout** and how custom `4m2m` partitions affect returning to the official application. Must not confuse successful boot with complete factory-state restoration.
 6. Only then issue a precise proposed owner-specific Wi-Fi install guide, including an honest list of remaining failure modes. Wait for owner's **new, affirmative permission** for the actual upload. The option to remain indefinitely on original firmware is always available.
 
