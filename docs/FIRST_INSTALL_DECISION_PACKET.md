@@ -13,7 +13,7 @@
 
 The earlier 4m2m SHINO source meant later U_FLASH staging could erase original manufacturer FS sectors even while our own dashboard never mounts a filesystem. The source branch for **this decision packet** therefore links the FS-less V2 under **\`eagle.flash.4m3m.ld\`** (one-MiB application+OTA ceiling), while still NEVER mounting or provisioning LittleFS. Linker \`FS_start\` determines Arduino's U_FLASH stage endpoint, even when the application uses no filesystem.
 
-The table below is based on the reviewed ESP8266 Arduino [\`UpdaterClass::begin(size, U_FLASH)\`](https://github.com/esp8266/Arduino/blob/1475ed7d49fef5c5167061ac76abb6eced9abda5/cores/esp8266/Updater.cpp) and \`EspClass::getFreeSketchSpace()\`, not on a live trace of GeekMagic V9.0.44. It uses the last verified V2 experimental BIN snapshot **398,544 B** at PR #15 and the **312,256 B** temporary loader; the actual new 4m3m candidate size MUST be reinserted from the latest CI and independently checked private build before any physical decision. All addresses are byte offsets in a 4-MiB device; staging length is rounded upward to 4,096-byte sectors.
+The table below is based on the reviewed ESP8266 Arduino [\`UpdaterClass::begin(size, U_FLASH)\`](https://github.com/esp8266/Arduino/blob/1475ed7d49fef5c5167061ac76abb6eced9abda5/cores/esp8266/Updater.cpp) and \`EspClass::getFreeSketchSpace()\`, not on a live trace of GeekMagic V9.0.44. It uses the **actual newly verified 4m3m experimental BIN 398,848 B** from the [three-image offline CI run](https://github.com/shinobione/SHINO-TV/actions/runs/36281022025), and the **312,256 B** temporary loader; a future owner-private build size and digest MUST be independently checked and independently checked private build before any physical decision. All addresses are byte offsets in a 4-MiB device; staging length is rounded upward to 4,096-byte sectors.
 
 | Hypothetical transition | Source linkage used for modeled OTA | Stage sector range | Sectors inside inferred original stock FS |
 |---|---|---|---:|
@@ -22,6 +22,8 @@ The table below is based on the reviewed ESP8266 Arduino [\`UpdaterClass::begin(
 | Mini-loader → SHINO V2 | Mini-loader source \`4m1m\`, OTA ceiling \`0x300000\` | \`0x29E000…0x300000\` | **401,408 B** — NOT original-data preserving |
 | Old SHINO V2 (4m2m) → OEM app | Old source \`4m2m\`, OTA ceiling \`0x200000\` | \`0x187000…0x200000\` | **495,616 B** — NOT full factory restoration |
 | **New FS-less SHINO (4m3m) → OEM app** | New reviewed source \`4m3m\`, OTA ceiling \`0x100000\` | \`0x087000…0x100000\` | **0 B**, under 4m3m hypothesis |
+
+The corresponding [actual 4m3m default read-only build](https://github.com/shinobione/SHINO-TV/actions/runs/36280879278) is **395,472 B**; it does NOT contain the OEM application POST receiver. The experimental **398,848-B** candidate is **95,296 B smaller** than official V9.0.44. These CI builds use disposable private secrets and do not publish/release exact installable files.
 
 The OEM 494,144-B incoming image occupies **495,616 B of rounded staging sectors**. This new 4m3m layout also keeps future size-fitting SHINO→SHINO Arduino application OTA staging **before \`0x100000\`**. It cannot guarantee all manufacturer FS content survives unrelated proprietary update/SDK writes or hardware interruption. The temporary mini-loader is deliberately **NOT a preservation fallback** simply because its first BIN fits the manufacturer's nominal slot: its second update takes part of the original stock user-data area.
 
