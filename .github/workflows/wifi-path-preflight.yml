@@ -15,6 +15,7 @@ on:
     paths:
       - 'tools/wifi_flash_preflight.py'
       - 'tools/test_wifi_flash_preflight.py'
+      - 'tools/generate_shino_device_policy.py'
       - '.github/workflows/wifi-path-preflight.yml'
       - 'firmware/**'
       - 'recovery_loader/**'
@@ -28,10 +29,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out SHINO
+        uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/checkout@v4
+      - name: Fetch manufacturer at immutable historical commit
+        uses: actions/checkout@v4
         with:
           repository: GeekMagicClock/smalltv-ultra
           ref: 55d7877fcba8b1cb7a66a0830d35d5b374bc8540
@@ -39,19 +42,24 @@ jobs:
           persist-credentials: false
           sparse-checkout: |
             Ultra-V9.0.44
-      - uses: actions/setup-python@v5
+      - name: Python toolchain
+        uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - name: Unit tests (synthetic images, no device)
+      - name: Unit tests (synthetic images only)
         run: python -m unittest discover -s tools -p 'test_wifi_flash_preflight.py' -v
-      - name: Verify original archive against pinned manufacturer Git object
+      - name: Verify exact OEM Git object, ZIP and inner image
         run: |
           test "$(git -C reference-geekmagic rev-parse HEAD)" = "55d7877fcba8b1cb7a66a0830d35d5b374bc8540"
           test "$(git -C reference-geekmagic rev-parse HEAD:Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip)" = "a829d48766cbd2f4f62656523cc9646ba67017d3"
           python tools/verify_factory_ota.py --manifest recovery/factory_ota_v9_0_44.json reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip
-      - name: Install PlatformIO
-        run: python -m pip install 'platformio>=6.1,<7'
-      - name: Generate disposable SHINO build config
+      - name: Install PlatformIO and esptool (no serial operations)
+        run: python -m pip install 'platformio>=6.1,<7' 'esptool>=5,<6'
+      - name: Generate ephemeral experimental exact-OEM SHINO policy
+        run: |
+          python tools/generate_shino_device_policy.py --oem-zip reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip --enable-restore
+          grep -q '^#define SHINO_ENABLE_FACTORY_RESTORE 1$' firmware/include/shino_private_policy.h
+      - name: Generate throwaway blank settings
         run: |
           python - <<'PY'
           import json
@@ -60,29 +68,25 @@ jobs:
           assert not p.exists()
           p.write_text(json.dumps({'wifi_ssid':'','wifi_password':'','api_token':'','lcd_rotation':0})+'\n')
           PY
-      - name: Generate exact-OEM-pinned experimental main app private policy (CI only)
-        run: |
-          python tools/generate_shino_device_policy.py --oem-zip reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip --enable-restore
-          grep -q '^#define SHINO_ENABLE_FACTORY_RESTORE 1
+      - name: Compile actual experimental SHINO candidate (no upload)
         working-directory: firmware
         run: pio run -e esp12e
-      - name: Keep ephemeral candidate for model (never publish)
+      - name: Verify current SHINO output, never publish
         run: |
           test -s firmware/.pio/build/esp12e/firmware.bin
           cp firmware/.pio/build/esp12e/firmware.bin /tmp/shino-preflight-candidate.bin
-      - name: Generate private experimental loader pins from actual candidate and OEM image
+      - name: Generate a loader pinned to this exact SHINO candidate and OEM
         run: |
           python tools/make_loader_policy.py --official-zip reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip --candidate-bin /tmp/shino-preflight-candidate.bin --enable-writes
-      - name: Compile exact candidate-locked experimental loader
+      - name: Compile exact candidate-locked loader (no upload)
         working-directory: recovery_loader
         run: pio run -e esp12e_recovery
-      - name: Keep ephemeral loader for model (never publish)
+      - name: Verify loader output, never publish
         run: |
           test -s recovery_loader/.pio/build/esp12e_recovery/firmware.bin
           cp recovery_loader/.pio/build/esp12e_recovery/firmware.bin /tmp/shino-preflight-loader.bin
-      - name: Independently inspect all three ESP8266 image structures (no serial connection)
+      - name: Independently inspect both builds and the original ESP8266 image
         run: |
-          python -m pip install 'esptool>=5,<6'
           python -m esptool image-info /tmp/shino-preflight-loader.bin
           python -m esptool image-info /tmp/shino-preflight-candidate.bin
           python - <<'PY'
@@ -92,9 +96,15 @@ jobs:
               Path('/tmp/shino-preflight-original.bin').write_bytes(z.read('FW-Smalltv-Ultra-V9.0.44.bin'))
           PY
           python -m esptool image-info /tmp/shino-preflight-original.bin
-      - name: Evaluate factory to loader to SHINO to original path OFFLINE
+      - name: Check complete three-image compatibility assumptions OFFLINE
         run: |
-          python tools/wifi_flash_preflight.py             --official-zip reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip             --manifest recovery/factory_ota_v9_0_44.json             --loader /tmp/shino-preflight-loader.bin             --candidate /tmp/shino-preflight-candidate.bin             --loader-ini recovery_loader/platformio.ini             --candidate-ini firmware/platformio.ini > /tmp/shino-preflight-result.json
+          python tools/wifi_flash_preflight.py \
+            --official-zip reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip \
+            --manifest recovery/factory_ota_v9_0_44.json \
+            --loader /tmp/shino-preflight-loader.bin \
+            --candidate /tmp/shino-preflight-candidate.bin \
+            --loader-ini recovery_loader/platformio.ini \
+            --candidate-ini firmware/platformio.ini > /tmp/shino-preflight-result.json
           python - <<'PY'
           import json,os
           from pathlib import Path
@@ -102,103 +112,28 @@ jobs:
           assert d['status']=='OFFLINE_PREFLIGHT_ONLY__OWNER_FLASH_NOT_AUTHORIZED'
           assert d['permission_to_flash'] is False
           assert d['device_access_performed'] is False
-          print('PASS: PINNED OEM ZIP, LIVE-COMPILED CANDIDATE + GUARDED LOADER, TWO STAGING DIRECTIONS.')
-          print('Owner stock free OTA space is NOT MEASURED. No Wi-Fi rollback runtime proof. No flash permission.')
+          print('PASS: exactly pinned OEM, actual compiled SHINO + its own OEM rollback, candidate-locked loader.')
+          print('Original stock OTA acceptance, OEM filesystem and nonbooting Wi-Fi recovery remain unknown.')
           for image in d['images']:
               print(f"IMAGE {image['name']}: {image['size_bytes']} bytes; {image['flash_mode']}; {image['flash_size_flag']}; {image['flash_frequency']}")
-          print('Modeled loader to SHINO OTA gap:', d['transitions']['loader_to_shino']['free_gap_bytes'], 'bytes')
-          print('Modeled SHINO to OEM OTA gap:', d['transitions']['shino_to_factory']['free_gap_bytes'], 'bytes')
-          summary = (
-            '### Single-device offline Wi-Fi preflight\n\n'
-            '| Check | Status |\n|---|---|\n'
-            '| Official V9.0.44 ZIP + inner BIN SHA-256 | PASS |\n'
-            '| Current SHINO + protected loader compiled | PASS |\n'
-            f"| Official OEM image header | {d['images'][0]['flash_mode']}, {d['images'][0]['flash_size_flag']}, {d['images'][0]['flash_frequency']} |\n"
-            f"| Current candidate image | {d['images'][2]['size_bytes']:,} bytes |\n"
-            f"| Exact candidate-locked loader | {d['images'][1]['size_bytes']:,} bytes |\n"
-            '| Loader contains exact OEM and SHINO image MD5 | PASS |\n'
-            '| Modeled loader -> SHINO OTA spacing | '+('PASS' if d['transitions']['loader_to_shino']['nominal_no_overlap'] else 'FAIL')+' |\n'
-            '| Modeled SHINO -> OEM OTA spacing | '+('PASS' if d['transitions']['shino_to_factory']['nominal_no_overlap'] else 'FAIL')+' |\n'
-            '| Owner stock OTA free space / acceptance | **UNKNOWN** |\n'
-            '| OEM factory filesystem layout after custom flash | **UNKNOWN** |\n'
-            '| Nonbooting app recovery without UART | **NOT GUARANTEED** |\n\n'
-            '**No physical device operation and no permission to flash.**\n'
-          )
-          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf8') as out: out.write(summary)
+          lines=['### Three-image offline preflight', '', '| Check | Result |', '|---|---|']
+          lines += [
+              '| OEM original archive + image | Exact hash PASS |',
+              '| Current SHINO firmware + its own OEM pin | PASS |',
+              '| First-hop loader exact candidate + OEM pins | PASS |',
+              '| Nominal loader -> SHINO staging | '+str(d['transitions']['loader_to_shino']['nominal_no_overlap'])+' |',
+              '| Nominal SHINO -> OEM staging | '+str(d['transitions']['shino_to_factory']['nominal_no_overlap'])+' |',
+              '| Actual owner stock OTA slot and acceptance | UNKNOWN |',
+              '| Original OEM filesystem map | UNKNOWN |',
+              '| Nonbooting Wi-Fi recovery | NOT GUARANTEED |',
+              '', '**No physical device access and NO permission to flash.**'
+          ]
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as out:
+              out.write('\n'.join(lines)+'\n')
           PY
-      - name: Remove transient OEM source, firmware binaries and generated private keys
+      - name: Delete proprietary OEM checkout, all generated secrets and binaries
         if: always()
         run: |
           rm -rf reference-geekmagic recovery_loader/private recovery_loader/.pio firmware/.pio firmware/private
           rm -f recovery_loader/include/local_policy.h firmware/data/config.json firmware/include/shino_private_policy.h
-          rm -f /tmp/shino-preflight-candidate.bin /tmp/shino-preflight-loader.bin /tmp/shino-preflight-original.bin /tmp/shino-preflight-result.json
- firmware/include/shino_private_policy.h
-      - name: Compile actual current SHINO candidate
-        working-directory: firmware
-        run: pio run -e esp12e
-      - name: Keep ephemeral candidate for model (never publish)
-        run: |
-          test -s firmware/.pio/build/esp12e/firmware.bin
-          cp firmware/.pio/build/esp12e/firmware.bin /tmp/shino-preflight-candidate.bin
-      - name: Generate private experimental loader pins from actual candidate and OEM image
-        run: |
-          python tools/make_loader_policy.py --official-zip reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip --candidate-bin /tmp/shino-preflight-candidate.bin --enable-writes
-      - name: Compile exact candidate-locked experimental loader
-        working-directory: recovery_loader
-        run: pio run -e esp12e_recovery
-      - name: Keep ephemeral loader for model (never publish)
-        run: |
-          test -s recovery_loader/.pio/build/esp12e_recovery/firmware.bin
-          cp recovery_loader/.pio/build/esp12e_recovery/firmware.bin /tmp/shino-preflight-loader.bin
-      - name: Independently inspect all three ESP8266 image structures (no serial connection)
-        run: |
-          python -m pip install 'esptool>=5,<6'
-          python -m esptool image-info /tmp/shino-preflight-loader.bin
-          python -m esptool image-info /tmp/shino-preflight-candidate.bin
-          python - <<'PY'
-          from pathlib import Path
-          import zipfile
-          with zipfile.ZipFile('reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip') as z:
-              Path('/tmp/shino-preflight-original.bin').write_bytes(z.read('FW-Smalltv-Ultra-V9.0.44.bin'))
-          PY
-          python -m esptool image-info /tmp/shino-preflight-original.bin
-      - name: Evaluate factory to loader to SHINO to original path OFFLINE
-        run: |
-          python tools/wifi_flash_preflight.py             --official-zip reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip             --manifest recovery/factory_ota_v9_0_44.json             --loader /tmp/shino-preflight-loader.bin             --candidate /tmp/shino-preflight-candidate.bin             --loader-ini recovery_loader/platformio.ini             --candidate-ini firmware/platformio.ini > /tmp/shino-preflight-result.json
-          python - <<'PY'
-          import json,os
-          from pathlib import Path
-          d=json.loads(Path('/tmp/shino-preflight-result.json').read_text())
-          assert d['status']=='OFFLINE_PREFLIGHT_ONLY__OWNER_FLASH_NOT_AUTHORIZED'
-          assert d['permission_to_flash'] is False
-          assert d['device_access_performed'] is False
-          print('PASS: PINNED OEM ZIP, LIVE-COMPILED CANDIDATE + GUARDED LOADER, TWO STAGING DIRECTIONS.')
-          print('Owner stock free OTA space is NOT MEASURED. No Wi-Fi rollback runtime proof. No flash permission.')
-          for image in d['images']:
-              print(f"IMAGE {image['name']}: {image['size_bytes']} bytes; {image['flash_mode']}; {image['flash_size_flag']}; {image['flash_frequency']}")
-          print('Modeled loader to SHINO OTA gap:', d['transitions']['loader_to_shino']['free_gap_bytes'], 'bytes')
-          print('Modeled SHINO to OEM OTA gap:', d['transitions']['shino_to_factory']['free_gap_bytes'], 'bytes')
-          summary = (
-            '### Single-device offline Wi-Fi preflight\n\n'
-            '| Check | Status |\n|---|---|\n'
-            '| Official V9.0.44 ZIP + inner BIN SHA-256 | PASS |\n'
-            '| Current SHINO + protected loader compiled | PASS |\n'
-            f"| Official OEM image header | {d['images'][0]['flash_mode']}, {d['images'][0]['flash_size_flag']}, {d['images'][0]['flash_frequency']} |\n"
-            f"| Current candidate image | {d['images'][2]['size_bytes']:,} bytes |\n"
-            f"| Exact candidate-locked loader | {d['images'][1]['size_bytes']:,} bytes |\n"
-            '| Loader contains exact OEM and SHINO image MD5 | PASS |\n'
-            '| Modeled loader -> SHINO OTA spacing | '+('PASS' if d['transitions']['loader_to_shino']['nominal_no_overlap'] else 'FAIL')+' |\n'
-            '| Modeled SHINO -> OEM OTA spacing | '+('PASS' if d['transitions']['shino_to_factory']['nominal_no_overlap'] else 'FAIL')+' |\n'
-            '| Owner stock OTA free space / acceptance | **UNKNOWN** |\n'
-            '| OEM factory filesystem layout after custom flash | **UNKNOWN** |\n'
-            '| Nonbooting app recovery without UART | **NOT GUARANTEED** |\n\n'
-            '**No physical device operation and no permission to flash.**\n'
-          )
-          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf8') as out: out.write(summary)
-          PY
-      - name: Remove transient OEM source, firmware binaries and generated private keys
-        if: always()
-        run: |
-          rm -rf reference-geekmagic recovery_loader/private recovery_loader/.pio firmware/.pio
-          rm -f recovery_loader/include/local_policy.h firmware/data/config.json
           rm -f /tmp/shino-preflight-candidate.bin /tmp/shino-preflight-loader.bin /tmp/shino-preflight-original.bin /tmp/shino-preflight-result.json
