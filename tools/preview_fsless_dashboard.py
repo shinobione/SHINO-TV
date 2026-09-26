@@ -47,9 +47,10 @@ def make_handler(static: dict[str, bytes], sampler):
                     "stale": not good,
                     "gpu_available": bool(sample.get("gpu_available", False)),
                 }
-                for key in ("cpu_usage", "gpu_usage", "memory_used_gb",
+                for key in ("cpu_usage", "gpu_usage", "memory_used_gb", "memory_total_gb",
                             "gpu_vram_mb", "gpu_temp_c", "gpu_power"):
                     result[key] = sample.get(key, 0)
+                result["schema_version"] = 2
                 code, content_type = 200, "application/json; charset=utf-8"
                 body = json.dumps(result, allow_nan=False).encode()
             elif route in ("/api/v1/bridge/status", "/api/v1/bridge/fs-plan",
