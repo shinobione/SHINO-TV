@@ -9,12 +9,12 @@ This is a **small intermediate application**, built separately from `firmware/`,
 - Defaults to **read-only**, with zero upload routes compiled. A locally generated policy header is mandatory even for a build; **no compiled-in public/default passwords** exist.
 - Creates only a private WPA2 Wi-Fi AP `SHINO-Recovery-<chip-id>`. No use of owner's Wi-Fi credentials, no fallback open AP. AP password random per build, >= 12 chars.
 - Authenticates GET and POST routes using ESP8266WebServer's **HTTP Digest** challenge, with a separate random >= 20-character HTTP password.
-- An *experimental* build can compile `POST /install` for exactly one pinned SHINO candidate and `POST /restore` for exactly the official OEM V9.0.44 application image. Bytes/MD5 are compiled into a per-build private policy, not accepted as untrusted client-supplied checksums.
+- An *experimental* build can compile authenticated browser upload forms `GET /install` and `GET /restore`, backed by `POST /install` for exactly one pinned SHINO candidate and `POST /restore` for exactly the official OEM V9.0.44 application image. Bytes/MD5 are compiled into a per-build private policy, not accepted as untrusted client-supplied checksums.
 - Uses ESP8266 `Update.begin(expected,U_FLASH)`, `Update.setMD5(expected)`, exact upload byte count and `Update.end(false)`: the core verifies digest **before scheduling** its eboot copy command. An invalid/aborted upload must not switch to it.
 - Checks actual flash capacity is 4 MiB on experimental writes. Does not accept filesystem uploads or arbitrary firmware.
 - No OTA binaries, generated credentials or private files are ever published in GitHub Actions. Their generated paths are gitignored.
 
-The MD5 check here is a streaming ESP8266 Updater compatibility control, **not a substitute for pinned SHA-256 verification on the trusted PC**. This is a local WPA2/Digest constrained maintenance route, not a secure-boot or hardware root-of-trust system. Wi-Fi disconnects and power interruptions at various stages require physical testing, and cannot be shown to be safe by CI.
+The upload form is served with a restrictive Content Security Policy; it is not exposed by the read-only build. The MD5 check here is a streaming ESP8266 Updater compatibility control, **not a substitute for pinned SHA-256 verification on the trusted PC**. This is a local WPA2/Digest constrained maintenance route, not a secure-boot or hardware root-of-trust system. Wi-Fi disconnects and power interruptions at various stages require physical testing, and cannot be shown to be safe by CI.
 
 ## Build offline (still no device action)
 
