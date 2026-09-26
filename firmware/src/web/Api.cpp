@@ -328,10 +328,10 @@ void handleTokenSave(Webserver* webserver) {
 
     const char* newToken = ddoc["token"] | "";
 
-    if (strlen(newToken) == 0) {
+    if (strlen(newToken) < 24 || strlen(newToken) > 128) {
         JsonDocument doc;
         doc["status"] = "error";
-        doc["message"] = "token field is required";
+        doc["message"] = "token must contain 24 to 128 characters";
 
         String json;
         serializeJson(doc, json);
@@ -344,8 +344,14 @@ void handleTokenSave(Webserver* webserver) {
         return;
     }
 
+    // The imported save() only persists Wi-Fi fields. Persist this rotation
+    // explicitly, otherwise rebooting silently restores the previous token.
+    if (!configManager.secure.put("api_token", newToken)) {
+        webserver->raw().send(HTTP_CODE_INTERNAL_ERROR, "application/json",
+                              "{\"status\":\"error\",\"message\":\"Token persistence failed\"}");
+        return;
+    }
     configManager.setApiToken(newToken);
-    configManager.save();
 
     JsonDocument doc;
     doc["status"] = "ok";
