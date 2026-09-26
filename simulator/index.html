@@ -21,7 +21,7 @@ textarea{resize:vertical;background:#0d0e12;color:#dcd9d5;border:1px solid #4c45
 footer{margin-top:18px;color:#aaa6a2;font-size:12px}
 @media(max-width:740px){.layout{grid-template-columns:1fr}.display{min-height:375px}}
 </style></head><body><main>
-<header><div><h1>SHINO <span>// TV</span></h1><p>Firmware-independent 240 × 240 scene simulator · v0</p></div><div class="pill">DEMO · NO DEVICE CONNECTION</div></header>
+<header><div><h1>SHINO <span>// TV</span></h1><p>Firmware-independent 240 × 240 scene simulator · v0</p></div><div class="pill" id="mode-badge">DEMO · NO TV CONNECTION</div></header>
 <section class="layout"><div class="panel"><h2>DISPLAY PREVIEW</h2><div class="display"><div class="frame"><canvas id="screen" width="240" height="240" role="img" aria-label="240 by 240 device preview"></canvas></div></div><p class="small">Rendered locally on your PC; nothing is sent to the SmallTV.</p></div>
 <div class="panel"><h2>SCENE CONTROL</h2><div class="tabs" id="presets"><button data-kind="metrics">PC HEALTH DEMO</button><button data-kind="music">MUSIC</button><button data-kind="agent">CODEX</button><button data-kind="release">RELEASE</button></div><button id="live" aria-pressed="false" style="width:100%;margin-bottom:8px;border-color:#ad8a5a">CONNECT LIVE PC METRICS</button><p class="small" id="live-status" role="status" aria-live="polite">Demo values until you explicitly connect. Local PC only; no TV communication.</p>
 <label class="small" for="json">Editable scene JSON</label><textarea id="json" spellcheck="false"></textarea><div class="actions"><button id="apply">APPLY SCENE</button><button id="save">SAVE PNG</button></div><p id="error" role="status" aria-live="polite"></p><footer>Live PC values use this machine's local metrics bridge. Music, Codex and release presets remain illustrative. Nothing is sent to your SmallTV.</footer></div></section>
@@ -29,7 +29,7 @@ footer{margin-top:18px;color:#aaa6a2;font-size:12px}
 import {PRESETS, normalizeScene, renderScene} from './scene.mjs';
 import {metricsToScene, unavailableMetricsScene} from './live.mjs';
 const area=document.querySelector('#json'),canvas=document.querySelector('#screen'),ctx=canvas.getContext('2d'),error=document.querySelector('#error');
-const liveButton=document.querySelector('#live'),liveStatus=document.querySelector('#live-status');
+const liveButton=document.querySelector('#live'),liveStatus=document.querySelector('#live-status'),modeBadge=document.querySelector('#mode-badge');
 let live=false, requestGeneration=0, inFlight=false;
 function show(scene){
   const s=normalizeScene(scene);
@@ -40,6 +40,7 @@ function setLive(enabled){
   live=enabled;requestGeneration++;
   liveButton.setAttribute('aria-pressed',String(enabled));
   liveButton.textContent=enabled?'DISCONNECT LIVE PC METRICS':'CONNECT LIVE PC METRICS';
+  modeBadge.textContent=enabled?'CONNECTING TO PC · NO TV CONNECTION':'DEMO · NO TV CONNECTION';
   if(!enabled)liveStatus.textContent='Demo values. Nothing is being requested from the PC bridge.';
 }
 async function poll(){
@@ -52,18 +53,18 @@ async function poll(){
     if(!response.ok)throw new Error('HTTP '+response.status);
     const result=metricsToScene(await response.json());
     if(live&&generation===requestGeneration){
-      show(result);liveStatus.textContent=result.gpuAvailable?'LIVE · CPU / RAM / NVIDIA GPU':'LIVE · CPU / RAM · NVIDIA GPU UNAVAILABLE';
+      show(result);modeBadge.textContent='LIVE PC · NO TV CONNECTION';liveStatus.textContent=result.gpuAvailable?'LIVE · CPU / RAM / NVIDIA GPU':'LIVE · CPU / RAM · NVIDIA GPU UNAVAILABLE';
     }
   }catch{
     if(live&&generation===requestGeneration){
-      show(unavailableMetricsScene());
+      show(unavailableMetricsScene());modeBadge.textContent='PC OFFLINE · NO TV CONNECTION';
       liveStatus.textContent='PC bridge offline. Run: py companion/metrics_server.py (see docs).';
     }
   }finally{clearTimeout(timeout);inFlight=false;}
 }
 document.querySelectorAll('[data-kind]').forEach(b=>b.addEventListener('click',()=>{setLive(false);show(PRESETS[b.dataset.kind])}));
 liveButton.addEventListener('click',()=>{const next=!live;setLive(next);show(PRESETS.metrics);if(next){liveStatus.textContent='Connecting to local PC metrics…';void poll();}});
-document.querySelector('#apply').addEventListener('click',()=>{try{const parsed=JSON.parse(area.value);const checked=normalizeScene(parsed);setLive(false);show(checked);}catch(e){error.textContent=e.message}});
+document.querySelector('#apply').addEventListener('click',()=>{try{const parsed=JSON.parse(area.value);const checked=normalizeScene(parsed);setLive(false);if(checked.kind==='metrics'){checked.source='manual';modeBadge.textContent='MANUAL SNAPSHOT · NO TV CONNECTION';liveStatus.textContent='Frozen JSON snapshot. Connect again for automatic PC readings.';}show(checked);}catch(e){error.textContent=e.message}});
 document.querySelector('#save').addEventListener('click',()=>{const a=document.createElement('a');a.download='shino-tv-preview.png';a.href=canvas.toDataURL('image/png');a.click()});
 setInterval(()=>{if(live)void poll()},1000);
 setLive(false);show(PRESETS.metrics);
