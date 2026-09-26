@@ -12,6 +12,8 @@
 #include <ArduinoJson.h>
 #include <Logger.h>
 #include "display/DisplayManager.h"
+#include "boot/FslessMetrics.h"
+#include "boot/FslessWebUI.h"
 #include "recovery/FactoryRollback.h"
 #include "shino_private_policy.h"
 
@@ -27,9 +29,19 @@ static_assert(sizeof(SHINO_RESCUE_HTTP_PASSWORD) >= 21, "Missing private Digest 
 #endif
 static_assert(SHINO_ENABLE_FS_MIGRATION == 0,
               "In-place LittleFS migration is forbidden in this single-device bridge build.");
-static_assert(SHINO_FS_BYTES == 2072576, "Unreviewed LittleFS partition length.");
-static_assert(sizeof(SHINO_FS_SHA256) == 65, "Missing pinned full-image SHA-256.");
-static_assert(sizeof(SHINO_FS_MD5) == 33, "Missing pinned FS Updater compatibility checksum.");
+static_assert(SHINO_FS_BYTES == 2072576, "Unreviewed alternative LittleFS partition geometry.");
+#ifndef SHINO_FS_IMAGE_PRESENT
+#error "Explicit none/pinned alternative filesystem reference is required."
+#endif
+static_assert(SHINO_FS_IMAGE_PRESENT == 0 || SHINO_FS_IMAGE_PRESENT == 1,
+              "Only optional offline FS research image reference is supported.");
+#if SHINO_FS_IMAGE_PRESENT
+static_assert(sizeof(SHINO_FS_SHA256) == 65, "Invalid optional image SHA-256.");
+static_assert(sizeof(SHINO_FS_MD5) == 33, "Invalid optional image MD5.");
+#else
+static_assert(sizeof(SHINO_FS_SHA256) == 1 && sizeof(SHINO_FS_MD5) == 1,
+              "FS-less profile must not pretend that a filesystem image is pinned.");
+#endif
 
 namespace {
 ESP8266WebServer server(80);
@@ -37,18 +49,9 @@ bool active = false;
 bool networkReady = false;
 String ssid;
 
-const char LANDING[] PROGMEM = R"HTML(<!doctype html><html lang="en"><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SHINO // TV — First boot</title>
-<h1>SHINO // TV / FIRST BOOT</h1>
-<p>Conservative firmware bridge. Manufacturer file area has not been mounted
-or initialized by the SHINO application. This is not proof that a full flash
-backup or a nonbooting rescue is available.</p>
-<p>Authenticated diagnostics: <a href="/api/v1/bridge/status">status</a>,
-<a href="/api/v1/bridge/factory-return">original application reference</a>,
-<a href="/api/v1/bridge/fs-plan">LittleFS impact (read only)</a>.</p>
-<p>No filesystem provisioning or arbitrary update control is installed.</p>
-</html>)HTML";
+bool telemetryNeedsRedraw = true;
+bool stalePreviously = true;
+uint32_t lastDrawMs = 0;
 
 bool requireAuth() {
     if (server.authenticate(SHINO_RESCUE_HTTP_USER, SHINO_RESCUE_HTTP_PASSWORD)) return true;
@@ -64,8 +67,9 @@ void sendFsPlan() {
     if (!requireAuth()) return;
     JsonDocument doc;
     doc["mode"] = "READ_ONLY_FS_MIGRATION_PLAN";
-    doc["pinned_image_sha256"] = SHINO_FS_SHA256;
-    doc["pinned_image_bytes"] = SHINO_FS_BYTES;
+    doc["fs_research_image_present"] = SHINO_FS_IMAGE_PRESENT == 1;
+    doc["pinned_image_sha256"] = SHINO_FS_IMAGE_PRESENT ? SHINO_FS_SHA256 : "NONE__NO_LITTLEFS_IMAGE_BUILT";
+    doc["pinned_image_bytes"] = SHINO_FS_IMAGE_PRESENT ? SHINO_FS_BYTES : 0;
     doc["linked_shino_fs_start"] = "0x200000";
     doc["linked_shino_fs_end_exclusive"] = "0x3fa000";
     doc["stock_fs_start_inferred_NOT_PROVEN"] = "0x100000";
@@ -91,7 +95,10 @@ void sendStatus() {
     doc["sdk_wifi_persistence_enabled"] = false;
     doc["filesystem_provisioning_route"] = false;
     doc["filesystem_impact_report_route"] = "/api/v1/bridge/fs-plan";
-    doc["pinned_littlefs_image_available_off_device"] = SHINO_FS_BYTES == 2072576;
+    doc["pinned_littlefs_image_available_off_device"] = SHINO_FS_IMAGE_PRESENT == 1;
+    doc["browser_ui_source"] = "PROGRAM_FLASH_ONLY";
+    doc["pc_metrics_storage"] = "RAM_ONLY";
+    doc["pc_metrics_route"] = "/api/v1/bridge/metrics";
     doc["filesystem_migration_writes_compiled"] = false;
     doc["manufacturer_original_flash_backup_available"] = false;
     doc["linked_shino_FS_start_offset"] = "0x200000";
@@ -107,6 +114,73 @@ void sendStatus() {
     serializeJson(doc, result);
     respond(200, result);
 }
+void sendMetrics() {
+    if (!requireAuth()) return;
+    JsonDocument doc;
+    FslessMetrics::describe(doc);
+    String body;
+    serializeJson(doc, body);
+    respond(200, body);
+}
+
+void acceptMetrics() {
+    if (!requireAuth()) return;
+    // Small bounded sample with no filenames, scripts, assets or device writes.
+    const String payload = server.arg("plain");
+    if (payload.length() < 16 || payload.length() > 384) {
+        respond(413, F("{\"error\":\"Invalid bounded telemetry payload length\"}"));
+        return;
+    }
+    JsonDocument doc;
+    if (deserializeJson(doc, payload)) {
+        respond(422, F("{\"error\":\"Invalid JSON telemetry\"}"));
+        return;
+    }
+    String error;
+    if (!FslessMetrics::apply(doc.as<JsonVariantConst>(), error)) {
+        respond(422, F("{\"error\":\"Invalid, missing or out-of-range telemetry fields\"}"));
+        return;
+    }
+    telemetryNeedsRedraw = true;
+    respond(200, F("{\"status\":\"RAM_SAMPLE_ACCEPTED\",\"persisted\":false}"));
+}
+
+void paintNativeDashboard() {
+    const auto m = FslessMetrics::snapshot();
+    const bool old = FslessMetrics::stale();
+    DisplayManager::clearScreen();
+    DisplayManager::drawTextWrapped(9, 8, F("SHINO // TV"), 2, LCD_WHITE, LCD_BLACK, false);
+    char text[52];
+    if (old) {
+        DisplayManager::drawTextWrapped(9, 49, F("PC WAITING"), 2, LCD_RED, LCD_BLACK, false);
+        DisplayManager::drawTextWrapped(9, 87, F("Connect Windows"), 1, LCD_WHITE, LCD_BLACK, false);
+        DisplayManager::drawTextWrapped(9, 104, F("to the private AP"), 1, LCD_WHITE, LCD_BLACK, false);
+        DisplayManager::drawTextWrapped(9, 122, F("and run sender"), 1, LCD_WHITE, LCD_BLACK, false);
+    } else {
+        snprintf(text, sizeof(text), "CPU %3.0f%%", m.cpu);
+        DisplayManager::drawTextWrapped(9, 43, text, 2, LCD_GREEN, LCD_BLACK, false);
+        DisplayManager::drawLoadingBar(m.cpu / 100.0F, 70, 218, 9, LCD_GREEN);
+        if (m.gpuAvailable) {
+            snprintf(text, sizeof(text), "GPU %3.0f%%", m.gpu);
+            DisplayManager::drawTextWrapped(9, 92, text, 2, LCD_WHITE, LCD_BLACK, false);
+            DisplayManager::drawLoadingBar(m.gpu / 100.0F, 119, 218, 9, LCD_BLUE);
+            snprintf(text, sizeof(text), "GPU %3.0fC", m.gpuTempC);
+            DisplayManager::drawTextWrapped(9, 146, text, 1, LCD_WHITE, LCD_BLACK, false);
+        } else {
+            DisplayManager::drawTextWrapped(9, 92, F("GPU unavailable"), 1, LCD_WHITE, LCD_BLACK, false);
+        }
+        snprintf(text, sizeof(text), "RAM %.1f GB", m.memoryGb);
+        DisplayManager::drawTextWrapped(9, 169, text, 1, LCD_WHITE, LCD_BLACK, false);
+    }
+    DisplayManager::drawTextWrapped(9, 198, WiFi.softAPIP().toString(), 1,
+                                    LCD_WHITE, LCD_BLACK, false);
+    DisplayManager::drawTextWrapped(9, 215, F("FS unchanged by app"), 1,
+                                    LCD_GREEN, LCD_BLACK, false);
+    stalePreviously = old;
+    lastDrawMs = millis();
+    telemetryNeedsRedraw = false;
+}
+
 } // namespace
 
 namespace FirstBootBridge {
@@ -133,9 +207,17 @@ void run() {
         if (!requireAuth()) return;
         server.sendHeader(F("Cache-Control"), F("no-store"));
         server.sendHeader(F("Content-Security-Policy"),
-                          F("default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"));
-        server.send_P(200, PSTR("text/html; charset=utf-8"), LANDING);
+                          F("default-src 'none'; style-src 'unsafe-inline'; script-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'"));
+        server.send_P(200, PSTR("text/html; charset=utf-8"), FslessWebUI::PAGE);
     });
+    server.on("/ui.js", HTTP_GET, []() {
+        if (!requireAuth()) return;
+        server.sendHeader(F("Cache-Control"), F("no-store"));
+        server.sendHeader(F("X-Content-Type-Options"), F("nosniff"));
+        server.send_P(200, PSTR("application/javascript; charset=utf-8"), FslessWebUI::SCRIPT);
+    });
+    server.on("/api/v1/bridge/metrics", HTTP_GET, sendMetrics);
+    server.on("/api/v1/bridge/metrics", HTTP_POST, acceptMetrics);
     server.on("/api/v1/bridge/status", HTTP_GET, sendStatus);
     server.on("/api/v1/bridge/fs-plan", HTTP_GET, sendFsPlan);
     server.on("/api/v1/bridge/factory-return", HTTP_GET, []() {
@@ -159,20 +241,18 @@ void run() {
     });
     server.begin();
 
-    // The display driver runs from application flash and does not read the FS.
+    // LCD dashboard and browser assets are compiled into program flash. Only
+    // validated numeric PC samples are stored in volatile RAM.
     DisplayManager::begin();
-    DisplayManager::clearScreen();
-    DisplayManager::drawTextWrapped(8, 12, F("SHINO // TV"), 2, LCD_WHITE, LCD_BLACK, false);
-    DisplayManager::drawTextWrapped(8, 56, F("FIRST BOOT"), 2, LCD_GREEN, LCD_BLACK, false);
-    DisplayManager::drawTextWrapped(8, 105, F("No FS migration"), 1, LCD_WHITE, LCD_BLACK, false);
-    DisplayManager::drawTextWrapped(8, 135, ssid, 1, LCD_WHITE, LCD_BLACK, false);
-    DisplayManager::drawTextWrapped(8, 175, WiFi.softAPIP().toString(), 2,
-                                    LCD_WHITE, LCD_BLACK, false);
+    paintNativeDashboard();
     Logger::info("FirstBoot protected AP running; no filesystem or EEPROM initialization", "FirstBoot");
 }
 
 void loop() {
     if (networkReady) server.handleClient();
+    if (networkReady &&
+        (telemetryNeedsRedraw || FslessMetrics::stale() != stalePreviously) &&
+        static_cast<uint32_t>(millis() - lastDrawMs) >= 250) paintNativeDashboard();
     FactoryRollback::tick();
     ESP.wdtFeed();
     yield();
