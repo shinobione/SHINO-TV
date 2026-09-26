@@ -8,6 +8,8 @@ BRIDGE = (ROOT / "firmware/src/boot/FirstBootBridge.cpp").read_text()
 POLICY = (ROOT / "tools/generate_shino_device_policy.py").read_text()
 WEB = (ROOT / "firmware/src/web/Webserver.cpp").read_text()
 RECOVERY = (ROOT / "firmware/src/recovery/FactoryRollback.cpp").read_text()
+API = (ROOT / "firmware/src/web/Api.cpp").read_text()
+API_HEADER = (ROOT / "firmware/include/web/Api.h").read_text()
 
 
 class FirstBootGate(unittest.TestCase):
@@ -65,6 +67,17 @@ class FirstBootGate(unittest.TestCase):
         self.assertNotIn('U_FS', BRIDGE)
         self.assertIn("'#define SHINO_ENABLE_FS_MIGRATION 0", POLICY)
         self.assertIn('fs_image', POLICY)
+
+    def test_old_generic_application_and_filesystem_updater_is_removed_entirely(self):
+        # An unregistered writer in the inherited source can be accidentally
+        # routed again in a later refactor: remove its implementation too.
+        for forbidden in ("U_FS", "Update.begin(", "Update.end(", "handleOtaUpload(",
+                          "otaHandleStart(", "otaInProgress"):
+            self.assertNotIn(forbidden, API)
+        for forbidden in ("handleOtaUpload(", "handleOtaFinished(",
+                          "handleOtaStatus(", "handleOtaCancel("):
+            self.assertNotIn(forbidden, API_HEADER)
+        self.assertIn("FactoryRollback::upload(", API)
 
     def test_no_automatic_format_in_legacy_mount_helper(self):
         self.assertIn("LittleFS.setConfig(LittleFSConfig(false))", WEB)
