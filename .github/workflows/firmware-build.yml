@@ -7,10 +7,12 @@ on:
       - 'planning/**'
       - 'feature/**'
       - 'safety/**'
+      - 'security/**'
     paths:
       - 'firmware/**'
       - 'recovery/**'
       - 'tools/verify_factory_ota.py'
+      - 'tools/generate_shino_device_policy.py'
       - '.github/workflows/firmware-build.yml'
   pull_request:
     paths:
@@ -54,6 +56,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Check out historical exact OEM source for ephemeral firmware policy
+        uses: actions/checkout@v4
+        with:
+          repository: GeekMagicClock/smalltv-ultra
+          ref: 55d7877fcba8b1cb7a66a0830d35d5b374bc8540
+          path: reference-geekmagic
+          persist-credentials: false
+          sparse-checkout: |
+            Ultra-V9.0.44
       - name: Install Python
         uses: actions/setup-python@v5
         with:
@@ -70,10 +81,44 @@ jobs:
           path.write_text(json.dumps({
               'wifi_ssid': '',
               'wifi_password': '',
-              'api_token': 'CI_ONLY_NOT_FOR_PHYSICAL_DEVICE',
+              'api_token': '',
               'lcd_rotation': 0,
           }) + '\n')
           PY
+      - name: Generate private OEM-pinned read-only device policy
+        run: |
+          python tools/generate_shino_device_policy.py --oem-zip reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip
+          grep -q '^#define SHINO_ENABLE_FACTORY_RESTORE 0
+        working-directory: firmware
+        run: pio run -e esp12e
+      - name: Build LittleFS image (no upload)
+        working-directory: firmware
+        run: pio run -e esp12e -t buildfs
+      - name: Report binary sizes without publishing images
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          lines = ['### Offline firmware build outputs', '', 'File | Size (bytes)', ':-- | --:']
+          for name in ('firmware.bin', 'littlefs.bin'):
+              matches = [p for p in Path.cwd().rglob(name) if '.pio' in p.parts and 'esp12e' in p.parts]
+              if len(matches) == 1:
+                  path = matches[0]
+                  lines.append(f'{name} | {path.stat().st_size:,}')
+              else:
+                  lines.append(f'{name} | Build succeeded; runner path not found by report step')
+          lines += ['', '**Not validated on hardware. Do not flash these CI outputs.**']
+          summary = '\n'.join(lines) + '\n'
+          print(summary)
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as f:
+              f.write(summary)
+          PY
+      - name: Remove throwaway configuration
+        if: always()
+        run: |
+          rm -f firmware/data/config.json firmware/include/shino_private_policy.h
+          rm -rf firmware/private reference-geekmagic
+ firmware/include/shino_private_policy.h
       - name: Compile source (ESP8266, no upload)
         working-directory: firmware
         run: pio run -e esp12e
