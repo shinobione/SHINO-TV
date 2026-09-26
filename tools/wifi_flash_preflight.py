@@ -108,8 +108,12 @@ def evaluate(official_zip: Path, manifest: Path, loader: Path, candidate: Path,
     with zipfile.ZipFile(official_zip) as archive:
         oem_image = archive.read(metadata["firmware_member"])
     oem = inspect_image(oem_image, "official_Ultra_V9.0.44")
-    first = inspect_image(Path(loader).read_bytes(), "experimental_shino_loader")
-    second = inspect_image(Path(candidate).read_bytes(), "shino_candidate")
+    loader_bytes = Path(loader).read_bytes()
+    candidate_bytes = Path(candidate).read_bytes()
+    first = inspect_image(loader_bytes, "experimental_shino_loader")
+    second = inspect_image(candidate_bytes, "shino_candidate")
+    if oem["md5_for_arduino_updater"].encode("ascii") not in candidate_bytes:
+        raise PreflightError("SHINO application lacks its own exact compiled OEM factory-return digest")
     if oem["size_bytes"] != OEM_SIZE:
         raise PreflightError("OEM V9.0.44 image size changed")
     if first["size_bytes"] > COMMUNITY_LOADER_COMPARISON:
