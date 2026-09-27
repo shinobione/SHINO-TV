@@ -36,7 +36,7 @@ class OtaRawHttpHeaderTests(unittest.TestCase):
         self.assertIn("data[len-4u] != '\\r'",gate)
         self.assertIn("if (sameHeader(names[i],name)) return false",gate)
         self.assertIn("transfer-encoding",gate)
-        self.assertIn("digestHeaderPresent = gotAuth",gate)
+        self.assertIn("digestHeaderPresent=gotAuth",gate)
         self.assertIn("readCookiePresent",gate)
         self.assertNotIn("NativeOtaRawHeaderGate.h",active)
         self.assertNotIn("NativeOtaRawHeaderGate.h",ui)
