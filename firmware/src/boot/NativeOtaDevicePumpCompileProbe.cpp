@@ -13,6 +13,7 @@
 #include "boot/NativeOtaPort80Plan.h"
 #include "boot/NativeOtaSingleIngressShadow.h"
 #include "boot/NativeOtaLegacySessionReview.h"
+#include "boot/NativeOtaHeapReview.h"
 #include "shino_private_policy.h"
 
 static_assert(SHINO_ENABLE_NATIVE_SIGNED_OTA == 0,
@@ -82,6 +83,20 @@ struct NativeDeviceEntropySource final {
         return bytes && length==32u && ESP.random(bytes,length)==bytes;
     }
 };
+
+// Actual pinned ESP8266 API TYPE CHECK ONLY, using the 32-bit max-block
+// overload. It remains disconnected: no heap sampling occurs on the device,
+// no endpoint or scheduler is registered and no runtime heap claim is made.
+// Arduino Core 3.1.2 must expose these APIs under its pinned UMM_INFO build.
+struct NativeDeviceHeapSource final {
+    bool read(uint32_t& freeBytes,uint32_t& largestBlock,uint8_t& fragmentation) {
+        ESP.getHeapStats(&freeBytes,&largestBlock,&fragmentation);
+        return true;
+    }
+};
+static_assert(sizeof(NativeOtaHeapReview<NativeDeviceHeapSource>) <= 64u,
+              "Prospective non-running heap review exceeds bounded type budget.");
+template class NativeOtaHeapReview<NativeDeviceHeapSource>;
 
 // Fail-closed compile fixture. It does not retain body bytes, has no device
 // writer, and deliberately never permits a successful review. Never replace
