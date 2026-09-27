@@ -81,7 +81,6 @@ int main() {
         CHECK(route(overlong).plan==Port80Plan::Invalid);
     }
     {
-        const std::string injected="GET /\0 HTTP/1.1\r\n";
         // Construct explicitly to preserve the NUL byte.
         std::string s="GET /";s.push_back('\0');s+=" HTTP/1.1\r\n";
         CHECK(route(s).plan==Port80Plan::Invalid);
