@@ -85,7 +85,8 @@ public:
         for(size_t i=0;i<f.cnonce.n;++i) {
             const char c=f.cnonce.p[i];
             if (!((c>='a'&&c<='z')||(c>='A'&&c<='Z')||
-                  (c>='0'&&c<='9')||c=='-'||c=='_')) return fail();
+                  (c>='0'&&c<='9')||c=='-'||c=='_'||
+                 c=='+'||c=='/'||c=='=')) return fail();
         }
         char ha2[65]{};
         char message[96]{};
