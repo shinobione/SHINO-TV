@@ -86,7 +86,7 @@ class ExternalDigestClientTests(unittest.TestCase):
             auth=captured[0]
             self.assertTrue(auth.startswith("Digest "))
             self.assertIn('uri="/api/v1/bridge/ota/arm"',auth)
-            self.assertIn("algorithm=SHA-256",auth)
+            self.assertRegex(auth,r'algorithm="?SHA-256"?')
             def verify(mode, header):
                 return subprocess.run([str(exe),mode],input=header+"\n",
                                       capture_output=True,text=True,
