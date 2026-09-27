@@ -21,6 +21,10 @@ enum class TransferPhase : uint8_t {
 
 class IntentGate final {
 public:
+    IntentGate() = default;
+    IntentGate(const IntentGate&) = delete;
+    IntentGate& operator=(const IntentGate&) = delete;
+
     static constexpr uint32_t kArmLifetimeMs = 60'000;
     static constexpr uint32_t kStreamInactivityMs = 15'000;
     static constexpr uint32_t kMinSignedTransportBytes = 64'000 + 256 + 4;
@@ -51,6 +55,7 @@ public:
 
     bool start(uint32_t peerIPv4, const std::array<uint8_t, 16>& token,
                uint32_t declaredTransportBytes, uint32_t nowMs) {
+        if (phase_ == TransferPhase::Streaming) return fail(); // duplicate BEGIN invalidates transfer
         if (phase_ != TransferPhase::Armed) return false;
         if (expired(nowMs) || !sameBinding(peerIPv4, token) ||
             declaredTransportBytes != expected_) return fail();
