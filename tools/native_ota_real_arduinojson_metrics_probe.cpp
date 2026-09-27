@@ -22,7 +22,7 @@ int main() {
     std::string line;
     uint32_t count=0u;
     while(std::getline(std::cin,line)) {
-        if(line.size()>65536u)return 3; // host probe, not upload receiver.
+        if(line.size()>500000u)return 3; // HOST negative 494404-byte envelope fixture; NEVER on-device staging.
         clockFixture=100u+count++;
         int status=200;
         JsonDocument doc;
