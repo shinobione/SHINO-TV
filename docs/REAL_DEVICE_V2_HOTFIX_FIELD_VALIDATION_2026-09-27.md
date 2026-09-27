@@ -28,7 +28,7 @@
 | Four native 240×240 cards remain, unmirrored | OWNER-OBSERVED PASS |
 | Repeating browser authentication dialogs no longer occur | OWNER-OBSERVED PASS |
 | New owner-kit credential pairing | Static/private kit checks PASS; live credential handling evidently sufficient for browser reported by owner |
-| Full load/burn-in with browser plus Windows telemetry on hotfix | NOT SEPARATELY ATTESTED in final owner confirmation |
+| Concurrent browser + Windows telemetry on the deployed hotfix | OWNER-OBSERVED PASS: all four readings update on both physical LCD and Chrome simultaneously; no repeated login dialogs |
 | Exact two-hour browser session expiry + reauthentication | NOT FIELD-TESTED |
 | OEM full flash/filesystem backup | DOES NOT EXIST; OEM image was application-only |
 | Nonbooting/recovery/future update path | NOT PROVEN |
@@ -37,4 +37,4 @@
 
 Keep existing `review-001`, `review-002`, and matching `credentials.txt` files private, separate and immutable. Do not automatically flash again or declare any other build deployed. SHINO's installed FS-less firmware still has no arbitrary SHINO→SHINO OTA. The manufacturer's exact-image-only app-return feature is not a generic update facility. A future write requires a new independent review and authorization.
 
-**Next software milestone** after a separately attested live Windows metric test: optional user-controlled Windows companion autostart, with private credentials stored locally and no firmware update.
+**Next software milestone**: the owner has now separately confirmed concurrent live Windows metric delivery and browser refresh on the installed hotfix. Optional user-controlled Windows companion autostart can follow, with private credentials stored locally and no firmware update. Two-hour browser session expiry and extended endurance are still not separately field-tested.
