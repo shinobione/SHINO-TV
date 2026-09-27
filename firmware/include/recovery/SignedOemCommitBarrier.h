@@ -24,6 +24,9 @@
 namespace ShinoOemPrecommit {
 
 enum class CommitPhase : uint8_t { Idle, Streaming, CoreAccepted, Aborted };
+// Forces the independently reviewed production adapter to expose an explicitly
+// APPLICATION-ONLY begin method. Its implementation must use U_FLASH, never U_FS.
+struct SignedApplicationOnlyTag final {};
 
 template<class Hasher, class Pin, class Adapter>
 class SignedOemCommitBarrier final {
@@ -43,13 +46,13 @@ public:
             declaredTransportBytes != Pin::kTransportBytes)
             return fail();
         if (!raw_.begin(declaredTransportBytes)) return fail();
-        if (!adapter_.begin(declaredTransportBytes) || adapter_.hasError())
+        if (!adapter_.begin(declaredTransportBytes, SignedApplicationOnlyTag{}) || adapter_.hasError())
             return fail();
         phase_ = CommitPhase::Streaming;
         return true;
     }
 
-    bool add(const uint8_t* data, size_t count) {
+    bool add(uint8_t* data, size_t count) {
         if (phase_ != CommitPhase::Streaming) return false;
         // Validate before staging each chunk. Earlier chunks may already have
         // touched the temporary staging area: NOT atomic power-loss recovery.
