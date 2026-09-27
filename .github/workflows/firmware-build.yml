@@ -80,6 +80,7 @@ jobs:
           for marker in (b'FIRST_BOOT_BRIDGE',b'FSLESS_PC_TELEMETRY_RAM_ONLY',
                          b'READ_ONLY_FS_MIGRATION_PLAN',b'RAM_SAMPLE_ACCEPTED'):
               assert marker in blob, f'Missing fsless bridge marker: {marker!r}'
+          assert b'OBSERVED_HEAP_V1' not in blob, 'Default firmware must not contain opt-in diagnostics'
           assert p.stat().st_size < 494144, 'Current candidate is not smaller than OEM app; manually review OTA geometry'
           assert not (Path('firmware/.pio/build/esp12e')/'littlefs.bin').exists(), 'FS image must not be built for this profile'
           print('Conservative RAM-only SHINO image:',p.stat().st_size,'bytes. No FS generated, no device upload.')
@@ -87,6 +88,27 @@ jobs:
               out.write('### SHINO native FS-less build — offline only\n\n'
                         f'Application image: {p.stat().st_size:,} bytes. No LittleFS image generated. '
                         'Factory restoration POST not compiled. Owner device untouched.\n')
+          PY
+      - name: Compile explicit READ-ONLY instrumented heap candidate (NO UPLOAD)
+        working-directory: firmware
+        run: pio run -e esp12e_heap_diagnostics
+      - name: Verify optional heap candidate markers, bounds and no FS image
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          p=Path('firmware/.pio/build/esp12e_heap_diagnostics/firmware.bin')
+          assert p.is_file() and 0 < p.stat().st_size < 494144, 'Heap candidate requires manual size/OTA review'
+          blob=p.read_bytes()
+          for marker in (b'FIRST_BOOT_BRIDGE', b'OBSERVED_HEAP_V1',
+                         b'lowest_observed_free_heap_bytes', b'RAM_SAMPLE_ACCEPTED'):
+              assert marker in blob, f'Opt-in read-only image missing marker: {marker!r}'
+          assert not (p.parent/'littlefs.bin').exists(), 'Opt-in candidate must not contain FS image'
+          print('Optional heap diagnostic candidate COMPILED ONLY:',p.stat().st_size,'bytes. NEVER uploaded.')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as out:
+              out.write('### Separately gated heap diagnostic candidate — OFFLINE ONLY\\n\\n'
+                        f'Opt-in instrumented image: {p.stat().st_size:,} bytes. '
+                        'Default V2 build is uninstrumented; NO DEVICE UPLOAD.\\n')
           PY
       - name: Delete proprietary manufacturer source, one-use keys and images
         if: always()
