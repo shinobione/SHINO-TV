@@ -78,12 +78,6 @@ public:
         const View route{raw+firstSpace+1u,secondSpace-firstSpace-1u};
         const bool get=equal(method,"GET");
         const bool post=equal(method,"POST");
-        if(!get && !post) {
-            // Existing webserver would protect a generic unknown method/path;
-            // this future router must never reinterpret it as OTA.
-            result.plan=Port80Plan::LegacyAuthenticatedNotFound;
-            return result;
-        }
         if(route.n==0u || route.p[0]!='/')return result;
         for(size_t i=0;i<route.n;++i) {
             const char c=route.p[i];
@@ -105,6 +99,10 @@ public:
             else result.plan=Port80Plan::OtaReservedReject;
             // RESERVATION is NOT a live install route or permission.
             result.currentlyRegisteredInFirstBootBridge=false;
+            return result;
+        }
+        if(!get && !post) {
+            result.plan=Port80Plan::LegacyAuthenticatedNotFound;
             return result;
         }
         if(get && equal(route,"/"))result.plan=Port80Plan::LegacyDashboardGet;
