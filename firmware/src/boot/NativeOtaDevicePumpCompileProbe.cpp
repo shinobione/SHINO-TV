@@ -5,6 +5,7 @@
 // NO callable entry point, creates NO WiFiServer/port listener, is NOT included
 // by FirstBootBridge, and cannot receive or install a package.
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 #include <bearssl/bearssl_hash.h>
 #include "boot/NativeOtaNetworkPump.h"
@@ -13,6 +14,10 @@
 
 static_assert(SHINO_ENABLE_NATIVE_SIGNED_OTA == 0,
               "Native OTA is still a non-installing source research gate.");
+static_assert(ARDUINOJSON_VERSION_MAJOR == 7 &&
+              ARDUINOJSON_VERSION_MINOR == 4 &&
+              ARDUINOJSON_VERSION_REVISION == 3,
+              "Live ESP8266 JSON library drifted from verified host parity version 7.4.3.");
 static_assert(ShinoNativeOta::NativeOtaPort80Plan::kMaxFirstLineBytes == 128u,
               "Port-80 routing research line cap must stay fixed and disconnected.");
 
