@@ -74,7 +74,9 @@ jobs:
       - name: Compare actual ArduinoJson 7.4.3 with unchanged FslessMetrics.cpp on host
         run: |
           test -f firmware/.pio/libdeps/esp12e/ArduinoJson/src/ArduinoJson/version.hpp
-          grep -q '^#define ARDUINOJSON_VERSION "7.4.3"        run: |
+          python tools/verify_native_arduinojson_parity.py
+      - name: Verify current SHINO output, never publish
+        run: |
           test -s firmware/.pio/build/esp12e/firmware.bin
           cp firmware/.pio/build/esp12e/firmware.bin /tmp/shino-preflight-candidate.bin
       - name: Verify local private original/application/AP/Digest pairing; NO device operation
