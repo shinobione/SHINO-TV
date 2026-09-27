@@ -129,6 +129,9 @@ class SingleOwnerShadowSocketTests(unittest.TestCase):
                 self.exercise(wire,chunk=7)
         self.exercise(b"GET / HTTP/1.1\r\n\r\n",chunk=1)
 
+    def test_unknown_get_is_only_metadata_classified_not_dispatched(self):
+        self.exercise(request("GET","/not-an-api-route"),accepted=True,chunk=1)
+
     def test_incomplete_windows_post_and_extra_pipelined_bytes_are_terminal(self):
         body=b'{"ok":true,"gpu_available":true,"cpu_usage":22.5,"gpu_usage":34.5,"memory_used_gb":8,"memory_total_gb":16,"gpu_vram_mb":2048,"gpu_temp_c":56,"gpu_power":120}'
         h=("Content-Type: application/json\r\n"
