@@ -136,7 +136,8 @@ def write_private_kit(zip_path: Path, out_dir: Path, expected_source_sha: str, *
             # Exact esptool image-info is a FILE-ONLY command; no serial port,
             # baud, target address, upload/flash/erase or device connection.
             inspection = run([python, "-m", "esptool", "image-info", str(item)])
-            if "Detected image type: ESP8266" not in inspection or                "Checksum:" not in inspection or "(valid)" not in inspection:
+            if not all(token in inspection for token in (
+                    "Detected image type: ESP8266", "Checksum:", "(valid)")):
                 raise OwnerKitError("Independent ESP8266 image-info checksum not confirmed as valid")
         if report["status"] != "PRIVATE_OFFLINE_PACKET_CHECKED__OWNER_FLASH_NOT_AUTHORIZED":
             raise OwnerKitError("Safe review status missing")
