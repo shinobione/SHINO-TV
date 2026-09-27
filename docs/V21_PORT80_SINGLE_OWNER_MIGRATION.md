@@ -78,6 +78,10 @@ The unified synthetic-auth C++ fixture now links the **unchanged real** `firmwar
 
 The original active `FirstBootBridge.cpp` still serves these assets with `ESP8266WebServer::send_P`; that source, `FslessWebUI.cpp`, Windows companion and the installed `review-002` firmware are untouched. The no-FIN host ingress, synthetic MD5 realm and fixture cookie only preserve legacy-browser compatibility; privileged signed OTA remains separately gated behind SHA-256 and no route is registered. Build-time candidate image geometry and actual ESP8266 RAM/peak stack must be evaluated independently before any owner-approved hardware transition. `permission_to_flash=false`.
 
+## Disconnected ESP8266 compile-time object-size budget
+
+The **unchanged live** `FirstBootBridge.cpp` still uses ESP8266WebServer and its normal display path; no alternate listener, updater or migration is registered. The isolated, already compiled `NativeOtaDevicePumpCompileProbe.cpp` now makes the pinned Xtensa compiler check the bounded `NativeOtaSingleIngressShadow` and two-slot `NativeOtaLegacySessionReview` types. It refuses a future source drift above **3,072 bytes per ingress object** or **256 bytes per session-model object**; its underlying header/body capacities remain exactly **2,048/384 bytes**. These compile-time budgets prevent silently enlarging a prospective per-request object. They do **not** mean the ESP8266 has sufficient *free heap, peak stack, TCP buffers, response string space or full live-server RAM* at runtime, nor do they instantiate any object. The original firmware image-size and 4m3m flash-boundary CI checks continue separately. No unapproved hardware transition, `permission_to_flash=false`.
+
 ## Browser read-session and real Windows telemetry parity — host fixtures ONLY
 
 A separate, **disconnected** C++/Python source-regression pair now follows the actual `FirstBootBridge.cpp` and `FslessMetrics.cpp` behaviors rather than assuming that classifying the route is equivalent to serving it:
