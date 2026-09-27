@@ -55,7 +55,7 @@ def run(args: list[str], *, cwd: Path=ROOT, output: bool=True) -> str:
         # or command tokens are intentionally included in published output.
         raise OwnerKitError("Local prerequisite/build/check failed: " +
                             args[0] + " exited with " + str(completed.returncode) +
-                            ". Inspect LOCAL process logs; do not publish secrets.")
+                            ". Re-run the prerequisite/build manually in the private checkout; never share generated logs containing secrets.")
     return completed.stdout.strip() if output else ""
 
 def require_clean_frozen_checkout() -> str:
@@ -71,11 +71,11 @@ def require_clean_frozen_checkout() -> str:
     return sha
 
 def output_policy(zip_path: Path, out_dir: Path) -> tuple[Path, Path]:
+    if zip_path.is_symlink() or not zip_path.is_file():
+        raise OwnerKitError("OEM ZIP must be a regular local file, no symlink")
     original = zip_path.resolve(strict=True)
     root = ROOT.resolve(strict=True)
     out = out_dir.resolve(strict=False)
-    if original.is_symlink() or not original.is_file():
-        raise OwnerKitError("OEM ZIP must be a regular local file, no symlink")
     if original.stat().st_size > MAX_OEM_ZIP:
         raise OwnerKitError("Unexpected OEM ZIP size")
     if out == root or root in out.parents:
