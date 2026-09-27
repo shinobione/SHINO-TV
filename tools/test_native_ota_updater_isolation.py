@@ -69,7 +69,7 @@ class UpdaterSigningIsolationTests(unittest.TestCase):
                            "#define ARDUINO_SIGNING " + str(core_signing)]
             if native is not None:
                 definitions.append("#define SHINO_ENABLE_NATIVE_SIGNED_OTA " + str(native))
-            snippet = "\\n".join(definitions) + "\\n" + actual_guards + "\\nint main() { return 0; }\\n"
+            snippet = "\n".join(definitions) + "\n" + actual_guards + "\nint main() { return 0; }\n"
             return subprocess.run([compiler, "-std=c++17", "-x", "c++", "-fsyntax-only", "-"],
                                   input=snippet, capture_output=True, text=True, timeout=10,
                                   check=False)
