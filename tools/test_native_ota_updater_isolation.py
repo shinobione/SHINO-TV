@@ -85,6 +85,16 @@ class UpdaterSigningIsolationTests(unittest.TestCase):
                 self.assertNotEqual(result.returncode,0)
                 self.assertIn("error:",result.stderr.lower())
 
+    def test_both_ota_builds_pin_reviewed_core_version(self):
+        for path in ("firmware/platformio.ini", "recovery_loader/platformio.ini"):
+            with self.subTest(path=path):
+                ini = (ROOT / path).read_text(encoding="utf-8")
+                self.assertIn("platform = espressif8266@4.2.1", ini)
+                self.assertIn(
+                    "platformio/framework-arduinoespressif8266@3.30102.0", ini
+                )
+                self.assertNotIn("\\nplatform = espressif8266\\n", ini)
+
     def test_experimental_writer_never_signing_bypass_exception(self):
         src = OEM.read_text(encoding="utf-8")
         self.assertNotIn("installSignature(nullptr", src)
