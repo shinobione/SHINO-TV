@@ -26,6 +26,7 @@ class OwnerKitTests(unittest.TestCase):
         (self.root / "firmware/include").mkdir(parents=True)
         (self.root / "firmware/private").mkdir(parents=True)
         (self.root / "firmware/.pio/build/esp12e").mkdir(parents=True)
+        (self.root / "firmware/.pio/build/esp12e_heap_diagnostics").mkdir(parents=True)
         (self.root / "firmware/data").mkdir(parents=True)
         (self.root / "recovery").mkdir(parents=True)
         self.original = fake_image(494144)
@@ -40,6 +41,7 @@ class OwnerKitTests(unittest.TestCase):
         self.policy = self.root / "firmware/include/shino_private_policy.h"
         self.creds = self.root / "firmware/private/credentials.txt"
         self.app = self.root / "firmware/.pio/build/esp12e/firmware.bin"
+        self.app_heap = self.root / "firmware/.pio/build/esp12e_heap_diagnostics/firmware.bin"
         self.output = self.base / "only-private-local" / "kit-001"
         self.output.parent.mkdir()
         self.sha = "a" * 40
@@ -79,17 +81,20 @@ class OwnerKitTests(unittest.TestCase):
                    + self.ap.encode() + self.http.encode())
         self.app.write_bytes(fake_image(398848-len(markers)) + markers)
 
-    def make_candidate_only(self):
+    def make_candidate_only(self, *, heap=False):
         markers = (b"FIRST_BOOT_BRIDGE" + b"FSLESS_PC_TELEMETRY_RAM_ONLY"
                    + b"READ_ONLY_FS_MIGRATION_PLAN" + b"RAM_SAMPLE_ACCEPTED"
                    + b"Verified OEM application image"
                    + hashlib.md5(self.original,usedforsecurity=False).hexdigest().encode()
                    + self.ap.encode() + self.http.encode())
-        self.app.write_bytes(fake_image(398848-len(markers)) + markers)
+        if heap:
+            markers += b"OBSERVED_HEAP_V1" + b"lowest_observed_free_heap_bytes"
+        (self.app_heap if heap else self.app).write_bytes(
+            fake_image((402320 if heap else 398848)-len(markers)) + markers)
 
     def patch_paths(self):
         return patch.multiple(kit, ROOT=self.root, POLICY=self.policy,
-                              CREDENTIALS=self.creds, APP=self.app)
+                              CREDENTIALS=self.creds, APP=self.app, APP_HEAP=self.app_heap)
 
     def test_refuses_output_inside_repository_or_existing_and_old_credentials(self):
         with self.patch_paths():
@@ -144,6 +149,63 @@ class OwnerKitTests(unittest.TestCase):
             for cmd in calls:
                 self.assertFalse(any("/update" in str(t) or "--port" == str(t) or
                                      "write-flash" == str(t) for t in cmd))
+
+    def test_explicit_heap_private_kit_keeps_oem_return_and_proves_instrumentation(self):
+        calls=[]
+        def local(command, *, cwd=None, output=True):
+            calls.append(command)
+            if any(str(arg).endswith("generate_shino_device_policy.py") for arg in command):
+                self.make_build()
+                self.app.unlink()
+            if "platformio" in command:
+                self.assertEqual(command[-2:],["-e","esp12e_heap_diagnostics"])
+                self.make_candidate_only(heap=True)
+            if "image-info" in command:
+                return "Detected image type: ESP8266\\nChecksum: 0x2b (valid)"
+            return ""
+        with self.patch_paths(), patch.object(kit,"require_clean_frozen_checkout",return_value=self.sha), \
+             patch.object(kit,"run",side_effect=local):
+            result=kit.write_private_kit(self.oem_zip,self.output,self.sha,
+                                         heap_diagnostics=True)
+            self.assertEqual(result["build_profile"],"esp12e_heap_diagnostics")
+            self.assertTrue(result["read_only_heap_instrumentation_compiled"])
+            self.assertFalse(result["device_contacted"])
+            self.assertFalse(self.app_heap.exists())
+            self.assertFalse(self.policy.exists())
+            self.assertFalse(self.creds.exists())
+            manifest=json.loads((self.output/"REVIEW-ONLY-MANIFEST.json").read_text())
+            self.assertTrue(manifest["read_only_heap_instrumentation_compiled"])
+            self.assertFalse(manifest["owner_ready_to_flash"])
+            self.assertTrue(manifest["review"]["experimental_exact_oem_return_present"] if
+                            "experimental_exact_oem_return_present" in manifest["review"] else
+                            manifest["review"]["security"]["experimental_exact_oem_return_present"])
+            self.assertEqual(manifest["files"][kit.APP_NAME_HEAP]["bytes"],402320)
+            self.assertEqual(sum("image-info" in cmd for cmd in calls),2)
+            report=json.dumps(manifest)
+            for secret in (self.ap,self.http,self.token):
+                self.assertNotIn(secret,report)
+            self.assertNotIn("http://192.168.4.1",report)
+            self.assertFalse(any("upload" in " ".join(cmd).lower() or
+                                 "write-flash" in " ".join(cmd).lower()
+                                 for cmd in calls))
+
+    def test_heap_profile_rejects_missing_marker_and_cleans_private_build(self):
+        def local(command, *, cwd=None, output=True):
+            if any(str(arg).endswith("generate_shino_device_policy.py") for arg in command):
+                self.make_build()
+                self.app.unlink()
+            if "platformio" in command:
+                self.make_candidate_only(heap=False)
+                self.app_heap.write_bytes(self.app.read_bytes())
+            return ""
+        with self.patch_paths(), patch.object(kit,"require_clean_frozen_checkout",return_value=self.sha), \
+             patch.object(kit,"run",side_effect=local):
+            with self.assertRaisesRegex(kit.OwnerKitError,"instrumentation"):
+                kit.write_private_kit(self.oem_zip,self.output,self.sha,heap_diagnostics=True)
+            self.assertFalse(self.output.exists())
+            self.assertFalse(self.app_heap.exists())
+            self.assertFalse(self.policy.exists())
+            self.assertFalse(self.creds.exists())
 
     def test_failure_keeps_no_incomplete_private_kit_or_checkout_secret(self):
         def local(command, *, cwd=None, output=True):
