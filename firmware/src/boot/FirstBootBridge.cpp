@@ -203,6 +203,10 @@ void sendStatus() {
     doc["linker_declared_free_sketch_bytes_NOT_stock_OTA_capacity"] = ESP.getFreeSketchSpace();
     doc["available_heap_bytes"] = ESP.getFreeHeap();
     doc["factory_app_return_compiled"] = SHINO_ENABLE_FACTORY_RESTORE == 1;
+    // V2.1 phase A: diagnostics only. There is deliberately no SHINO updater
+    // registered and no way to turn this into an install by passing JSON.
+    doc["native_ota_manager"] = "READ_ONLY_DESIGN_GATE";
+    doc["native_ota_writer_compiled"] = false;
     doc["physical_flash_or_application_OTA_writes_performed_by_diagnostics"] = false;
     doc["physical_flash_installation_authorized"] = false;
     String result;
@@ -386,6 +390,27 @@ void run() {
     server.on("/api/v1/bridge/metrics", HTTP_POST, acceptMetrics);
     server.on("/api/v1/bridge/status", HTTP_GET, sendStatus);
     server.on("/api/v1/bridge/fs-plan", HTTP_GET, sendFsPlan);
+    // Native OTA phase A. This route is read-only. Browser cookie is for GET
+    // viewing only; it does NOT authorize firmware uploads or OEM restore.
+    server.on("/api/v1/bridge/ota/capabilities", HTTP_GET, []() {
+        if (!browserSessionValid() && !requireAuth()) return;
+        JsonDocument doc;
+        doc["mode"] = "OTA_MANAGER_READ_ONLY_PREFLIGHT";
+        doc["model"] = "SmallTV-Ultra";
+        doc["physical_flash_bytes_observed_at_runtime"] = ESP.getFlashChipRealSize();
+        doc["running_application_bytes"] = ESP.getSketchSize();
+        doc["reported_free_sketch_bytes_NOT_INSTALL_APPROVAL"] = ESP.getFreeSketchSpace();
+        doc["linked_application_ceiling"] = "0x100000";
+        doc["filesystem_write_or_migration_enabled"] = false;
+        doc["native_ota_writer_compiled"] = false;
+        doc["native_ota_upload_route_registered"] = false;
+        doc["signature_verification_implemented"] = false;
+        doc["physical_installation_authorized"] = false;
+        doc["manufacturer_application_return_separate"] = true;
+        String body;
+        serializeJson(doc, body);
+        respond(200, body);
+    });
     server.on("/api/v1/bridge/factory-return", HTTP_GET, []() {
         if (!requireAuth()) return;
         FactoryRollback::status(server);
