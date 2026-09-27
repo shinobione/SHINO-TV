@@ -31,6 +31,14 @@ int main() {
         CHECK(d.requiresIndependentPrivilegedPost==x.privileged);
         CHECK(d.currentlyRegisteredInFirstBootBridge==(d.plan!=Port80Plan::LegacyFactoryReturnPost));
     }
+    {
+        const auto line=request("POST","/api/v1/bridge/factory-return");
+        const auto factory=NativeOtaPort80Plan::inspect(line.data(),line.size(),true);
+        CHECK(factory.plan==Port80Plan::LegacyFactoryReturnPost);
+        CHECK(factory.currentlyRegisteredInFirstBootBridge &&
+              factory.requiresIndependentPrivilegedPost &&
+              !factory.mayUseBrowserReadCookie);
+    }
     for(const auto& method:{"GET","POST","PUT","HEAD","OPTIONS","PATCH","DELETE","post"}) {
         for(const auto& path:{
             "/api/v1/bridge/ota/arm","/api/v1/bridge/ota/upload",
