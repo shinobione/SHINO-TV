@@ -4,6 +4,10 @@
 
 SHINO // TV now contains a dedicated factory-return module that can be built **READ-ONLY by default**, or with experimental upload enabled only by a verified per-build device policy. Both the normal SHINO application and its boot-loop Rescue mode share the same exact-image logic. This is deliberately different from the temporary first-hop Wi-Fi loader, which is overwritten when SHINO is installed.
 
+## 27 September 2026: revised FS-less application layout
+
+The experimental exact-OEM app-only return module below still applies, but **current FS-less V2 source is now linked as 4m3m, not 4m2m**. Under the inferred manufacturer 4m3m-like map, its `U_FLASH` staging of the 494,144-byte official app is `0x087000…0x100000`, before the reported stock file region. This corrects the old 4m2m source model where OEM application return staging touched about 495,616 B of original stock-file sectors. Full original files/settings restoration and physical acceptance remain UNPROVEN; see [current decision packet](FIRST_INSTALL_DECISION_PACKET.md).
+
 ## Why we implemented this
 
 The owner has one SmallTV-Ultra V9.0.44, requests no soldering/no spare PCB and wants Wi-Fi-only installation. The exact official [historical Ultra-V9.0.44 update](https://github.com/GeekMagicClock/smalltv-ultra/blob/55d7877fcba8b1cb7a66a0830d35d5b374bc8540/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip) is available, but it is **application OTA**, not the full original flash. Keeping a verified original app image outside Git is essential. Embedding the proprietary OEM image in our custom image would consume flash and would not help if the program cannot boot.
