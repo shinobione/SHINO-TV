@@ -138,7 +138,12 @@ public:
         out.phase=phase_;
         out.refusal=refusal_;
         out.bodyBytes=bodyLength_;
-        out.requiresExistingLegacyAuthentication=true;
+        out.requiresExistingLegacyAuthentication=
+            classification_.plan!=Port80Plan::Invalid &&
+            classification_.plan!=Port80Plan::Incomplete &&
+            classification_.plan!=Port80Plan::OtaReservedArm &&
+            classification_.plan!=Port80Plan::OtaReservedUpload &&
+            classification_.plan!=Port80Plan::OtaReservedReject;
         out.browserGetCookieMayBeConsidered=classification_.mayUseBrowserReadCookie;
         return out;
     }
@@ -185,7 +190,10 @@ private:
             while(end+1u<headerLength_ &&
                   !(headers_[end]=='\r'&&headers_[end+1u]=='\n'))++end;
             if(end+1u>=headerLength_)return false;
-            if(end==at)return end+2u==headerLength_; // end of headers.
+            if(end==at) {
+                if(end+2u!=headerLength_)return false;
+                break; // validate Host and Content-Length BEFORE accepting.
+            }
             if(count==kMaxHeaderCount || end-at>768u)return false;
             size_t colon=at;
             while(colon<end && headers_[colon]!=':')++colon;
