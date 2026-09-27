@@ -111,6 +111,9 @@ class LoopbackOtaTcpReviewTests(unittest.TestCase):
             if proc.poll() is None:
                 proc.kill()
                 proc.communicate(timeout=5)
+            for pipe in (proc.stdout, proc.stderr):
+                if pipe is not None:
+                    pipe.close()
 
     def test_real_tcp_accepts_arbitrarily_fragmented_header_and_file(self):
         for chunk in (1,7,151,4096,65536):
