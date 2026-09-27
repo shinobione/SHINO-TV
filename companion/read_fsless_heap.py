@@ -5,8 +5,10 @@ EXISTING GET /api/v1/bridge/status endpoint and a private matching-build
 Digest credentials file. No POST, OTA routes, firmware/FS write, cookie,
 telemetry injection, local report file, automatic loop or background task.
 
-The existing status only reports available_heap_bytes at one instant. This
-is NOT a peak heap, fragmentation, concurrent socket or crash-proof monitor.
+The existing review-002 status reports a single current free-heap integer.
+A separately owner-approved opt-in candidate may also carry a bounded,
+validated OBSERVED_HEAP_V1 summary on the SAME already-authenticated GET.
+Both readings are observations, NOT proof of unobserved peak or concurrency.
 """
 from __future__ import annotations
 
@@ -41,7 +43,58 @@ def _unique_keys(pairs: list[tuple[str, object]]) -> dict:
     return values
 
 
-def validate_status(raw: bytes) -> dict[str, int]:
+def _validate_optional_observation(observation: object) -> dict[str, int | str]:
+    """Strictly decode only the optional finite read-only candidate schema."""
+    if not isinstance(observation, dict):
+        raise HeapReadError("Invalid observed heap object")
+    if (observation.get("schema") != "OBSERVED_HEAP_V1" or
+        type(observation.get("sampling_interval_ms")) is not int or
+        observation["sampling_interval_ms"] != 1000 or
+        type(observation.get("max_samples")) is not int or
+        observation["max_samples"] != 1024 or
+        type(observation.get("sample_count")) is not int):
+        raise HeapReadError("Unexpected observed heap schema or cadence")
+    count = observation["sample_count"]
+    state = observation.get("state")
+    expected = "NO_SAMPLES" if count == 0 else (
+        "SATURATED" if count == 1024 else "SAMPLING")
+    if not 0 <= count <= 1024 or state != expected:
+        raise HeapReadError("Unexpected observed heap sample count/state")
+    fields = (
+        "first_free_heap_bytes", "latest_free_heap_bytes",
+        "latest_largest_free_block_bytes", "latest_fragmentation_percent",
+        "lowest_observed_free_heap_bytes",
+        "lowest_observed_largest_free_block_bytes",
+        "highest_observed_fragmentation_percent",
+    )
+    allowed = {"schema", "sampling_interval_ms", "max_samples",
+               "sample_count", "state", *fields}
+    if set(observation) - allowed:
+        raise HeapReadError("Unexpected observed heap field")
+    if count == 0:
+        if any(field in observation for field in fields):
+            raise HeapReadError("No samples must not fabricate measurements")
+        return {"state": state, "sample_count": count}
+    if any(type(observation.get(field)) is not int for field in fields):
+        raise HeapReadError("Observed heap measurement is missing or not integer")
+    first, latest, latest_block, latest_frag, low, low_block, high_frag = (
+        observation[field] for field in fields)
+    if not (0 < first <= 262144 and 0 < latest <= 262144 and
+            0 < low <= min(first, latest) and
+            0 < latest_block <= latest and
+            0 < low_block <= min(latest_block, low) and
+            0 <= latest_frag <= high_frag <= 100):
+        raise HeapReadError("Observed heap summary is inconsistent")
+    if count == 1 and (first != latest or latest != low or
+                       latest_block != low_block or latest_frag != high_frag):
+        raise HeapReadError("Single observation cannot have divergent extrema")
+    return {"state": state, "sample_count": count,
+            "lowest_observed_free_heap_bytes": low,
+            "lowest_observed_largest_free_block_bytes": low_block,
+            "highest_observed_fragmentation_percent": high_frag}
+
+
+def validate_status(raw: bytes) -> dict[str, object]:
     if not raw or len(raw) > MAX_STATUS_BYTES:
         raise HeapReadError("Device status JSON missing or too large")
     try:
@@ -72,7 +125,12 @@ def validate_status(raw: bytes) -> dict[str, int]:
         raise HeapReadError("Invalid/missing live free-heap sample")
     if type(size) is not int or not 0 < size < 4194304:
         raise HeapReadError("Invalid/missing running image size")
-    return {"free_heap_bytes": heap, "running_application_bytes": size}
+    result: dict[str, object] = {
+        "free_heap_bytes": heap, "running_application_bytes": size}
+    if "heap_observation" in document:
+        result["heap_observation"] = _validate_optional_observation(
+            document["heap_observation"])
+    return result
 
 
 def make_status_opener(username: str, password: str):
@@ -83,7 +141,7 @@ def make_status_opener(username: str, password: str):
     return build_opener(ProxyHandler({}), NoRedirect(), HTTPDigestAuthHandler(passwords))
 
 
-def read_one_snapshot(opener) -> dict[str, int]:
+def read_one_snapshot(opener) -> dict[str, object]:
     endpoint = "http://" + PRIVATE_AP + STATUS_PATH
     request = Request(endpoint, method="GET", headers={
         "Accept": "application/json",
@@ -135,8 +193,19 @@ def main(argv: list[str] | None = None) -> int:
     print("READ ONLY | phase="+args.phase+
           " | free_heap_bytes="+str(measurement["free_heap_bytes"])+
           " | running_application_bytes="+str(measurement["running_application_bytes"]))
-    print("One instant only; not peak heap, fragmentation, concurrent AP safety "
-          "or authorization to flash.")
+    observation = measurement.get("heap_observation")
+    if observation is not None:
+        print("READ ONLY OBSERVED | state="+observation["state"]+
+              " | samples="+str(observation["sample_count"])+
+              (" | lowest_observed_free_heap_bytes="+
+               str(observation["lowest_observed_free_heap_bytes"])+
+               " | lowest_observed_largest_block_bytes="+
+               str(observation["lowest_observed_largest_free_block_bytes"])+
+               " | highest_observed_fragmentation_percent="+
+               str(observation["highest_observed_fragmentation_percent"])
+               if observation["sample_count"] else ""))
+    print("Current heap is one instant; optional periodic extrema are OBSERVED only, "
+          "not an in-flight peak, concurrency proof or authorization to flash.")
     return 0
 
 
