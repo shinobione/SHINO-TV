@@ -18,14 +18,8 @@ struct BearSslSha256 final {
 };
 } // namespace
 
-// Intentional dormant compile/link probe. It cannot authorize an OTA, does not
-// interact with network or Update, and is not called by firmware startup.
-// Production use requires SEPARATE review of authenticated HTTP adapter,
-// signed-package verifier, disconnection handling and last-mile commit.
-bool compiledReadOnlyExactOemProbe(const uint8_t* chunk, size_t chunkBytes) {
-    SignedOemPrecommitGate<BearSslSha256> gate;
-    if (!gate.begin(ProductionV9044Pin::kTransportBytes)) return false;
-    if (!gate.add(chunk, chunkBytes)) return false;
-    return gate.finish(ProductionV9044Pin::kTransportBytes);
-}
+// Explicit instantiation type-checks ALL of the real C++ guard's methods
+// against the on-device BearSSL adapter at ESP8266 compile time. There is no
+// callable route or helper that accepts an OTA package in this phase.
+template class SignedOemPrecommitGate<BearSslSha256, ProductionV9044Pin>;
 } // namespace ShinoOemPrecommit
