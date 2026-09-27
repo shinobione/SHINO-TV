@@ -69,7 +69,9 @@ class MessageBoundaryNoFinTests(unittest.TestCase):
             remainder=process.stdout.read()
             error=process.stderr.read()
             self.assertEqual(code,0,port_info+"\n"+remainder+"\n"+error)
-            self.assertIn(f"HTTP/1.1 {expected} ".encode(),answer)
+            choices=expected if isinstance(expected,tuple) else (expected,)
+            self.assertTrue(any(f"HTTP/1.1 {status} ".encode() in answer
+                                for status in choices),answer[:100])
             self.assertIn(b"Connection: close\r\n",answer)
             self.assertIn(b"X-Shino-Host-Fixture: no-auth-no-device-no-writer",answer)
             self.assertEqual(answer.count(b"HTTP/1.1 "),1)
@@ -98,7 +100,9 @@ class MessageBoundaryNoFinTests(unittest.TestCase):
         self.exchange(partial,403,half_close=True)
         self.exchange(get(extra="Host: 192.168.4.1\r\n"),403)
         self.exchange(get(extra="Transfer-Encoding: chunked\r\n"),403)
-        self.exchange(post(body)+b"EXTRA",403)
+        # Later bytes in a separate TCP recv can race a closing response.
+        # Either refusal or exactly one review-only response is permissible.
+        self.exchange(post(body)+b"EXTRA",(403,501))
 
     def test_reserved_ota_is_not_served_and_pipelining_never_dispatches(self):
         reserved=(b"POST /api/v1/bridge/ota/upload HTTP/1.1\r\n"
@@ -107,7 +111,7 @@ class MessageBoundaryNoFinTests(unittest.TestCase):
         self.assertIn(b"NO_WRITER",response)
         # A peer can queue more data, but this fixture sends one response then
         # closes. Exact result of later bytes in another recv is not claimed.
-        response,_=self.exchange(get()+get(),501 if False else 403)
+        response,_=self.exchange(get()+get(),(403,501))
         self.assertEqual(response.count(b"HTTP/1.1 "),1)
 
     def test_source_is_disconnected_and_no_firmware_body_is_buffered(self):
