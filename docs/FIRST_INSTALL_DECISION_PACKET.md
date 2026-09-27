@@ -64,6 +64,10 @@ py tools/owner_install_packet_gate.py --official-zip "PRIVATE_PATH_TO_ORIGINAL_Z
 
 Create the ignored \`research-local/\` folder beforehand. The checker only READS provided firmware/policy/secret files, compares them without publishing secret values, and creates a **new non-overwriting, sanitized report**. It fails if candidate/config/output is mismatched, the full factory OEM MD5 is absent from the compiled BIN, actual active AP/Digest secrets do not match the build, optional OEM writer was not compiled, chip header/size/map is wrong or the modeled direct/return stage touches old FS sectors. The script cannot independently establish OEM updater acceptance, a correct actual flash chip ID or an error-free physical OTA. It NEVER sends GET/POST or connects to the TV. No physical installation command is supplied here.
 
+## Windows private packet source-only implementation
+
+A follow-on [private Windows review kit guide](PRIVATE_WINDOWS_BUILD_KIT.md) documents the fail-closed local generator in tools/build_private_owner_packet.py and optional start-private-owner-build.cmd. This requires a FULL clean Git checkout frozen to one FULL reviewed source commit, an already locally obtained pinned official ZIP, a NEW private output directory OUTSIDE Git and explicit source SHA on the command line. It compiles one exact 4m3m FS-less experimental app-return V2, verifies source/OEM/credential/image checksum pairing, and stores only a local matched firmware/OEM app BIN/keys and sanitized never-flash manifest; no actual owner BIN or password is distributed in GitHub Actions. This private preparation is distinct from any future physical install authorization.
+
 ## 5. Owner review and stop conditions BEFORE any separate first-OTA go/no-go
 
 1. Confirm the device is STILL stock Ultra-V9.0.44 with another owner-operated GET-only report and confirm the current LAN IP. Do not infer current version from the previous 26 Sept sample if it changed.
