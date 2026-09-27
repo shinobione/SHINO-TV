@@ -67,6 +67,10 @@ int main(int argc, char** argv) {
         const bool expectPass = std::stoi(argv[3]) == 1;
         if (chunk == 0u || bytes.size() > UINT32_MAX) return 2;
 
+        Gate wrongLength;
+        if (wrongLength.begin(OemPin::kTransportBytes - 1u)) return 1;
+        if (wrongLength.phase() != Phase::Aborted) return 1;
+        if (wrongLength.begin(OemPin::kTransportBytes)) return 1; // no rearm
         Gate gate;
         bool accepted = gate.begin(static_cast<uint32_t>(OemPin::kTransportBytes));
         size_t at = 0u;
