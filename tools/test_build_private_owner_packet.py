@@ -117,6 +117,8 @@ class OwnerKitTests(unittest.TestCase):
                 self.app.unlink()
             if "platformio" in command:
                 self.make_candidate_only()
+            if "image-info" in command:
+                return "Detected image type: ESP8266\nChecksum: 0x2b (valid)"
             return ""
         with self.patch_paths(), patch.object(kit, "require_clean_frozen_checkout", return_value=self.sha), \
                 patch.object(kit, "run", side_effect=local):
@@ -126,6 +128,7 @@ class OwnerKitTests(unittest.TestCase):
             self.assertTrue(self.output.exists())
             self.assertFalse(self.creds.exists(), "No generated credentials left in working checkout")
             self.assertFalse(self.policy.exists(), "No generated policy left in working checkout")
+            self.assertFalse(self.app.exists(), "No duplicate application BIN left inside working checkout")
             manifest=json.loads((self.output/"REVIEW-ONLY-MANIFEST.json").read_text())
             self.assertFalse(manifest["owner_ready_to_flash"])
             self.assertFalse(manifest["review"]["permission_to_flash"])
