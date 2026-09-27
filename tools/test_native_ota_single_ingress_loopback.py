@@ -92,7 +92,7 @@ class SingleOwnerShadowSocketTests(unittest.TestCase):
                     "Cookie: SHINO_READ_SESSION=untrusted\r\n"),accepted=True,chunk=1)
 
     def test_small_windows_metrics_post_framed_without_dispatching_telemetry(self):
-        body=b'{"cpu":22.5,"gpu":34.5,"memoryGb":8,"memoryTotalGb":16,"gpuTempC":56}'
+        body=b'{"ok":true,"gpu_available":true,"cpu_usage":22.5,"gpu_usage":34.5,"memory_used_gb":8,"memory_total_gb":16,"gpu_vram_mb":2048,"gpu_temp_c":56,"gpu_power":120}'
         wire=request("POST","/api/v1/bridge/metrics",
                      "Content-Type: application/json\r\n"
                      f"Content-Length: {len(body)}\r\n",body)
@@ -130,7 +130,7 @@ class SingleOwnerShadowSocketTests(unittest.TestCase):
         self.exercise(b"GET / HTTP/1.1\r\n\r\n",chunk=1)
 
     def test_incomplete_windows_post_and_extra_pipelined_bytes_are_terminal(self):
-        body=b'{"cpu":22.5,"gpu":34.5,"memoryGb":8,"memoryTotalGb":16,"gpuTempC":56}'
+        body=b'{"ok":true,"gpu_available":true,"cpu_usage":22.5,"gpu_usage":34.5,"memory_used_gb":8,"memory_total_gb":16,"gpu_vram_mb":2048,"gpu_temp_c":56,"gpu_power":120}'
         h=("Content-Type: application/json\r\n"
            f"Content-Length: {len(body)}\r\n")
         self.exercise(request("POST","/api/v1/bridge/metrics",h,body[:-1]))
