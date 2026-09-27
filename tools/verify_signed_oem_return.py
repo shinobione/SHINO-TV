@@ -31,6 +31,9 @@ from wifi_flash_preflight import (
 )
 
 OEM_BYTES = 494144
+# Independently frozen manufacturer V9.0.44 reference; no CLI override.
+PINNED_OEM_SHA256 = "a6421f5bfee7860d97bed26620c346b8008f503e513702d4bfdf6e01010a7718"
+PINNED_OEM_ZIP_SHA256 = "cfbef50754ec552f9791878931c5f3643734de15f3c81cebdecf7ce05b28230f"
 SIGNATURE_TRAILER_BYTES = SIGNATURE_BYTES + 4
 SIGNED_OEM_BYTES = OEM_BYTES + SIGNATURE_TRAILER_BYTES
 OTA_END = 0x100000
@@ -73,8 +76,10 @@ def assess_signed_oem(
     except (FactoryOtaError, OSError, RuntimeError, ValueError, KeyError,
             zipfile.BadZipFile) as exc:
         raise SignedOemReturnError("Manufacturer original does not match independently pinned ZIP") from exc
-    if len(original) != OEM_BYTES:
-        raise SignedOemReturnError("Manufacturer original application size changed")
+    if (len(original) != OEM_BYTES or
+        original_metadata["firmware_sha256"] != PINNED_OEM_SHA256 or
+        original_metadata["zip_sha256"] != PINNED_OEM_ZIP_SHA256):
+        raise SignedOemReturnError("Manufacturer input is not the immutable pinned V9.0.44 reference")
 
     data = signed.read_bytes()
     if len(data) != SIGNED_OEM_BYTES:
