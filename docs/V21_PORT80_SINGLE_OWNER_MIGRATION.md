@@ -1,0 +1,48 @@
+# SHINO // TV V2.1 — Single-owner port-80 migration contract (DESIGN ONLY)
+
+**State:** independent, offline-only PR #20. No port-80 switch, no device connection, no new upload route, no Updater or filesystem write. The owner's installed V2 Hotfix `review-002` remains the known working application. Its browser GET cookie is never POST/OTA authority.
+
+## Existing pinned firmware and why a naive mux cannot work
+
+`FirstBootBridge.cpp` currently owns **one `ESP8266WebServer server(80)`** and calls `server.handleClient()` from its normal loop. The library's pinned ESP8266 Arduino Core **3.1.2** `handleClient()` independently calls the private `_server.accept()`, then its `_parseRequest(_currentClient)` consumes the request before invoking a normal handler. A second `WiFiServer(80)` would contend for the same port. Reading the request line on a different server and passing the partly consumed connection to the existing unmodified `ESP8266WebServer` is **not a reviewed or supported handoff**; those consumed bytes would not be available to its parser. Ordinary `server.on(..., HTTP_POST)` is also unsuitable for a firmware body because the core's standard non-multipart POST parser buffers the body in a `String` before dispatch and can overwrite duplicate Host/Content-Length fields.
+
+Sources reviewed against exact core 3.1.2:
+- [ESP8266WebServer-impl.h — handleClient](https://github.com/esp8266/Arduino/blob/3.1.2/libraries/ESP8266WebServer/src/ESP8266WebServer-impl.h).
+- [Parsing-impl.h — HTTP request/body parsing](https://github.com/esp8266/Arduino/blob/3.1.2/libraries/ESP8266WebServer/src/Parsing-impl.h).
+- The actual owner's [FirstBootBridge.cpp](../firmware/src/boot/FirstBootBridge.cpp).
+
+A separate port or domain is **not** an implicit workaround: current UI/CSP and strict private-AP Host/Origin are tied to `http://192.168.4.1`; an alternate port changes browser origin, Digest challenge behavior and CORS/CSRF assumptions. We have **not** enabled that option.
+
+## Source-only routing classifier
+
+`firmware/include/boot/NativeOtaPort80Plan.h` classifies **at most 128 bytes of a complete strict CRLF-terminated request line**. It is a pure routing *proposal*; it consumes no live socket bytes, parses no headers or body, and never invokes a handler. `tools/native_ota_port80_plan_probe.cpp` compiles/executes the classifier; `tools/test_native_ota_port80_plan.py` independently extracts the exact live route set from FirstBootBridge and fails CI if that set changes without an audit.
+
+The matrix is frozen to the existing FirstBootBridge routes:
+
+| Request | Current route/authorization rule | Planned classification |
+| --- | --- | --- |
+| `GET /` | Digest or valid short-lived **GET-only** browser session; issues session after Digest | LegacyDashboardGet |
+| `GET /ui.js` | Digest or valid browser-read session | LegacyJavascriptGet |
+| `GET /api/v1/bridge/metrics` | Valid browser-read session; no repetitive background Digest prompt | LegacyMetricsGet |
+| `POST /api/v1/bridge/metrics` | Digest, bounded 16–384-byte JSON; updates four RAM-only telemetry values | LegacyMetricsPost |
+| `GET /api/v1/bridge/status` | Digest | LegacyStatusGet |
+| `GET /api/v1/bridge/fs-plan` | Digest | LegacyFsPlanGet |
+| `GET /api/v1/bridge/ota/capabilities` | Digest or GET-read session; explicitly no writer/upload | LegacyCapabilitiesGet |
+| `GET /api/v1/bridge/factory-return` | Digest; status only | LegacyFactoryReturnGet |
+| `POST /api/v1/bridge/factory-return` | **Only compiled when** `SHINO_ENABLE_FACTORY_RESTORE=1`; separate pinned OEM policy, Digest and independent per-operation approval | LegacyFactoryReturnPost |
+| Unknown route | Existing Digest-authenticated 404 | LegacyAuthenticatedNotFound |
+
+The entire `/api/v1/bridge/ota/` namespace **except existing read-only capabilities GET** is reserved before any future buffered legacy parser. A POST to `/arm` or `/upload` yields **OtaReservedArm/OtaReservedUpload** *as a proposed classification only*, NEVER as a registered handler, and any other method/path yields OtaReservedReject. A read cookie cannot authorize these classifications. Strict route matching rejects ambiguous encoded/query/fragment targets; existing legacy-query behavior outside the exact listed routes remains unverified and is an explicit future parity gate.
+
+## Before replacing the running single-owner server
+
+A separately reviewed new single-owner port-80 ingress must meet ALL of the following, without an unreviewed fork or a blind handoff to the current parser:
+
+1. Own precisely one port-80 listener. Preserve the original request bytes after tentative request-line classification and parse them **once** under one consistent bounded framing policy; if legacy handling still depends on `ESP8266WebServer`, prove a supported full-byte handoff or implement/review equivalent legacy handlers from scratch. Do not claim this classifier does either.
+2. Preserve every exact route in the table, the read-session scope, Chrome Digest-prompt fix, Windows POST sample path, same four LCD cards/redraw timing and `server.onNotFound` authorization. Preserve factory-return compile profile and its separately approved owner workflow.
+3. Give OTA arm/upload a **separate raw HTTP header and streaming pipeline** before any buffered legacy body parse. Reject duplicate Host/Content-Length/Authorization, transfer encoding, ambiguous Origin, invalid MIME and over-size headers. Never let arbitrary `GET` or `HEAD` fall through to an upload handler.
+4. Preserve the exact private-AP interface/peer identity from the accepted socket, hardware-random one-shot nonce and manual consent, dedicated true SHA-256 Digest binding method and route, private owner HA1 and RSA public-key continuity. No long-lived POST cookie authorization.
+5. Keep the new OTA review sink **nonwriting** until port-80, browser and live-device RAM/time regression are passed in a separate, owner-reviewed transition. No `Update.begin/write/end`, no `Update.end(true)`, no FS/EEPROM migrations, no automatic restart, no new OEM unsigned exception.
+6. Complete separate CI and supervised **single-device, per-operation owner authorization** before ever installing a new firmware. Compiling this routing plan is not that authorization. A boot failure cannot be assumed recoverable through a web server.
+
+**Current result:** host classification/route-parity tests only. The native WiFiClient pump from the previous increment remains disconnected from FirstBootBridge and bound to a reject-all compile fixture. Installed hardware is unchanged; PR #20 remains Draft and **physical_installation_authorized=false**.
