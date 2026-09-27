@@ -44,7 +44,8 @@ public:
     static constexpr size_t kMaxFirstLineBytes = 128u;
     // Feed at most the complete request line. Do not consume a body or other
     // headers. Caller must retain any consumed preface for its own parser.
-    static Port80Classification inspect(const char* raw,size_t length) {
+    static Port80Classification inspect(const char* raw,size_t length,
+                                        bool factoryRestoreCompiled=false) {
         Port80Classification result{};
         if (!raw || length==0u || length>kMaxFirstLineBytes) return result;
         bool hasLineEnd=false;
@@ -118,7 +119,7 @@ public:
         else result.plan=Port80Plan::LegacyAuthenticatedNotFound;
         result.currentlyRegisteredInFirstBootBridge=
             result.plan!=Port80Plan::LegacyAuthenticatedNotFound &&
-            result.plan!=Port80Plan::LegacyFactoryReturnPost;
+            (result.plan!=Port80Plan::LegacyFactoryReturnPost || factoryRestoreCompiled);
         result.requiresIndependentPrivilegedPost=
             result.plan==Port80Plan::LegacyMetricsPost ||
             result.plan==Port80Plan::LegacyFactoryReturnPost;
