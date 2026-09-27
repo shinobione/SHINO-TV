@@ -57,12 +57,6 @@ bool verify(Gate& g,const std::string& request,
             uint32_t now=101u) {
     return g.verify(peer,kind,request.data(),request.size(),USER,ha1.c_str(),now);
 }
-Gate prepared(uint32_t now=100u) {
-    Gate g;
-    if(!g.challenge(PEER,RawOtaRequestKind::SignedTransport,NONCE,OPAQUE,now))
-        throw 1;
-    return g;
-}
 // Non-copyable gate: construct each scope locally, no reuse/rearm.
 int reject(const std::string& request, const std::string& ha1=ownerHa1(),
            uint32_t peer=PEER,
@@ -121,7 +115,7 @@ int main() {
         v=auth()+",";CHECK(!reject(v));
         v=auth();v.replace(0,7,"Basic  ");CHECK(!reject(v));
         v=auth();v+="\r\nX-Injected: true";CHECK(!reject(v));
-        v=auth();v.insert(v.find("cnonce=\"")+"cnonce=\""_s.size(), "\\"); // remove below if unavailable
+        v=auth();v.insert(v.find("cnonce=\"")+8u, "\\");CHECK(!reject(v));
     }
     {
         Gate g;CHECK(g.challenge(PEER,RawOtaRequestKind::SignedTransport,NONCE,OPAQUE,100u));
