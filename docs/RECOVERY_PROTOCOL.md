@@ -1,5 +1,7 @@
 # SHINO // TV — Owner-unit full-flash backup gate
 
+> **ARCHIVAL / BREAK-GLASS ONLY (owner instruction 2026-09-27):** The owner's normal project workflow is **Wi-Fi only**, because USB-C is power-only. Do not suggest PCB access, soldering, test pads, USB-UART, pogo pins, hardware purchases or readback as a routine SHINO update precondition. This historical serial recovery plan may be revisited **only after an actual brick/nonbooting event and a fresh explicit owner request**. See `docs/V21_OWNER_INSTALLATION_DECISION.md`. This section does not authorize any physical action.
+
 **Status:** preparation only. No physical access, board identification, ROM entry, backup, or restore has occurred. **Do not perform these steps until the actual PCB's serial/power/pad wiring has been identified from photos and reviewed.** The target is the owner's current **SmallTV-Ultra / Ultra-V9.0.44**, not a generic ESP8266 devboard.
 
 ## 0. Hardware evidence needed (no disassembly instructions yet)
