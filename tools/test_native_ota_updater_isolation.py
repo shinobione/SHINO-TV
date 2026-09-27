@@ -7,6 +7,8 @@ This is SOURCE safety review, NOT a physical install/recovery test.
 """
 from pathlib import Path
 import re
+import shutil
+import subprocess
 import tempfile
 import unittest
 
@@ -52,6 +54,36 @@ class UpdaterSigningIsolationTests(unittest.TestCase):
                               "installSignature(", "U_FS", "U_FLASH",
                               "ESP8266WebServer", "#include <Updater"):
                 self.assertNotIn(forbidden, source)
+
+    def test_actual_oem_preprocessor_guards_reject_unsafe_signing_matrix(self):
+        """Execute the source's real #error block through a host C++ preprocessor."""
+        compiler = shutil.which("g++")
+        self.assertIsNotNone(compiler, "A C++ preprocessor is required by CI")
+        source = OEM.read_text(encoding="utf-8")
+        start = source.index("#ifndef SHINO_ENABLE_NATIVE_SIGNED_OTA")
+        end = source.index("#ifndef SHINO_FACTORY_BYTES", start)
+        actual_guards = source[start:end]
+
+        def compile_guards(native: int | None, factory: int, core_signing: int):
+            definitions = ["#define SHINO_ENABLE_FACTORY_RESTORE " + str(factory),
+                           "#define ARDUINO_SIGNING " + str(core_signing)]
+            if native is not None:
+                definitions.append("#define SHINO_ENABLE_NATIVE_SIGNED_OTA " + str(native))
+            snippet = "\\n".join(definitions) + "\\n" + actual_guards + "\\nint main() { return 0; }\\n"
+            return subprocess.run([compiler, "-std=c++17", "-x", "c++", "-fsyntax-only", "-"],
+                                  input=snippet, capture_output=True, text=True, timeout=10,
+                                  check=False)
+
+        for native, factory, core_signing in ((0,0,0), (0,1,0), (0,0,1)):
+            with self.subTest(native=native, factory=factory, core_signing=core_signing):
+                result=compile_guards(native,factory,core_signing)
+                self.assertEqual(result.returncode,0,result.stderr)
+        for native, factory, core_signing in ((None,0,0), (1,0,0), (1,1,0),
+                                               (1,0,1), (0,1,1)):
+            with self.subTest(native=native, factory=factory, core_signing=core_signing):
+                result=compile_guards(native,factory,core_signing)
+                self.assertNotEqual(result.returncode,0)
+                self.assertIn("error:",result.stderr.lower())
 
     def test_experimental_writer_never_signing_bypass_exception(self):
         src = OEM.read_text(encoding="utf-8")
