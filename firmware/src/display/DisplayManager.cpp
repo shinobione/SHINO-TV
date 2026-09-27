@@ -374,7 +374,9 @@ static void lcdEnsureInit(uint8_t rotationOverride) {
 
     lcdBacklightOn();
 
-    uint8_t rotation = configManager.getLCDRotationSafe();
+    // Do not read persisted/legacy rotation for the FS-less owner first boot.
+    // Arduino_ST7789 rotation 4 sets MADCTL_MX (horizontal mirror), 0 does not.
+    uint8_t rotation = rotationOverride <= 7 ? rotationOverride : configManager.getLCDRotationSafe();
 
     // SPI mode 3 is required. This toggles the pin from LOW to HIGH after reset, which my guess
     // is after reset "initializes" the SPI interface of the display, as CS is tied to GND?
