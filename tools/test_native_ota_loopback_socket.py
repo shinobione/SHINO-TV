@@ -63,11 +63,14 @@ class LoopbackOtaTcpReviewTests(unittest.TestCase):
     def tearDownClass(cls):
         cls.temp.cleanup()
 
-    def exercise(self,header_bytes=None,payload=None,chunk=4096,expected_ok=True):
-        hdr=header(len(self.payload)) if header_bytes is None else header_bytes
-        body=self.payload if payload is None else payload
+    def exercise(self,header_bytes=None,payload=None,chunk=4096,
+                 expected_ok=True,baseline=None):
+        reference=self.payload if baseline is None else baseline
+        selected=hashlib.sha256(reference).hexdigest()
+        hdr=header(len(reference)) if header_bytes is None else header_bytes
+        body=reference if payload is None else payload
         proc=subprocess.Popen(
-            [str(self.exe),self.selected,str(len(self.payload))],
+            [str(self.exe),selected,str(len(reference))],
             stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
         try:
             portline=proc.stdout.readline().strip()
@@ -102,7 +105,7 @@ class LoopbackOtaTcpReviewTests(unittest.TestCase):
                 self.assertEqual(rc,0,portline+"\n"+out+"\n"+err)
                 self.assertIn(b"200 OK",reply)
                 self.assertIn(b"OFFLINE_REVIEW_ONLY_NO_FLASH_OK",reply)
-                self.assertIn("RESULT OFFLINE_REVIEW_ONLY RAM_BYTES 64260",out)
+                self.assertIn("RESULT OFFLINE_REVIEW_ONLY RAM_BYTES "+str(len(reference)),out)
             else:
                 self.assertEqual(rc,1,portline+"\n"+out+"\n"+err)
                 self.assertIn("RESULT REJECTED RAM_BYTES 0 NO_DEVICE_NO_FLASH",out)
@@ -122,6 +125,11 @@ class LoopbackOtaTcpReviewTests(unittest.TestCase):
 
     def test_real_tcp_accepts_header_and_payload_in_one_transport_send(self):
         self.exercise(chunk=131072)
+
+    def test_real_tcp_accepts_full_oem_sized_synthetic_transport(self):
+        # 494404 transport bytes with no actual manufacturer application.
+        reference=bytes((i*53+i//11+3)&255 for i in range(494404))
+        self.exercise(baseline=reference,chunk=4096)
 
     def test_real_tcp_blocks_corrupt_payload_against_owner_selected_full_sha256(self):
         mutated=bytearray(self.payload)
