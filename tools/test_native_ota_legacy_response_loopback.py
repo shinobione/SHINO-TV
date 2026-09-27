@@ -60,14 +60,14 @@ class LegacyResponseHttpLoopbackFixtureTests(unittest.TestCase):
                         sock.sendall(wire[at:at+chunk])
                     sock.shutdown(socket.SHUT_WR)
                 except (BrokenPipeError,ConnectionResetError,OSError):
-                    if expected!=403:raise
+                    if expected not in (403,413):raise
                 try:
                     while True:
                         part=sock.recv(2048)
                         if not part:break
                         response+=part
                 except (BrokenPipeError,ConnectionResetError):
-                    if expected!=403:raise
+                    if expected not in (403,413):raise
             rc=proc.wait(timeout=12)
             output=proc.stdout.read()
             error=proc.stderr.read()
@@ -173,6 +173,30 @@ class LegacyResponseHttpLoopbackFixtureTests(unittest.TestCase):
         self.assertEqual(json.loads(b)["error"],"Invalid JSON telemetry")
         # Only the two recognized literal host fixture JSON bodies are decoded
         # into model outcomes; this is NOT an ArduinoJson implementation.
+
+    def test_unknown_non_ota_route_requires_fixture_digest_before_404(self):
+        h,b=self.run_case("anonymous",request("GET","/not-an-api-route"),401)
+        self.assertIn(b"X-Shino-Fixture-Digest-Challenge:",h)
+        self.assertNotIn(b"Set-Cookie:",h)
+        h,b=self.run_case("digest_fixture",request("GET","/not-an-api-route"),404)
+        self.assertEqual(json.loads(b),{
+            "error":"No arbitrary update, erase or filesystem route exists"})
+        self.assertNotIn(b"Set-Cookie:",h)
+
+    def test_declared_oversized_windows_sample_is_never_received_before_post_auth_413(self):
+        # Only bounded Content-Length metadata is parsed. No large firmware
+        # or metrics body is sent/staged in this host fixture.
+        for declared in (15,385,494404):
+            wire=(b"POST /api/v1/bridge/metrics HTTP/1.1\r\n"
+                  b"Host: 192.168.4.1\r\nContent-Type: application/json\r\n"
+                  +f"Content-Length: {declared}\r\n\r\n".encode("ascii"))
+            with self.subTest(declared=declared):
+                h,b=self.run_case("anonymous",wire,401,chunk=1)
+                self.assertIn(b"X-Shino-Fixture-Digest-Challenge:",h)
+                h,b=self.run_case("digest_fixture",wire,413,chunk=1)
+                self.assertEqual(json.loads(b),{
+                    "error":"Invalid bounded telemetry payload length"})
+                self.assertNotIn(b"Set-Cookie:",h)
 
     def test_reserved_ota_namespace_remains_403_even_in_synthetic_digest_mode(self):
         for method,path in (
