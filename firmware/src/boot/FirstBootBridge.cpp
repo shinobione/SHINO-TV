@@ -17,6 +17,7 @@
 #include "boot/DashboardV2.h"
 #include <cstdio>
 #include <cstring>
+#include <array>
 #include "recovery/FactoryRollback.h"
 #include "shino_private_policy.h"
 
@@ -56,6 +57,84 @@ bool telemetryNeedsRedraw = true;
 bool stalePreviously = true;
 uint32_t lastDrawMs = 0;
 
+// A small, short-lived, GET-only browser session prevents background polling
+// from repeatedly challenging the shared ESP8266WebServer Digest nonce.
+// Never authenticates POST telemetry, OEM return, diagnostics or write routes.
+// Tokens live in volatile RAM, bind to the private AP peer IP and expire.
+constexpr uint32_t BROWSER_SESSION_LIFETIME_MS = 2UL * 60UL * 60UL * 1000UL;
+struct BrowserSession {
+    String token;
+    IPAddress peer;
+    uint32_t issuedAtMs = 0;
+};
+std::array<BrowserSession, 2> browserSessions;
+
+String browserCookieToken() {
+    const String raw = server.header("Cookie");
+    if (raw.length() > 256) return String();
+    String found;
+    bool seen = false;
+    int start = 0;
+    while (start < static_cast<int>(raw.length())) {
+        int end = raw.indexOf(';', start);
+        if (end < 0) end = raw.length();
+        String item = raw.substring(start, end);
+        item.trim();
+        const int separator = item.indexOf('=');
+        if (separator > 0 && item.substring(0, separator) == "SHINO_READ_SESSION") {
+            if (seen) return String(); // reject duplicate cookie names
+            seen = true;
+            found = item.substring(separator + 1);
+        }
+        start = end + 1;
+    }
+    return found.length() == 32 ? found : String();
+}
+
+bool browserSessionValid() {
+    const String token = browserCookieToken();
+    if (token.length() != 32) return false;
+    const IPAddress peer = server.client().remoteIP();
+    const uint32_t now = millis();
+    for (const BrowserSession& session : browserSessions) {
+        if (session.token.length() != 32 || session.peer != peer ||
+            static_cast<uint32_t>(now - session.issuedAtMs) >= BROWSER_SESSION_LIFETIME_MS) continue;
+        // Compare all 32 hex bytes without an early mismatch return.
+        uint8_t difference = 0;
+        for (size_t i = 0; i < 32; ++i) difference |= static_cast<uint8_t>(token[i] ^ session.token[i]);
+        if (difference == 0) return true;
+    }
+    return false;
+}
+
+void issueBrowserReadSession() {
+    // ESP8266 hardware RNG with the private WPA2 AP already running.
+    uint8_t randomBytes[16] = {};
+    ESP.random(randomBytes, sizeof(randomBytes));
+    static constexpr char HEX_DIGITS[] = "0123456789abcdef";
+    char token[33] = {};
+    for (size_t i = 0; i < sizeof(randomBytes); ++i) {
+        token[i * 2] = HEX_DIGITS[randomBytes[i] >> 4];
+        token[i * 2 + 1] = HEX_DIGITS[randomBytes[i] & 0x0f];
+    }
+    const uint32_t now = millis();
+    size_t slot = 0;
+    uint32_t oldest = 0;
+    for (size_t i = 0; i < browserSessions.size(); ++i) {
+        const uint32_t age = static_cast<uint32_t>(now - browserSessions[i].issuedAtMs);
+        if (browserSessions[i].token.length() == 0 || age >= BROWSER_SESSION_LIFETIME_MS) {
+            slot = i;
+            break;
+        }
+        if (age >= oldest) { oldest = age; slot = i; }
+    }
+    browserSessions[slot].token = token;
+    browserSessions[slot].peer = server.client().remoteIP();
+    browserSessions[slot].issuedAtMs = now;
+    server.sendHeader(F("Set-Cookie"), String(F("SHINO_READ_SESSION=")) + token +
+        F("; Path=/; Max-Age=7200; HttpOnly; SameSite=Strict"));
+}
+
 bool requireAuth() {
     if (server.authenticate(SHINO_RESCUE_HTTP_USER, SHINO_RESCUE_HTTP_PASSWORD)) return true;
     server.requestAuthentication(DIGEST_AUTH, "SHINO-FirstBoot");
@@ -66,6 +145,15 @@ void respond(int code, const String& data) {
     server.sendHeader(F("X-Content-Type-Options"), F("nosniff"));
     server.send(code, "application/json", data);
 }
+bool requireBrowserMetricsRead() {
+    if (browserSessionValid()) return true;
+    // No new Digest challenge on a background fetch: it would rotate the
+    // shared nonce and Chrome can reopen a password prompt every two seconds.
+    // Only the Digest-authenticated GET / can create a new browser session.
+    respond(403, F("{\"error\":\"Browser session expired; reopen / and authenticate\"}"));
+    return false;
+}
+
 void sendFsPlan() {
     if (!requireAuth()) return;
     JsonDocument doc;
@@ -122,7 +210,7 @@ void sendStatus() {
     respond(200, result);
 }
 void sendMetrics() {
-    if (!requireAuth()) return;
+    if (!requireBrowserMetricsRead()) return;
     JsonDocument doc;
     FslessMetrics::describe(doc);
     String body;
@@ -268,22 +356,28 @@ void run() {
         // Never silently start an open AP or enter a storage-writing fallback.
         WiFi.mode(WIFI_OFF);
         Logger::error("FirstBoot private AP failed; no fallback and no storage writes", "FirstBoot");
-        DisplayManager::begin();
+        DisplayManager::begin(0); // Unmirrored ST7789; inherited default 4 activates MADCTL_MX.
         DisplayManager::clearScreen();
         DisplayManager::drawTextWrapped(8, 14, F("FIRST BOOT"), 2, LCD_RED, LCD_BLACK, false);
         DisplayManager::drawTextWrapped(8, 65, F("PRIVATE AP FAILED"), 1, LCD_WHITE, LCD_BLACK, false);
         DisplayManager::drawTextWrapped(8, 110, F("NO STORAGE WRITE"), 1, LCD_WHITE, LCD_BLACK, false);
         return;
     }
+    // Authorization is always required to obtain a cookie. Only GET of the
+    // dashboard assets and metrics may subsequently use it; POST stays Digest.
+    server.collectHeaders("Cookie");
     server.on("/", HTTP_GET, []() {
-        if (!requireAuth()) return;
+        if (!browserSessionValid()) {
+            if (!requireAuth()) return;
+            issueBrowserReadSession();
+        }
         server.sendHeader(F("Cache-Control"), F("no-store"));
         server.sendHeader(F("Content-Security-Policy"),
                           F("default-src 'none'; style-src 'unsafe-inline'; script-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'"));
         server.send_P(200, PSTR("text/html; charset=utf-8"), FslessWebUI::PAGE);
     });
     server.on("/ui.js", HTTP_GET, []() {
-        if (!requireAuth()) return;
+        if (!browserSessionValid() && !requireAuth()) return;
         server.sendHeader(F("Cache-Control"), F("no-store"));
         server.sendHeader(F("X-Content-Type-Options"), F("nosniff"));
         server.send_P(200, PSTR("application/javascript; charset=utf-8"), FslessWebUI::SCRIPT);
@@ -315,7 +409,7 @@ void run() {
 
     // LCD dashboard and browser assets are compiled into program flash. Only
     // validated numeric PC samples are stored in volatile RAM.
-    DisplayManager::begin();
+    DisplayManager::begin(0); // Runtime-only, no config or filesystem writes.
     paintNativeDashboard();
     Logger::info("FirstBoot protected AP running; no filesystem or EEPROM initialization", "FirstBoot");
 }
