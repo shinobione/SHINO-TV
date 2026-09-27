@@ -141,3 +141,29 @@ test('temperature uses 30-90 visual scale and long labels never disappear', () =
   m.render({...normal,gpu_temp_c:30});
   assert.equal(node('tempFill').style.width,'0px');
 });
+
+test('expired browser session stops future background fetches without another login storm', async () => {
+  let calls = 0;
+  const nodes = new Map();
+  const node = id => {
+    if (!nodes.has(id)) nodes.set(id, {
+      textContent: '', style: {}, setAttribute() {}, removeAttribute() {},
+    });
+    return nodes.get(id);
+  };
+  const script = scriptMatch[1].replace(
+    'poll();setInterval(poll,2000);',
+    'globalThis.__poll = poll; globalThis.__isDenied = () => pollingDenied;'
+  );
+  assert.notEqual(script, scriptMatch[1]);
+  const context = {
+    document: {getElementById: node},
+    fetch: async () => { calls++; return {status: 403, ok: false}; },
+  };
+  vm.runInNewContext(script, context, {timeout: 200});
+  await context.__poll();
+  assert.equal(context.__isDenied(), true);
+  assert.equal(node('state').textContent, 'SESSION EXPIRED · REOPEN /');
+  await context.__poll();
+  assert.equal(calls, 1, 'no repeated 401/403 polling after login expiration');
+});
