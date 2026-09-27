@@ -91,8 +91,9 @@ public:
         // Strictly reserve the entire OTA namespace BEFORE any future generic
         // HTTP parser can buffer a 494-KiB POST. Capabilities is the EXISTING
         // GET-only read-only route and must remain reachable via legacy auth.
-        if(starts(route,"/api/v1/bridge/ota/") &&
-           !equal(route,"/api/v1/bridge/ota/capabilities")) {
+        if ((equal(route,"/api/v1/bridge/ota") ||
+             starts(route,"/api/v1/bridge/ota/")) &&
+            !(get && equal(route,"/api/v1/bridge/ota/capabilities"))) {
             result.requiresIndependentPrivilegedPost=true;
             if(post && equal(route,"/api/v1/bridge/ota/arm"))
                 result.plan=Port80Plan::OtaReservedArm;
