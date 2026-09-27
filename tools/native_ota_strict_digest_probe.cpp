@@ -45,10 +45,11 @@ std::string responseFor(const std::string& uri=ROUTE,const std::string& ha1=owne
     const auto ha2=hash(std::string("POST:")+uri);
     return hash(ha1+":"+NONCE+":00000001:"+cnonce+":auth:"+ha2);
 }
-std::string auth(const std::string& uri=ROUTE,const std::string& response=responseFor()) {
+std::string auth(const std::string& uri=ROUTE,const std::string& response=responseFor(),
+                 const std::string& cnonce=CNONCE) {
     return std::string("Digest username=\"")+USER+"\", realm=\"SHINO-OTA\", nonce=\""+
         NONCE+"\", uri=\""+uri+"\", response=\""+response+"\", opaque=\""+OPAQUE+
-        "\", qop=auth, nc=00000001, cnonce=\""+CNONCE+"\", algorithm=SHA-256";
+        "\", qop=auth, nc=00000001, cnonce=\""+cnonce+"\", algorithm=SHA-256";
 }
 bool verify(Gate& g,const std::string& request,
             const std::string& ha1=ownerHa1(),
@@ -84,6 +85,15 @@ int main() {
     {
         Gate g;CHECK(g.challenge(PEER,RawOtaRequestKind::SignedTransport,NONCE,OPAQUE,100u));
         CHECK(!verify(g,auth(),ownerHa1(),OTHER_PEER)); // AP peer binding
+    }
+    {
+        // RFC7616 quoted cnonce may use Base64 including +, /, =.
+        const std::string base64Cnonce="abc+def/ghijklmnop=";
+        Gate g;CHECK(g.challenge(PEER,RawOtaRequestKind::SignedTransport,
+                                 NONCE,OPAQUE,100u));
+        CHECK(verify(g,auth(ROUTE,responseFor(ROUTE,ownerHa1(),base64Cnonce),
+                            base64Cnonce)));
+        CHECK(g.phase()==StrictDigestPhase::VerifiedForReviewOnly);
     }
     CHECK(!reject(auth(ARM_ROUTE,responseFor(ARM_ROUTE))));
     CHECK(!reject(auth(ROUTE,std::string(64u,'0'))));
