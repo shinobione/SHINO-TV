@@ -15,6 +15,17 @@
 #include "boot/FslessMetrics.h"
 #include "boot/FslessWebUI.h"
 #include "boot/DashboardV2.h"
+// Explicit opt-in, never enabled in the default V2/esp12e build.
+// This is read-only heap observation; it cannot authorize flash or OTA.
+#ifndef SHINO_ENABLE_HEAP_DIAGNOSTICS
+#define SHINO_ENABLE_HEAP_DIAGNOSTICS 0
+#endif
+static_assert(SHINO_ENABLE_HEAP_DIAGNOSTICS == 0 ||
+              SHINO_ENABLE_HEAP_DIAGNOSTICS == 1,
+              "Unrecognized heap instrumentation policy flag");
+#if SHINO_ENABLE_HEAP_DIAGNOSTICS
+#include "boot/ShinoHeapDiagnosticCandidate.h"
+#endif
 #include <cstdio>
 #include <cstring>
 #include <array>
@@ -74,6 +85,10 @@ struct BrowserSession {
     uint32_t issuedAtMs = 0;
 };
 std::array<BrowserSession, 2> browserSessions;
+#if SHINO_ENABLE_HEAP_DIAGNOSTICS
+// Fixed-size opt-in observer only; no new server and no background timer.
+ShinoHeapDiagnostic::Candidate heapDiagnostic;
+#endif
 
 String browserCookieToken() {
     const String raw = server.header("Cookie");
@@ -208,6 +223,11 @@ void sendStatus() {
     doc["running_application_bytes"] = ESP.getSketchSize();
     doc["linker_declared_free_sketch_bytes_NOT_stock_OTA_capacity"] = ESP.getFreeSketchSpace();
     doc["available_heap_bytes"] = ESP.getFreeHeap();
+#if SHINO_ENABLE_HEAP_DIAGNOSTICS
+    // Prior cooperatively sampled summary; GET itself never triggers a sample.
+    // Preserve every existing status field and the existing Digest challenge.
+    heapDiagnostic.appendReadOnlyStatus(doc);
+#endif
     doc["factory_app_return_compiled"] = SHINO_ENABLE_FACTORY_RESTORE == 1;
     // V2.1 phase A: diagnostics only. There is deliberately no SHINO updater
     // registered and no way to turn this into an install by passing JSON.
@@ -451,6 +471,11 @@ void loop() {
         (telemetryNeedsRedraw || FslessMetrics::stale() != stalePreviously) &&
         static_cast<uint32_t>(millis() - lastDrawMs) >= 250) paintNativeDashboard();
     FactoryRollback::tick();
+#if SHINO_ENABLE_HEAP_DIAGNOSTICS
+    // Only after existing HTTP/LCD/factory loop work; never in a handler/ISR.
+    // This opt-in poll must remain bounded to at most one sample per second.
+    if (networkReady) heapDiagnostic.pollAfterExistingWork(millis());
+#endif
     ESP.wdtFeed();
     yield();
 }
