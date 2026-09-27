@@ -6,7 +6,18 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <Updater.h>
+#include <Updater_Signing.h> // Core-wide ARDUINO_SIGNING: MD5 must never silently be bypassed.
 #include "shino_private_policy.h"
+
+#ifndef SHINO_ENABLE_NATIVE_SIGNED_OTA
+#error "Explicit native OTA safety gate required in generated private policy."
+#endif
+#if SHINO_ENABLE_NATIVE_SIGNED_OTA != 0
+#error "Native signed OTA has no writer: never combine shared signature verifier with unsigned pinned OEM return."
+#endif
+#if SHINO_ENABLE_FACTORY_RESTORE && ARDUINO_SIGNING
+#error "Core auto-signing bypasses MD5 verifier; pinned unsigned OEM application return forbidden."
+#endif
 
 #ifndef SHINO_FACTORY_BYTES
 #error "Official V9.0.44 reference missing; generate private policy from pinned manufacturer ZIP."
