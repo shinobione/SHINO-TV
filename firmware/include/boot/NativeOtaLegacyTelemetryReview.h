@@ -74,9 +74,12 @@ public:
     bool fourLcdCardsActuallyRepainted() const {return false;}
 private:
     static bool bounded(const LegacyNumericField& field,double low,double high,float& out) {
-        if(!field.isNumeric || !std::isfinite(field.value) ||
-           field.value<low || field.value>high)return false;
-        out=static_cast<float>(field.value);
+        // ArduinoJson's live FslessMetrics::bounded() first obtains
+        // value.as<float>(), then checks isfinite/range on THAT float.
+        if(!field.isNumeric)return false;
+        const float numeric=static_cast<float>(field.value);
+        if(!std::isfinite(numeric) || numeric<low || numeric>high)return false;
+        out=numeric;
         return true;
     }
     LegacyTelemetrySnapshot snapshot_{};
