@@ -116,18 +116,8 @@ jobs:
           # than overwriting it. No release/download artifact is produced.
           rm -f firmware/include/shino_private_policy.h firmware/private/credentials.txt
           python tools/generate_shino_device_policy.py --oem-zip reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip --enable-restore >/dev/null
-          grep -q '^#define SHINO_ENABLE_FACTORY_RESTORE 1
-        if: always()
-        run: |
-          rm -f firmware/include/shino_private_policy.h
-          rm -rf firmware/private firmware/.pio reference-geekmagic
- firmware/include/shino_private_policy.h
-          grep -q '^#define SHINO_ENABLE_NATIVE_SIGNED_OTA 0
-        if: always()
-        run: |
-          rm -f firmware/include/shino_private_policy.h
-          rm -rf firmware/private firmware/.pio reference-geekmagic
- firmware/include/shino_private_policy.h
+          grep -q '^#define SHINO_ENABLE_FACTORY_RESTORE 1$' firmware/include/shino_private_policy.h
+          grep -q '^#define SHINO_ENABLE_NATIVE_SIGNED_OTA 0$' firmware/include/shino_private_policy.h
           cd firmware
           pio run -e esp12e_heap_diagnostics
       - name: Verify combined REAL ESP8266 heap and pinned OEM return compilation offline
