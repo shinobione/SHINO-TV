@@ -71,6 +71,204 @@ jobs:
       - name: Compile actual experimental SHINO candidate (no upload)
         working-directory: firmware
         run: pio run -e esp12e
+      - name: Compare actual ArduinoJson 7.4.3 with unchanged FslessMetrics.cpp on host
+        run: |
+          test -f firmware/.pio/libdeps/esp12e/ArduinoJson/src/ArduinoJson/version.hpp
+          grep -q '^#define ARDUINOJSON_VERSION "7.4.3"        run: |
+          test -s firmware/.pio/build/esp12e/firmware.bin
+          cp firmware/.pio/build/esp12e/firmware.bin /tmp/shino-preflight-candidate.bin
+      - name: Verify local private original/application/AP/Digest pairing; NO device operation
+        run: |
+          python tools/owner_install_packet_gate.py \
+            --official-zip reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip \
+            --candidate-bin /tmp/shino-preflight-candidate.bin \
+            --policy firmware/include/shino_private_policy.h \
+            --credentials firmware/private/credentials.txt \
+            --candidate-ini firmware/platformio.ini > /tmp/owner-packet-sanitized.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('/tmp/owner-packet-sanitized.json').read_text())
+          assert d['status']=='PRIVATE_OFFLINE_PACKET_CHECKED__OWNER_FLASH_NOT_AUTHORIZED'
+          assert d['permission_to_flash'] is False
+          assert d['direct_install_model']['overlaps_inferred_stock_file_sectors_bytes']==0
+          assert d['running_shino_to_oem_application_model']['overlaps_inferred_stock_file_sectors_bytes']==0
+          assert d['private_pair_checks']['compiled_app_has_correct_active_ap_and_digest_secrets'] is True
+          assert d['private_pair_checks']['experimental_exact_oem_return_present'] is True
+          print('Validated one-run OEM/app/private AP and Digest pairing OFFLINE. No credentials printed, no upload.')
+          PY
+      - name: Generate a loader pinned to this exact SHINO candidate and OEM
+        run: |
+          python tools/make_loader_policy.py --official-zip reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip --candidate-bin /tmp/shino-preflight-candidate.bin --enable-writes
+      - name: Compile exact candidate-locked loader (no upload)
+        working-directory: recovery_loader
+        run: pio run -e esp12e_recovery
+      - name: Verify loader output, never publish
+        run: |
+          test -s recovery_loader/.pio/build/esp12e_recovery/firmware.bin
+          cp recovery_loader/.pio/build/esp12e_recovery/firmware.bin /tmp/shino-preflight-loader.bin
+      - name: Independently inspect both builds and the original ESP8266 image
+        run: |
+          python -m esptool image-info /tmp/shino-preflight-loader.bin
+          python -m esptool image-info /tmp/shino-preflight-candidate.bin
+          python - <<'PY'
+          from pathlib import Path
+          import zipfile
+          with zipfile.ZipFile('reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip') as z:
+              Path('/tmp/shino-preflight-original.bin').write_bytes(z.read('FW-Smalltv-Ultra-V9.0.44.bin'))
+          PY
+          python -m esptool image-info /tmp/shino-preflight-original.bin
+      - name: Check complete three-image compatibility assumptions OFFLINE
+        run: |
+          python tools/wifi_flash_preflight.py \
+            --official-zip reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip \
+            --manifest recovery/factory_ota_v9_0_44.json \
+            --loader /tmp/shino-preflight-loader.bin \
+            --candidate /tmp/shino-preflight-candidate.bin \
+            --loader-ini recovery_loader/platformio.ini \
+            --candidate-ini firmware/platformio.ini > /tmp/shino-preflight-result.json
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          d=json.loads(Path('/tmp/shino-preflight-result.json').read_text())
+          assert d['status']=='OFFLINE_PREFLIGHT_ONLY__OWNER_FLASH_NOT_AUTHORIZED'
+          assert d['permission_to_flash'] is False
+          assert d['device_access_performed'] is False
+          assert d['source_layouts']['candidate']=='eagle.flash.4m3m.ld'
+          assert d['transitions']['factory_to_candidate_direct']['nominal_no_overlap'] is True
+          assert d['transitions']['factory_to_candidate_direct']['inferred_stock_FS_staging_sector_overlap_bytes']==0
+          assert d['transitions']['shino_to_factory']['inferred_stock_FS_staging_sector_overlap_bytes']==0
+          assert d['transitions']['loader_to_shino']['inferred_stock_FS_staging_sector_overlap_bytes']>0
+          assert d['transitions']['factory_to_candidate_direct']['original_stock_OTA_image_acceptance'].startswith('UNKNOWN')
+          assert b'FIRST_BOOT_BRIDGE' in Path('/tmp/shino-preflight-candidate.bin').read_bytes()
+          assert b'READ_ONLY_FS_MIGRATION_PLAN' in Path('/tmp/shino-preflight-candidate.bin').read_bytes()
+          assert b'FSLESS_PC_TELEMETRY_RAM_ONLY' in Path('/tmp/shino-preflight-candidate.bin').read_bytes()
+          assert Path('/tmp/shino-preflight-candidate.bin').stat().st_size < 494144
+          assert not Path('firmware/.pio/build/esp12e/littlefs.bin').exists()
+          print('PASS: exactly pinned OEM, actual compiled SHINO + its own OEM rollback, candidate-locked loader.')
+          print('Original stock OTA acceptance, OEM filesystem and nonbooting Wi-Fi recovery remain unknown.')
+          for image in d['images']:
+              print(f"IMAGE {image['name']}: {image['size_bytes']} bytes; {image['flash_mode']}; {image['flash_size_flag']}; {image['flash_frequency']}")
+          lines=['### Three-image offline preflight', '', '| Check | Result |', '|---|---|']
+          lines += [
+              '| OEM original archive + image | Exact hash PASS |',
+              '| Current SHINO firmware + its own OEM pin | PASS |',
+              '| Direct stock -> SHINO (inferred 4m3m model) | '+str(d['transitions']['factory_to_candidate_direct']['nominal_no_overlap'])+'; actual OEM acceptance UNKNOWN |',
+              '| Direct first stage / return stage stock-FS overlap (model) | 0 / 0 bytes; actual stock layout unproven |',
+              '| Loader -> SHINO stock-FS overwrite (inferred model) | '+str(d['transitions']['loader_to_shino']['inferred_stock_FS_staging_sector_overlap_bytes'])+' bytes; two-hop is NOT stock-data-preserving |',
+              '| First-hop loader exact candidate + OEM pins | PASS |',
+              '| Nominal loader -> SHINO staging | '+str(d['transitions']['loader_to_shino']['nominal_no_overlap'])+' |',
+              '| Nominal SHINO -> OEM staging | '+str(d['transitions']['shino_to_factory']['nominal_no_overlap'])+' |',
+              '| Actual owner stock OTA slot and acceptance | UNKNOWN |',
+              '| Original OEM filesystem map | UNKNOWN |',
+              '| Nonbooting Wi-Fi recovery | NOT GUARANTEED |',
+              '', '**No physical device access and NO permission to flash.**'
+          ]
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as out:
+              out.write('\n'.join(lines)+'\n')
+          PY
+      - name: Verify signed exact OEM V9.0.44 with disposable CI key (OFFLINE; delete all)
+        run: |
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          import struct
+          import subprocess
+          import sys
+          sys.path.insert(0, 'tools')
+          from verify_signed_oem_return import (
+              SignedOemReturnError, assess_signed_oem, SIGNED_OEM_BYTES)
+          raw_path=Path('/tmp/shino-preflight-original.bin')
+          key=Path('/tmp/shino-oem-test-private.pem')
+          pub=Path('/tmp/shino-oem-test-public.pem')
+          sig=Path('/tmp/shino-oem-test.sig')
+          signed=Path('/tmp/shino-oem-test-signed.bin')
+          subprocess.run(['openssl','genpkey','-algorithm','RSA','-pkeyopt',
+                          'rsa_keygen_bits:2048','-out',str(key)],
+                         check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+          subprocess.run(['openssl','pkey','-in',str(key),'-pubout','-out',str(pub)],
+                         check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+          subprocess.run(['openssl','dgst','-sha256','-sign',str(key),
+                          '-out',str(sig),str(raw_path)],check=True,
+                         stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+          signature=sig.read_bytes()
+          assert len(signature)==256
+          signed.write_bytes(raw_path.read_bytes()+signature+struct.pack('<I',len(signature)))
+          # Independently execute the SAME production SHA-256 raw precommit
+          # C++ gate against ACTUAL pinned OEM bytes. No updater or device.
+          exe=Path('/tmp/shino-oem-precommit-probe')
+          subprocess.run([
+              'g++','-std=c++17','-Wall','-Wextra','-Werror','-pedantic',
+              '-DSHINO_USE_PRODUCTION_OEM_PIN',
+              '-Ifirmware/include',
+              'tools/signed_oem_precommit_host_probe.cpp',
+              '-o',str(exe),'-lcrypto'],
+              check=True,stdout=subprocess.DEVNULL)
+          subprocess.run([str(exe),str(signed),'4096','1'],check=True)
+          unsigned_modified=bytearray(raw_path.read_bytes())
+          unsigned_modified[12345] ^= 1
+          changed=Path('/tmp/shino-oem-precommit-modified.bin')
+          changed.write_bytes(unsigned_modified+signature+struct.pack('<I',len(signature)))
+          subprocess.run([str(exe),str(changed),'257','0'],check=True)
+          print('PASS: production pinned C++ OEM precommit on true official bytes; one-byte alteration rejected.')
+          # Host-only last-mile contract against ACTUAL independently pinned
+          # V9.0.44 bytes and ephemeral CI signer. Fake core validates true
+          # RSA/OpenSSL before simulated eboot; no ESP Updater/flash operation.
+          last_mile=Path('/tmp/shino-oem-host-commit-barrier')
+          subprocess.run([
+              'g++','-std=c++17','-Wall','-Wextra','-Werror','-pedantic',
+              '-DSHINO_USE_PRODUCTION_OEM_PIN','-Ifirmware/include',
+              'tools/signed_oem_commit_barrier_probe.cpp','-o',str(last_mile),
+              '-lcrypto'],check=True,stdout=subprocess.DEVNULL)
+          subprocess.run([str(last_mile),str(signed),str(pub),'success','4096'],check=True)
+          subprocess.run([str(last_mile),str(changed),str(pub),'raw_invalid','257'],check=True)
+          forged=Path('/tmp/shino-oem-invalid-signature.bin')
+          corrupted=bytearray(signed.read_bytes())
+          corrupted[494144+17] ^= 1
+          forged.write_bytes(corrupted)
+          subprocess.run([str(last_mile),str(forged),str(pub),'rsa_invalid','4096'],check=True)
+          print('PASS: host simulated core eboot only for signed and exact OEM; altered raw blocked before end; bad RSA end(false) rejects without eboot.')
+          report=assess_signed_oem(
+              signed,pub,
+              Path('reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip'),
+              Path('recovery/factory_ota_v9_0_44.json'),
+              expected_owner_public_key_sha256=hashlib.sha256(pub.read_bytes()).hexdigest(),
+              current_sketch_bytes=Path('/tmp/shino-preflight-candidate.bin').stat().st_size,
+              reported_free_sketch_bytes=600000, # CI GEOMETRY FIXTURE, NOT OWNER RUNTIME
+              observed_physical_flash_bytes=4194304, # CI MODEL, NOT OWNER QUERY
+              platformio_ini=Path('firmware/platformio.ini'))
+          assert report['signed_transport_bytes']==SIGNED_OEM_BYTES==494404
+          assert report['manufacturer_original_byte_for_byte_equal'] is True
+          assert report['owner_signature_verified'] is True
+          assert report['permission_to_flash'] is False
+          assert report['on_device_signed_oem_writer_compiled'] is False
+          signed.write_bytes(raw_path.read_bytes()) # unsigned OEM must fail closed
+          try:
+              assess_signed_oem(
+                  signed,pub,
+                  Path('reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip'),
+                  Path('recovery/factory_ota_v9_0_44.json'),
+                  expected_owner_public_key_sha256=hashlib.sha256(pub.read_bytes()).hexdigest(),
+                  current_sketch_bytes=Path('/tmp/shino-preflight-candidate.bin').stat().st_size,
+                  reported_free_sketch_bytes=600000,
+                  observed_physical_flash_bytes=4194304,
+                  platformio_ini=Path('firmware/platformio.ini'))
+          except SignedOemReturnError:
+              pass
+          else:
+              raise AssertionError('Unsigned original incorrectly accepted')
+          print('PASS: real pinned OEM exact bytes + disposable RSA signature verified OFFLINE; unsigned rejected; permission_to_flash=false.')
+          print('CI signing key/package and manufacturer bytes are temporary, never published; runtime free-space is hypothetical for this CI test.')
+          PY
+
+      - name: Delete proprietary OEM checkout, all generated secrets and binaries
+        if: always()
+        run: |
+          rm -rf reference-geekmagic recovery_loader/private recovery_loader/.pio firmware/.pio firmware/private
+          rm -f recovery_loader/include/local_policy.h firmware/data/config.json firmware/include/shino_private_policy.h
+          rm -f /tmp/shino-preflight-candidate.bin /tmp/shino-preflight-loader.bin /tmp/shino-preflight-original.bin /tmp/shino-preflight-result.json /tmp/owner-packet-sanitized.json /tmp/shino-oem-test-private.pem /tmp/shino-oem-test-public.pem /tmp/shino-oem-test.sig /tmp/shino-oem-test-signed.bin /tmp/shino-oem-precommit-probe /tmp/shino-oem-precommit-modified.bin /tmp/shino-oem-host-commit-barrier /tmp/shino-oem-invalid-signature.bin
+ firmware/.pio/libdeps/esp12e/ArduinoJson/src/ArduinoJson/version.hpp
+          python tools/verify_native_arduinojson_parity.py
       - name: Verify current SHINO output, never publish
         run: |
           test -s firmware/.pio/build/esp12e/firmware.bin
