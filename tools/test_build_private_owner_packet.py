@@ -112,7 +112,7 @@ class OwnerKitTests(unittest.TestCase):
         calls=[]
         def local(command, *, cwd=None, output=True):
             calls.append(command)
-            if "generate_shino_device_policy.py" in command:
+            if any(str(arg).endswith("generate_shino_device_policy.py") for arg in command):
                 self.make_build()
                 self.app.unlink()
             if "platformio" in command:
@@ -144,7 +144,7 @@ class OwnerKitTests(unittest.TestCase):
 
     def test_failure_keeps_no_incomplete_private_kit_or_checkout_secret(self):
         def local(command, *, cwd=None, output=True):
-            if "generate_shino_device_policy.py" in command:
+            if any(str(arg).endswith("generate_shino_device_policy.py") for arg in command):
                 self.make_build()
             if "platformio" in command:
                 raise kit.OwnerKitError("Expected synthetic compile failure")
