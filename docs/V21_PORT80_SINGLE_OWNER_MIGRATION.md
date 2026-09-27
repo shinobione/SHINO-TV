@@ -72,6 +72,12 @@ On the same running loopback listener, independent Python `urllib` clients exerc
 
 This closes a **host-level wiring gap**, not the production server migration or physical-install gate. `FirstBootBridge.cpp` still owns the only device port-80 listener unchanged; PR remains Draft and `permission_to_flash=false`.
 
+## Real compiled PROGMEM dashboard assets through authenticated host ingress
+
+The unified synthetic-auth C++ fixture now links the **unchanged real** `firmware/src/boot/FslessWebUI.cpp` against a host-only Arduino shim (with `PROGMEM` empty only in the host compiler). After one bounded GET and verified legacy test Digest/read-session decision, it sends the exact `FslessWebUI::PAGE` or `FslessWebUI::SCRIPT` byte string, original source content type and calculated HTTP `Content-Length`; previously it returned placeholder bodies. No asset is downloaded, edited, saved to a device filesystem, served before authorization or registered on the running ESP8266. A test independently extracts the original two C++ raw literals and compares **the complete network response body byte-for-byte**, checks the numeric Content-Length, exact browser polling/session-expiry behavior and explicit read-only OTA text. It also verifies anonymous script GET still challenges, and caps each observed host asset below 16 KiB. This is source/host asset parity; it is **not** proof of actual PROGMEM flash reads, physical display contrast, Chrome rendering, real device heap/stack, port-80 handoff, or a production-authenticated handler.
+
+The original active `FirstBootBridge.cpp` still serves these assets with `ESP8266WebServer::send_P`; that source, `FslessWebUI.cpp`, Windows companion and the installed `review-002` firmware are untouched. The no-FIN host ingress, synthetic MD5 realm and fixture cookie only preserve legacy-browser compatibility; privileged signed OTA remains separately gated behind SHA-256 and no route is registered. Build-time candidate image geometry and actual ESP8266 RAM/peak stack must be evaluated independently before any owner-approved hardware transition. `permission_to_flash=false`.
+
 ## Browser read-session and real Windows telemetry parity — host fixtures ONLY
 
 A separate, **disconnected** C++/Python source-regression pair now follows the actual `FirstBootBridge.cpp` and `FslessMetrics.cpp` behaviors rather than assuming that classifying the route is equivalent to serving it:
