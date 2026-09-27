@@ -33,6 +33,11 @@ static_assert(sizeof(ShinoNativeOta::NativeOtaSingleIngressShadow) <= 3072u,
               "Unwired ingress would exceed 3 KiB of per-instance storage.");
 static_assert(sizeof(ShinoNativeOta::NativeOtaLegacySessionReview) <= 256u,
               "Unwired 2-slot legacy session model exceeded its type-size envelope.");
+// Illustrative two-client parser ceiling using the ACTUAL Xtensa layout,
+// not live heap or TCP overhead. Both parsers remain wholly uninstantiated
+// and disconnected from the active FirstBootBridge port-80 listener.
+static_assert(2u*sizeof(ShinoNativeOta::NativeOtaSingleIngressShadow) <= 6144u,
+              "Two prospective ingress contexts exceeded the 6 KiB parser-only cap.");
 
 
 namespace ShinoNativeOta {
