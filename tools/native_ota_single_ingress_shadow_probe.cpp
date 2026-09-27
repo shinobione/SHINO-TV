@@ -14,7 +14,7 @@ std::string request(const char* method,const char* path,
         extra+"\r\n"+body;
 }
 std::string sampleMetrics(){
-    return R"({"cpu":22,"gpu":35,"memoryGb":8.2,"memoryTotalGb":16,"gpuTempC":55})";
+    return R"({"ok":true,"gpu_available":true,"cpu_usage":22,"gpu_usage":35,"memory_used_gb":8.2,"memory_total_gb":16,"gpu_vram_mb":2048,"gpu_temp_c":55,"gpu_power":120})";
 }
 SingleIngressReviewResult send(const std::string& payload,size_t perRead,
                                 bool finish=true,uint32_t now=101u) {
