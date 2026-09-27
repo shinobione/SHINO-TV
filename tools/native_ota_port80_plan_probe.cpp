@@ -54,6 +54,14 @@ int main() {
             else CHECK(d.plan==Port80Plan::OtaReservedReject);
         }
     }
+    for(const auto& method:{"POST","PUT","HEAD","OPTIONS","DELETE"}) {
+        for(const auto& reserved:{"/api/v1/bridge/ota/capabilities","/api/v1/bridge/ota"}) {
+            const auto d=route(request(method,reserved));
+            CHECK(d.plan==Port80Plan::OtaReservedReject);
+            CHECK(d.requiresIndependentPrivilegedPost &&
+                  !d.currentlyRegisteredInFirstBootBridge && !d.mayUseBrowserReadCookie);
+        }
+    }
     for(const auto& path:{
         "/api/v1/bridge/metrics2","/update","/api/v1/bridge/ota",
         "/api/v1/bridge/status/","/api/v1/bridge/ota/capabilities-extra"}) {
