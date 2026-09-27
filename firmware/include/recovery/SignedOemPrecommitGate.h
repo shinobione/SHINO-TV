@@ -41,8 +41,8 @@ public:
     SignedOemPrecommitGate& operator=(const SignedOemPrecommitGate&) = delete;
 
     bool begin(uint32_t declaredTransportBytes) {
-        if (phase_ != Phase::Idle || declaredTransportBytes != Pin::kTransportBytes)
-            return false;
+        if (phase_ != Phase::Idle) return false;
+        if (declaredTransportBytes != Pin::kTransportBytes) return fail();
         if (!decodePin(expected_)) return fail();
         hash_.begin();
         phase_ = Phase::Receiving;
