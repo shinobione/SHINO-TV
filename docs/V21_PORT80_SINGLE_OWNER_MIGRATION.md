@@ -74,6 +74,14 @@ For `POST /api/v1/bridge/metrics`, a valid, unique, bounded `Content-Length` fie
 
 These improvements stay **source-only**, with `FirstBootBridge.cpp` unchanged, the normal installed dashboard protected, and no new OTA handler, listener, flash writer, signature exception, factory return operation or physical-install authorization.
 
+## Actual ArduinoJson/FslessMetrics parity build gate (no device/server)
+
+The previously documented Python general JSON oracle was **not the embedded parser**. The default firmware build log subsequently confirmed that the unpinned caret dependency `ArduinoJson@^7.4.2` had resolved to **7.4.3**. `firmware/platformio.ini` now locks `bblanchon/ArduinoJson@7.4.3` exactly, and the native **compile-only, reject-all** source unit checks `ARDUINOJSON_VERSION_MAJOR/MINOR/REVISION == 7/4/3`. A version drift must cause an explicit review rather than silently changing parsing behavior.
+
+The host-only `tools/native_ota_real_arduinojson_metrics_probe.cpp` compiles the **UNMODIFIED** `firmware/src/boot/FslessMetrics.cpp` against the same dependency fetched into `firmware/.pio/libdeps/esp12e/ArduinoJson/src`. The mock `tools/host_arduinojson_stubs/Arduino.h` provides only minimal `String`, `F` and injected `millis()`: there is no ESP8266, IP stack, LCD, file storage, hardware flash or native OTA writer. The script `tools/verify_native_arduinojson_parity.py` feeds the original C++ and the independent Python oracle the same sequential bytes, compares status, numeric sample, optional total and previous-good sample preservation, and rejects any mismatch. Its bounded research corpus includes arbitrary key orders, whitespace, optional/null RAM, valid numeric boundaries, malformed/invalid JSON/UTF-8, invalid types and short/oversized bodies. This runs **after real PlatformIO compilation and before private-policy cleanup**, in both the baseline firmware build and the existing single-device **offline-only** manufacturer-preflight workflow. It uses no production keys or real device connections.
+
+An identical result in this defined host corpus is **a source-level parity result, not proof of every possible ArduinoJson input or of runtime ESP8266 RAM/stack behavior**. The 401/403/404/413 HTTP fixture continues to use synthetic Digest-pass inputs, and its C++ response listener continues to recognize only two frozen JSON literals; this crosscheck is independent and does not turn either fixture into a production updater or a real browser handler. The next separately audited stage is a true private-AP/port-80 authenticated integration with consistent browser and Windows telemetry regression — still nonwriting.
+
 ## Before replacing the running single-owner server
 
 A separately reviewed new single-owner port-80 ingress must meet ALL of the following, without an unreviewed fork or a blind handoff to the current parser:
