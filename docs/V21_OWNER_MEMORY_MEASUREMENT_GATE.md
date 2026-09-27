@@ -62,3 +62,36 @@ The cadence helper has no timer interrupt, `Ticker`, `delay()`, `yield()`, task,
 
 This cadence is a **maximum observation rate, not a promise that every second is sampled**. Missed cooperative opportunities remain missed. Accordingly, even an eventual owner-approved instrumented build may still fail to observe a shorter in-flight heap trough between samples; any reported value must remain named *lowest observed free heap*, not the true runtime minimum. The sampling helper does not change the current device or authorize an instrumented installation. **PR Draft; permission_to_flash=false.**
 
+
+
+## Opt-in instrumented ESP8266 candidate — actual bridge hook (NOT INSTALLED)
+
+A dedicated `firmware/include/boot/ShinoHeapDiagnosticCandidate.h` now combines the pinned Core 3.1.2 `ESP.getHeapStats(&freeBytes,&largestFreeBlockBytes,&fragmentationPercent)` source, the previously audited 1 Hz wrap-safe/no-catchup cadence and the fixed-size observed-heap accumulator. **This is a real, separately selectable compilation profile, not a live firmware installation.**
+
+The real `FirstBootBridge.cpp` has only three `#if SHINO_ENABLE_HEAP_DIAGNOSTICS` guarded additions: one fixed-size observer (no dynamic allocation), projection into the **same** already authenticated `GET /api/v1/bridge/status`, and a cooperative `pollAfterExistingWork(millis())` call **after** `server.handleClient()`, potential normal four-card LCD painting and `FactoryRollback::tick()`, and before the existing watchdog feed/yield. The optional helper never reads the sensor from inside `sendStatus()`, never creates another listener, timer, route, background task or new authentication/cookie behavior. The original four dashboard values, existing `available_heap_bytes` and all original status fields remain intact. In a candidate compiled with the flag, this sample is from an earlier cooperative loop iteration, not from the request handler, so it cannot quantify the transient heap during the status response itself.
+
+Default build `pio run -e esp12e` uses `SHINO_ENABLE_HEAP_DIAGNOSTICS=0` and MUST NOT contain the `OBSERVED_HEAP_V1` firmware marker. The explicitly opt-in build `pio run -e esp12e_heap_diagnostics` inherits the exact same pinned ESP8266 board/core/ArduinoJson/lib/linker and adds only `-DSHINO_ENABLE_HEAP_DIAGNOSTICS=1`. CI compiles **both** variants offline with disposable generated private build policy; it checks that the default image excludes instrumentation, the opt-in candidate image includes marker and original V2 bridge/telemetry markers, both stay below the individually reviewed image-size ceiling, and neither produces a filesystem image. No CI command uploads a binary.
+
+Only on that opt-in candidate, the existing HTTP Digest-protected status JSON would gain a bounded `heap_observation` object, preserving backward compatibility of the original fields:
+
+```json
+"heap_observation": {
+  "schema": "OBSERVED_HEAP_V1",
+  "sampling_interval_ms": 1000,
+  "sample_count": 3,
+  "max_samples": 1024,
+  "state": "SAMPLING",
+  "first_free_heap_bytes": 32000,
+  "latest_free_heap_bytes": 31900,
+  "latest_largest_free_block_bytes": 25000,
+  "latest_fragmentation_percent": 17,
+  "lowest_observed_free_heap_bytes": 31850,
+  "lowest_observed_largest_free_block_bytes": 24000,
+  "highest_observed_fragmentation_percent": 18
+}
+```
+
+**The numbers above are illustrative fixture values, NOT device measurements.** On a candidate before the first valid sample, `state="NO_SAMPLES"` and `sample_count=0`, and measurement fields are **omitted rather than represented as fictitious zeros**. After 1,024 *valid* samples the finite observer reports `state="SATURATED"`, freezes the prior result and performs no more sensor reads; it does not overwrite a previous minimum. The observer remains volatile in RAM and never writes to flash/FS/EEPROM. This is a bounded observation window, not indefinite monitoring, and `sampling_interval_ms=1000` is a maximum cadence rather than guaranteed periodic sampling. A 1-second cooperative sample interval cannot prove the true lowest heap during shorter HTTP/network spikes.
+
+**Approval gates still CLOSED:** Optional firmware was only compiled offline. The owner-installed `review-002` stays unchanged. Before an explicit *per-device/per-binary* owner approval for any physical candidate installation, independently inspect binary identity/checksum, nonwriting policy, backup/recovery route, image geometry, status/nonce and normal Chrome + 2-second sender + 240x240 LCD compatibility. After owner authorization, any real memory values must be separately gathered and reported as actual observed device readings. No production single-owner port-80 replacement, generic OTA writer, merge or flash is authorized by this document.
+
