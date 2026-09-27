@@ -2,6 +2,10 @@
 
 **Status:** offline implementation only; single owner device on official Ultra-V9.0.44 remains untouched. This PR DOES NOT enable any filesystem upload, write, erase, mount or formatting operation. PR #12's first-boot bridge remains the only permitted startup profile.
 
+## Status update: 4m2m FS replacement is NOT active in the newer FS-less V2
+
+The full 2,072,576-byte 4m2m LittleFS package in this document remains **offline, inactive migration research**. The current FS-less application deliberately chooses the stock-like `4m3m` linker and does not mount or build a LittleFS image. No FS provisioning/format/upload routes are enabled. For first-OTA and factory-app-return staging, refer to [the 4m3m first-install packet](FIRST_INSTALL_DECISION_PACKET.md). Do not copy historical 4m2m filesystem installation instructions into an owner rollout.
+
 ## Critical result from the actual ESP8266 updater source
 
 The source of the Arduino ESP8266 `UpdaterClass::begin(size,U_FS)` (see [Updater.cpp](https://github.com/esp8266/Arduino/blob/1475ed7d49fef5c5167061ac76abb6eced9abda5/cores/esp8266/Updater.cpp)) has two branches:
