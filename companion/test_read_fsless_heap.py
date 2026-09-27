@@ -27,6 +27,25 @@ def status(**changes):
     return json.dumps(body,separators=(",",":")).encode("utf-8")
 
 
+def observed(**changes):
+    summary={
+        "schema":"OBSERVED_HEAP_V1",
+        "sampling_interval_ms":1000,
+        "sample_count":3,
+        "max_samples":1024,
+        "state":"SAMPLING",
+        "first_free_heap_bytes":32000,
+        "latest_free_heap_bytes":31900,
+        "latest_largest_free_block_bytes":25000,
+        "latest_fragmentation_percent":17,
+        "lowest_observed_free_heap_bytes":31850,
+        "lowest_observed_largest_free_block_bytes":24000,
+        "highest_observed_fragmentation_percent":18,
+    }
+    summary.update(changes)
+    return summary
+
+
 class FakeResponse:
     def __init__(self,body=None,code=200,content_type="application/json",
                  length=None):
@@ -86,6 +105,71 @@ class HeapReadOnlySnapshotTests(unittest.TestCase):
         original.pop("native_ota_writer_compiled")
         self.assertEqual(probe.validate_status(json.dumps(original).encode()),{
             "free_heap_bytes":31520,"running_application_bytes":399152})
+
+    def test_optional_candidate_observation_with_actual_bounded_schema(self):
+        report=probe.validate_status(status(heap_observation=observed()))
+        self.assertEqual(report["free_heap_bytes"],31520)
+        self.assertEqual(report["heap_observation"],{
+            "state":"SAMPLING","sample_count":3,
+            "lowest_observed_free_heap_bytes":31850,
+            "lowest_observed_largest_free_block_bytes":24000,
+            "highest_observed_fragmentation_percent":18})
+        empty={key:value for key,value in observed().items()
+               if key not in ("first_free_heap_bytes","latest_free_heap_bytes",
+                              "latest_largest_free_block_bytes",
+                              "latest_fragmentation_percent",
+                              "lowest_observed_free_heap_bytes",
+                              "lowest_observed_largest_free_block_bytes",
+                              "highest_observed_fragmentation_percent")}
+        empty.update(sample_count=0,state="NO_SAMPLES")
+        self.assertEqual(probe.validate_status(status(heap_observation=empty))[
+            "heap_observation"],{"state":"NO_SAMPLES","sample_count":0})
+        full=observed(sample_count=1024,state="SATURATED")
+        self.assertEqual(probe.validate_status(status(heap_observation=full))[
+            "heap_observation"]["state"],"SATURATED")
+
+    def test_optional_observation_fails_closed_on_bad_counts_states_types_or_extrema(self):
+        invalid=[
+            None,[],observed(schema="OTHER"),
+            observed(sampling_interval_ms=0),observed(max_samples=True),
+            observed(sample_count=1025),observed(sample_count=True),
+            observed(state="NO_SAMPLES"),observed(sample_count=1024,state="SAMPLING"),
+            observed(latest_free_heap_bytes="31900"),
+            observed(latest_fragmentation_percent=True),
+            observed(latest_largest_free_block_bytes=32000),
+            observed(lowest_observed_free_heap_bytes=32100),
+            observed(lowest_observed_largest_free_block_bytes=30000),
+            observed(highest_observed_fragmentation_percent=16),
+            observed(first_free_heap_bytes=0),
+            observed(unexpected="raw"),
+            observed(sample_count=1,first_free_heap_bytes=32000,
+                     latest_free_heap_bytes=31900),
+            observed(sample_count=0,state="NO_SAMPLES"),
+        ]
+        for item in invalid:
+            with self.subTest(item=item),self.assertRaises(probe.HeapReadError):
+                probe.validate_status(status(heap_observation=item))
+        raw=status().decode("utf-8")[:-1]+',"heap_observation":{"schema":"OBSERVED_HEAP_V1","schema":"OBSERVED_HEAP_V1"}}'
+        with self.assertRaises(probe.HeapReadError):
+            probe.validate_status(raw.encode())
+
+    def test_new_candidate_output_is_only_sanitized_observed_integer_summary(self):
+        fake=FakeOpener(FakeResponse(body=status(heap_observation=observed())))
+        output=StringIO()
+        with patch.object(probe,"read_credentials",
+                          return_value=("shino","disposable-fixture-password")), \
+             patch.object(probe,"make_status_opener",return_value=fake), \
+             redirect_stdout(output):
+            self.assertEqual(probe.main([
+                "--measure","--credentials-file","private-fixture.txt",
+                "--phase","pc_telemetry"]),0)
+        report=output.getvalue()
+        self.assertIn("READ ONLY OBSERVED | state=SAMPLING | samples=3",report)
+        self.assertIn("lowest_observed_free_heap_bytes=31850",report)
+        self.assertIn("highest_observed_fragmentation_percent=18",report)
+        self.assertNotIn("disposable-fixture-password",report)
+        self.assertNotIn("http://",report)
+        self.assertEqual(len(fake.calls),1)
 
     def test_missing_or_true_shared_safety_marker_is_rejected_in_both_versions(self):
         for field in (
