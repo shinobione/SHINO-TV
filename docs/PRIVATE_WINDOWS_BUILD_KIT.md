@@ -27,7 +27,7 @@ https://github.com/GeekMagicClock/smalltv-ultra/blob/55d7877fcba8b1cb7a66a0830d3
 
 The generator checks both the entire ZIP and the one original application member against the committed exact SHA-256 manifest before doing any build. It does not accept a similarly named substituted package.
 
-**Use a FULL Git checkout, not GitHub's Download ZIP.** That ZIP omits the Git commit provenance required by the gate. After reviewing the completed PR #17 and its green CI, copy its **full 40-character reviewed HEAD SHA** and checkout that exact SHA locally (detached HEAD is fine), then require an otherwise clean source tree. Branch names alone move and are not a sufficient production freeze.
+**Use a FULL Git checkout, not GitHub's Download ZIP.** That ZIP omits the Git commit provenance required by the gate. After reviewing the completed PR #18 and its green CI, copy its **full 40-character reviewed HEAD SHA** and checkout that exact SHA locally (detached HEAD is fine), then require an otherwise clean source tree. Branch names alone move and are not a sufficient production freeze.
 
     git checkout FULL_40_CHARACTER_REVIEWED_GIT_SHA
     git rev-parse HEAD
