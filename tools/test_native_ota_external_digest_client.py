@@ -93,7 +93,7 @@ class ExternalDigestClientTests(unittest.TestCase):
             # nonce/cnonce/response or any password. Independently check the
             # captured RFC7616 proof before trying the strict C++ parser.
             parameters=re.findall(
-                r'(?:^Digest |,\\s*)([a-z-]+)=(?:"([^"]*)"|([^,\\s]+))',auth)
+                r'(?:^Digest |,\s*)([a-z-]+)=(?:"([^"]*)"|([^,\s]+))',auth)
             names=[key for key,_,_ in parameters]
             expected_names={"username","realm","nonce","uri","response",
                             "opaque","qop","nc","cnonce","algorithm"}
