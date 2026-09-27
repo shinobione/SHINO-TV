@@ -124,13 +124,25 @@ public:
         }
         return false;
     }
-    bool finishOnExactTransportClose(uint32_t nowMs) {
+    // Pure HOST review of the exact Content-Length HTTP message boundary.
+    // Unlike the historical loopback fixture, this does NOT require a TCP
+    // write-half-close. Future single-owner servers must send Connection: close
+    // after this *one* response, never parse a second message on the socket.
+    // Bytes already present after the boundary in the SAME feed() are rejected
+    // by AwaitExactClose. Later pipelined bytes are NOT read/accepted as a
+    // second request. This is not an authorization or legacy dispatch.
+    bool finishOnExactMessageBoundaryForHostReviewOnly(uint32_t nowMs) {
         if(phase_!=SingleIngressReviewPhase::AwaitExactClose)return reject(
             SingleIngressRefusal::InvalidFraming);
         if(!tick(nowMs) || bodyLength_!=bodyExpected_)
             return reject(SingleIngressRefusal::InvalidFraming);
         phase_=SingleIngressReviewPhase::LegacyRequestReviewedOnly;
-        return true; // Not a permission to invoke a live legacy handler.
+        return true;
+    }
+    // Retain the older strict socket-FIN fixture contract for its adversarial
+    // transport tests; only call this after a real EOF, not merely an HTTP end.
+    bool finishOnExactTransportClose(uint32_t nowMs) {
+        return finishOnExactMessageBoundaryForHostReviewOnly(nowMs);
     }
     void disconnect() {
         if(phase_!=SingleIngressReviewPhase::LegacyRequestReviewedOnly &&
