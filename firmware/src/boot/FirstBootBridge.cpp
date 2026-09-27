@@ -21,6 +21,12 @@
 #include "recovery/FactoryRollback.h"
 #include "shino_private_policy.h"
 
+#ifndef SHINO_ENABLE_NATIVE_SIGNED_OTA
+#error "Explicit native signed-OTA policy missing from private build."
+#endif
+static_assert(SHINO_ENABLE_NATIVE_SIGNED_OTA == 0,
+              "V2.1 research only: no generic SHINO updater or signed-OTA writer enabled.");
+
 #ifndef SHINO_BOOT_PROFILE
 #error "A private, explicit first-boot profile is required."
 #endif
