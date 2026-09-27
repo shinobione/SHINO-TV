@@ -50,10 +50,21 @@ def validate_status(raw: bytes) -> dict[str, int]:
         raise HeapReadError("Device status JSON invalid") from exc
     if not isinstance(document, dict):
         raise HeapReadError("Device status must be one JSON object")
+    # review-002 predates the newer native_ota_writer_compiled JSON key.
+    # Require the safety markers shared by BOTH real V2 status versions;
+    # when the newer key exists it must independently remain exactly False.
+    safety_flags = (
+        "physical_flash_installation_authorized",
+        "physical_flash_or_application_OTA_writes_performed_by_diagnostics",
+        "filesystem_migration_writes_compiled",
+        "application_littlefs_begin_called",
+        "application_eeprom_commit_called",
+    )
     if (document.get("mode") != "FIRST_BOOT_BRIDGE" or
         document.get("pc_metrics_storage") != "RAM_ONLY" or
-        document.get("native_ota_writer_compiled") is not False or
-        document.get("physical_flash_installation_authorized") is not False):
+        any(document.get(field) is not False for field in safety_flags) or
+        ("native_ota_writer_compiled" in document and
+         document["native_ota_writer_compiled"] is not False)):
         raise HeapReadError("Response is not the expected nonwriting V2 diagnostic")
     heap = document.get("available_heap_bytes")
     size = document.get("running_application_bytes")
