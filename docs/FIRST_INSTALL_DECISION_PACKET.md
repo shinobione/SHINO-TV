@@ -54,6 +54,10 @@ The publicly accessible GitHub CI intentionally deletes all generated BINs and p
 
 The optional mini-loader has separate credentials, own image pins and risks. It is NOT the assumed selected path. Its matching policy/BIN should never be mixed with the direct-candidate build.
 
+### New manually launched owner-private Windows build kit
+
+[The separate owner-private Windows build kit](OWNER_PRIVATE_WINDOWS_BUILD_KIT.md) and `start-owner-private-build.cmd` now perform the previously described **private local build + exact credential pairing + pinned original extraction + Espressif image checks** from one verified Git source SHA, in a newly created non-cloud folder outside the checkout. This stage requires the owner to run it on their Windows computer and does NOT access their SmallTV. Public GitHub CI runs the same software path only with ephemeral binaries/keys and deletes its results, so nothing in a public CI log can substitute for the owner-local folder. The standard compile mode without OEM POST is NOT silently substituted for the experimental private candidate. A complete report still sets `permission_to_flash: false`, and there is no install command.
+
 ### Private offline verification tool (does not create a firmware)
 
 After all owner-private files were locally produced under an explicitly reviewed Git SHA, and when the original ZIP is available locally, run from that private checkout:
