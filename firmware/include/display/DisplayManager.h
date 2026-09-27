@@ -35,7 +35,9 @@ static constexpr int THREE_LINES_SPACE = 60;
 
 class DisplayManager {
    public:
-    static void begin();
+    // 0..7: explicit runtime-only orientation; 255 retains legacy config default.
+    // FirstBoot V2 uses 0 (unmirrored) without touching LittleFS/config.
+    static void begin(uint8_t rotationOverride = 255);
     static void setRotation(uint8_t rotation, String currentIP);
     static Arduino_GFX* getGfx();
     static void drawStartup(String currentIP);
