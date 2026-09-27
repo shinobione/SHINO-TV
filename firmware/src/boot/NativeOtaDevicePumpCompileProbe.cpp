@@ -11,6 +11,8 @@
 #include "boot/NativeOtaNetworkPump.h"
 #include "boot/NativeOtaEntropyReview.h"
 #include "boot/NativeOtaPort80Plan.h"
+#include "boot/NativeOtaSingleIngressShadow.h"
+#include "boot/NativeOtaLegacySessionReview.h"
 #include "shino_private_policy.h"
 
 static_assert(SHINO_ENABLE_NATIVE_SIGNED_OTA == 0,
@@ -21,6 +23,17 @@ static_assert(ARDUINOJSON_VERSION_MAJOR == 7 &&
               "Live ESP8266 JSON library drifted from verified host parity version 7.4.3.");
 static_assert(ShinoNativeOta::NativeOtaPort80Plan::kMaxFirstLineBytes == 128u,
               "Port-80 routing research line cap must stay fixed and disconnected.");
+static_assert(ShinoNativeOta::NativeOtaSingleIngressShadow::kHeaderBytes == 2048u &&
+              ShinoNativeOta::NativeOtaSingleIngressShadow::kLegacyMetricsBytes == 384u,
+              "Source-only single-owner review buffers drifted; re-audit bounded framing.");
+// Compile these SIZEOF limits with the ACTUAL pinned Xtensa ESP8266 toolchain,
+// not just host x86 layout. They are TYPE-SIZE ceilings, not a measured free-
+// heap / peak stack / live port-80 server budget. No object is constructed.
+static_assert(sizeof(ShinoNativeOta::NativeOtaSingleIngressShadow) <= 3072u,
+              "Unwired ingress would exceed 3 KiB of per-instance storage.");
+static_assert(sizeof(ShinoNativeOta::NativeOtaLegacySessionReview) <= 256u,
+              "Unwired 2-slot legacy session model exceeded its type-size envelope.");
+
 
 namespace ShinoNativeOta {
 
