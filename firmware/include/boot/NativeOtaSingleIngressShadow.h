@@ -153,6 +153,16 @@ public:
             ? boundedMetrics_.data():nullptr;
     }
 
+    // Raw Cookie HEADER VALUE only, from this already validated host fixture
+    // request. Does not confer Digest authority; duplicates are still rejected.
+    const char* cookieValueForHostReviewOnly(size_t& n) const {
+        n=0u;
+        if(phase_!=SingleIngressReviewPhase::LegacyRequestReviewedOnly ||
+           !cookiePresent_)return nullptr;
+        n=cookieLength_;
+        return headers_.data()+cookieStart_;
+    }
+
 private:
     struct Span{const char* p;size_t n;};
     static char lower(char c) {return c>='A'&&c<='Z'?static_cast<char>(c+('a'-'A')):c;}
@@ -222,6 +232,13 @@ private:
             } else if(equalName(name,Span{"content-type",12u})) {
                 gotType=match(value,"application/json");
                 if(!gotType)return false;
+            } else if(equalName(name,Span{"cookie",6u})) {
+                // Store bounded source span for host-only session rule testing.
+                // A value >256 is still well-framed HTTP but won't be trusted
+                // by the separate legacy read-session parser.
+                cookiePresent_=true;
+                cookieStart_=valueStart;
+                cookieLength_=value.n;
             } else if(equalName(name,Span{"transfer-encoding",17u}) ||
                       equalName(name,Span{"expect",6u}) ||
                       equalName(name,Span{"content-encoding",16u}) ||
@@ -260,6 +277,8 @@ private:
     std::array<char,kHeaderBytes> headers_{};
     std::array<uint8_t,kLegacyMetricsBytes> boundedMetrics_{};
     size_t lineLength_=0u,headerLength_=0u;
+    size_t cookieStart_=0u,cookieLength_=0u;
+    bool cookiePresent_=false;
     uint32_t bodyLength_=0u,bodyExpected_=0u;
 };
 } // namespace ShinoNativeOta
