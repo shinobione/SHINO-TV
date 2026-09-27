@@ -17,6 +17,10 @@ def status(**changes):
         "mode":"FIRST_BOOT_BRIDGE","pc_metrics_storage":"RAM_ONLY",
         "native_ota_writer_compiled":False,
         "physical_flash_installation_authorized":False,
+        "physical_flash_or_application_OTA_writes_performed_by_diagnostics":False,
+        "filesystem_migration_writes_compiled":False,
+        "application_littlefs_begin_called":False,
+        "application_eeprom_commit_called":False,
         "available_heap_bytes":31520,"running_application_bytes":399152,
     }
     body.update(changes)
@@ -74,6 +78,33 @@ class HeapReadOnlySnapshotTests(unittest.TestCase):
         self.assertEqual(request.get_header("Cache-control"),"no-store")
         self.assertNotIn("/ota/",request.full_url)
         self.assertNotIn("/factory-return",request.full_url)
+
+    def test_exact_installed_review_002_status_without_new_ota_field_is_accepted(self):
+        # Historical actual review-002 bridge status has the common no-write
+        # indicators but not native_ota_writer_compiled, added in PR #20.
+        original=json.loads(status())
+        original.pop("native_ota_writer_compiled")
+        self.assertEqual(probe.validate_status(json.dumps(original).encode()),{
+            "free_heap_bytes":31520,"running_application_bytes":399152})
+
+    def test_missing_or_true_shared_safety_marker_is_rejected_in_both_versions(self):
+        for field in (
+            "physical_flash_installation_authorized",
+            "physical_flash_or_application_OTA_writes_performed_by_diagnostics",
+            "filesystem_migration_writes_compiled",
+            "application_littlefs_begin_called",
+            "application_eeprom_commit_called",
+        ):
+            for replacement in (True,None,0):
+                body=json.loads(status())
+                body.pop("native_ota_writer_compiled")
+                body[field]=replacement
+                with self.subTest(field=field,replacement=replacement), \
+                     self.assertRaises(probe.HeapReadError):
+                    probe.validate_status(json.dumps(body).encode())
+        # Newer builds must not be allowed to explicitly enable native OTA.
+        with self.assertRaises(probe.HeapReadError):
+            probe.validate_status(status(native_ota_writer_compiled=True))
 
     def test_rejects_wrong_or_ambiguous_status_and_oversized_response(self):
         for raw in (
