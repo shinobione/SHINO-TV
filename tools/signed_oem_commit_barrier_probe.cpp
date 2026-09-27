@@ -69,7 +69,7 @@ struct HostSignedCore final {
     std::vector<uint8_t> staged{};
 
     explicit HostSignedCore(EVP_PKEY* key) : publicKey(key) {}
-    bool begin(uint32_t exactSignedBytes) {
+    bool begin(uint32_t exactSignedBytes, ShinoOemPrecommit::SignedApplicationOnlyTag) {
         ++beginCalls;
         if (failBegin || !signedOnly || exactSignedBytes != OemPin::kTransportBytes) {
             fault = true;
