@@ -14,6 +14,7 @@
 #include "boot/NativeOtaSingleIngressShadow.h"
 #include "boot/NativeOtaLegacySessionReview.h"
 #include "boot/NativeOtaHeapReview.h"
+#include "boot/NativeOtaHeapSampleCadence.h"
 #include "shino_private_policy.h"
 
 static_assert(SHINO_ENABLE_NATIVE_SIGNED_OTA == 0,
@@ -96,6 +97,10 @@ struct NativeDeviceHeapSource final {
 };
 static_assert(sizeof(NativeOtaHeapReview<NativeDeviceHeapSource>) <= 64u,
               "Prospective non-running heap review exceeds bounded type budget.");
+static_assert(NativeOtaHeapSampleCadence::kIntervalMs == 1000u,
+              "Prospective heap sampling cadence drifted from 1 Hz maximum.");
+static_assert(sizeof(NativeOtaHeapSampleCadence) <= 8u,
+              "Prospective non-running heap cadence unexpectedly expanded.");
 template class NativeOtaHeapReview<NativeDeviceHeapSource>;
 
 // Fail-closed compile fixture. It does not retain body bytes, has no device
