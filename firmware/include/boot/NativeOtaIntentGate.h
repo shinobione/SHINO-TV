@@ -5,7 +5,7 @@
 // No registration in ESP8266WebServer and no calls to Updater/flash/filesystem.
 // It only validates single-use, peer-bound, time-bounded transfer accounting.
 // Possession of a token, a matching digest, or BytesComplete does NOT prove a
-// signed release, authorize Update.begin(), or authorize hardware flashing.
+// signed release, authorize updater initialization, or authorize hardware flashing.
 // Only a separately designed privileged Digest action may ever arm a future
 // device-side instance; the caller must supply an independently generated
 // unpredictable 128-bit token and an independently approved exact size.
