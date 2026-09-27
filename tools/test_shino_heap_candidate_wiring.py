@@ -55,10 +55,12 @@ class ReadOnlyHeapCandidateWiringTests(unittest.TestCase):
         self.assertIn("if(cadence_.due(nowMs)) (void)review_.capture();",src)
         self.assertEqual(src.count("ESP.getHeapStats("),1)
         self.assertNotIn("ESP.getFreeHeap()",src)
+        executable="\n".join(line for line in src.splitlines()
+                            if not line.lstrip().startswith("//"))
         for forbidden in ("Update.begin(", "Update.write(", "Update.end(",
                           "LittleFS.", "EEPROM.", "WiFiServer(", "ESP8266WebServer(",
                           "server.send(", "ESP.restart(", "malloc(", "new "):
-            self.assertNotIn(forbidden,src)
+            self.assertNotIn(forbidden,executable)
 
     def test_ci_compiles_both_profiles_without_upload_or_secrets_in_image(self):
         ci=WORKFLOW.read_text(encoding="utf-8")
