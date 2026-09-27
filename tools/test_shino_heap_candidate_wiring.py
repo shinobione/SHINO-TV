@@ -73,28 +73,8 @@ class ReadOnlyHeapCandidateWiringTests(unittest.TestCase):
         self.assertEqual(ci.count("pio run -e esp12e_heap_diagnostics"),2)
         self.assertEqual(ci.count("      - name: Delete proprietary manufacturer source, one-use keys and images"),1)
         self.assertEqual(ci.count("        if: always()"),1)
-        self.assertIn("grep -q '^#define SHINO_ENABLE_FACTORY_RESTORE 1        self.assertIn("assert b'OBSERVED_HEAP_V1' not in blob",ci)
-        self.assertIn("for marker in (b'FIRST_BOOT_BRIDGE', b'OBSERVED_HEAP_V1',",ci)
-        self.assertNotIn("pio run -t upload",ci)
-        self.assertNotIn("pio run -t uploadfs",ci)
-        self.assertLess(ci.index("pio run -e esp12e_heap_diagnostics"),
-                        ci.index("Delete proprietary manufacturer source"))
-
-
-if __name__=="__main__":
-    unittest.main()
- firmware/include/shino_private_policy.h",ci)
-        self.assertIn("grep -q '^#define SHINO_ENABLE_NATIVE_SIGNED_OTA 0        self.assertIn("assert b'OBSERVED_HEAP_V1' not in blob",ci)
-        self.assertIn("for marker in (b'FIRST_BOOT_BRIDGE', b'OBSERVED_HEAP_V1',",ci)
-        self.assertNotIn("pio run -t upload",ci)
-        self.assertNotIn("pio run -t uploadfs",ci)
-        self.assertLess(ci.index("pio run -e esp12e_heap_diagnostics"),
-                        ci.index("Delete proprietary manufacturer source"))
-
-
-if __name__=="__main__":
-    unittest.main()
- firmware/include/shino_private_policy.h",ci)
+        self.assertIn("grep -q '^#define SHINO_ENABLE_FACTORY_RESTORE 1$' firmware/include/shino_private_policy.h",ci)
+        self.assertIn("grep -q '^#define SHINO_ENABLE_NATIVE_SIGNED_OTA 0$' firmware/include/shino_private_policy.h",ci)
         self.assertIn("assert b'OBSERVED_HEAP_V1' not in blob",ci)
         self.assertIn("for marker in (b'FIRST_BOOT_BRIDGE', b'OBSERVED_HEAP_V1',",ci)
         self.assertNotIn("pio run -t upload",ci)
