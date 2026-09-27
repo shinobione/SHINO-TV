@@ -6,6 +6,7 @@ or OTA write. Independently runs the Python host oracle on identical bytes.
 A mismatch is a failed research gate, not permission to patch owner hardware.
 """
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -15,7 +16,8 @@ ROOT=Path(__file__).resolve().parent.parent
 sys.path.insert(0,str(ROOT/"tools"))
 from native_ota_host_json_oracle import HostTelemetryJsonOracle  # noqa: E402
 
-ARDUINOJSON=ROOT/"firmware/.pio/libdeps/esp12e/ArduinoJson/src"
+ARDUINOJSON=Path(os.environ.get("SHINO_ARDUINOJSON_SRC",
+    str(ROOT/"firmware/.pio/libdeps/esp12e/ArduinoJson/src")))
 ACTUAL=ROOT/"firmware/src/boot/FslessMetrics.cpp"
 STUB=ROOT/"tools/host_arduinojson_stubs"
 PROBE=ROOT/"tools/native_ota_real_arduinojson_metrics_probe.cpp"
