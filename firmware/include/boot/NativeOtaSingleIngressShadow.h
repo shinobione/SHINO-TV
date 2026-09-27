@@ -180,6 +180,17 @@ public:
         n=cookieLength_;
         return headers_.data()+cookieStart_;
     }
+    // Bounded raw Authorization VALUE from the exact validated host fixture.
+    // The accessor DOES NOT verify credentials; downstream independent host
+    // tests must perform Digest verification before any fixture success flag.
+    // Repeated/mixed-case Authorization lines are already rejected above.
+    const char* authorizationValueForHostReviewOnly(size_t& n) const {
+        n=0u;
+        if(phase_!=SingleIngressReviewPhase::LegacyRequestReviewedOnly ||
+           !authorizationPresent_)return nullptr;
+        n=authorizationLength_;
+        return headers_.data()+authorizationStart_;
+    }
 
 private:
     struct Span{const char* p;size_t n;};
@@ -254,6 +265,11 @@ private:
             } else if(equalName(name,Span{"content-type",12u})) {
                 gotType=match(value,"application/json");
                 if(!gotType)return false;
+            } else if(equalName(name,Span{"authorization",13u})) {
+                // Raw value is never interpreted here or used as authority.
+                authorizationPresent_=true;
+                authorizationStart_=valueStart;
+                authorizationLength_=value.n;
             } else if(equalName(name,Span{"cookie",6u})) {
                 // Store bounded source span for host-only session rule testing.
                 // A value >256 is still well-framed HTTP but won't be trusted
@@ -300,7 +316,8 @@ private:
     std::array<uint8_t,kLegacyMetricsBytes> boundedMetrics_{};
     size_t lineLength_=0u,headerLength_=0u;
     size_t cookieStart_=0u,cookieLength_=0u;
-    bool cookiePresent_=false;
+    size_t authorizationStart_=0u,authorizationLength_=0u;
+    bool cookiePresent_=false,authorizationPresent_=false;
     uint32_t bodyLength_=0u,bodyExpected_=0u;
 };
 } // namespace ShinoNativeOta
