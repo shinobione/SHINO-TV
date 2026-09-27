@@ -547,7 +547,7 @@ static void lcdDrawTextWrapped(int16_t startX, int16_t startY, const String& tex
  *
  * @return void
  */
-auto DisplayManager::begin() -> void { lcdEnsureInit(); }
+auto DisplayManager::begin(uint8_t rotationOverride) -> void { lcdEnsureInit(rotationOverride); }
 
 /**
  * @brief Apply a new display rotation at runtime
