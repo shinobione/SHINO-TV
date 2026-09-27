@@ -3,6 +3,10 @@
 **Status: offline SOURCE + CI prototype; NEVER deployed to owner's SmallTV.**
 **Goal:** a *single-device, no-solder* candidate whose FIRST SHINO application entry does **not initialize/mount/format the manufacturer's 3-MiB photo/GIF filesystem or initialize/write EEPROM from application code.** The factory V9.0.44 OTA entry and acceptance remain unmeasured. Compiling does not authorize flashing.
 
+## 27 September 2026 supersession
+
+The initial first-boot bridge was linked as inherited `4m2m`, but the source-only FS-less V2 is now deliberately linked as `4m3m` for its Arduino OTA stage boundary. No filesystem is mounted or provisioned. The original first-boot gate remains essential; see [current owner decision packet](FIRST_INSTALL_DECISION_PACKET.md) for modeled direct/loader/official return stages and limits. The old 4m2m geometry references below describe the **historical research build**, not the latest owner-candidate source.
+
 ## Why
 
 The owner's `/space.json.total=3,121,152` bytes matches the official Arduino ESP8266 4-MB `4m3m` FS region exactly (physical `0x100000…0x3FA000`). The Times-Z/SHINO `4m2m` build instead has its LittleFS at `0x200000…0x3FA000`, a suffix of the manufacturer data area. Arduino `LittleFSConfig` defaults to **autoFormat=true**: blindly calling `LittleFS.begin()` on that incompatible image can format stock data. The prior SHINO normal startup also initialized `SecureStorage` via EEPROM-backed persistence *before* boot-loop Rescue. An app-only official OEM restore ZIP cannot restore an erased manufacturer filesystem.
