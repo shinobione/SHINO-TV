@@ -8,6 +8,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -139,7 +140,8 @@ int main(int argc, char** argv) {
         const std::string mode(argv[3]);
         const size_t chunk = std::stoul(argv[4]);
         if (!chunk || package.size() > UINT32_MAX) return 2;
-        std::unique_ptr<FILE, decltype(&fclose)> file(fopen(argv[2], "rb"), fclose);
+        struct FileCloser { void operator()(std::FILE* f) const { if (f) std::fclose(f); } };
+        std::unique_ptr<std::FILE, FileCloser> file(std::fopen(argv[2], "rb"));
         if (!file) return 2;
         std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> key(
             PEM_read_PUBKEY(file.get(), nullptr, nullptr, nullptr), EVP_PKEY_free);
