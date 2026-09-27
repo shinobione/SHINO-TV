@@ -171,11 +171,13 @@ private:
             }
             if(age>=oldest){oldest=age;slot=i;}
         }
-        static constexpr char HEX[]="0123456789abcdef";
+        // Arduino Print.h defines HEX as a macro (16). Never use HEX as an
+        // identifier in shared pure headers compiled by the actual ESP8266 core.
+        static constexpr char HEX_DIGITS[]="0123456789abcdef";
         Session next{};
         for(size_t i=0;i<16u;++i) {
-            next.token[i*2u]=HEX[entropy[i]>>4u];
-            next.token[i*2u+1u]=HEX[entropy[i]&0x0fu];
+            next.token[i*2u]=HEX_DIGITS[entropy[i]>>4u];
+            next.token[i*2u+1u]=HEX_DIGITS[entropy[i]&0x0fu];
         }
         next.token[32u]='\0';
         next.peer=peer;
