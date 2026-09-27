@@ -369,7 +369,7 @@ static void lcdHardReset() {
  *
  * @return void
  */
-static void lcdEnsureInit() {
+static void lcdEnsureInit(uint8_t rotationOverride) {
     Logger::info("Initialization started", "DisplayManager");
 
     lcdBacklightOn();
