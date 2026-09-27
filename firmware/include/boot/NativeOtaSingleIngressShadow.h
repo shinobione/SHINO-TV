@@ -43,6 +43,10 @@ public:
     static constexpr size_t kLegacyMetricsBytes=384u;
     static constexpr uint32_t kHeaderDeadlineMs=10000u;
     static constexpr uint32_t kBodyIdleDeadlineMs=15000u;
+    // Independent absolute limit; one byte every 14 seconds must not hold a
+    // single-owner socket indefinitely. Applies to at most 384 legacy bytes.
+    // This is a disconnected host-review rule, not live ESP8266 scheduling.
+    static constexpr uint32_t kBodyTotalDeadlineMs=30000u;
 
     explicit NativeOtaSingleIngressShadow(uint32_t startedMs)
         : startedMs_(startedMs), lastReadMs_(startedMs) {}
@@ -92,6 +96,10 @@ public:
                     if (classification_.plan==Port80Plan::LegacyMetricsPost &&
                         (bodyExpected_<16u || bodyExpected_>kLegacyMetricsBytes))
                         return reject(SingleIngressRefusal::LegacyMetricsLengthOutsideBounds);
+                    // Begin the absolute body/message deadline only
+                    // after the exact bounded headers are validated.
+                    // Wrap-safe unsigned elapsed arithmetic in tick().
+                    bodyStartedMs_=nowMs;
                     phase_=bodyExpected_?
                         SingleIngressReviewPhase::BoundedLegacyBody:
                         SingleIngressReviewPhase::AwaitExactClose;
@@ -118,7 +126,8 @@ public:
         }
         if(phase_==SingleIngressReviewPhase::BoundedLegacyBody ||
            phase_==SingleIngressReviewPhase::AwaitExactClose) {
-            if(static_cast<uint32_t>(nowMs-lastReadMs_)>=kBodyIdleDeadlineMs)
+            if(static_cast<uint32_t>(nowMs-bodyStartedMs_)>=kBodyTotalDeadlineMs ||
+               static_cast<uint32_t>(nowMs-lastReadMs_)>=kBodyIdleDeadlineMs)
                 return reject(SingleIngressRefusal::Deadline);
             return true;
         }
@@ -307,7 +316,7 @@ private:
         bodyLength_=0u;
         return false;
     }
-    uint32_t startedMs_=0u,lastReadMs_=0u;
+    uint32_t startedMs_=0u,lastReadMs_=0u,bodyStartedMs_=0u;
     Port80Classification classification_{};
     SingleIngressReviewPhase phase_=SingleIngressReviewPhase::FirstLine;
     SingleIngressRefusal refusal_=SingleIngressRefusal::None;
