@@ -88,8 +88,15 @@ int main(int argc,char** argv) {
 
     LegacyHttpPreview reply{};
     const auto parsed=shadow.result();
-    if(!rejected &&
-       parsed.phase==SingleIngressReviewPhase::LegacyRequestReviewedOnly) {
+    // Even an oversized declared Windows POST is NOT read into RAM. The
+    // source's 413 is a post-Digest response: the host fixture retains only
+    // bounded header metadata and authenticates its synthetic decision first.
+    const bool boundedOversize=
+        rejected && parsed.route==Port80Plan::LegacyMetricsPost &&
+        parsed.refusal==SingleIngressRefusal::LegacyMetricsLengthOutsideBounds;
+    if((!rejected &&
+        parsed.phase==SingleIngressReviewPhase::LegacyRequestReviewedOnly) ||
+       boundedOversize) {
         NativeOtaLegacySessionReview sessions;
         if(cookieFixture) {
             // Explicitly prepare one synthetic prior Digest-successful GET /.
@@ -114,7 +121,8 @@ int main(int argc,char** argv) {
         // A tiny frozen synthetic dictionary is intentionally NOT a JSON
         // parser. Unexpected JSON receives the malformed-fixture branch.
         reply=NativeOtaLegacyResponsePreview::decide(
-            parsed.route,d,parsed.bodyBytes,knownValid||knownBadNumeric,
+            parsed.route,d,boundedOversize?parsed.declaredBodyBytes:parsed.bodyBytes,
+            knownValid||knownBadNumeric,
             knownValid?LegacyTelemetryResult::AcceptedIntoHostFixtureRamOnly:
                        LegacyTelemetryResult::InvalidNumbers);
     } else {
