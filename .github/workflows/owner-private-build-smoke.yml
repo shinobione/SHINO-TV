@@ -1,0 +1,120 @@
+name: Owner-private kit smoke (ephemeral, NO owner device)
+
+on:
+  push:
+    branches: ['safety/owner-private-windows-build-kit']
+    paths:
+      - 'tools/build_owner_private_packet.py'
+      - 'tools/test_build_owner_private_packet.py'
+      - 'tools/owner_install_packet_gate.py'
+      - 'firmware/**'
+      - '.github/workflows/owner-private-build-smoke.yml'
+  pull_request:
+    paths:
+      - 'tools/build_owner_private_packet.py'
+      - 'tools/test_build_owner_private_packet.py'
+      - 'tools/owner_install_packet_gate.py'
+      - 'firmware/**'
+      - '.github/workflows/owner-private-build-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-local-packaging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Full-source checkout to verify reviewed ancestor and actual current commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install local image inspection and compiler on ephemeral CI only
+        run: python -m pip install 'platformio>=6.1,<7' 'esptool>=5,<6'
+      - name: Unit-test private kit; never access a TV or create release
+        run: python -m unittest discover -s tools -p 'test_build_owner_private_packet.py' -v
+      - name: Exercise actual private one-run packaging from exact checkout and verified OEM ZIP
+        env:
+          PRIVATE_OUTPUT: ${{ runner.temp }}/shino-owner-private-smoke
+        run: |
+          python tools/build_owner_private_packet.py \
+            --expected-source-sha "$(git rev-parse HEAD)" \
+            --output-root "$PRIVATE_OUTPUT"
+      - name: Validate sanitized packet and default FALSE deployment gates without reading secrets
+        env:
+          PRIVATE_OUTPUT: ${{ runner.temp }}/shino-owner-private-smoke
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          base=Path(os.environ['PRIVATE_OUTPUT'])
+          folders=list(base.glob('SHINO-V2-PRIVATE-*'))
+          assert len(folders)==1, 'Expected one unique local packet'
+          folder=folders[0]
+          assert not (folder/'INCOMPLETE__DO_NOT_FLASH.txt').exists()
+          reports=list((folder/'reports').glob('owner-private-build-manifest.json'))
+          assert len(reports)==1
+          manifest=json.loads(reports[0].read_text(encoding='utf-8'))
+          assert manifest['permission_to_flash'] is False
+          assert manifest['physical_device_accessed'] is False
+          assert manifest['device_upload_or_flash'] is False
+          assert manifest['filesystem_image_compiled_or_migrated'] is False
+          assert manifest['actual_candidate']['bytes'] < 494144
+          assert manifest['actual_candidate']['linker_map']=='eagle.flash.4m3m.ld'
+          assert manifest['actual_candidate']['esptool_checksum_valid'] is True
+          assert manifest['verified_original_app']['esptool_checksum_valid'] is True
+          assert manifest['private_files_are_one_exact_build'] is True
+          assert (folder/'private/credentials.txt').is_file()
+          assert (folder/'private/shino_private_policy.h').is_file()
+          assert (folder/'images/FW-Smalltv-Ultra-V9.0.44.bin').stat().st_size == 494144
+          assert not Path('firmware/include/shino_private_policy.h').exists()
+          assert not Path('firmware/.pio').exists()
+          assert not Path('firmware/data/config.json').exists()
+          print('PASS: actual exact-source packet and verified one-build pairing.')
+          print('No secrets/images published, device operation or flash permission.')
+          PY
+      - name: Delete ephemeral OEM bytes, candidate image and ALL generated private keys
+        if: always()
+        run: |
+          rm -rf "$RUNNER_TEMP/shino-owner-private-smoke" firmware/.pio firmware/private
+          rm -f firmware/include/shino_private_policy.h firmware/data/config.json
+
+  verify-windows-owner-path:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - name: Full clean owner-style Git clone with source commit history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install Windows Python build and checksum dependencies
+        run: python -m pip install "platformio>=6.1,<7" "esptool>=5,<6"
+      - name: Run source regression tests before building an ephemeral PRIVATE Windows packet
+        run: python -m unittest discover -s tools -p "test_build_owner_private_packet.py" -v
+      - name: Execute the actual manual owner Python build flow on Windows; no TV or upload
+        shell: pwsh
+        run: |
+          $source = (git rev-parse HEAD).Trim()
+          python tools/build_owner_private_packet.py --expected-source-sha "$source" --output-root "$env:RUNNER_TEMP\shino-owner-private-windows"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Independently verify Windows-native output summary and absence of flash permission
+        shell: pwsh
+        run: |
+          $env:PRIVATE_OUTPUT = "$env:RUNNER_TEMP\shino-owner-private-windows"
+          python -c "import json,os,pathlib; p=pathlib.Path(os.environ['PRIVATE_OUTPUT']); f=list(p.glob('SHINO-V2-PRIVATE-*/reports/owner-private-build-manifest.json')); assert len(f)==1; d=json.loads(f[0].read_text()); assert d['permission_to_flash'] is False and d['device_upload_or_flash'] is False and d['physical_device_accessed'] is False; assert d['actual_candidate']['esptool_checksum_valid'] is True; assert d['private_files_are_one_exact_build'] is True; print('PASS: Windows local bundle and checksum/privacy gates; no hardware contact.')"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Delete all ephemeral Windows OEM/candidate images and PRIVATE credentials
+        if: always()
+        shell: pwsh
+        run: |
+          foreach ($p in @("$env:RUNNER_TEMP\shino-owner-private-windows", "firmware\.pio", "firmware\private", "firmware\include\shino_private_policy.h")) {
+            if (Test-Path -LiteralPath $p) { Remove-Item -LiteralPath $p -Recurse -Force -ErrorAction SilentlyContinue }
+          }
