@@ -68,7 +68,9 @@ jobs:
       - name: Compare REAL pinned ArduinoJson with unchanged FslessMetrics.cpp on host (NO DEVICE)
         run: |
           test -f firmware/.pio/libdeps/esp12e/ArduinoJson/src/ArduinoJson/version.hpp
-          grep -q '^#define ARDUINOJSON_VERSION "7.4.3"        run: |
+          python tools/verify_native_arduinojson_parity.py
+      - name: Enforce actual no-FS candidate size and source/flash markers
+        run: |
           python - <<'PY'
           import os
           from pathlib import Path
