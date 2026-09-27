@@ -68,6 +68,7 @@ int main(int argc,char** argv) {
     NativeOtaSingleIngressShadow shadow(101u);
     const auto began=std::chrono::steady_clock::now();
     bool rejected=false;
+    bool messageReady=false;
     uint8_t buf[512]{};
     while(true) {
         const ssize_t n=::recv(connection,buf,sizeof(buf),0);
@@ -76,13 +77,22 @@ int main(int argc,char** argv) {
             if(!shadow.feed(buf,static_cast<size_t>(n),when)) {
                 rejected=true;break;
             }
-        } else if(n==0)break;
-        else if(errno==EINTR)continue;
+            if(shadow.result().phase==SingleIngressReviewPhase::AwaitExactClose) {
+                // End at the exact HTTP message boundary: normal clients do
+                // not have to half-close their TCP write side before a reply.
+                messageReady=true;break;
+            }
+        } else if(n==0) {
+            messageReady=shadow.result().phase==SingleIngressReviewPhase::AwaitExactClose;
+            if(!messageReady)rejected=true;
+            break;
+        } else if(errno==EINTR)continue;
         else if(errno==EAGAIN || errno==EWOULDBLOCK) {
             if(!shadow.tick(when)) {rejected=true;break;}
         } else {rejected=true;break;}
     }
-    if(!rejected && !shadow.finishOnExactTransportClose(nowMs(began)))
+    if(!rejected && (!messageReady ||
+       !shadow.finishOnExactMessageBoundaryForHostReviewOnly(nowMs(began))))
         rejected=true;
     if(rejected)shadow.disconnect();
 
