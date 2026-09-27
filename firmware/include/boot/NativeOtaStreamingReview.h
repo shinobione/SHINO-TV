@@ -70,6 +70,8 @@ public:
     // payload bytes in the SAME received packet. Never buffers firmware: only
     // fixed 2KiB header and one externally supplied <=4KiB payload span.
     bool feed(const uint8_t* wire, size_t bytes, uint32_t nowMs) {
+        if (phase_==StreamReviewPhase::BodyCompleteAwaitingReview)
+            return fail(); // Any further wire bytes after Content-Length abort.
         if (phase_!=StreamReviewPhase::RawHeaders && phase_!=StreamReviewPhase::Body)
             return false;
         if (!wire || bytes==0u || !tick(nowMs)) return fail();
@@ -127,6 +129,8 @@ public:
     // body/pipelined data buffered, and it has received exactly Content-Length.
     // This is an informational "bytes checked" outcome, NEVER installation.
     bool finishAfterExactFraming(uint32_t nowMs) {
+        if (phase_==StreamReviewPhase::RawHeaders || phase_==StreamReviewPhase::Body)
+            return fail(); // Attempted EOF/finalize with missing bytes aborts.
         if (phase_!=StreamReviewPhase::BodyCompleteAwaitingReview) return false;
         if (!tick(nowMs) ||
             !intent_.finish(peer_,boundToken_,expectedBytes_,nowMs)) return fail();
