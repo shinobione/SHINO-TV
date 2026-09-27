@@ -106,7 +106,7 @@ int main() {
                                     "algorithm=\"SHA-512-256\"",
                                     "uri=\"/api/v1/bridge/ota/arm\"",
                                     "realm=\"Other\"","username=\"intruder\"",
-                                    "cnonce=\"a\"","opaque=\"00000000000000000000000000000000\""}) {
+                                    "cnonce=\"a\"","cnonce=\"abc:defghi\"","cnonce=\"abc,defghi\"","opaque=\"00000000000000000000000000000000\""}) {
         auto v=auth();std::string needle;
         if(std::string(replacement).find("qop=")==0)needle="qop=auth";
         else if(std::string(replacement).find("algorithm=")==0)needle="algorithm=SHA-256";
