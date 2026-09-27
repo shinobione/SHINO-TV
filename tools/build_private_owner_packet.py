@@ -135,7 +135,9 @@ def write_private_kit(zip_path: Path, out_dir: Path, expected_source_sha: str, *
         for item in (private_app, private_oem):
             # Exact esptool image-info is a FILE-ONLY command; no serial port,
             # baud, target address, upload/flash/erase or device connection.
-            run([python, "-m", "esptool", "image-info", str(item)], output=False)
+            inspection = run([python, "-m", "esptool", "image-info", str(item)])
+            if "Detected image type: ESP8266" not in inspection or                "Checksum:" not in inspection or "(valid)" not in inspection:
+                raise OwnerKitError("Independent ESP8266 image-info checksum not confirmed as valid")
         if report["status"] != "PRIVATE_OFFLINE_PACKET_CHECKED__OWNER_FLASH_NOT_AUTHORIZED":
             raise OwnerKitError("Safe review status missing")
         if report["permission_to_flash"] or report["files_uploaded"]:
@@ -185,6 +187,9 @@ def write_private_kit(zip_path: Path, out_dir: Path, expected_source_sha: str, *
         if generated:
             POLICY.unlink(missing_ok=True)
             CREDENTIALS.unlink(missing_ok=True)
+            # The only preserved reviewed BIN is the verified private KIT
+            # copy, not a second ignored leftover under the source checkout.
+            APP.unlink(missing_ok=True)
         if temporary.exists():
             shutil.rmtree(temporary)
         # PlatformIO output is ignored and stays local; do not auto-delete it
