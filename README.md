@@ -122,6 +122,10 @@ A no-install/no-flash Windows report tool is available on the stacked `research/
 The [LittleFS migration safety report](docs/VERIFIED_FS_PROVISIONING.md) explains why a full 2,072,576-byte image of our 4m2m FS is **not an atomic OTA operation** on this ESP8266. The new offline tooling verifies and pins the exact FS image and safely reports the old-data overlap; the bridge has only an authenticated GET impact page. Automatic formatting, filesystem writer and on-device upload remain disabled. The original V9.0.44 application ZIP does not restore stock filesystem data.
 
 
+## New: private Windows review kit — source only, NO device upload
+
+After the [first-install decision packet](docs/FIRST_INSTALL_DECISION_PACKET.md), the [private Windows build guide](docs/PRIVATE_WINDOWS_BUILD_KIT.md) and start-private-owner-build.cmd now prepare exactly one local, source-SHA-locked SHINO V2 BIN with matching private credentials and the verified OEM application-only rollback reference. This is **not a public firmware release, does not contact the only SmallTV, and is not permission to flash**. Keep the generated policy/BIN/passwords private and provide only the sanitized review manifest if requested.
+
 ## One-device first-install decision — NEW stock-like 4m3m envelope
 
 The [first-install offline decision packet](docs/FIRST_INSTALL_DECISION_PACKET.md) builds the FS-less UI V2 against **`eagle.flash.4m3m.ld`**, not the inherited 4m2m linker. The owner's 3,121,152-byte stock FS matches this geometry exactly but its proprietary OTA acceptance remains UNKNOWN. The modeled *direct* initial OTA and size-fitting future 4m3m OTA/official-app return stage before the inferred OEM files; the transient 4m1m loader's **second hop** instead overwrites inferred stock file sectors. Separate private build/OEM/credentials SHA checks remain required before a later explicitly approved first upload. No hardware contact, no publicly distributed binary and no flash permission.
