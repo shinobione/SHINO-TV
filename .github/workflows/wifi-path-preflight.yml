@@ -192,6 +192,23 @@ jobs:
           signature=sig.read_bytes()
           assert len(signature)==256
           signed.write_bytes(raw_path.read_bytes()+signature+struct.pack('<I',len(signature)))
+          # Independently execute the SAME production SHA-256 raw precommit
+          # C++ gate against ACTUAL pinned OEM bytes. No updater or device.
+          exe=Path('/tmp/shino-oem-precommit-probe')
+          subprocess.run([
+              'g++','-std=c++17','-Wall','-Wextra','-Werror','-pedantic',
+              '-DSHINO_USE_PRODUCTION_OEM_PIN',
+              '-Ifirmware/include',
+              'tools/signed_oem_precommit_host_probe.cpp',
+              '-o',str(exe),'-lcrypto'],
+              check=True,stdout=subprocess.DEVNULL)
+          subprocess.run([str(exe),str(signed),'4096','1'],check=True)
+          unsigned_modified=bytearray(raw_path.read_bytes())
+          unsigned_modified[12345] ^= 1
+          changed=Path('/tmp/shino-oem-precommit-modified.bin')
+          changed.write_bytes(unsigned_modified+signature+struct.pack('<I',len(signature)))
+          subprocess.run([str(exe),str(changed),'257','0'],check=True)
+          print('PASS: production pinned C++ OEM precommit on true official bytes; one-byte alteration rejected.')
           report=assess_signed_oem(
               signed,pub,
               Path('reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip'),
@@ -230,4 +247,4 @@ jobs:
         run: |
           rm -rf reference-geekmagic recovery_loader/private recovery_loader/.pio firmware/.pio firmware/private
           rm -f recovery_loader/include/local_policy.h firmware/data/config.json firmware/include/shino_private_policy.h
-          rm -f /tmp/shino-preflight-candidate.bin /tmp/shino-preflight-loader.bin /tmp/shino-preflight-original.bin /tmp/shino-preflight-result.json /tmp/owner-packet-sanitized.json /tmp/shino-oem-test-private.pem /tmp/shino-oem-test-public.pem /tmp/shino-oem-test.sig /tmp/shino-oem-test-signed.bin
+          rm -f /tmp/shino-preflight-candidate.bin /tmp/shino-preflight-loader.bin /tmp/shino-preflight-original.bin /tmp/shino-preflight-result.json /tmp/owner-packet-sanitized.json /tmp/shino-oem-test-private.pem /tmp/shino-oem-test-public.pem /tmp/shino-oem-test.sig /tmp/shino-oem-test-signed.bin /tmp/shino-oem-precommit-probe /tmp/shino-oem-precommit-modified.bin
