@@ -64,7 +64,7 @@ class PrivateWindowsBuildTests(unittest.TestCase):
         self.assertIn("OWNER_PRIVATE_LOCAL_FILES_VERIFIED__FLASH_NOT_AUTHORIZED", source)
         self.assertIn("permission_to_flash", source)
         self.assertIn("False", source)
-        self.assertIn("PRIVATE", APP_NAME)
+        self.assertIn("private", APP_NAME)
         self.assertTrue(OEM_URL.startswith("https://raw.githubusercontent.com/GeekMagicClock/"))
         self.assertEqual(len(PR16_REVIEWED_ANCESTOR), 40)
         self.assertTrue(BIN_NAME.endswith(".bin"))
