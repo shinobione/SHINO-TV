@@ -8,17 +8,13 @@
 
 On 2026-09-27, the owner already performed **previous SHINO V2 → exact official OEM Ultra-V9.0.44 application by the existing authenticated factory-return Wi-Fi route**, then verified the OEM clock, domestic Wi-Fi, `/v.json` response identifying Ultra-V9.0.44 and available stock `GET /update`. The owner subsequently returned **OEM `/update` → current SHINO V2 Hotfix review-002**, with the four 240x240 CPU/GPU/RAM/temperature cards working.
 
-The **CURRENT review-002** private candidate was owner-reported as source `cf65c74775ac55b52b3993704e2f8b8e6cce198a`, 400,592-byte BIN SHA-256 `d7d37092573e65be13f54077e95534438fe790a27b2e65cbd0b8034f18f93717`. Its private builder explicitly generated `--enable-restore` and the local review manifest reported factory return compiled true. The **previous V2** live `factory-return` GET reported `write_enabled:true`; the exact same GET has **not yet been observed after installing current review-002**. Do not collapse these two separate observations.
+The **CURRENT review-002** private candidate was owner-reported as source `cf65c74775ac55b52b3993704e2f8b8e6cce198a`, 400,592-byte BIN SHA-256 `d7d37092573e65be13f54077e95534438fe790a27b2e65cbd0b8034f18f93717`. Its private builder explicitly generated `--enable-restore` and the local review manifest reported factory return compiled true. Both the earlier V2 and **the currently installed review-002** have now separately produced a live owner-observed `factory-return` GET with `write_enabled:true`. The current response is documented below; neither observation is authorization for an upload.
 
 The running current V2 has four owner-reported read-only free heap samples: 32,184 idle, 32,016 with Chrome, 31,960 with normal Windows sender and 32,128 after load. All responses gave running application size 400,592. Those are snapshots, not peak, fragmentation or binary checksum proof.
 
-## One decisive current-device observation, GET only
+## Current Hotfix live OEM-return GET confirmed (read-only, 2026-09-28 local)
 
-When Windows is connected to the ordinary SHINO AP, use the existing authenticated Chrome browser session to open exactly:
-
-`http://192.168.4.1/api/v1/bridge/factory-return`
-
-It is already registered in the reviewed current Hotfix source as a **GET-only status handler** even when uploads are disabled. Inspect only `write_enabled`, `application_bytes` and `manufacturer_sha256`, expecting boolean `true`, integer **494144** and official SHA-256 **a6421f5bfee7860d97bed26620c346b8008f503e513702d4bfdf6e01010a7718**. The status also says `full_flash_backup:false`, `filesystem_layout_verified:false`. Do not send credentials, raw private data, POST/file/dummy BIN, route scan or firmware anywhere. A GET returning the expected values proves a bounded OEM-only route is present on the current running build, **not** permission or guaranteed successful firmware installation. False/missing/mismatched values = STOP.
+The owner supplied the actual authenticated `GET /api/v1/bridge/factory-return` result **after review-002 installation**: `write_enabled:true`, `application_bytes:494144`, and `manufacturer_sha256:a6421f5bfee7860d97bed26620c346b8008f503e513702d4bfdf6e01010a7718` exactly match the pinned original OEM application. The same real response states `full_flash_backup:false` and `filesystem_layout_verified:false`. This resolves the previous *current-device presence* uncertainty; do not ask owner to repeat that GET. It does not prove success of a future write or grant flash permission. Full provenance, safeguards and limits: [V21_WIFI_ONLY_RETURN_CHAIN_AUDIT.md](V21_WIFI_ONLY_RETURN_CHAIN_AUDIT.md).
 
 ## Conditional two-operation Wi-Fi transition (not approved yet)
 
