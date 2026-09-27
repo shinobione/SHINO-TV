@@ -133,9 +133,18 @@ class ActualHeaderIntegratedFixtureTests(unittest.TestCase):
             # test-scope fake sentinel maps to this localhost/ephemeral port.
             real_validate=sender.validate_host
             fake="integrated-test-loopback-only"
+            original_request=sender.Request
+            def local_fixture_request(url,*args,**kwargs):
+                # Host names the simulated private AP even though the test
+                # transport is 127.0.0.1:ephemeral. The actual sender/host
+                # whitelist and strict C++ Host check are not modified.
+                headers=dict(kwargs.pop("headers",{}))
+                headers["Host"]="192.168.4.1"
+                return original_request(url,*args,headers=headers,**kwargs)
             with patch.object(sender,"validate_host",
                               side_effect=lambda h: base.split("//",1)[1]
-                                  if h==fake else real_validate(h)):
+                                  if h==fake else real_validate(h)), \
+                 patch.object(sender,"Request",side_effect=local_fixture_request):
                 windows=sender.make_opener(fake,USER,PASSWORD)
                 self.assertTrue(sender.send_one(fake,windows,SAMPLE,timeout=4.0))
             read_only=self.opener(base,jar,with_digest=False)
