@@ -52,7 +52,7 @@ class OwnerPort80MigrationPlanTests(unittest.TestCase):
         self.assertEqual(original.count("server.handleClient()"),1)
         self.assertIn("server.onNotFound",original)
         self.assertIn("SHINO_ENABLE_FACTORY_RESTORE",original)
-        for method,path in actual:
+        for path,method in actual:
             self.assertIn(path,plan)
         self.assertIn("OtaReservedArm",plan)
         self.assertIn("OtaReservedUpload",plan)
