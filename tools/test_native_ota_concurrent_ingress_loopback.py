@@ -29,11 +29,24 @@ def partial():
 
 
 def receive(sock,expected):
+    # Use HTTP's declared message boundary; a promptly refused busy client
+    # may receive an RST on socket close if unread inbound request bytes
+    # remain, AFTER all Content-Length response bytes have arrived.
+    # Do not wait for a graceful TCP FIN or drain a potentially huge request.
     response=b""
     while True:
-        part=sock.recv(4096)
+        try:
+            part=sock.recv(4096)
+        except ConnectionResetError:
+            break
         if not part:break
         response+=part
+        head,separator,body_so_far=response.partition(b"\r\n\r\n")
+        if separator:
+            lengths=[line.split(b": ",1)[1] for line in head.split(b"\r\n")
+                     if line.startswith(b"Content-Length: ")]
+            if len(lengths)==1 and len(body_so_far)>=int(lengths[0]):
+                break
     header,sep,body=response.partition(b"\r\n\r\n")
     assert sep==b"\r\n\r\n",response[:180]
     assert f"HTTP/1.1 {expected} ".encode() in header,header
