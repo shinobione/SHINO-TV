@@ -195,7 +195,7 @@ int rejectBeforeBody() {
         std::string("Transfer-Encoding: chunked\r\n"),
         std::string("Origin: http://evil.invalid\r\n"),
         std::string("X-Shino-Intent: ")+TOKEN_HEX+"\r\n",
-        std::string("Content-Length: 64260\r\n",
+        std::string("Content-Length: 64260\r\n"),
         std::string("Expect: 100-continue\r\n")}) {
         Fixture f;CHECK(f.prepare());
         CHECK(!f.headerOnly(f.header(authorization(),extra)));
