@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
+#include <string>
 using namespace ShinoNativeOta;
 #define CHECK(x) do { if(!(x)) { std::cerr<<"FAIL "<<__LINE__<<": "<<#x<<"\n"; return 1; } } while(0)
 
