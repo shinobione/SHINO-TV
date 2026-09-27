@@ -9,6 +9,7 @@
 #include "boot/NativeOtaSingleIngressShadow.h"
 #include "boot/NativeOtaLegacySessionReview.h"
 #include "boot/NativeOtaLegacyResponsePreview.h"
+#include "boot/FslessWebUI.h"
 #include <openssl/evp.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -242,7 +243,17 @@ int main(int argc,char** argv) {
             reply.body="{\"error\":\"HOST_ONLY_INGRESS_REJECTED_NO_WRITER\"}";
         }
         if(reply.status!=200)++refusals;
-        const std::string body=reply.body;
+        // On the HOST fixture only, use the byte-for-byte ORIGINAL firmware
+        // PROGMEM assets instead of placeholder HTML/JS. All authorization
+        // and request framing still happen BEFORE serving these GET assets.
+        // This is NOT a runtime ESP8266WebServer handler and cannot mutate
+        // RAM metrics, any filesystem or flash.
+        const bool sendRealPage=reply.status==200 &&
+            parsed.route==Port80Plan::LegacyDashboardGet;
+        const bool sendRealScript=reply.status==200 &&
+            parsed.route==Port80Plan::LegacyJavascriptGet;
+        const std::string body=sendRealPage?std::string(FslessWebUI::PAGE):
+            (sendRealScript?std::string(FslessWebUI::SCRIPT):std::string(reply.body));
         std::string header=std::string("HTTP/1.1 ")+std::to_string(reply.status)+
             " "+reason(reply.status)+"\r\nConnection: close\r\n"
             "Cache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\n"
