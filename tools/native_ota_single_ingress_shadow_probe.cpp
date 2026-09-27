@@ -78,7 +78,11 @@ int denials(){
     }
     {
         const auto r=send(request("GET","/update"),4096u);
-        CHECK(r.refusal==SingleIngressRefusal::UnsupportedMethodOrPath);
+        CHECK(r.phase==SingleIngressReviewPhase::LegacyRequestReviewedOnly);
+        CHECK(r.route==Port80Plan::LegacyAuthenticatedNotFound);
+        CHECK(r.refusal==SingleIngressRefusal::None);
+        CHECK(r.requiresExistingLegacyAuthentication &&
+              !r.browserGetCookieMayBeConsidered && !r.routeWasActuallyDispatched);
     }
     {
         const auto r=send(request("GET","/api/v1/bridge/metrics",
@@ -121,7 +125,9 @@ int denials(){
     {
         auto r=send(request("POST","/api/v1/bridge/metrics",
             "Content-Type: application/json\r\nContent-Length: 385\r\n",std::string(385u,'x')),4096u);
-        CHECK(r.refusal==SingleIngressRefusal::InvalidFraming);
+        CHECK(r.refusal==SingleIngressRefusal::LegacyMetricsLengthOutsideBounds);
+        CHECK(r.bodyBytes==0u && r.declaredBodyBytes==385u);
+        CHECK(!r.routeWasActuallyDispatched && !r.otaWriterCompiled);
     }
     {
         NativeOtaSingleIngressShadow shadow(100u);
