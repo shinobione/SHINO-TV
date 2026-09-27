@@ -20,13 +20,15 @@ enum class SingleIngressReviewPhase : uint8_t {
 };
 enum class SingleIngressRefusal : uint8_t {
     None, Invalid, OtaReservedNoWriter, FactoryWriteDisabled,
-    UnsupportedMethodOrPath, InvalidFraming, Deadline
+    UnsupportedMethodOrPath, LegacyMetricsLengthOutsideBounds,
+    InvalidFraming, Deadline
 };
 struct SingleIngressReviewResult {
     Port80Plan route=Port80Plan::Invalid;
     SingleIngressReviewPhase phase=SingleIngressReviewPhase::FirstLine;
     SingleIngressRefusal refusal=SingleIngressRefusal::None;
     uint32_t bodyBytes=0u;
+    uint32_t declaredBodyBytes=0u; // metadata, NEVER an allocation request.
     bool requiresExistingLegacyAuthentication=false;
     bool browserGetCookieMayBeConsidered=false;
     bool routeWasActuallyDispatched=false; // ALWAYS false.
@@ -74,8 +76,8 @@ public:
                     if (classification_.plan==Port80Plan::Invalid ||
                         classification_.plan==Port80Plan::Incomplete)
                         return reject(SingleIngressRefusal::InvalidFraming);
-                    if (classification_.plan==Port80Plan::LegacyAuthenticatedNotFound)
-                        return reject(SingleIngressRefusal::UnsupportedMethodOrPath);
+                    // Unknown non-OTA routes still need independent Digest
+                    // BEFORE a future 404, never an actual legacy dispatch.
                     phase_=SingleIngressReviewPhase::Headers;
                 }
             } else if (phase_==SingleIngressReviewPhase::Headers) {
@@ -87,6 +89,9 @@ public:
                     headers_[headerLength_-2u]=='\r' &&
                     headers_[headerLength_-1u]=='\n') {
                     if(!inspectHeaders())return reject(SingleIngressRefusal::InvalidFraming);
+                    if (classification_.plan==Port80Plan::LegacyMetricsPost &&
+                        (bodyExpected_<16u || bodyExpected_>kLegacyMetricsBytes))
+                        return reject(SingleIngressRefusal::LegacyMetricsLengthOutsideBounds);
                     phase_=bodyExpected_?
                         SingleIngressReviewPhase::BoundedLegacyBody:
                         SingleIngressReviewPhase::AwaitExactClose;
@@ -138,6 +143,7 @@ public:
         out.phase=phase_;
         out.refusal=refusal_;
         out.bodyBytes=bodyLength_;
+        out.declaredBodyBytes=bodyExpected_;
         out.requiresExistingLegacyAuthentication=
             classification_.plan!=Port80Plan::Invalid &&
             classification_.plan!=Port80Plan::Incomplete &&
@@ -181,11 +187,15 @@ private:
                (c>='0'&&c<='9')||c=='-';
     }
     static bool decimal(Span value,uint32_t& out) {
-        if(value.n==0u || value.n>3u || (value.n>1u && value.p[0]=='0'))return false;
+        if(value.n==0u || value.n>9u || (value.n>1u && value.p[0]=='0'))return false;
         uint32_t n=0u;
         for(size_t i=0u;i<value.n;++i) {
             if(value.p[i]<'0'||value.p[i]>'9')return false;
-            n=n*10u+static_cast<uint32_t>(value.p[i]-'0');
+            const uint32_t digit=static_cast<uint32_t>(value.p[i]-'0');
+            // A large Content-Length is metadata to reject, not body storage.
+            if(n>1000000u)return false;
+            n=n*10u+digit;
+            if(n>1000000u)return false;
         }
         out=n;return true;
     }
@@ -249,7 +259,7 @@ private:
         }
         if(!host)return false;
         if(classification_.plan==Port80Plan::LegacyMetricsPost) {
-            if(!gotLength||declared<16u||declared>kLegacyMetricsBytes||!gotType)return false;
+            if(!gotLength||!gotType)return false;
             bodyExpected_=declared;
         } else {
             if(gotLength&&declared!=0u)return false;
