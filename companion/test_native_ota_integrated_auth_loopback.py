@@ -13,7 +13,6 @@ from urllib.request import (
     ProxyHandler, Request, build_opener,
 )
 import json
-import hashlib
 import re
 import shutil
 import socket
@@ -186,11 +185,11 @@ class ActualHeaderIntegratedFixtureTests(unittest.TestCase):
         self.assertIn("READ_COOKIES 1",self.last_counts)
         self.assertIn("POST_PREVIEWS 1",self.last_counts)
 
-    def test_original_progmeme_assets_are_byte_exact_and_not_anonymous(self):
+    def test_original_progmem_assets_are_byte_exact_and_not_anonymous(self):
         # One 401 for unauthenticated JS, then two requests for root Digest,
         # then read-only JS with the returned cookie. No synthetic text body.
         with self.server(4) as (base,proc):
-            h,b=self.raw(base,b"GET /ui.js HTTP/1.1\\r\\nHost: 192.168.4.1\\r\\n\\r\\n")
+            h,b=self.raw(base,b"GET /ui.js HTTP/1.1\r\nHost: 192.168.4.1\r\n\r\n")
             self.assertIn(b"HTTP/1.1 401 ",h)
             self.assertNotIn(b"FslessWebUI",b)
             browser=self.opener(base,CookieJar())
@@ -210,7 +209,6 @@ class ActualHeaderIntegratedFixtureTests(unittest.TestCase):
         self.assertIn("READ_COOKIES 1",self.last_counts)
         for name in ("PAGE","SCRIPT"):
             original=self.original_web_asset(name)
-            self.assertEqual(len(hashlib.sha256(original).hexdigest()),64)
             self.assertNotIn(b"/api/v1/bridge/ota/upload",original)
             self.assertNotIn(b'form method="post"',original.lower())
 
