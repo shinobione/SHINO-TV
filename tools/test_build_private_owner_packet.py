@@ -176,9 +176,7 @@ class OwnerKitTests(unittest.TestCase):
             manifest=json.loads((self.output/"REVIEW-ONLY-MANIFEST.json").read_text())
             self.assertTrue(manifest["read_only_heap_instrumentation_compiled"])
             self.assertFalse(manifest["owner_ready_to_flash"])
-            self.assertTrue(manifest["review"]["experimental_exact_oem_return_present"] if
-                            "experimental_exact_oem_return_present" in manifest["review"] else
-                            manifest["review"]["security"]["experimental_exact_oem_return_present"])
+            self.assertTrue(manifest["review"]["private_pair_checks"]["experimental_exact_oem_return_present"])
             self.assertEqual(manifest["files"][kit.APP_NAME_HEAP]["bytes"],402320)
             self.assertEqual(sum("image-info" in cmd for cmd in calls),2)
             report=json.dumps(manifest)
