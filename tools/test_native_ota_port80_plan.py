@@ -62,7 +62,9 @@ class OwnerPort80MigrationPlanTests(unittest.TestCase):
         self.assertIn("LegacyFactoryReturnPost",plan)
         self.assertIn("currentlyRegisteredInFirstBootBridge=false",plan)
         self.assertNotIn("NativeOtaPort80Plan.h",original)
-        self.assertNotIn("NativeOtaPort80Plan.h",NATIVE_PUMP.read_text(encoding="utf-8"))
+        self.assertIn("NativeOtaPort80Plan.h",NATIVE_PUMP.read_text(encoding="utf-8"))
+        self.assertIn("SHINO_ENABLE_NATIVE_SIGNED_OTA == 0",
+                      NATIVE_PUMP.read_text(encoding="utf-8"))
         for code in (plan,PROBE.read_text(encoding="utf-8")):
             without_comments="\n".join(line for line in code.splitlines()
                                         if not line.lstrip().startswith("//"))
