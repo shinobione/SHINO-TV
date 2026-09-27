@@ -5,6 +5,8 @@ receives firmware. The real strict C++ gate separately verifies the captured
 Authorization proof. This is neither Chrome nor a SmallTV/device test.
 """
 from http.server import BaseHTTPRequestHandler, HTTPServer
+import hashlib
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -87,6 +89,38 @@ class ExternalDigestClientTests(unittest.TestCase):
             self.assertTrue(auth.startswith("Digest "))
             self.assertIn('uri="/api/v1/bridge/ota/arm"',auth)
             self.assertRegex(auth,r'algorithm="?SHA-256"?')
+            # Sanitized interoperability diagnostic: never log header values,
+            # nonce/cnonce/response or any password. Independently check the
+            # captured RFC7616 proof before trying the strict C++ parser.
+            parameters=re.findall(
+                r'(?:^Digest |,\\s*)([a-z-]+)=(?:"([^"]*)"|([^,\\s]+))',auth)
+            names=[key for key,_,_ in parameters]
+            expected_names={"username","realm","nonce","uri","response",
+                            "opaque","qop","nc","cnonce","algorithm"}
+            self.assertEqual(set(names),expected_names,
+                             f"only captured parameter names: {sorted(names)}")
+            self.assertEqual(len(names),10,"duplicate Digest parameter")
+            fields={key: quoted if quoted else plain
+                    for key,quoted,plain in parameters}
+            self.assertEqual(fields["username"],"owner-fixture")
+            self.assertEqual(fields["realm"],"SHINO-OTA")
+            self.assertEqual(fields["nonce"],
+                             "0102030405060708090a0b0c0d0e0f10")
+            self.assertEqual(fields["opaque"],
+                             "2122232425262728292a2b2c2d2e2f30")
+            self.assertEqual(fields["qop"],"auth")
+            self.assertEqual(fields["nc"],"00000001")
+            self.assertEqual(fields["algorithm"],"SHA-256")
+            self.assertRegex(fields["response"],r"^[0-9a-f]{64}$")
+            cnonce_compatible=bool(re.fullmatch(r"[A-Za-z0-9_-]{8,64}",fields["cnonce"]))
+            self.assertTrue(cnonce_compatible,"client cnonce uses additional RFC token characters")
+            sha=lambda value: hashlib.sha256(value.encode("ascii")).hexdigest()
+            expected_response=sha(
+                sha("owner-fixture:SHINO-OTA:not-the-owner-password")+":"+
+                fields["nonce"]+":"+fields["nc"]+":"+fields["cnonce"]+":auth:"+
+                sha("POST:"+fields["uri"]))
+            self.assertEqual(fields["response"],expected_response,
+                             "independent RFC7616 SHA-256 proof mismatch")
             def verify(mode, header):
                 return subprocess.run([str(exe),mode],input=header+"\n",
                                       capture_output=True,text=True,
