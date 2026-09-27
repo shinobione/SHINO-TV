@@ -150,7 +150,7 @@ bool requireBrowserMetricsRead() {
     // No new Digest challenge on a background fetch: it would rotate the
     // shared nonce and Chrome can reopen a password prompt every two seconds.
     // Only the Digest-authenticated GET / can create a new browser session.
-    respond(403, F("{\\"error\\":\\"Browser session expired; reopen / and authenticate\\"}"));
+    respond(403, F("{\"error\":\"Browser session expired; reopen / and authenticate\"}"));
     return false;
 }
 
