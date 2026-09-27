@@ -113,7 +113,10 @@ class ExternalDigestClientTests(unittest.TestCase):
             self.assertEqual(fields["algorithm"],"SHA-256")
             self.assertRegex(fields["response"],r"^[0-9a-f]{64}$")
             cnonce_compatible=bool(re.fullmatch(r"[A-Za-z0-9_-]{8,64}",fields["cnonce"]))
-            self.assertTrue(cnonce_compatible,"client cnonce uses additional RFC token characters")
+            self.assertTrue(cnonce_compatible,
+                            "independent client cnonce length=%d, unsupported ASCII codes=%s" %
+                            (len(fields["cnonce"]), sorted({ord(ch) for ch in fields["cnonce"]
+                             if not re.fullmatch(r"[A-Za-z0-9_-]",ch)})))
             sha=lambda value: hashlib.sha256(value.encode("ascii")).hexdigest()
             expected_response=sha(
                 sha("owner-fixture:SHINO-OTA:not-the-owner-password")+":"+
