@@ -97,9 +97,16 @@ setCard(2,ram===null?'—':fixed(ram,' GB'),ramPct);
 setCard(3,gpu?fixed(m.gpu_temp_c,'°C'):'—',gpu&&Number.isFinite(m.gpu_temp_c)?
 clamp100(100*(m.gpu_temp_c-30)/60):null);
 }
+let pollingDenied=false;
 async function poll(){
+if(pollingDenied)return;
 try{
 const response=await fetch('/api/v1/bridge/metrics',{cache:'no-store',credentials:'same-origin'});
+if(response.status===401||response.status===403){
+pollingDenied=true; // Reopen / to perform a new explicit Digest login.
+render(null);el('state').textContent='SESSION EXPIRED · REOPEN /';
+return;
+}
 if(!response.ok)throw Error('Metrics request failed');
 render(await response.json());
 }catch(_){render(null);el('state').textContent='DEVICE OFFLINE';}
