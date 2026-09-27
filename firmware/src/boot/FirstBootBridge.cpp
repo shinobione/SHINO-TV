@@ -111,11 +111,11 @@ void issueBrowserReadSession() {
     // ESP8266 hardware RNG with the private WPA2 AP already running.
     uint8_t randomBytes[16] = {};
     ESP.random(randomBytes, sizeof(randomBytes));
-    static constexpr char HEX[] = "0123456789abcdef";
+    static constexpr char HEX_DIGITS[] = "0123456789abcdef";
     char token[33] = {};
     for (size_t i = 0; i < sizeof(randomBytes); ++i) {
-        token[i * 2] = HEX[randomBytes[i] >> 4];
-        token[i * 2 + 1] = HEX[randomBytes[i] & 0x0f];
+        token[i * 2] = HEX_DIGITS[randomBytes[i] >> 4];
+        token[i * 2 + 1] = HEX_DIGITS[randomBytes[i] & 0x0f];
     }
     const uint32_t now = millis();
     size_t slot = 0;
