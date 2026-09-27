@@ -12,6 +12,7 @@
 #include <chrono>
 #include <cstdio>
 #include <cstdint>
+#include <cstring>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -150,8 +151,8 @@ int main(int argc,char** argv) {
     const bool accepted=!bad && stream.finishAfterExactFraming(clockMs(begin));
     if(!accepted)stream.disconnect();
     const char* answer=accepted
-        ? "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 29\r\n\r\nOFFLINE_REVIEW_ONLY_NO_FLASH_OK"
-        : "HTTP/1.1 422 Unprocessable Content\r\nConnection: close\r\nContent-Length: 16\r\n\r\nREJECTED_NO_FLASH";
+        ? "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 31\r\n\r\nOFFLINE_REVIEW_ONLY_NO_FLASH_OK"
+        : "HTTP/1.1 422 Unprocessable Content\r\nConnection: close\r\nContent-Length: 17\r\n\r\nREJECTED_NO_FLASH";
     // Content-Length is fixture response framing, never a firmware result.
     ::send(client,answer,std::strlen(answer),MSG_NOSIGNAL);
     ::close(client);
