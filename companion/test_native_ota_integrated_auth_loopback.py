@@ -13,6 +13,8 @@ from urllib.request import (
     ProxyHandler, Request, build_opener,
 )
 import json
+import hashlib
+import re
 import shutil
 import socket
 import subprocess
@@ -25,6 +27,7 @@ ROOT=Path(__file__).resolve().parent.parent
 HOST=ROOT/"tools/native_ota_integrated_auth_loopback.cpp"
 BRIDGE=ROOT/"firmware/src/boot/FirstBootBridge.cpp"
 INGRESS=ROOT/"firmware/include/boot/NativeOtaSingleIngressShadow.h"
+ACTUAL_WEB=ROOT/"firmware/src/boot/FslessWebUI.cpp"
 USER="shino"
 PASSWORD="disposable-only-never-owner-password"
 METRICS="/api/v1/bridge/metrics"
@@ -44,7 +47,8 @@ class ActualHeaderIntegratedFixtureTests(unittest.TestCase):
         cls.exe=Path(cls.temp.name)/"integrated-host"
         compiled=subprocess.run(
             ["g++","-std=c++17","-Wall","-Wextra","-Werror","-pedantic",
-             "-I",str(ROOT/"firmware/include"),str(HOST),
+             "-DPROGMEM=","-I",str(ROOT/"tools/host_arduinojson_stubs"),
+             "-I",str(ROOT/"firmware/include"),str(HOST),str(ACTUAL_WEB),
              "-o",str(cls.exe),"-lcrypto"],
             capture_output=True,text=True,timeout=40,check=False)
         if compiled.returncode:
@@ -76,6 +80,18 @@ class ActualHeaderIntegratedFixtureTests(unittest.TestCase):
                 proc.communicate(timeout=5)
             for file in (proc.stdout,proc.stderr):
                 if file:file.close()
+
+    @staticmethod
+    def original_web_asset(name):
+        # Independent extraction of the exact firmware C++ raw string, not a
+        # copied fixture literal. UTF-8 source bytes == host C++ raw UTF-8.
+        source=ACTUAL_WEB.read_text(encoding="utf-8")
+        match=re.search(r'const char '+name+
+                        r'\[\] PROGMEM = R"SHINO\((.*?)\)SHINO";',
+                        source,re.DOTALL)
+        if not match:
+            raise AssertionError("Missing original firmware asset "+name)
+        return match.group(1).encode("utf-8")
 
     def opener(self,base,jar=None,with_digest=True):
         handlers=[ProxyHandler({}),sender.NoRedirect()]
@@ -117,7 +133,10 @@ class ActualHeaderIntegratedFixtureTests(unittest.TestCase):
             with browser.open(Request(base+"/",headers={"Host":"192.168.4.1"}),
                               timeout=4) as res:
                 self.assertEqual(res.status,200)
-                self.assertIn(b"HOST_FIXTURE_DASHBOARD_HTML_NOT_SERVED",res.read())
+                page=res.read()
+                self.assertEqual(page,self.original_web_asset("PAGE"))
+                self.assertEqual(int(res.headers["Content-Length"]),len(page))
+                self.assertIn(b'<section class="screen"',page)
                 self.assertIn("SHINO_READ_SESSION=",res.headers.get("Set-Cookie",""))
                 self.assertTrue(res.headers.get("X-Shino-Host-Fixture"))
             self.assertEqual(len(list(jar)),1)
@@ -127,6 +146,11 @@ class ActualHeaderIntegratedFixtureTests(unittest.TestCase):
                     self.assertEqual(res.status,200)
                     data=res.read()
                     self.assertTrue(data)
+                    if route=="/ui.js":
+                        self.assertEqual(data,self.original_web_asset("SCRIPT"))
+                        self.assertEqual(int(res.headers["Content-Length"]),len(data))
+                        self.assertIn(b"credentials:'same-origin'",data)
+                        self.assertIn(b"pollingDenied=true",data)
                     if route.endswith("capabilities"):
                         self.assertFalse(json.loads(data)["native_ota_upload_route_registered"])
             # Production sender restrictions stay unchanged: only the
@@ -161,6 +185,34 @@ class ActualHeaderIntegratedFixtureTests(unittest.TestCase):
         self.assertIn("ACTUAL_FIXTURE_PROOFS 2",self.last_counts)
         self.assertIn("READ_COOKIES 1",self.last_counts)
         self.assertIn("POST_PREVIEWS 1",self.last_counts)
+
+    def test_original_progmeme_assets_are_byte_exact_and_not_anonymous(self):
+        # One 401 for unauthenticated JS, then two requests for root Digest,
+        # then read-only JS with the returned cookie. No synthetic text body.
+        with self.server(4) as (base,proc):
+            h,b=self.raw(base,b"GET /ui.js HTTP/1.1\\r\\nHost: 192.168.4.1\\r\\n\\r\\n")
+            self.assertIn(b"HTTP/1.1 401 ",h)
+            self.assertNotIn(b"FslessWebUI",b)
+            browser=self.opener(base,CookieJar())
+            with browser.open(Request(base+"/",headers={"Host":"192.168.4.1"}),
+                              timeout=4) as response:
+                page=response.read()
+                self.assertEqual(page,self.original_web_asset("PAGE"))
+                self.assertIn(b"SHINO // TV",page)
+                self.assertLess(len(page),16*1024) # explicitly bounded source asset review
+            with browser.open(Request(base+"/ui.js",headers={"Host":"192.168.4.1"}),
+                              timeout=4) as response:
+                script=response.read()
+                self.assertEqual(script,self.original_web_asset("SCRIPT"))
+                self.assertLess(len(script),16*1024)
+                self.assertIn(b"setInterval(poll,2000)",script)
+                self.assertIn(b"if(response.status===401||response.status===403)",script)
+        self.assertIn("READ_COOKIES 1",self.last_counts)
+        for name in ("PAGE","SCRIPT"):
+            original=self.original_web_asset(name)
+            self.assertEqual(len(hashlib.sha256(original).hexdigest()),64)
+            self.assertNotIn(b"/api/v1/bridge/ota/upload",original)
+            self.assertNotIn(b'form method="post"',original.lower())
 
     def test_invalid_digest_and_ambiguous_ingress_never_issue_a_read_cookie(self):
         # One refused metrics poll, two wrong root proofs, duplicate auth,
@@ -205,6 +257,10 @@ class ActualHeaderIntegratedFixtureTests(unittest.TestCase):
         self.assertIn('Span{"authorization",13u}',native)
         self.assertIn("isLegacyProof(authorization,authorizationLength",source)
         self.assertIn("NativeOtaLegacySessionReview sessions;",source)
+        self.assertIn('#include "boot/FslessWebUI.h"',source)
+        self.assertIn("std::string(FslessWebUI::PAGE)",source)
+        self.assertIn("std::string(FslessWebUI::SCRIPT)",source)
+        self.assertIn('const char PAGE[] PROGMEM',ACTUAL_WEB.read_text(encoding="utf-8"))
         self.assertIn("NativeOtaLegacyResponsePreview::decide(",source)
         self.assertIn("htonl(INADDR_LOOPBACK)",source)
         self.assertIn("htons(0u)",source)
