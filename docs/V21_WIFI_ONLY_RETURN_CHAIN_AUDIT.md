@@ -8,7 +8,7 @@ The owner previously explicitly authorized an **individual** return from the the
 
 The **CURRENT installed** Hotfix is the owner-reported private `review-002` built from source commit `cf65c74775ac55b52b3993704e2f8b8e6cce198a`; user-reported private candidate **400,592 bytes**, SHA-256 `d7d37092573e65be13f54077e95534438fe790a27b2e65cbd0b8034f18f93717`. The four later owner-reported running `/status` responses consistently showed `running_application_bytes=400592` and free heap 32,184 (idle), 32,016 (Chrome), 31,960 (ordinary PC metrics), 32,128 (after load). This supports running-image size/operation, but is **not an independent rehash of flash**.
 
-## Source-specific current Hotfix facts and the sole remaining GET-only confirmation
+## Source-specific current Hotfix facts and completed GET-only confirmation
 
 At exact `cf65c747...`, the `SHINO_BOOT_PROFILE=0` `setup()` calls only `FirstBootBridge::run()` and returns: legacy normal-mode `Webserver`, `RescueMode` and any old `/legacyupdate` route do not start. There is **NO live generic SHINO native updater** in that firmware. Nevertheless, the original bridge registers `GET /api/v1/bridge/factory-return` under Digest, and conditionally compiles the same route's **OEM-only POST** with `SHINO_ENABLE_FACTORY_RESTORE=1`. Its read-only status reports pinned 494,144-byte manufacturer application, manufacturer SHA-256 and literal boolean `write_enabled`. The `review-002` private build tool `tools/build_private_owner_packet.py` explicitly generates policy with `--enable-restore`, and the owner-shared offline review manifest reported `factory_app_return_compiled:true`. That is **local-build evidence, not yet a post-Hotfix device status observation**.
 
@@ -17,6 +17,21 @@ A single final **read-only check of the CURRENT device** (one authorized normal 
 `GET http://192.168.4.1/api/v1/bridge/factory-return`
 
 Use the **existing** `SHINO-FirstBoot` HTTP Digest login. Never send a file, POST, PUT, flash command, curl upload or a credential in chat. Record **only** `write_enabled`, `application_bytes` and whether the `manufacturer_sha256` equals the pinned expected `a6421f5bfee7860d97bed26620c346b8008f503e513702d4bfdf6e01010a7718`. The expected response also says `full_flash_backup:false` and `filesystem_layout_verified:false`. If `write_enabled` is false, missing, malformed, or the hash/size differs, STOP; no working current V2→OEM path established. **A true result is evidence that the exact-OEM-only route is present, not permission to invoke it or a zero-risk guarantee.**
+
+## Current-device authenticated GET completed — owner report, 2026-09-28 local time
+
+The owner has now shared the actual response from the **currently installed review-002** `GET /api/v1/bridge/factory-return` while connected to the SHINO private AP:
+
+| Sanitized response field | Actual value | Compared to reviewed pinned source |
+| --- | --- | --- |
+| `firmware` | `GeekMagic Ultra-V9.0.44` | Expected exact OEM target |
+| `application_bytes` | `494144` | Exact expected pinned OEM application length |
+| `manufacturer_sha256` | `a6421f5bfee7860d97bed26620c346b8008f503e513702d4bfdf6e01010a7718` | Exact official pinned OEM SHA-256 |
+| `full_flash_backup` | `false` | Explicitly **not** a full-chip backup |
+| `filesystem_layout_verified` | `false` | Original data layout remains unverified |
+| `write_enabled` | `true` | Existing OEM-only return receiver **is compiled in the current installed V2** |
+
+**The old post-Hotfix GET question is RESOLVED, not a remaining action.** These are owner-shared real-device read-only GET fields, not a GitHub Actions physical observation. No credential or raw private file was collected. The status establishes presence of an enabled, bounded OEM-only receiver with the expected metadata, but does **not** establish a successful new upload, reboot, staging space, nonbooting recovery, or full filesystem preservation. No firmware POST/flash/restart was performed by this inspection. The owner has **not** authorized any firmware write by supplying this response. `permission_to_flash=false`.
 
 ## Conditional future chain, NOT approved for use now
 
@@ -29,7 +44,7 @@ Use the **existing** `SHINO-FirstBoot` HTTP Digest login. Never send a file, POS
 ## Engineering handoff
 
 - Stop telling the owner that all Wi-Fi installation pathways are absent: the **previous** V2→OEM→V2 private route was observed working and the **current** private build manifest says OEM return is compiled. Also stop pretending generic SHINO-native OTA already exists in current V2.
-- Close the current-build OEM-return existence question via the above single existing, authenticated **GET only**, not an upload/dummy file or undocumented endpoint scan.
+- The current-build OEM-return presence gate has been **closed successfully by owner-reported authenticated GET**. Do not repeat or escalate it into an upload/dummy file or undocumented endpoint scan.
 - Prepare the **next owner-private candidate** offline, with `SHINO_ENABLE_FACTORY_RESTORE=1`, matched new AP/Digest credentials, real opt-in heap diagnostics, verified OEM reference and exact image hash; do not publish the generated private policy or package or treat CI disposable BIN as a release.
 - Keep the currently working review-002 running unless/until owner explicitly authorizes each concrete future Wi-Fi firmware transition. No automatic double-hop, no unattended rollback and no PR merge.
 
