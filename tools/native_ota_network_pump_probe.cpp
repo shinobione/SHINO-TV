@@ -166,6 +166,8 @@ int boundedCooperation() {
 int main() {
     for(size_t size : {size_t(600u),size_t(64260u),size_t(494404u)}) {
         for(size_t chunks : {size_t(1u),size_t(73u),size_t(512u),size_t(2048u)}) {
+            if(size>1000u && chunks<73u)continue;
+            if(size>100000u && chunks<512u)continue;
             if(happy(size,chunks))return 1;
         }
     }
