@@ -5,6 +5,7 @@ on:
     branches: ['safety/**', 'feature/**', 'security/**']
     paths:
       - 'tools/wifi_flash_preflight.py'
+      - 'tools/owner_install_packet_gate.py'
       - 'tools/test_wifi_flash_preflight.py'
       - 'tools/generate_shino_device_policy.py'
       - '.github/workflows/wifi-path-preflight.yml'
@@ -14,6 +15,7 @@ on:
   pull_request:
     paths:
       - 'tools/wifi_flash_preflight.py'
+      - 'tools/owner_install_packet_gate.py'
       - 'tools/test_wifi_flash_preflight.py'
       - 'tools/generate_shino_device_policy.py'
       - 'tools/verify_fs_provisioning.py'
@@ -73,6 +75,26 @@ jobs:
         run: |
           test -s firmware/.pio/build/esp12e/firmware.bin
           cp firmware/.pio/build/esp12e/firmware.bin /tmp/shino-preflight-candidate.bin
+      - name: Verify local private original/application/AP/Digest pairing; NO device operation
+        run: |
+          python tools/owner_install_packet_gate.py \
+            --official-zip reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip \
+            --candidate-bin /tmp/shino-preflight-candidate.bin \
+            --policy firmware/include/shino_private_policy.h \
+            --credentials firmware/private/credentials.txt \
+            --candidate-ini firmware/platformio.ini > /tmp/owner-packet-sanitized.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('/tmp/owner-packet-sanitized.json').read_text())
+          assert d['status']=='PRIVATE_OFFLINE_PACKET_CHECKED__OWNER_FLASH_NOT_AUTHORIZED'
+          assert d['permission_to_flash'] is False
+          assert d['direct_install_model']['overlaps_inferred_stock_file_sectors_bytes']==0
+          assert d['running_shino_to_oem_application_model']['overlaps_inferred_stock_file_sectors_bytes']==0
+          assert d['private_pair_checks']['compiled_app_has_correct_active_ap_and_digest_secrets'] is True
+          assert d['private_pair_checks']['experimental_exact_oem_return_present'] is True
+          print('Validated one-run OEM/app/private AP and Digest pairing OFFLINE. No credentials printed, no upload.')
+          PY
       - name: Generate a loader pinned to this exact SHINO candidate and OEM
         run: |
           python tools/make_loader_policy.py --official-zip reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip --candidate-bin /tmp/shino-preflight-candidate.bin --enable-writes
@@ -110,6 +132,12 @@ jobs:
           assert d['status']=='OFFLINE_PREFLIGHT_ONLY__OWNER_FLASH_NOT_AUTHORIZED'
           assert d['permission_to_flash'] is False
           assert d['device_access_performed'] is False
+          assert d['source_layouts']['candidate']=='eagle.flash.4m3m.ld'
+          assert d['transitions']['factory_to_candidate_direct']['nominal_no_overlap'] is True
+          assert d['transitions']['factory_to_candidate_direct']['inferred_stock_FS_staging_sector_overlap_bytes']==0
+          assert d['transitions']['shino_to_factory']['inferred_stock_FS_staging_sector_overlap_bytes']==0
+          assert d['transitions']['loader_to_shino']['inferred_stock_FS_staging_sector_overlap_bytes']>0
+          assert d['transitions']['factory_to_candidate_direct']['original_stock_OTA_image_acceptance'].startswith('UNKNOWN')
           assert b'FIRST_BOOT_BRIDGE' in Path('/tmp/shino-preflight-candidate.bin').read_bytes()
           assert b'READ_ONLY_FS_MIGRATION_PLAN' in Path('/tmp/shino-preflight-candidate.bin').read_bytes()
           assert b'FSLESS_PC_TELEMETRY_RAM_ONLY' in Path('/tmp/shino-preflight-candidate.bin').read_bytes()
@@ -123,6 +151,9 @@ jobs:
           lines += [
               '| OEM original archive + image | Exact hash PASS |',
               '| Current SHINO firmware + its own OEM pin | PASS |',
+              '| Direct stock -> SHINO (inferred 4m3m model) | '+str(d['transitions']['factory_to_candidate_direct']['nominal_no_overlap'])+'; actual OEM acceptance UNKNOWN |',
+              '| Direct first stage / return stage stock-FS overlap (model) | 0 / 0 bytes; actual stock layout unproven |',
+              '| Loader -> SHINO stock-FS overwrite (inferred model) | '+str(d['transitions']['loader_to_shino']['inferred_stock_FS_staging_sector_overlap_bytes'])+' bytes; two-hop is NOT stock-data-preserving |',
               '| First-hop loader exact candidate + OEM pins | PASS |',
               '| Nominal loader -> SHINO staging | '+str(d['transitions']['loader_to_shino']['nominal_no_overlap'])+' |',
               '| Nominal SHINO -> OEM staging | '+str(d['transitions']['shino_to_factory']['nominal_no_overlap'])+' |',
@@ -139,4 +170,4 @@ jobs:
         run: |
           rm -rf reference-geekmagic recovery_loader/private recovery_loader/.pio firmware/.pio firmware/private
           rm -f recovery_loader/include/local_policy.h firmware/data/config.json firmware/include/shino_private_policy.h
-          rm -f /tmp/shino-preflight-candidate.bin /tmp/shino-preflight-loader.bin /tmp/shino-preflight-original.bin /tmp/shino-preflight-result.json
+          rm -f /tmp/shino-preflight-candidate.bin /tmp/shino-preflight-loader.bin /tmp/shino-preflight-original.bin /tmp/shino-preflight-result.json /tmp/owner-packet-sanitized.json

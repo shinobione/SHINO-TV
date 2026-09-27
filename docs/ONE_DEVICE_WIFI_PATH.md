@@ -2,6 +2,10 @@
 
 **Owner constraints:** one working SmallTV-Ultra on stock V9.0.44, no second board, no soldering or UART/PCB pin wiring, and a USB-C port that does not enumerate a COM device even with a known-good data cable. Work offline until a separate explicit owner authorization for a named flash file and action.
 
+## 27 September 2026 update — FS-less 4m3m direct-path research
+
+**This earlier PR #8 plan is retained as historical evidence and not an owner-upload guide.** The newer [first-install decision packet](FIRST_INSTALL_DECISION_PACKET.md) recognizes the owner-observed factory data size as an exact 4m3m linker fingerprint and rebuilds SHINO's FS-less application as **4m3m**. Direct factory→SHINO U_FLASH staging and later running SHINO→OEM V9.0.44 application staging fall *before* the inferred stock filesystem in the modeled Arduino updater. The older 4m2m rollback or second hop from the 4m1m loader **does NOT** preserve manufacturer file sectors. The source/CI safety decision prioritizes a reviewed direct path over a destructive two-hop fallback, while OEM live OTA acceptance, true owner flash map, boot and brick recovery remain unverified. No hardware operation was authorized or performed.
+
 ## Current state
 
 - The owner's original `http://192.168.1.70/update` GET page was personally observed in a screenshot. Merely opening it did not upload anything.

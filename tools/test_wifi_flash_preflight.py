@@ -35,7 +35,7 @@ class WiFiPreflightTests(unittest.TestCase):
         self.loader_ini = self.root / "loader.ini"
         self.shino_ini = self.root / "candidate.ini"
         self.loader_ini.write_text("[env:esp12e_recovery]\nboard = esp12e\nboard_build.flash_size=4MB\nboard_build.flash_mode=dio\nboard_build.ldscript=eagle.flash.4m1m.ld\n")
-        self.shino_ini.write_text("[env:esp12e]\nboard = esp12e\nboard_build.flash_size=4MB\nboard_build.flash_mode=dio\nboard_build.ldscript=eagle.flash.4m2m.ld\n")
+        self.shino_ini.write_text("[env:esp12e]\nboard = esp12e\nboard_build.flash_size=4MB\nboard_build.flash_mode=dio\nboard_build.ldscript=eagle.flash.4m3m.ld\n")
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -51,6 +51,12 @@ class WiFiPreflightTests(unittest.TestCase):
         self.assertIn("NOT MEASURED", result["transitions"]["factory_to_loader"]["actual_owner_factory_OTA_available_bytes"])
         self.assertTrue(result["transitions"]["loader_to_shino"]["nominal_no_overlap"])
         self.assertTrue(result["transitions"]["shino_to_factory"]["nominal_no_overlap"])
+        self.assertTrue(result["transitions"]["factory_to_candidate_direct"]["nominal_no_overlap"])
+        self.assertEqual(result["transitions"]["factory_to_candidate_direct"]["inferred_stock_FS_staging_sector_overlap_bytes"], 0)
+        self.assertEqual(result["transitions"]["shino_to_factory"]["inferred_stock_FS_staging_sector_overlap_bytes"], 0)
+        self.assertGreater(result["transitions"]["loader_to_shino"]["inferred_stock_FS_staging_sector_overlap_bytes"], 0)
+        self.assertEqual(result["transitions"]["factory_to_candidate_direct"]["original_stock_OTA_image_acceptance"],
+                         "UNKNOWN_DO_NOT_UPLOAD_TO_PROBE")
         self.assertEqual(result["source_layouts"]["OEM_internal_FS_layout"], "UNKNOWN_FROM_APPLICATION_IMAGE_ALONE")
 
     def test_reject_readonly_loader_missing_pinned_oem(self):
@@ -85,6 +91,11 @@ class WiFiPreflightTests(unittest.TestCase):
         with self.assertRaisesRegex(PreflightError, "4-MiB"):
             self.check()
 
+    def test_old_4m2m_candidate_is_rejected_because_rollback_overwrites_stock_files(self):
+        self.shino_ini.write_text(self.shino_ini.read_text().replace("4m3m", "4m2m"))
+        with self.assertRaisesRegex(PreflightError, "stock-like 4m3m"):
+            self.check()
+
     def test_unknown_layout_rejected(self):
         self.loader_ini.write_text(self.loader_ini.read_text().replace("4m1m", "4m2m"))
         with self.assertRaisesRegex(PreflightError, "Unexpected source layout"):
@@ -111,8 +122,8 @@ class WiFiPreflightTests(unittest.TestCase):
 
     def test_reviewed_platformio_layout(self):
         name, fs_start = platformio_layout(self.shino_ini, "env:esp12e")
-        self.assertEqual(name, "eagle.flash.4m2m.ld")
-        self.assertEqual(fs_start, 2 * 1024 * 1024)
+        self.assertEqual(name, "eagle.flash.4m3m.ld")
+        self.assertEqual(fs_start, 1 * 1024 * 1024)
 
 
 if __name__ == "__main__":

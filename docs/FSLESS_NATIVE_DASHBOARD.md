@@ -2,6 +2,10 @@
 
 **Status:** source-only / GitHub CI prototype, not uploaded to the owner's working factory Ultra-V9.0.44. Builds remain draft. No soldering, spare board, serial adapter or second device required for development.
 
+## 27 September 2026 OTA-layout correction
+
+The previous FS-less branch compiled against the inherited Times-Z 4m2m map despite **not using LittleFS**. For future OTA stages to avoid the inferred original factory file region, the follow-on [first-install decision branch](FIRST_INSTALL_DECISION_PACKET.md) now compiles the same V2 with `eagle.flash.4m3m.ld`. The active first boot still neither mounts nor formats any filesystem; the old 4m2m LittleFS verifier is isolated historical research. Candidate first install and exact OEM return remain untested on the physical unit.
+
 ## Native UI V2 (the 240×240 single-screen specification)
 
 The follow-on source branch implements the [fixed four-card native V2](NATIVE_UI_V2_240_SPEC.md) on the physical 240×240 coordinate system, mirrored by the exact flash-embedded browser UI. CPU/GPU usage, used/total RAM and true GPU temperature are all visible at once; **all four have 90×6-pixel dynamically colored bars** with mint/yellow/dark-orange/burgundy bands and ±2-percentage-point hysteresis. RAM normalization uses the PC-reported new `memory_total_gb` field, not an inferred 16 GB; GPU temperature is mapped to 30–90 °C for the visual bar only. Invalid/old data leave cards visible with neutral bars. Initial bridge startup and LittleFS/EEPROM bans are unchanged.

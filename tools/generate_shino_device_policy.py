@@ -68,7 +68,7 @@ def generate(oem_zip: Path, manifest: Path, output: Path, secrets_file: Path,
     )
     credentials = (
         "PRIVATE SHINO // TV SOURCE BUILD CREDENTIALS — never publish or upload.\n"
-        "Setup/rescue Wi-Fi SSID: SHINO-TV-<chip-id>\n"
+        "First-boot Wi-Fi SSID: SHINO-FirstBoot-<chip-id>\n"
         f"Setup/rescue Wi-Fi password: {ap_psk}\n"
         f"Initial API bearer token: {token}\n"
         "Rescue HTTP Digest user: shino\n"

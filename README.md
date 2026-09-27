@@ -122,6 +122,10 @@ A no-install/no-flash Windows report tool is available on the stacked `research/
 The [LittleFS migration safety report](docs/VERIFIED_FS_PROVISIONING.md) explains why a full 2,072,576-byte image of our 4m2m FS is **not an atomic OTA operation** on this ESP8266. The new offline tooling verifies and pins the exact FS image and safely reports the old-data overlap; the bridge has only an authenticated GET impact page. Automatic formatting, filesystem writer and on-device upload remain disabled. The original V9.0.44 application ZIP does not restore stock filesystem data.
 
 
+## One-device first-install decision — NEW stock-like 4m3m envelope
+
+The [first-install offline decision packet](docs/FIRST_INSTALL_DECISION_PACKET.md) builds the FS-less UI V2 against **`eagle.flash.4m3m.ld`**, not the inherited 4m2m linker. The owner's 3,121,152-byte stock FS matches this geometry exactly but its proprietary OTA acceptance remains UNKNOWN. The modeled *direct* initial OTA and size-fitting future 4m3m OTA/official-app return stage before the inferred OEM files; the transient 4m1m loader's **second hop** instead overwrites inferred stock file sectors. Separate private build/OEM/credentials SHA checks remain required before a later explicitly approved first upload. No hardware contact, no publicly distributed binary and no flash permission.
+ 
 ## Native UI V2 — exact 240×240 / four live metrics
 
 The [approved V2 240×240 specification](docs/NATIVE_UI_V2_240_SPEC.md) is implemented in stacked branch `feature/native-ui-v2-four-cards`: four always-visible CPU/GPU/RAM/temperature cards, dynamic four-band colored bar fills, real PC memory total for RAM normalization, 30–90 °C *visual-only* thermal scale and per-card ±2pp hysteresis. `start-fsless-preview.cmd` serves the **exact embedded Web assets locally** for inspection without device access. The code is compiled/tested offline only, not a device-ready upload.
