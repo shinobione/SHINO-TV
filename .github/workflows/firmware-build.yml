@@ -93,29 +93,3 @@ jobs:
         run: |
           rm -f firmware/include/shino_private_policy.h
           rm -rf firmware/private firmware/.pio reference-geekmagic
- firmware/.pio/libdeps/esp12e/ArduinoJson/src/ArduinoJson/version.hpp
-          python tools/verify_native_arduinojson_parity.py
-      - name: Enforce actual no-FS candidate size and source/flash markers
-        run: |
-          python - <<'PY'
-          import os
-          from pathlib import Path
-          p=Path('firmware/.pio/build/esp12e/firmware.bin')
-          assert p.is_file() and p.stat().st_size > 0, 'No application image compiled'
-          blob=p.read_bytes()
-          for marker in (b'FIRST_BOOT_BRIDGE',b'FSLESS_PC_TELEMETRY_RAM_ONLY',
-                         b'READ_ONLY_FS_MIGRATION_PLAN',b'RAM_SAMPLE_ACCEPTED'):
-              assert marker in blob, f'Missing fsless bridge marker: {marker!r}'
-          assert p.stat().st_size < 494144, 'Current candidate is not smaller than OEM app; manually review OTA geometry'
-          assert not (Path('firmware/.pio/build/esp12e')/'littlefs.bin').exists(), 'FS image must not be built for this profile'
-          print('Conservative RAM-only SHINO image:',p.stat().st_size,'bytes. No FS generated, no device upload.')
-          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as out:
-              out.write('### SHINO native FS-less build — offline only\n\n'
-                        f'Application image: {p.stat().st_size:,} bytes. No LittleFS image generated. '
-                        'Factory restoration POST not compiled. Owner device untouched.\n')
-          PY
-      - name: Delete proprietary manufacturer source, one-use keys and images
-        if: always()
-        run: |
-          rm -f firmware/include/shino_private_policy.h
-          rm -rf firmware/private firmware/.pio reference-geekmagic
