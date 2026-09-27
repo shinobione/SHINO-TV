@@ -79,6 +79,14 @@ class OwnerKitTests(unittest.TestCase):
                    + self.ap.encode() + self.http.encode())
         self.app.write_bytes(fake_image(398848-len(markers)) + markers)
 
+    def make_candidate_only(self):
+        markers = (b"FIRST_BOOT_BRIDGE" + b"FSLESS_PC_TELEMETRY_RAM_ONLY"
+                   + b"READ_ONLY_FS_MIGRATION_PLAN" + b"RAM_SAMPLE_ACCEPTED"
+                   + b"Verified OEM application image"
+                   + hashlib.md5(self.original,usedforsecurity=False).hexdigest().encode()
+                   + self.ap.encode() + self.http.encode())
+        self.app.write_bytes(fake_image(398848-len(markers)) + markers)
+
     def patch_paths(self):
         return patch.multiple(kit, ROOT=self.root, POLICY=self.policy,
                               CREDENTIALS=self.creds, APP=self.app)
@@ -98,6 +106,20 @@ class OwnerKitTests(unittest.TestCase):
     def test_requires_explicit_frozen_source_sha_even_with_clean_checkout(self):
         with self.patch_paths(), patch.object(kit, "require_clean_frozen_checkout", return_value=self.sha):
             with self.assertRaisesRegex(kit.OwnerKitError, "reviewed source SHA"):
+                kit.write_private_kit(self.oem_zip, self.output, "b" * 40)
+
+    def test_private_kit_all_checks_are_local_and_public_manifest_has_no_secrets(self):
+        calls=[]
+        def local(command, *, cwd=None, output=True):
+            calls.append(command)
+            if "generate_shino_device_policy.py" in command:
+                self.make_build()
+                # In this synthetic setup, remove the fake app until compile runs.
+                self.app.unlink()
+            if "platformio" in command:
+                self.make_candidate_only()
+            return ""
+        with self.assertRaisesRegex(kit.OwnerKitError, "reviewed source SHA"):
                 kit.write_private_kit(self.oem_zip, self.output, "b" * 40)
 
     def test_private_kit_all_checks_are_local_and_public_manifest_has_no_secrets(self):
