@@ -8,10 +8,13 @@
 #include <ESP8266WiFi.h>
 #include <bearssl/bearssl_hash.h>
 #include "boot/NativeOtaNetworkPump.h"
+#include "boot/NativeOtaPort80Plan.h"
 #include "shino_private_policy.h"
 
 static_assert(SHINO_ENABLE_NATIVE_SIGNED_OTA == 0,
               "Native OTA is still a non-installing source research gate.");
+static_assert(ShinoNativeOta::NativeOtaPort80Plan::kMaxFirstLineBytes == 128u,
+              "Port-80 routing research line cap must stay fixed and disconnected.");
 
 namespace ShinoNativeOta {
 
