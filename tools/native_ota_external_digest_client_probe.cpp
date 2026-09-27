@@ -57,7 +57,6 @@ int main(int argc,char** argv) {
        authorization.size()>StrictOtaDigestGate<HostSha256>::kMaxAuthorizationBytes)
         return 3;
     static constexpr char username[]="owner-fixture";
-    static constexpr char password[]="not-the-owner-password";
     static constexpr char ha1Prefix[]="owner-fixture:SHINO-OTA:not-the-owner-password";
     char ha1[65]{};
     if(!HostSha256::hex(ha1Prefix,sizeof(ha1Prefix)-1u,ha1)) return 2;
