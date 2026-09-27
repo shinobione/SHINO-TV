@@ -20,6 +20,11 @@ background:#101318;display:grid;grid-template-columns:108px 108px;grid-template-
 letter-spacing:-1px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .track{position:absolute;left:8px;bottom:10px;width:90px;height:6px;border-radius:3px;background:#536277;overflow:hidden}
 .fill{display:none;width:0;height:6px;border-radius:3px;background:#66d39a;transition:none}
+.update-panel{max-width:720px;margin:18px auto 0;padding:14px;border:1px solid #394755;border-radius:12px;background:#222933}
+.update-panel strong{font-size:13px;letter-spacing:.04em}
+.update-panel p{font-size:12px;line-height:1.5;color:#bfc9d4;margin:8px 0}
+.update-panel a{font-size:12px;color:#b9d9fb}
+.update-panel .read-only{display:inline-block;margin-left:8px;padding:3px 7px;border:1px solid #8f7a40;color:#dec781;border-radius:10px;font-size:10px}
 footer{font-size:12px;line-height:1.55;color:#aab6c3;max-width:720px;margin:15px auto 0}
 footer a{color:#b9d9fb}a:focus-visible{outline:2px solid #66d39a}
 @media(max-width:760px){.viewport{width:480px;height:480px}.screen{transform:scale(2)}}
@@ -36,6 +41,13 @@ footer a{color:#b9d9fb}a:focus-visible{outline:2px solid #66d39a}
 <article class="card"><span class="label">GPU<br>temperature</span><output id="tempV" class="value">—</output>
 <div class="track" role="progressbar" aria-label="GPU temperature visual scale 30 to 90 Celsius" aria-valuemin="0" aria-valuemax="100" id="tempTrack"><span class="fill" id="tempFill"></span></div></article>
 </section></div>
+<section class="update-panel" aria-label="Firmware update status">
+<strong>Firmware &amp; updates</strong><span class="read-only">READ-ONLY PREFLIGHT</span>
+<p>Native SHINO-to-SHINO installation is NOT enabled in this firmware candidate.
+No update file selection, upload or flash-write route is registered.
+Check the device geometry before a separately reviewed writer is developed.</p>
+<a href="/api/v1/bridge/ota/capabilities">View read-only OTA capabilities</a>
+</section>
 <footer>Exact 240×240 grid · 4 permanent values · colors reflect bar fill, not GPU danger thresholds.
 PC measurements live only in RAM and expire after six seconds. No filesystem is provisioned.
 <p><a href="/api/v1/bridge/status">Diagnostics</a> · <a href="/api/v1/bridge/fs-plan">Filesystem impact</a> ·
