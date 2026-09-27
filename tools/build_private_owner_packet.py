@@ -94,8 +94,10 @@ def output_policy(zip_path: Path, out_dir: Path) -> tuple[Path, Path]:
         raise OwnerKitError("Old candidate BIN exists; clean build folder first, never reuse unknown bytes")
     return original, out
 
-def write_private_kit(zip_path: Path, out_dir: Path, *, python=sys.executable) -> dict:
+def write_private_kit(zip_path: Path, out_dir: Path, expected_source_sha: str, *, python=sys.executable) -> dict:
     source_sha = require_clean_frozen_checkout()
+    if source_sha != expected_source_sha:
+        raise OwnerKitError("Current checkout commit does NOT match the explicitly reviewed source SHA")
     original, final = output_policy(zip_path, out_dir)
     oem = verify_archive(original, ROOT / "recovery/factory_ota_v9_0_44.json")
     parent = final.parent
@@ -191,13 +193,15 @@ def write_private_kit(zip_path: Path, out_dir: Path, *, python=sys.executable) -
 
 def main() -> int:
     parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--expected-source-sha", required=True,
+                        help="Full 40-char reviewed Git source SHA; never use a floating branch silently")
     parser.add_argument("--official-zip", type=Path, required=True,
                         help="Verified OEM Ultra V9.0.44 original ZIP already on user's PC")
     parser.add_argument("--out-dir", type=Path, required=True,
                         help="New PRIVATE local directory OUTSIDE Git checkout, no overwrite")
     args=parser.parse_args()
     try:
-        result=write_private_kit(args.official_zip,args.out_dir)
+        result=write_private_kit(args.official_zip,args.out_dir,args.expected_source_sha)
     except (OwnerKitError, PacketError, PreflightError, FactoryOtaError,
             OSError, ValueError, subprocess.TimeoutExpired) as exc:
         parser.exit(1, f"PRIVATE BUILD CLOSED: {exc}\n")
