@@ -183,16 +183,14 @@ class LegacyResponseHttpLoopbackFixtureTests(unittest.TestCase):
         ):
             with self.subTest(method=method,path=path):
                 _,b=self.run_case("digest_fixture",request(method,path),403,chunk=1)
-                self.assertIn(b"NO_FLASH",b if b"NO_FLASH" in b else
-                              b"HOST_FIXTURE_INGRESS_REJECTED_NO_FLASH")
+                self.assertIn(b"NO_FLASH",b)
 
     def test_host_fixture_bound_exclusively_to_loopback_and_unwired_from_firmware(self):
         source=HOST.read_text(encoding="utf-8")
         bridge=BRIDGE.read_text(encoding="utf-8")
         self.assertIn("htonl(INADDR_LOOPBACK)",source)
         self.assertIn("htons(0u)",source)
-        self.assertIn("fixtureDigestPassed",source if "fixtureDigestPassed" in source
-                      else "bool fixtureDigestPassed=false;")
+        self.assertIn('const bool digestFixture=mode=="digest_fixture";',source)
         self.assertIn("synthetic-no-owner-auth-no-device-writer",source)
         self.assertNotIn("NativeOtaLegacyResponsePreview.h",bridge)
         without_comments="\n".join(line for line in source.splitlines()
