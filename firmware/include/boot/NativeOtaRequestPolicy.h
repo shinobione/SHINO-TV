@@ -52,12 +52,13 @@ public:
 private:
     static bool equal(const char* supplied, const char* expected) {
         if (supplied == nullptr) return false;
-        // All expected strings are short; reject any unexpectedly long
-        // header before strcmp to bound parsing and reject concatenated ones.
-        const size_t cap = std::strlen(expected) + 1;
-        const void* terminator = std::memchr(supplied, '\0', cap);
-        if (!terminator) return false;
-        return std::strcmp(supplied, expected) == 0;
+        // Compare only expected length, stopping at the FIRST mismatch or NUL;
+        // never use a fixed-length memchr that may read past a short C string.
+        size_t i = 0;
+        for (; expected[i] != '\0'; ++i) {
+            if (supplied[i] != expected[i]) return false;
+        }
+        return supplied[i] == '\0';
     }
 };
 
