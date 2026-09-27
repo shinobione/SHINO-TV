@@ -36,10 +36,14 @@ class NativeOtaIntentGateHostTests(unittest.TestCase):
         self.assertIn("IntentGate(const IntentGate&) = delete;", gate)
         self.assertIn("kArmLifetimeMs = 60'000", gate)
         self.assertIn("kStreamInactivityMs = 15'000", gate)
+        # Security scan compiled declarations/statements, not truthful comments
+        # explaining what the gate must never become.
+        source_only = "\\n".join(line for line in gate.splitlines()
+                                if not line.lstrip().startswith("//"))
         for forbidden in ("Update.begin(", "Update.write(", "Update.end(",
                           "#include <Arduino", "#include <Updater", "ESP8266WebServer",
                           "LittleFS", "EEPROM.", "HTTP_POST"):
-            self.assertNotIn(forbidden, gate)
+            self.assertNotIn(forbidden, source_only)
         self.assertNotIn("NativeOtaIntentGate.h", bridge)
         self.assertNotIn('server.on("/api/v1/bridge/ota/install"', bridge)
         self.assertNotIn('server.on("/api/v1/bridge/ota/arm"', bridge)
