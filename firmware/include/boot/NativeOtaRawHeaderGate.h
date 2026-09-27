@@ -23,6 +23,8 @@ struct RawOtaHeaderResult {
     RawOtaRequestKind kind = RawOtaRequestKind::Arm;
     uint32_t contentLength = 0u;
     bool digestHeaderPresent = false; // Only syntax, NOT cryptographic proof.
+    size_t digestValueOffset = 0u;    // Span in original raw header; do not log it.
+    size_t digestValueLength = 0u;    // Original buffer must outlive proof verification.
     bool readCookiePresent = false;   // Never an authorization.
     bool intentTokenPresent = false;
     char intentToken[33]{};          // Syntax-only, bound separately in RAM.
@@ -108,7 +110,9 @@ public:
             } else if (sameHeader(name,Span{"authorization",13u})) {
                 if (value.n < 8u || value.n > kMaxDigestHeaderBytes ||
                     !hasPrefix(value,"Digest ")) return false;
-                gotAuth=true; // Full Digest cryptographic proof is a DIFFERENT unimplemented gate.
+                gotAuth=true; // Syntax only; verifier must bind route/nonce/replay.
+                result.digestValueOffset=vStart;
+                result.digestValueLength=value.n;
             } else if (sameHeader(name,Span{"x-shino-intent",14u})) {
                 if (value.n!=32u) return false;
                 uint8_t nonzero=0u;
