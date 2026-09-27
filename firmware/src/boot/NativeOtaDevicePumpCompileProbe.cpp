@@ -9,6 +9,7 @@
 #include <ESP8266WiFi.h>
 #include <bearssl/bearssl_hash.h>
 #include "boot/NativeOtaNetworkPump.h"
+#include "boot/NativeOtaEntropyReview.h"
 #include "boot/NativeOtaPort80Plan.h"
 #include "shino_private_policy.h"
 
@@ -49,6 +50,21 @@ struct NativeBearSslSha256 final {
     }
 };
 
+// UNWIRED entropy source TYPE CHECK ONLY. ESP8266 Core 3.1.2 documents that
+// ESP.random() requires Wi-Fi RF enabled for entropy. AP mode and default
+// private IP are necessary, NOT proof that RF entropy is healthy, WPA2 is
+// provisioned or an incoming peer is authenticated. Never call from the
+// active bridge without separate review.
+struct NativeDeviceEntropySource final {
+    static bool privateApReady() {
+        return WiFi.getMode()==WIFI_AP &&
+               WiFi.softAPIP()==IPAddress(192,168,4,1);
+    }
+    static bool fill(uint8_t* bytes,size_t length) {
+        return bytes && length==32u && ESP.random(bytes,length)==bytes;
+    }
+};
+
 // Fail-closed compile fixture. It does not retain body bytes, has no device
 // writer, and deliberately never permits a successful review. Never replace
 // this with a flash sink without a separately approved implementation gate.
@@ -64,6 +80,7 @@ using UnwiredDeviceReview =
 
 // Explicit instantiation type-checks every real method against ESP8266 3.1.2.
 // No instance, listener, callback or startup action is declared or created.
+template class NativeOtaEntropyReview<NativeDeviceEntropySource>;
 template class StrictOtaDigestGate<NativeBearSslSha256>;
 template class NativeOtaStreamingReview<
     NativeBearSslSha256, NativeBearSslSha256, NativeRejectAllSink>;
