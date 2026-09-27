@@ -45,7 +45,7 @@ class LegacyResponseHttpLoopbackFixtureTests(unittest.TestCase):
     def tearDownClass(cls):
         cls.temp.cleanup()
 
-    def run_case(self,mode,wire,expected,chunk=4096):
+    def run_case(self,mode,wire,expected,chunk=4096,half_close=True):
         proc=subprocess.Popen([str(self.exe),mode],
             stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
         try:
@@ -58,7 +58,8 @@ class LegacyResponseHttpLoopbackFixtureTests(unittest.TestCase):
                 try:
                     for at in range(0,len(wire),chunk):
                         sock.sendall(wire[at:at+chunk])
-                    sock.shutdown(socket.SHUT_WR)
+                    if half_close:
+                        sock.shutdown(socket.SHUT_WR)
                 except (BrokenPipeError,ConnectionResetError,OSError):
                     if expected not in (403,413):raise
                 try:
@@ -209,6 +210,39 @@ class LegacyResponseHttpLoopbackFixtureTests(unittest.TestCase):
                 _,b=self.run_case("digest_fixture",request(method,path),403,chunk=1)
                 self.assertIn(b"NO_FLASH",b)
 
+    def test_same_ingress_replies_without_client_fin_for_legacy_status_contract(self):
+        # Previous tests used shutdown(SHUT_WR). A real keep-alive browser or
+        # Windows HTTP client waits for the reply without that half-close.
+        cases=(
+            ("anonymous",request("GET","/",extra="Connection: keep-alive\r\n"),401),
+            ("digest_fixture",request("GET","/",extra="Connection: keep-alive\r\n"),200),
+            ("cookie_fixture",request("GET","/api/v1/bridge/metrics",
+                extra="Cookie: SHINO_READ_SESSION="+TOKEN+"\r\n"
+                      "Connection: keep-alive\r\n"),200),
+            ("expired_cookie_fixture",request("GET","/api/v1/bridge/metrics",
+                extra="Cookie: SHINO_READ_SESSION="+TOKEN+"\r\n"),403),
+            ("digest_fixture",request("POST","/api/v1/bridge/metrics",GOOD,
+                extra="Connection: keep-alive\r\n"),200),
+            ("digest_fixture",request("POST","/api/v1/bridge/metrics",BAD_NUMBER),422),
+            ("digest_fixture",request("POST","/api/v1/bridge/ota/arm"),403),
+        )
+        for mode,wire,status in cases:
+            with self.subTest(mode=mode,status=status):
+                headers,body=self.run_case(mode,wire,status,chunk=1,half_close=False)
+                self.assertEqual(headers.count(b"HTTP/1.1 "),1)
+                self.assertIn(b"Connection: close",headers)
+                self.assertNotIn(b"Update.",body)
+                if mode=="expired_cookie_fixture":
+                    self.assertNotIn(b"WWW-Authenticate:",headers)
+                if b"/api/v1/bridge/ota/arm" in wire:
+                    self.assertIn(b"NO_FLASH",body)
+
+    def test_pipeline_same_feed_refused_without_dispatching_second_message(self):
+        wire=request("GET","/")+request("GET","/ui.js")
+        headers,body=self.run_case("digest_fixture",wire,403,half_close=False)
+        self.assertIn(b"HOST_FIXTURE_INGRESS_REJECTED_NO_FLASH",body)
+        self.assertEqual(headers.count(b"HTTP/1.1 "),1)
+
     def test_host_fixture_bound_exclusively_to_loopback_and_unwired_from_firmware(self):
         source=HOST.read_text(encoding="utf-8")
         bridge=BRIDGE.read_text(encoding="utf-8")
@@ -216,6 +250,8 @@ class LegacyResponseHttpLoopbackFixtureTests(unittest.TestCase):
         self.assertIn("htons(0u)",source)
         self.assertIn('const bool digestFixture=mode=="digest_fixture";',source)
         self.assertIn("synthetic-no-owner-auth-no-device-writer",source)
+        self.assertIn("finishOnExactMessageBoundaryForHostReviewOnly",source)
+        self.assertIn("messageReady",source)
         self.assertNotIn("NativeOtaLegacyResponsePreview.h",bridge)
         without_comments="\n".join(line for line in source.splitlines()
                                    if not line.lstrip().startswith("//"))
