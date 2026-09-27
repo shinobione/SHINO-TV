@@ -148,7 +148,10 @@ int successModes() {
         for(size_t chunks : {size_t(1),size_t(7),size_t(1024),size_t(4096),size_t(8192)}) {
             // Avoid half a million host calls for repeated segmentation variants.
             if(size==MAXIMUM && chunks<4096u)continue;
-            Fixture f(static_cast<uint32_t>(size));CHECK(f.prepare());
+            Fixture f(static_cast<uint32_t>(size));
+            const auto kind=size==MAXIMUM
+                ? IntendedPackage::SignedExactOem : IntendedPackage::SignedShino;
+            CHECK(f.prepare(100u,true,true,kind));
             const auto head=f.header();
             // Header may arrive one byte at a time, and final header+body
             // may share a single TCP packet. No body is forwarded before auth.
