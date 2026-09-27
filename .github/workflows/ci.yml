@@ -19,6 +19,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Fetch independently pinned ArduinoJson 7.4.3 source for HOST comparison
+        uses: actions/checkout@v4
+        with:
+          repository: bblanchon/ArduinoJson
+          ref: 77771d3c07668e01d8f52acb03910c1110bb373f
+          path: reference-arduinojson
+          persist-credentials: false
+      - name: Verify original FslessMetrics.cpp using REAL ArduinoJson on host (NO DEVICE)
+        env:
+          SHINO_ARDUINOJSON_SRC: reference-arduinojson/src
+        run: |
+          test "$(git -C reference-arduinojson rev-parse HEAD)" = "77771d3c07668e01d8f52acb03910c1110bb373f"
+          python tools/verify_native_arduinojson_parity.py
       - name: Test static firmware inspector
         run: python -m unittest discover -s tools -p 'test_*.py' -v
       - name: Test Windows telemetry bridge without hardware
