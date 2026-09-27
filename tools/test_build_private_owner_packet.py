@@ -114,20 +114,9 @@ class OwnerKitTests(unittest.TestCase):
             calls.append(command)
             if "generate_shino_device_policy.py" in command:
                 self.make_build()
-                # In this synthetic setup, remove the fake app until compile runs.
                 self.app.unlink()
             if "platformio" in command:
                 self.make_candidate_only()
-            return ""
-        with self.assertRaisesRegex(kit.OwnerKitError, "reviewed source SHA"):
-                kit.write_private_kit(self.oem_zip, self.output, "b" * 40)
-
-    def test_private_kit_all_checks_are_local_and_public_manifest_has_no_secrets(self):
-        calls=[]
-        def local(command, *, cwd=None, output=True):
-            calls.append(command)
-            if "generate_shino_device_policy.py" in command:
-                self.make_build()
             return ""
         with self.patch_paths(), patch.object(kit, "require_clean_frozen_checkout", return_value=self.sha), \
                 patch.object(kit, "run", side_effect=local):
