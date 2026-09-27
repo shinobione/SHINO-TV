@@ -53,6 +53,7 @@ public:
             if(c=='\r') {
                 if(i+1u!=length-1u || raw[i+1u]!='\n')return result;
                 hasLineEnd=true;
+                ++i; // consume paired LF; standalone LF remains forbidden.
             } else if(c=='\n' || c==0u || c<32u || c>=127u) {
                 return result; // no folding, LF-only, controls or non-ASCII
             }
