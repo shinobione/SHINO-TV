@@ -44,8 +44,9 @@ public:
         if (data[len-4u] != '\r' || data[len-3u] != '\n' ||
             data[len-2u] != '\r' || data[len-1u] != '\n') return false;
         for (size_t i = 0; i < len; ++i) {
-            if (data[i] == '\0' || data[i] == '\n' && (i == 0 || data[i-1u] != '\r') ||
-                data[i] == '\r' && (i+1u >= len || data[i+1u] != '\n'))
+            if (data[i] == '\0' ||
+                (data[i] == '\n' && (i == 0 || data[i-1u] != '\r')) ||
+                (data[i] == '\r' && (i+1u >= len || data[i+1u] != '\n')))
                 return false;
         }
         size_t lineEnd = 0u;
