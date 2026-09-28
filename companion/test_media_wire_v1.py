@@ -181,6 +181,28 @@ class WireHostTests(unittest.TestCase):
         self.assertEqual(self.receiver.until,11)
         self.assertEqual(self.receiver.tick(11),"PC_HEALTH")
 
+    def test_failure_after_good_cover_revokes_old_art_and_keeps_all_metrics(self):
+        self.assertEqual(self.complete(now=0),"COMMITTED")
+        self.assertIsNotNone(self.receiver.committed[1])
+        next_track=prepare(replace(self.media,title="Weapon is FED"),self.jpeg,tx="9"*32)
+        self.begin(next_track,now=4)
+        invalid=replace(next_track.packets[0],crc32=0)
+        with self.assertRaisesRegex(ProtocolError,"TILE_CRC"):
+            self.receiver.tile(invalid,auth_verified=True,now=5)
+        self.assertIsNone(self.receiver.committed)
+        self.assertEqual(self.receiver.view,"PC_HEALTH")
+        self.assertEqual(self.receiver.metrics,(27,62,43,68))
+        # Re-accept the first title with a fresh transaction ID only.
+        recovery=prepare(self.media,self.jpeg,tx="8"*32)
+        self.assertEqual(self.complete(recovery,now=10),"COMMITTED")
+        self.assertIsNotNone(self.receiver.committed[1])
+        next_track=prepare(replace(self.media,title="Weapon is FED"),self.jpeg,tx="7"*32)
+        self.begin(next_track,now=15)
+        self.receiver.tick(15+MAX_TRANSACTION_SECONDS+0.1)
+        self.assertIsNone(self.receiver.pending)
+        self.assertIsNone(self.receiver.committed)
+        self.assertEqual(self.receiver.view,"PC_HEALTH")
+
     def test_long_utf8_metadata_never_exceeds_envelope_limit(self):
         very_long=replace(self.media,title="界"*120,artist="É"*120,album="界"*120,
                           source="界"*120)
