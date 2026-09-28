@@ -6,6 +6,8 @@ echo SHINO // TV - PRIVATE OWNER REVIEW BUILD (NO DEVICE FLASH)
 echo ---------------------------------------------------------
 echo.
 if "%~3"=="" goto usage
+if not "%~5"=="" goto usage
+if not "%~4"=="" if /I not "%~4"=="--heap-diagnostics" goto usage
 if not exist "tools\build_private_owner_packet.py" (
   echo ERROR: Launch this script from a full Git checkout of SHINO-TV.
   exit /b 1
@@ -15,11 +17,16 @@ if errorlevel 1 (
   echo ERROR: Python 3 Windows launcher is missing.
   exit /b 1
 )
-echo This operation requires a LOCAL original OEM ZIP and a private output folder.
+echo This operation requires a LOCAL original OEM ZIP and a NEW private output folder.
 echo It will NOT contact your SmallTV, send an OTA or upload to GitHub.
-echo It will refuse a dirty checkout, stale credentials or a wrong Git SHA.
-echo.
-py -3 tools\build_private_owner_packet.py --official-zip "%~1" --out-dir "%~2" --expected-source-sha "%~3"
+echo It will refuse a dirty checkout, old build images, existing secrets or a wrong Git SHA.
+if "%~4"=="" (
+  echo Build profile: default V2 FS-less, uninstrumented.
+  py -3 tools\build_private_owner_packet.py --official-zip "%~1" --out-dir "%~2" --expected-source-sha "%~3"
+) else (
+  echo Build profile: V2.1 HEAP diagnostics plus exact OEM-only return, review only.
+  py -3 tools\build_private_owner_packet.py --official-zip "%~1" --out-dir "%~2" --expected-source-sha "%~3" --heap-diagnostics
+)
 if errorlevel 1 (
   echo.
   echo BUILD NOT APPROVED / STOPPED. Review locally; never upload a partial BIN.
@@ -31,8 +38,10 @@ exit /b 0
 
 :usage
 echo Usage:
-echo   start-private-owner-build.cmd "FULL_PATH_TO_OFFICIAL_V9.0.44_ZIP" "NEW_PRIVATE_OUTPUT_FOLDER_OUTSIDE_GIT" "FULL_40_CHARACTER_REVIEWED_GIT_SHA"
+echo   start-private-owner-build.cmd "FULL_PATH_TO_OFFICIAL_V9.0.44_ZIP" "NEW_PRIVATE_OUTPUT_FOLDER_OUTSIDE_GIT" "FULL_40_CHARACTER_REVIEWED_GIT_SHA" [--heap-diagnostics]
 echo.
+echo Option --heap-diagnostics explicitly builds V2.1 with read-only heap observation.
+echo Both profiles retain the pinned OEM-only return receiver in the OWNER private kit.
 echo Prerequisites: full clean Git checkout, installed Python 3, PlatformIO and esptool.
-echo No pip installs, network probing or device operation are launched by this .cmd.
+echo No pip installs, TV network probing, OTA or device operation are launched by this .cmd.
 exit /b 2
