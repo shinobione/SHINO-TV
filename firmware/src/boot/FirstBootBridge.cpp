@@ -15,11 +15,28 @@
 #include "boot/FslessMetrics.h"
 #include "boot/FslessWebUI.h"
 #include "boot/DashboardV2.h"
+// Explicit opt-in, never enabled in the default V2/esp12e build.
+// This is read-only heap observation; it cannot authorize flash or OTA.
+#ifndef SHINO_ENABLE_HEAP_DIAGNOSTICS
+#define SHINO_ENABLE_HEAP_DIAGNOSTICS 0
+#endif
+static_assert(SHINO_ENABLE_HEAP_DIAGNOSTICS == 0 ||
+              SHINO_ENABLE_HEAP_DIAGNOSTICS == 1,
+              "Unrecognized heap instrumentation policy flag");
+#if SHINO_ENABLE_HEAP_DIAGNOSTICS
+#include "boot/ShinoHeapDiagnosticCandidate.h"
+#endif
 #include <cstdio>
 #include <cstring>
 #include <array>
 #include "recovery/FactoryRollback.h"
 #include "shino_private_policy.h"
+
+#ifndef SHINO_ENABLE_NATIVE_SIGNED_OTA
+#error "Explicit native signed-OTA policy missing from private build."
+#endif
+static_assert(SHINO_ENABLE_NATIVE_SIGNED_OTA == 0,
+              "V2.1 research only: no generic SHINO updater or signed-OTA writer enabled.");
 
 #ifndef SHINO_BOOT_PROFILE
 #error "A private, explicit first-boot profile is required."
@@ -68,6 +85,10 @@ struct BrowserSession {
     uint32_t issuedAtMs = 0;
 };
 std::array<BrowserSession, 2> browserSessions;
+#if SHINO_ENABLE_HEAP_DIAGNOSTICS
+// Fixed-size opt-in observer only; no new server and no background timer.
+ShinoHeapDiagnostic::Candidate heapDiagnostic;
+#endif
 
 String browserCookieToken() {
     const String raw = server.header("Cookie");
@@ -202,7 +223,16 @@ void sendStatus() {
     doc["running_application_bytes"] = ESP.getSketchSize();
     doc["linker_declared_free_sketch_bytes_NOT_stock_OTA_capacity"] = ESP.getFreeSketchSpace();
     doc["available_heap_bytes"] = ESP.getFreeHeap();
+#if SHINO_ENABLE_HEAP_DIAGNOSTICS
+    // Prior cooperatively sampled summary; GET itself never triggers a sample.
+    // Preserve every existing status field and the existing Digest challenge.
+    heapDiagnostic.appendReadOnlyStatus(doc);
+#endif
     doc["factory_app_return_compiled"] = SHINO_ENABLE_FACTORY_RESTORE == 1;
+    // V2.1 phase A: diagnostics only. There is deliberately no SHINO updater
+    // registered and no way to turn this into an install by passing JSON.
+    doc["native_ota_manager"] = "READ_ONLY_DESIGN_GATE";
+    doc["native_ota_writer_compiled"] = false;
     doc["physical_flash_or_application_OTA_writes_performed_by_diagnostics"] = false;
     doc["physical_flash_installation_authorized"] = false;
     String result;
@@ -386,6 +416,27 @@ void run() {
     server.on("/api/v1/bridge/metrics", HTTP_POST, acceptMetrics);
     server.on("/api/v1/bridge/status", HTTP_GET, sendStatus);
     server.on("/api/v1/bridge/fs-plan", HTTP_GET, sendFsPlan);
+    // Native OTA phase A. This route is read-only. Browser cookie is for GET
+    // viewing only; it does NOT authorize firmware uploads or OEM restore.
+    server.on("/api/v1/bridge/ota/capabilities", HTTP_GET, []() {
+        if (!browserSessionValid() && !requireAuth()) return;
+        JsonDocument doc;
+        doc["mode"] = "OTA_MANAGER_READ_ONLY_PREFLIGHT";
+        doc["model"] = "SmallTV-Ultra";
+        doc["physical_flash_bytes_observed_at_runtime"] = ESP.getFlashChipRealSize();
+        doc["running_application_bytes"] = ESP.getSketchSize();
+        doc["reported_free_sketch_bytes_NOT_INSTALL_APPROVAL"] = ESP.getFreeSketchSpace();
+        doc["linked_application_ceiling"] = "0x100000";
+        doc["filesystem_write_or_migration_enabled"] = false;
+        doc["native_ota_writer_compiled"] = false;
+        doc["native_ota_upload_route_registered"] = false;
+        doc["signature_verification_implemented"] = false;
+        doc["physical_installation_authorized"] = false;
+        doc["manufacturer_application_return_separate"] = true;
+        String body;
+        serializeJson(doc, body);
+        respond(200, body);
+    });
     server.on("/api/v1/bridge/factory-return", HTTP_GET, []() {
         if (!requireAuth()) return;
         FactoryRollback::status(server);
@@ -420,6 +471,11 @@ void loop() {
         (telemetryNeedsRedraw || FslessMetrics::stale() != stalePreviously) &&
         static_cast<uint32_t>(millis() - lastDrawMs) >= 250) paintNativeDashboard();
     FactoryRollback::tick();
+#if SHINO_ENABLE_HEAP_DIAGNOSTICS
+    // Only after existing HTTP/LCD/factory loop work; never in a handler/ISR.
+    // This opt-in poll must remain bounded to at most one sample per second.
+    if (networkReady) heapDiagnostic.pollAfterExistingWork(millis());
+#endif
     ESP.wdtFeed();
     yield();
 }

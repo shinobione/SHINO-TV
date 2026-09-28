@@ -32,8 +32,10 @@ ROOT = Path(__file__).resolve().parent.parent
 POLICY = ROOT / "firmware/include/shino_private_policy.h"
 CREDENTIALS = ROOT / "firmware/private/credentials.txt"
 APP = ROOT / "firmware/.pio/build/esp12e/firmware.bin"
+APP_HEAP = ROOT / "firmware/.pio/build/esp12e_heap_diagnostics/firmware.bin"
 OEM_MEMBER = "FW-Smalltv-Ultra-V9.0.44.bin"
 APP_NAME = "SHINO-TV-V2-PRIVATE-NOT-A-FLASH-APPROVAL.bin"
+APP_NAME_HEAP = "SHINO-TV-V21-HEAP-PRIVATE-NOT-A-FLASH-APPROVAL.bin"
 OEM_NAME = "OEM-V9.0.44-APPLICATION-ONLY.bin"
 MAX_OEM_ZIP = 2_000_000
 
@@ -90,15 +92,20 @@ def output_policy(zip_path: Path, out_dir: Path) -> tuple[Path, Path]:
         raise OwnerKitError("Old generated private policy/credentials exist; do NOT silently reuse/overwrite")
     if (ROOT / "firmware/data/config.json").exists():
         raise OwnerKitError("Old config.json exists; FS-less build must not embed another config")
-    if APP.exists():
-        raise OwnerKitError("Old candidate BIN exists; clean build folder first, never reuse unknown bytes")
+    if APP.exists() or APP_HEAP.exists():
+        raise OwnerKitError("Old candidate BIN exists; clean both build folders first, never reuse unknown bytes")
     return original, out
 
-def write_private_kit(zip_path: Path, out_dir: Path, expected_source_sha: str, *, python=sys.executable) -> dict:
+def write_private_kit(zip_path: Path, out_dir: Path, expected_source_sha: str, *,
+                      python=sys.executable, heap_diagnostics: bool=False) -> dict:
     source_sha = require_clean_frozen_checkout()
     if source_sha != expected_source_sha:
         raise OwnerKitError("Current checkout commit does NOT match the explicitly reviewed source SHA")
     original, final = output_policy(zip_path, out_dir)
+    # Explicit owner review choice only. No arbitrary PlatformIO environment.
+    environment = "esp12e_heap_diagnostics" if heap_diagnostics else "esp12e"
+    candidate_path = APP_HEAP if heap_diagnostics else APP
+    candidate_name = APP_NAME_HEAP if heap_diagnostics else APP_NAME
     oem = verify_archive(original, ROOT / "recovery/factory_ota_v9_0_44.json")
     parent = final.parent
     # Work in private parent. Publish only after exact source/image/secret
@@ -110,12 +117,15 @@ def write_private_kit(zip_path: Path, out_dir: Path, expected_source_sha: str, *
         run([python, "tools/generate_shino_device_policy.py",
              "--oem-zip", str(original), "--enable-restore"])
         generated = True
-        run([python, "-m", "platformio", "run", "--project-dir", "firmware", "-e", "esp12e"],
+        run([python, "-m", "platformio", "run", "--project-dir", "firmware", "-e", environment],
             output=False)
-        if not APP.is_file() or APP.is_symlink():
+        if not candidate_path.is_file() or candidate_path.is_symlink():
             raise OwnerKitError("No regular fresh candidate application BIN compiled")
-        private_app = temporary / APP_NAME
-        shutil.copyfile(APP, private_app)
+        private_app = temporary / candidate_name
+        shutil.copyfile(candidate_path, private_app)
+        diagnostic_present = b"OBSERVED_HEAP_V1" in private_app.read_bytes()
+        if diagnostic_present is not heap_diagnostics:
+            raise OwnerKitError("Selected private image does not match requested heap instrumentation")
 
         # This is extraction to owner-controlled local folder only, NOT full 4MiB
         # flash backup, never an update request.
@@ -150,8 +160,10 @@ def write_private_kit(zip_path: Path, out_dir: Path, expected_source_sha: str, *
         result = {
             "status": "PRIVATE_KIT_READY_FOR_REVIEW__OWNER_FLASH_NOT_AUTHORIZED",
             "source_commit": source_sha,
+            "build_profile": environment,
+            "read_only_heap_instrumentation_compiled": heap_diagnostics,
             "files": {
-                APP_NAME: {"bytes": private_app.stat().st_size, "sha256": sha256(private_app)},
+                candidate_name: {"bytes": private_app.stat().st_size, "sha256": sha256(private_app)},
                 OEM_NAME: {"bytes": private_oem.stat().st_size, "sha256": sha256(private_oem),
                            "scope": "original application OTA only; not whole owner flash"},
                 "credentials.txt": {"private": True, "never_share": True},
@@ -174,12 +186,14 @@ def write_private_kit(zip_path: Path, out_dir: Path, expected_source_sha: str, *
             match = re.search(r'^#define ' + name + r' "([^"]+)"$', private_text, flags=re.M)
             if not match or match.group(1).encode("utf-8") in public:
                 raise OwnerKitError("Sanitized manifest includes credentials or private policy incomplete")
-        if (ROOT / "firmware/.pio/build/esp12e/littlefs.bin").exists():
+        if (candidate_path.parent / "littlefs.bin").exists():
             raise OwnerKitError("An unexpected filesystem image was created")
         temporary.rename(final)
         return {"folder": str(final), "source_commit": source_sha,
-                "candidate_bytes": result["files"][APP_NAME]["bytes"],
-                "candidate_sha256": result["files"][APP_NAME]["sha256"],
+                "candidate_bytes": result["files"][candidate_name]["bytes"],
+                "candidate_sha256": result["files"][candidate_name]["sha256"],
+                "build_profile": environment,
+                "read_only_heap_instrumentation_compiled": heap_diagnostics,
                 "factory_app_sha256": result["files"][OEM_NAME]["sha256"],
                 "status": result["status"], "device_contacted": False}
     finally:
@@ -190,7 +204,7 @@ def write_private_kit(zip_path: Path, out_dir: Path, expected_source_sha: str, *
             CREDENTIALS.unlink(missing_ok=True)
             # The only preserved reviewed BIN is the verified private KIT
             # copy, not a second ignored leftover under the source checkout.
-            APP.unlink(missing_ok=True)
+            candidate_path.unlink(missing_ok=True)
         if temporary.exists():
             shutil.rmtree(temporary)
         # PlatformIO output is ignored and stays local; do not auto-delete it
@@ -205,9 +219,12 @@ def main() -> int:
                         help="Verified OEM Ultra V9.0.44 original ZIP already on user's PC")
     parser.add_argument("--out-dir", type=Path, required=True,
                         help="New PRIVATE local directory OUTSIDE Git checkout, no overwrite")
+    parser.add_argument("--heap-diagnostics", action="store_true",
+                        help="Select explicit esp12e_heap_diagnostics PRIVATE offline profile; still no upload")
     args=parser.parse_args()
     try:
-        result=write_private_kit(args.official_zip,args.out_dir,args.expected_source_sha)
+        result=write_private_kit(args.official_zip,args.out_dir,args.expected_source_sha,
+                                 heap_diagnostics=args.heap_diagnostics)
     except (OwnerKitError, PacketError, PreflightError, FactoryOtaError,
             OSError, ValueError, subprocess.TimeoutExpired) as exc:
         parser.exit(1, f"PRIVATE BUILD CLOSED: {exc}\n")
