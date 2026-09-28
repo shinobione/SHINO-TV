@@ -1,0 +1,4 @@
+# Optional Windows-only GSMTC Now Playing provider (no Spotify API / no cloud).
+-r requirements-link.txt
+winrt-Windows.Media.Control==3.2.1; platform_system == "Windows"
+winrt-Windows.Storage.Streams==3.2.1; platform_system == "Windows"
