@@ -74,6 +74,15 @@ class LinkConfigTests(unittest.TestCase):
                 with self.assertRaises(LinkError):
                     load_config(alias)
 
+    def test_root_launcher_is_explicit_tray_only_no_update(self):
+        launcher = (Path(__file__).resolve().parent.parent /
+                    "start-shino-link.cmd").read_text(encoding="utf-8")
+        self.assertIn('start "" pyw -3 "%~dp0companion\\shino_link.py" --tray', launcher)
+        self.assertIn('if not exist "%LOCALAPPDATA%\\SHINO-TV\\link.json"', launcher)
+        self.assertNotIn(" --send-oem-once", launcher)
+        self.assertNotIn(" --flash", launcher)
+        self.assertNotIn(" /update", launcher)
+
     def test_no_registry_side_effect_on_non_windows(self):
         # Covers the default Linux CI path without monkeypatching OS globals.
         import os
