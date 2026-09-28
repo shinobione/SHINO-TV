@@ -236,8 +236,17 @@ def autostart(action: str, path: Path) -> str:
         except ImportError as exc:
             raise LinkError("Install companion/requirements-link.txt before enabling auto-start") from exc
     command = autostart_command() if action == "enable" else None
-    with winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, RUN_KEY, 0,
-                            winreg.KEY_QUERY_VALUE | winreg.KEY_SET_VALUE) as key:
+    access = winreg.KEY_QUERY_VALUE | (winreg.KEY_SET_VALUE if action != "status" else 0)
+    # Status / disable must not silently CREATE any registry key.
+    try:
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY, 0, access)
+    except FileNotFoundError:
+        if action == "status":
+            return "Disabled"
+        if action == "disable":
+            return "Already disabled"
+        key = winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, RUN_KEY, 0, access)
+    with key:
         try:
             existing, kind = winreg.QueryValueEx(key, RUN_VALUE)
         except FileNotFoundError:
@@ -245,15 +254,18 @@ def autostart(action: str, path: Path) -> str:
         if action == "status":
             return "Enabled" if existing is not None else "Disabled"
         if action == "enable":
-            if existing is not None and existing != command:
+            if existing is not None and (kind != winreg.REG_SZ or existing != command):
                 raise LinkError("Auto-start entry differs: refuse to overwrite an unexpected value")
             winreg.SetValueEx(key, RUN_VALUE, 0, winreg.REG_SZ, command)
             return "Enabled for current Windows user only"
         if action == "disable":
             if existing is None:
                 return "Already disabled"
-            # Explicitly owned value; never erase an unrelated changed entry.
-            if kind != winreg.REG_SZ or "shino_link.py" not in existing.lower():
+            # Explicitly owned value, not an arbitrary startup application.
+            # Avoid logging the registry contents because they can contain paths.
+            expected_script = str(Path(__file__).resolve()).lower()
+            if (kind != winreg.REG_SZ or expected_script not in existing.lower()
+                    or not existing.endswith(' --tray')):
                 raise LinkError("Unexpected auto-start entry: refuse automatic deletion")
             winreg.DeleteValue(key, RUN_VALUE)
             return "Disabled for current Windows user"
