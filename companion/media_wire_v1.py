@@ -195,7 +195,11 @@ class EmulatedReceiver:
         self.metrics = (27, 62, 43, 68)  # independent fixed host fixture
 
     def fail(self, error: str):
+        # Revoke the old music image too: after any invalid new transaction,
+        # a caller must never accidentally re-display obsolete cover artwork.
         self.pending = None
+        self.committed = None
+        self.last_track = None
         self.view = "PC_HEALTH"
         self.until = None
         raise ProtocolError(error)
@@ -287,6 +291,8 @@ class EmulatedReceiver:
         if self.pending and (now < self.pending["started"] or
                              now - self.pending["started"] > MAX_TRANSACTION_SECONDS):
             self.pending = None
+            self.committed = None
+            self.last_track = None
             self.view = "PC_HEALTH"
             self.until = None
         if self.until is not None and now >= self.until:
