@@ -217,10 +217,23 @@ class EmulatedReceiver:
             return self.fail("INVALID_METADATA")
         if document["tx"] in self.recent_tx:
             return self.fail("REPLAYED_TRANSFER")
-        # No side effect is committed until the whole payload is verified.
+        # Preserve the original expiry only for SAME-track progress updates.
+        # No partial image is shown during staging, and a progress-only refresh
+        # must not shorten/restart the existing 5-second track overlay.
+        carry_until = (self.until if self.view == "NOW_PLAYING" and
+                       self.last_track == document["track_key"] and
+                       self.until is not None and now < self.until else None)
+        # Experimental single-cover peak-RAM policy: release old artwork
+        # BEFORE allocating the next 8192-byte staging image. Previously
+        # accepted metadata/art must NOT be displayed during this transition.
+        # Metrics are independent and continue unchanged.
+        self.committed = None
+        self.view = "PC_HEALTH"
+        self.until = None
+        # No new music image is committed until all tiles and hash verify.
         self.pending = {
             "document": document, "buffer": bytearray(document["cover_len"]),
-            "next": 0, "started": now
+            "next": 0, "started": now, "carry_until": carry_until
         }
         return "STAGED"
 
@@ -282,7 +295,10 @@ class EmulatedReceiver:
         if is_new_playing:
             self.view = "NOW_PLAYING"
             self.until = now + OVERLAY_SECONDS
-        elif document["state"] in ("UNAVAILABLE", "NO_SESSION", "STOPPED"):
+        elif document["state"] == "PLAYING" and pending["carry_until"] is not None and now < pending["carry_until"]:
+            self.view = "NOW_PLAYING"
+            self.until = pending["carry_until"]
+        else:
             self.view = "PC_HEALTH"
             self.until = None
         return "COMMITTED"
