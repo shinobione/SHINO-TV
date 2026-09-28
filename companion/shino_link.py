@@ -125,7 +125,8 @@ class LinkEngine:
         self.state = "WAITING"
 
     def step(self, now: float | None = None) -> str:
-        now = self.clock() if now is None else now
+        use_live_clock = now is None
+        now = self.clock() if use_live_clock else now
         if now < self.next_due:
             return self.state
         try:
@@ -145,7 +146,7 @@ class LinkEngine:
             delay = min(MAX_RETRY_SECONDS, 2.0 * (2 ** min(self.failures - 1, 4)))
         # Delay is measured AFTER collection/HTTP completes, so a 3s timeout
         # cannot accidentally turn a 2s retry into an immediate retry storm.
-        completed = self.clock() if now is None else now
+        completed = self.clock() if use_live_clock else now
         self.next_due = completed + delay
         return self.state
 
