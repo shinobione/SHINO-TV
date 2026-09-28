@@ -247,6 +247,14 @@ def demo_capture() -> MediaCapture:
         "SHINOBIWAN", "Demo preview", 31, 215, False))
 
 
+async def probe_manager():
+    """Actually await Windows' manager RequestAsync. No media metadata read."""
+    from winrt.windows.media.control import GlobalSystemMediaTransportControlsSessionManager
+    return await asyncio.wait_for(
+        GlobalSystemMediaTransportControlsSessionManager.request_async(),
+        timeout=8.0)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group(required=True)
@@ -270,8 +278,7 @@ def main(argv: list[str] | None = None) -> int:
                 if os.name != "nt":
                     print("GSMTC probe only available on Windows.", file=sys.stderr)
                     return 2
-                from winrt.windows.media.control import GlobalSystemMediaTransportControlsSessionManager
-                manager = asyncio.run(GlobalSystemMediaTransportControlsSessionManager.request_async())
+                manager = asyncio.run(probe_manager())
                 print("GSMTC MANAGER:", "AVAILABLE" if manager is not None else "UNAVAILABLE")
                 return 0 if manager is not None else 1
             result = demo_capture() if args.demo else asyncio.run(
