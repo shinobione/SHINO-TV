@@ -115,6 +115,20 @@ class LinkEngineTests(unittest.TestCase):
         self.assertEqual(engine.failures, 0)
         self.assertEqual(engine.next_due, elapsed + 2)
 
+    def test_retry_wait_starts_after_slow_network_timeout(self):
+        timepoint = [100.0]
+        def slow_failure(*args, **kwargs):
+            timepoint[0] += 4.5
+            return False
+        engine = LinkEngine("192.168.4.1", object(), lambda: SAMPLE,
+                            sender=slow_failure, clock=lambda: timepoint[0])
+        self.assertEqual(engine.step(), "RETRYING")
+        self.assertEqual(timepoint[0], 104.5)
+        self.assertEqual(engine.next_due, 106.5)
+        self.assertEqual(engine.step(), "RETRYING")
+        # No new HTTP request is permitted until two seconds AFTER timeout.
+        self.assertEqual(timepoint[0], 104.5)
+
     def test_invalid_sample_never_passed_to_sender_and_recovers(self):
         called = []
         values = iter([dict(SAMPLE, cpu_usage="bad"), SAMPLE.copy()])
