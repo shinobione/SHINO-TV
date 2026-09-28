@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SHINO // TV — 240×240 Now Playing Lab</title>
+<style>
+:root{color-scheme:dark;font:14px/1.45 system-ui,Segoe UI,sans-serif;color:#ede8e1;background:#0b0c0f}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 24% 0%,#34251c 0%,#141419 38%,#0b0c0f 73%)}
+main{max-width:1180px;margin:0 auto;padding:30px 22px 52px}
+header{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:26px}
+header h1{font-size:clamp(26px,4vw,43px);letter-spacing:-.05em;line-height:1.05;margin:5px 0 9px}
+header h1 span{color:#e3ae68}
+header p{color:#b9aea5;margin:0;max-width:650px}
+.kicker{color:#e5b77e;letter-spacing:.16em;font:750 10px system-ui}
+.pill{border:1px solid #725435;background:#39291d8a;color:#f3ca90;border-radius:30px;padding:8px 11px;font:750 10px system-ui;letter-spacing:.06em}
+.layout{display:grid;grid-template-columns:minmax(370px,1fr) minmax(345px,1fr);gap:22px;align-items:start}
+.panel{border:1px solid #403934;background:#19191dbf;border-radius:19px;padding:22px;box-shadow:0 22px 55px #0006}
+.panel h2{margin:0 0 14px;font-size:13px;letter-spacing:.09em}
+.screen-pad{display:grid;place-content:center;min-height:440px;background:radial-gradient(circle at 50% 46%,#41352f,#1e1e23 59%,#15161a);border:1px solid #423a34;border-radius:13px;overflow:hidden}
+.device{border:13px solid #33363a;border-bottom-width:20px;border-radius:17px;box-shadow:8px 17px 39px #000b;line-height:0;display:inline-flex}
+canvas{display:block;width:min(65vw,336px);height:min(65vw,336px);aspect-ratio:1;image-rendering:auto}
+.under{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}
+.small{font-size:11px;color:#aaa49f}.accent{color:#edbe7f}.muted{color:#b5aaa0}
+button,select,textarea,input[type=file]{font:inherit}
+button{background:#2a2729;border:1px solid #56493f;border-radius:10px;color:#f4eee7;cursor:pointer;padding:10px 12px;font-size:12px;font-weight:750}
+button:hover,button:focus-visible,select:focus-visible,textarea:focus-visible,input[type=file]:focus-visible{outline:2px solid #b88d59;outline-offset:2px}
+button[aria-pressed=true],button.primary{color:#25180f;background:#ddb071;border-color:#eac58e}
+button:disabled{opacity:.55;cursor:not-allowed}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.block{border-top:1px solid #3d3734;margin-top:18px;padding-top:16px}
+.block h3{margin:0 0 8px;font-size:12px;color:#e9ded0}
+.block p{margin:5px 0 9px;font-size:11px;color:#b9aea5}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row>*{flex:1}
+label{display:block;margin:10px 0 6px;font-size:11px;color:#c1b6ad;font-weight:700}
+select,textarea,input[type=file]{width:100%;background:#111216;color:#eee7e0;border:1px solid #51463e;border-radius:10px;padding:10px}
+textarea{resize:vertical;min-height:120px;font:11px/1.45 Consolas,monospace}
+input[type=file]{font-size:11px}
+code{font:11px/1.5 Consolas,monospace;color:#edd0a7;overflow-wrap:anywhere}
+#status{min-height:34px;margin:15px 0 0;color:#d6ba95;font-size:12px}
+.note{margin-top:18px;padding:12px 13px;border-left:3px solid #a87a4b;border-radius:5px;background:#27221f;color:#cfc0b0;font-size:11px;line-height:1.65}
+footer{margin-top:16px;font-size:11px;color:#aca19b}
+@media(max-width:790px){.layout{grid-template-columns:1fr}.screen-pad{min-height:375px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<main>
+<header><div>
+  <div class="kicker">SHINO // CONTROL &nbsp; / &nbsp; V0.3 · PC SCENE LAB</div>
+  <h1>NOW <span>PLAYING</span></h1>
+  <p>Two complete 240 × 240 scenes. Four health readings stay together. A new playing track can show a five-second music overlay before returning to PC HEALTH.</p>
+</div><span class="pill">PC-ONLY · NO DEVICE CONNECTION</span></header>
+<section class="layout">
+<div class="panel">
+  <h2>DEVICE-SIZE RENDER PREVIEW</h2>
+  <div class="screen-pad"><div class="device"><canvas id="screen" width="240" height="240" role="img" aria-label="240 by 240 SmallTV scene preview"></canvas></div></div>
+  <div class="under"><span id="view-state" class="accent">PC HEALTH / MAIN SCENE</span><span class="small">240 × 240 source pixels</span></div>
+  <p class="small">Canvas is enlarged for inspection. It is a desktop concept, not an actual native LCD screenshot.</p>
+  <div class="controls">
+    <button id="health" aria-pressed="true">FOUR METRICS</button>
+    <button id="music" aria-pressed="false">NOW PLAYING</button>
+  </div>
+  <p class="small">Scene buttons always work; switching is never tied to a simulated physical button or touchscreen.</p>
+  <div class="block">
+    <h3>SCENE CHANGE POLICY</h3>
+    <select id="policy" aria-label="Preview policy">
+      <option value="overlay">5-second overlay on new PLAYING track</option>
+      <option value="manual">Manual scene changes only</option>
+    </select>
+    <p>Track-change overlay returns to the full four-value health scene; progress updates do not restart the timer.</p>
+  </div>
+  <div class="row"><button id="save">SAVE LOCAL 240 × 240 PNG</button></div>
+</div>
+<div class="panel">
+  <h2>PC-LOCAL MUSIC INPUT</h2>
+  <p class="small">Demo data initially displayed. Real Spotify is <strong>not connected automatically</strong> to this browser preview.</p>
+  <div class="block">
+    <h3>SIMULATE A NEW TRACK</h3>
+    <div class="row">
+      <button id="demo-a">DEMO / VELVET HAMMER</button>
+      <button id="demo-b">DEMO / WEAPON IS FED</button>
+    </div>
+    <p>Sample artwork is intentionally a fallback until you explicitly choose a local image.</p>
+  </div>
+  <div class="block">
+    <h3>PASTE ONE REAL GSMTC JSON LINE</h3>
+    <label for="media">Output of media_sessions.py --once</label>
+    <textarea id="media" spellcheck="false" maxlength="16384" aria-label="One raw media JSON object"></textarea>
+    <button id="apply" class="primary">APPLY MEDIA SNAPSHOT</button>
+    <p>Copy a single JSON object from PowerShell. Nothing reads Spotify or your filesystem in the background.</p>
+  </div>
+  <div class="block">
+    <h3>OPTIONAL COVER ART — LOCAL IMAGE FILE</h3>
+    <label for="cover">Select your existing media-preview.jpg (or PNG / WebP)</label>
+    <input id="cover" type="file" accept="image/jpeg,image/png,image/webp">
+    <p>Browser file sandbox: the image must be selected manually. Maximum 1 MiB, 4096 px per side and 4 megapixels. It is decoded in memory, square-cropped and never uploaded.</p>
+    <button id="clear-cover">CLEAR COVER</button>
+  </div>
+  <p id="status" role="status" aria-live="polite">Ready. Four demo metrics, music preview available by button.</p>
+  <div class="note">Current V2.1 SmallTV supports only its existing numeric metrics route. This simulator does not send titles, JPEGs or any new scene to the device. A future firmware/media protocol needs a separate memory, authentication and installation review.</div>
+</div>
+</section>
+<footer>SHINO // TV · no requests to Spotify, no credentials, no API server, no OTA and no change to the active Windows tray.</footer>
+</main>
+<script type="module">
+import {
+  SAMPLE_TRACKS,createPreviewState,updatePreviewState,renderPreview,trackKey,
+  validateArtworkFile,validateArtworkDimensions
+} from './now_playing.mjs';
+let state=createPreviewState(),bitmap=null,bitmapTrack=null,decodeId=0;
+const canvas=document.querySelector('#screen'),ctx=canvas.getContext('2d');
+const area=document.querySelector('#media'),status=document.querySelector('#status'),
+      coverInput=document.querySelector('#cover'),viewState=document.querySelector('#view-state');
+area.value=JSON.stringify(SAMPLE_TRACKS[0],null,2);
+function clearCover() {
+  decodeId++;
+  if(bitmap && typeof bitmap.close==='function')bitmap.close();
+  bitmap=null;bitmapTrack=null;coverInput.value='';
+}
+function repaint() {
+  const chosen=bitmapTrack===trackKey(state.media)?bitmap:null;
+  renderPreview(ctx,state,chosen);
+  document.querySelector('#health').setAttribute('aria-pressed',String(state.view==='health'));
+  document.querySelector('#music').setAttribute('aria-pressed',String(state.view==='music'));
+  const remaining=state.overlayUntil===null?null:Math.max(0,(state.overlayUntil-performance.now())/1000);
+  viewState.textContent=state.view==='health'?'PC HEALTH / MAIN SCENE':
+    remaining===null?'NOW PLAYING / MANUAL':'NOW PLAYING / OVERLAY '+remaining.toFixed(1)+' s';
+}
+function setMedia(raw,labelText) {
+  const before=trackKey(state.media);
+  state=updatePreviewState(state,{type:'MEDIA',value:raw},performance.now());
+  const after=trackKey(state.media);
+  if(before!==after)clearCover();
+  area.value=JSON.stringify(state.media,null,2);
+  status.textContent=labelText+(before===after?' / same track':' / track change');
+  repaint();
+}
+document.querySelector('#health').addEventListener('click',()=>{
+  state=updatePreviewState(state,{type:'SHOW_HEALTH'});repaint();
+});
+document.querySelector('#music').addEventListener('click',()=>{
+  state=updatePreviewState(state,{type:'SHOW_MUSIC'});repaint();
+});
+document.querySelector('#policy').addEventListener('change',e=>{
+  state=updatePreviewState(state,{type:'POLICY',value:e.target.value});repaint();
+});
+document.querySelector('#demo-a').addEventListener('click',()=>setMedia(SAMPLE_TRACKS[0],'DEMO only: Velvet HAMMER'));
+document.querySelector('#demo-b').addEventListener('click',()=>setMedia(SAMPLE_TRACKS[1],'DEMO only: Weapon is FED'));
+document.querySelector('#apply').addEventListener('click',()=>{
+  try {
+    if(area.value.length>16384)throw new Error('JSON exceeds 16 KiB');
+    const raw=JSON.parse(area.value);
+    if(!raw||Array.isArray(raw)||typeof raw!=='object')throw new Error('Expected one JSON object');
+    setMedia(raw,'PC-local JSON snapshot applied');
+  }catch(e){status.textContent='Cannot apply JSON: '+e.message;}
+});
+coverInput.addEventListener('change',async()=>{
+  const file=coverInput.files?.[0];
+  if(!file)return;
+  const error=validateArtworkFile(file);
+  if(error){status.textContent=error;coverInput.value='';return;}
+  const token=++decodeId,targetTrack=trackKey(state.media);
+  let decoded;
+  try {
+    decoded=await createImageBitmap(file);
+    if(token!==decodeId || targetTrack!==trackKey(state.media)){decoded.close();return;}
+    if(!validateArtworkDimensions(decoded)){
+      decoded.close();status.textContent='Artwork dimensions exceed the PC preview limit.';coverInput.value='';return;
+    }
+    if(bitmap&&typeof bitmap.close==='function')bitmap.close();
+    bitmap=decoded;bitmapTrack=targetTrack;
+    status.textContent='Cover decoded in PC browser memory. No transfer to SmallTV.';
+    repaint();
+  }catch(e){
+    if(decoded && typeof decoded.close==='function')decoded.close();
+    status.textContent='Could not decode this local image.';
+    coverInput.value='';
+  }
+});
+document.querySelector('#clear-cover').addEventListener('click',()=>{
+  clearCover();status.textContent='Local preview cover cleared.';repaint();
+});
+document.querySelector('#save').addEventListener('click',()=>{
+  const link=document.createElement('a');
+  link.download='shino-tv-now-playing-240x240.png';
+  link.href=canvas.toDataURL('image/png');
+  link.click();
+});
+setInterval(()=>{
+  if(state.overlayUntil===null)return;
+  state=updatePreviewState(state,{type:'TICK'},performance.now());repaint();
+},150);
+repaint();
+</script>
+</body>
+</html>
