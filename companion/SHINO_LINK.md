@@ -38,6 +38,8 @@ py -3 companion/shino_link.py --run
 py -3 companion/shino_link.py --tray
 ```
 
+After configuration and installed tray dependencies, you can also double-click the repository-root **start-shino-link.cmd** to request a no-console tray launch through Windows' pyw launcher. This does not configure auto-start. If pyw is unavailable, use the explicit PowerShell --tray command above. Do not run both the old manual continuous sender and SHINO // LINK at the same time: they would both send metrics to the same display.
+
 System tray Exit stops its worker. You may optionally opt in to Windows start at user sign-in. These three commands use **HKCU for current user only**, no admin/service/task, and never start automatically just from --configure:
 
 ```powershell
