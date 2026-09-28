@@ -1,0 +1,7 @@
+# Optional Windows-only GSMTC Now Playing provider (no Spotify API / no cloud).
+-r requirements-link.txt
+# PyWinRT projections are namespace-specific; live RequestAsync needs Foundation.
+winrt-Windows.Foundation==3.2.1; platform_system == "Windows"
+winrt-Windows.Foundation.Collections==3.2.1; platform_system == "Windows"
+winrt-Windows.Media.Control==3.2.1; platform_system == "Windows"
+winrt-Windows.Storage.Streams==3.2.1; platform_system == "Windows"
