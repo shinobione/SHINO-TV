@@ -1,5 +1,9 @@
 # Windows telemetry bridge (prototype)
 
+## Current owner V2.1 workflow (28 September 2026)
+
+The owner's **private review-003 V2.1 has been installed and shown to boot** with four live CPU/GPU/RAM/GPU TEMP values on the physical 240x240 LCD; the original manually initiated RAM-only sender returned `RAM telemetry accepted`. To pilot the NEW opt-in Windows tray companion without reflashing, see **[SHINO // LINK instructions](SHINO_LINK.md)** and `companion/shino_link.py`. Matching secrets stay only under owner-private `review-003/credentials.txt`, never in Git. Earlier factory/Times-Z research and manual sender explanations below remain historical, not current owner device status.
+
 This is the first PC-side integration for the **existing** six-tile `DashboardManager` from Times-Z. It samples CPU/RAM with `psutil` and GPU utilization, VRAM, power and temperature from `nvidia-smi` (when present). It does **not** modify the factory SmallTV or upload images.
 
 ## Set up on Windows
