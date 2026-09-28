@@ -217,7 +217,14 @@ class EmulatedReceiver:
             return self.fail("INVALID_METADATA")
         if document["tx"] in self.recent_tx:
             return self.fail("REPLAYED_TRANSFER")
-        # No side effect is committed until the whole payload is verified.
+        # Experimental single-cover peak-RAM policy: release old artwork
+        # BEFORE allocating the next 8192-byte staging image. Previously
+        # accepted metadata/art must NOT be displayed during this transition.
+        # Metrics are independent and continue unchanged.
+        self.committed = None
+        self.view = "PC_HEALTH"
+        self.until = None
+        # No new music image is committed until all tiles and hash verify.
         self.pending = {
             "document": document, "buffer": bytearray(document["cover_len"]),
             "next": 0, "started": now
