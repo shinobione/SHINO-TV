@@ -251,6 +251,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--demo", action="store_true", help="Fixture only: zero OS/media/network access")
+    mode.add_argument("--probe", action="store_true", help="Live Windows GSMTC manager creation only; no metadata/artwork")
     mode.add_argument("--once", action="store_true", help="One live Windows media session read")
     mode.add_argument("--watch", action="store_true", help="Watch current session every ~3s; Ctrl+C stops")
     parser.add_argument("--cover-preview", action="store_true",
@@ -258,11 +259,21 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.demo and args.cover_preview:
         parser.error("Demo mode does not write a preview")
+    if args.probe and args.cover_preview:
+        parser.error("Manager probe does not read artwork")
     if args.cover_preview and os.name != "nt":
         parser.error("Live preview requires Windows")
     previous = None
     while True:
         try:
+            if args.probe:
+                if os.name != "nt":
+                    print("GSMTC probe only available on Windows.", file=sys.stderr)
+                    return 2
+                from winrt.windows.media.control import GlobalSystemMediaTransportControlsSessionManager
+                manager = asyncio.run(GlobalSystemMediaTransportControlsSessionManager.request_async())
+                print("GSMTC MANAGER:", "AVAILABLE" if manager is not None else "UNAVAILABLE")
+                return 0 if manager is not None else 1
             result = demo_capture() if args.demo else asyncio.run(
                 capture(include_cover=args.cover_preview))
             data = result.snapshot.public_data()
@@ -277,8 +288,16 @@ def main(argv: list[str] | None = None) -> int:
         except KeyboardInterrupt:
             print("Media observer stopped.", flush=True)
             return 0
-        except ImportError:
-            print("Media module not installed. See companion/requirements-media.txt.",
+        except ImportError as exc:
+            # Do not misreport an ImportError raised by the WinRT manager as
+            # proof that Media.Control itself was never pip-installed. Only
+            # print a validated module identifier, never an arbitrary traceback.
+            module = getattr(exc, "name", None)
+            identifier = (module if isinstance(module, str) and
+                          re.fullmatch(r"[A-Za-z0-9_.]{1,128}", module)
+                          else "UNKNOWN_NAMESPACE")
+            print("Media import failed | module=" + identifier +
+                  " | reinstall companion/requirements-media.txt",
                   file=sys.stderr)
             return 2
         except Exception:
