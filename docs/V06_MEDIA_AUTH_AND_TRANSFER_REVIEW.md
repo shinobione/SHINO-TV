@@ -4,7 +4,7 @@
 
 This review starts at clean commit `ff08defa01cb39504ae4c516192de8418e34cf42` on `feature/shino-tv-v06-native-audit`. The complete [Mission 1 audit](V06_NATIVE_SOURCE_AUDIT.md) was read first. Its critical R1 (HTTP allocation before validation), critical R2 (authentication/authorization) and high R3 (heap/contiguous allocation) remain unresolved implementation gates. Findings below strengthen R1/R2; host tests do not close them. `git diff 8cef030 HEAD -- firmware` was empty at the start. Frozen V2.1, its private image, V0.1 tray and external worktrees are outside this change.
 
-Only this review, an isolated Python test module and its Windows CI invocation change. No native media route, firmware modification/build, device connection, private artifact access or cryptographic implementation is introduced.
+The implementation deliverable changes only this review, an isolated Python test module and its Windows CI invocation. The subsequent documentation follow-up corrects historical device-status wording in `ROADMAP.md` on this independent development branch. No native media route, firmware modification/build, device connection, private artifact access or cryptographic implementation is introduced.
 
 ## 1. Source provenance and trust boundaries
 
@@ -68,6 +68,24 @@ The dependency resolves Mission 1's uncertainty about **ordering**, while confir
 6. Multipart parsing allocates argument and upload structures before invoking upload callbacks (`Parsing-impl.h:348-430`). OEM authentication-before-`Update.begin()` is therefore not authentication-before-HTTP-allocation. Media must not borrow the multipart OEM return path. Its abort/complete/restart behavior belongs exclusively to the frozen OEM implementation (`FactoryRollback.cpp:142-175`).
 
 No network attack or native peak-allocation measurement was performed. Exact effects of resource exhaustion, malicious framing and sustained partial traffic on real Wi-Fi/metrics remain **BLOCKED/HOLD as in Mission 1**, not newly proven safe.
+
+### Pre-body interception seam: present, not a demonstrated protection
+
+`WS/Parsing-impl.h:77-82` invokes the server hook after allocating/parsing the request-line Strings (`47-74`), but **before reading headers**. `WS/ESP8266WebServer.h:266-278` exposes `addHook()`. This seam can stop a request by method/path before body allocation; it does not provide already validated current-request Content-Length or authorization headers. Collected header values were cleared at `Parsing-impl.h:51-53`. A future use would need independently bounded header parsing, strict framing/authentication and an explicit single-owner stream handoff, with native evidence. No such hook is registered in `FirstBootBridge.cpp`. Thus pre-body rejection is architecturally possible, but current ingress does not establish it for media. Checks after `server.arg("plain")`, or merely selecting a handler at `Parsing-impl.h:106-112`, cannot close R1.
+
+### Cooperative loop and preserved contracts
+
+The active HTTP owner is the file-local `ESP8266WebServer server(80)` at `FirstBootBridge.cpp:68`, registered in `run()` (`399-459`). The inactive legacy `Webserver`/`Api`/`SceneManager` stack is not an integration target. Any future design must account for this single owner before proposing another handler or parser.
+
+`FirstBootBridge::loop()` (`468-480`) calls `server.handleClient()` first, then checks telemetry/stale redraw eligibility with a 250 ms minimum redraw interval, calls `FactoryRollback::tick()`, polls optional heap diagnostics, explicitly feeds the watchdog and yields. While `_parseRequest()` is still executing, none of those later application steps runs. The core's WAIT_READ timeout (`WS/ESP8266WebServer-impl.h:367-382`) applies before entering the parser and cannot preempt its ongoing reads. SDK yields during stream processing are not calls to the application's redraw, timeout cleanup or diagnostics. Watchdog behavior under sustained partial input remains unmeasured; neither a guaranteed reset nor safe watchdog service is established here.
+
+`FslessMetrics::apply()` (`FslessMetrics.cpp:23-55`) updates the RAM snapshot and last-good timestamp only after all numeric checks. `stale()` (`59-61`) retains its strict unsigned elapsed >6000 ms rule. A slow request does not renew that timestamp, but can delay stale evaluation and LCD repaint, leaving an older frame visible longer; it can also delay acceptance of the next metric request. Protocol-unit state isolation therefore does not prove native scheduling isolation. Future bounded work/read deadlines must demonstrate metrics ingress, stale display and watchdog progress together.
+
+The numeric-only POST contract (`FirstBootBridge.cpp:251-272`) and all four simultaneous readings remain unchanged. The authenticated factory-return upload remains the separate, exact-image **application-only OEM return**, not a full-chip restoration guarantee or a media ingress (`FirstBootBridge.cpp:444-454`, `FactoryRollback.cpp:85-175`). Neither route may be repurposed for artwork.
+
+### Device evidence chronology and roadmap correction
+
+Mission 1 identified stale `ROADMAP.md` text describing review-002 as current and review-003 as uninstalled. The owner's current report is installed private V2.1 review-003 with four working metrics through standalone SHINO // LINK V0.1. V0.4 music is PC-local; V0.5 is host-only. The follow-up corrects that roadmap status and labels earlier review-002 GET/return observations as historical. No current-device GET, image inspection, installation verification or new recovery proof was performed. The original audit remains a historical record of the stale wording it found.
 
 ## 4. Required future bounds (review constraints, not an activated API)
 

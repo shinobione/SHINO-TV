@@ -1,26 +1,28 @@
 # SHINO // TV — Roadmap
 
-> **Current live owner state, updated 28 September 2026:** owner's 240 × 240 SmallTV Ultra is running private **V2 Hotfix review-002**, with four real PC metrics, browser mirror and private WPA2 AP; its **authenticated read-only current-device GET** confirms `write_enabled=true` for the pinned, exact **OEM V9.0.44 return**, 494,144 bytes and SHA-256 `a6421f5bfee7860d97bed26620c346b8008f503e513702d4bfdf6e01010a7718`. The **owner-private review-003 V2.1** (diagnostic heap + retained exact-OEM receiver) has been locally prepared from frozen source commit `8cef03012ae4a4864d69cbe20e02f141a36e2d54`; owner-reported file is 405,712 bytes, SHA-256 `3252ba5cd1f85683945d4d9a87ce49118568c0977605debc089267f54d7f3b0e`. Its uploaded sanitized manifest passes the pair/layout checks and explicitly says `owner_ready_to_flash=false`. These owner reports are **not independent hashes of the local BIN** and no new device flash is authorized by roadmap edits.
+> **Current owner-reported state, corrected 28 September 2026 during the V0.6 review:** the SmallTV Ultra runs private **V2.1 review-003**, frozen at source `8cef03012ae4a4864d69cbe20e02f141a36e2d54`. Its four metrics (CPU, GPU, RAM, GPU TEMP) work through the standalone **SHINO // LINK V0.1 Windows tray**. V0.4 music metadata/artwork/progress/pause-resume remain PC-local; V0.5 media transfer is host-only. Native media remains **BLOCKED** by pre-allocation HTTP bounds, production authentication and unproven heap headroom; see [V0.6 security review](V06_MEDIA_AUTH_AND_TRANSFER_REVIEW.md). This corrects the former review-002/current and review-003/not-installed wording using owner evidence, without a new device connection or private image inspection.
 
 > **Binding constraint:** development/install via **Wi-Fi only**, USB-C for power. **No proposed adapter, UART, pogo pins, solder, PCB access, extra device or purchase as a normal dependency.** Hardware recovery is a break-glass discussion **only after an actual brick and only at the owner's request**. Older hardware-gate research retained below is superseded for this owner. The manufacturer OTA application image is **not** a 4 MiB full-chip backup. No guarantee of Wi-Fi rescue if the application fails to boot.
 
-> **Source freeze:** all product-roadmap additions live on independent branch `planning/v22-shino-link-scene-roadmap`, based on `8cef030...`. Do **not merge or cherry-pick this branch into PR #20** until the exact `review-003` source/image freeze is no longer needed. Documentation is not device installation approval.
+> **Source freeze:** the original product roadmap was developed on `planning/v22-shino-link-scene-roadmap`. These status corrections are on independent branch `feature/shino-tv-v06-native-audit`, descended from the frozen source. **PR #20 and its firmware remain unchanged.** Do not merge or cherry-pick development work into the frozen PR. Documentation is not device installation approval.
 
 ## 28 September 2026 — SHINO // LINK & V2.2 integrated product roadmap
 
 ### Current delivered functionality vs future design
 
-| Capability | Installed review-002 | Private V2.1 review-003 | V2.2 planned |
+| Capability | Historical review-002 evidence | Current V2.1 review-003 (owner-reported) | Future design |
 | --- | --- | --- | --- |
-| 240x240 four live metrics CPU/GPU/RAM/GPU TEMP, variable-color bars | Owner observed, working | Retained by source | **Always preserved together** |
-| Windows PC metrics push to `/api/v1/bridge/metrics` every ~2s | Working, manual sender | Retained | Managed SHINO // LINK background companion |
+| 240x240 four live metrics CPU/GPU/RAM/GPU TEMP, variable-color bars | Owner observed, working | Four metrics working through V0.1 tray | **Always preserved together** |
+| Windows PC metrics push to `/api/v1/bridge/metrics` every ~2s | Manual sender worked | Standalone V0.1 tray works | Preserve numeric telemetry and existing tray |
 | Invalid/absent samples expire in ~6s, no invented zeros | Present in V2 code | Retained | Scene transition based on explicit PC connectivity |
 | Same-origin Chrome dashboard | Working | Retained | Configurable scenes and preview |
-| Observed heap/free block/fragmentation 1Hz summary | No | **Opt-in, compiled/private, not installed yet** | Optional diagnostics |
-| Exact pinned OEM return via authenticated Wi-Fi | **Live GET confirms enabled; earlier return worked** | Compiled and privately paired | Preserve a reviewed return path; no automatic flash |
-| Media session / cover / clock / weather / auto-start | Not in installed bridge | **Not part of review-003** | Product backlog below |
+| Observed heap/free block/fragmentation 1Hz summary | Historical baseline | Opt-in diagnostics; historical samples are not guaranteed available headroom | Memory/stress analysis pending; media blocked |
+| Exact pinned OEM return via authenticated Wi-Fi | Earlier GET/return observations only | Frozen exact-OEM application receiver retained in source; not rechecked here | Preserve boundary; no automatic flash or full-chip recovery claim |
+| Native media / cover / clock / weather | Not in bridge | **Not part of review-003** | Native media BLOCKED; PC-local V0.4 music and V0.5 host tests are separate |
 
 ### Roadmap milestone A — SHINO // LINK Windows companion (PC only, zero TV firmware changes)
+
+**Status correction:** V0.1 already provides the working standalone metrics tray; V0.4 provides a separate PC-local music bridge. The checklist below retains the earlier integration backlog and does not authorize replacing the tray or changing its autostart registration.
 
 - [ ] Unify existing `companion/metrics_server.py` collector and `companion/push_fsless_metrics.py` sender into a small resident **SHINO // LINK** process, without altering today's bounded Digest telemetry contract. System tray, clear status (Connected/Retrying/PC offline), config outside repo, start on Windows user logon, delayed start and graceful exit; **no administrator rights or auto-install required by default**. Preserve manual CLI fallback and keep private owner credentials only on PC.
 - [ ] Continue CPU usage, GPU usage, RAM actual used/total and GPU real temperature, update roughly **every two seconds**, GPU unavailable explicitly marked rather than fake 0°C; collector errors never replace last valid readings. Automatic reconnect with capped backoff, no busy-loop or repeated credential prompts; LAN-private target allowlist and no redirection.
@@ -55,9 +57,9 @@
 
 ### Roadmap milestone E — shipping/verification boundaries, do NOT couple release cycles
 
-- **review-003 V2.1** is strictly the frozen diagnostics candidate. Owner reported 405,712 B, exact owner SHA `3252ba5cd1f85683945d4d9a87ce49118568c0977605debc089267f54d7f3b0e`, pinned source SHA `8cef03012ae4a4864d69cbe20e02f141a36e2d54`. It **does not implement NOW PLAYING, artwork transfer, clock, home-Wi-Fi STA or scene engine**. The owner-private kit stays retained without build-source mutations from this roadmap.
-- The **current review-002** post-install authenticated `GET /api/v1/bridge/factory-return` showed `write_enabled:true`, correct OEM image bytes and SHA, `full_flash_backup:false`, `filesystem_layout_verified:false`. Its prior Wi-Fi-only OEM return and stock→V2 Hotfix were owner-observed, but do not prove future two-step success.
-- The **possible**, individually consented future Wi-Fi sequence is current V2 → **exact original OEM V9.0.44 app** → verify manufacturer clock/actual `GET /v.json`, stock `GET /update` availability → **new separate decision** for OEM→exact owner-private review-003. No automatic second upload, retries, arbitrary POST to diagnostic routes, or using disposable CI BIN. Before each operation, confirm local file path/exact size/hash, auth pair, power continuity, residual brick risk, and stop on ambiguous staging/boot response. `review-003`'s sanitized manifest specifically says `permission_to_flash=false` and independent checksum evidence before an actual write. The *owner* controls the private local Windows restore helper; roadmap changes do not invoke it.
+- **review-003 V2.1** is the installed frozen baseline according to the owner, pinned at source `8cef03012ae4a4864d69cbe20e02f141a36e2d54`. It **does not implement NOW PLAYING, artwork transfer, clock, home-Wi-Fi STA or a scene engine**. Earlier private-image preparation records are historical; no private artifact was inspected for this correction.
+- **Historical review-002 evidence:** the earlier authenticated factory-return GET reported the exact-OEM application return enabled, with `full_flash_backup:false` and `filesystem_layout_verified:false`. Prior Wi-Fi-only OEM return and stock-to-V2 Hotfix were owner-observed. These are not fresh checks of installed review-003 or guarantees of another return.
+- The earlier proposed review-002 → OEM → review-003 installation sequence is superseded by the owner-reported installed review-003 state. Any future device write requires a separate exact-image review and explicit authorization. The existing OEM mechanism returns only the application; it is not a full-chip backup, generic firmware uploader or guaranteed no-boot rescue. This roadmap invokes no restore helper.
 - Never merge a V2.2 roadmap/product-code branch onto the frozen V2.1 PR head **before the current private image source lock is released**, or pretend a documentation SHA change is the same private BIN. No device contact, OTA, flash, restart, factory-reset, credential display or PR merge is authorized by a roadmap entry.
 
 ### Choice register — decisions we will make with owner before V2.2 implementation
@@ -78,7 +80,7 @@
 ---
 This roadmap deliberately separates **analysis**, **PC-side simulation**, and **hardware writes**.
 
-## Phase 0 — Baseline and safety (current)
+## Phase 0 — Historical baseline and safety research
 
 - [x] Identify model and reported version via the owner's read-only HTTP endpoints.
 - [x] Inventory the manufacturer repository and selected community firmware projects.
@@ -93,7 +95,7 @@ This roadmap deliberately separates **analysis**, **PC-side simulation**, and **
 
 **Immediate P0 blocker found:** the stock photo/GIF filesystem total equals Arduino `4m3m` exactly, while SHINO/Times-Z `4m2m` uses a subset at a different start. Inherited `LittleFS.begin()` defaults to **autoformat on mount failure** and is called on first SHINO boot; SecureStorage initialization can also write EEPROM. Do NOT perform a stock→SHINO first flash using this unguarded startup. Design a no-format/no-EEPROM initial diagnostics/return bridge and an explicitly owner-approved FS provisioning path. Current compiled SHINO BIN is smaller than official V9.0.44; study direct OTA before treating two-hop loader as mandatory.
 
-**Latest safe candidate research (27 September 2026):** V2 works without LittleFS. Its source linker is now aligned to `4m3m` to model both direct stock→V2 OTA and running V2→original application return wholly below the inferred manufacturer filesystem. Two-hop transient 4m1m loader→V2 staged bytes overlap the old filesystem; do not call it a preservation fallback. [Review first-install decision packet](FIRST_INSTALL_DECISION_PACKET.md). Owner's original full-flash backup and physical first-OTA acceptance remain unavailable/unknown under Wi-Fi-only constraints. No flashing authorization.
+**Historical candidate research (27 September 2026):** V2 avoids LittleFS; its `4m3m` linker models direct stock-to-V2 and exact OEM application return below the inferred filesystem. Two-hop transient loader staging can overlap the old filesystem and is not a preservation fallback. See [first-install decision packet](FIRST_INSTALL_DECISION_PACKET.md). Later owner installation/return observations are summarized above; a full-chip backup and guaranteed no-boot recovery remain unavailable. This historical research authorizes no write.
 
 **Gate 0:** No firmware upload or flash write until baseline, backup and recovery plan have been verified.
 
@@ -123,7 +125,7 @@ This roadmap deliberately separates **analysis**, **PC-side simulation**, and **
 
 - Review and preserve Times-Z GeekMagic-Open-Firmware's GPL-3.0-or-later notices and pin an audited upstream commit; do not confuse referencing it with having imported/compiled it.
 - Build the unmodified upstream `esp12e` PlatformIO firmware and LittleFS assets offline first; record sizes and tests.
-- Reuse upstream `DisplayManager`, `DashboardManager`, `Webserver`, `Api`, `WiFiManager`, `ConfigManager` and `RescueMode`, rather than rebuilding their existing functionality.
+- Historical upstream module study includes `DisplayManager`, `DashboardManager`, `Webserver`, `Api`, `WiFiManager`, `ConfigManager` and `RescueMode`. **The active frozen bridge instead owns HTTP in `FirstBootBridge.cpp` and metrics in `FslessMetrics.cpp`; future integration must start there.** The legacy web/scene stack is inactive in this profile.
 - Extend the existing optional metrics mode into a bounded scene/widget engine with a Windows data bridge.
 - Review rescue-mode unauthenticated operations, setup AP defaults, memory/flash constraints and the stock Ultra OTA slot before any device write.
 - Run any hardware deployment only after Gate 0 has passed and with owner approval.
@@ -149,7 +151,7 @@ See [UPSTREAM_INTEGRATION.md](UPSTREAM_INTEGRATION.md) for the architectural dec
 
 ## Owner UX backlog — future V2.2 multi-scene display (NOT IMPLEMENTED)
 
-**Captured 27 September 2026 from side-by-side photographs of the live 240×240 SmallTV and its same-origin Web dashboard.** These are requested product/design notes, not a change to the approved V2 four-card contract and not authorization to flash or open an OTA route. The Web version is the positive visual reference; a matching browser preview does **not** guarantee the native LCD has comparable contrast, typography or color. Photographic exposure can exaggerate color differences, so confirm decisions by direct physical inspection and reproducible on-device test patterns during a separately approved future visual release. Existing V2 Hotfix `review-002` remains the known working installed baseline.
+**Captured 27 September 2026 from side-by-side photographs of the live 240×240 SmallTV and its same-origin Web dashboard.** These are requested product/design notes, not a change to the approved V2 four-card contract and not authorization to flash or open an OTA route. The Web version is the positive visual reference; a matching browser preview does **not** guarantee the native LCD has comparable contrast, typography or color. Photographic exposure can exaggerate color differences, so confirm decisions by direct physical inspection and reproducible on-device test patterns during a separately approved future visual release. Those photographs describe the historical review-002 baseline; the current owner-reported installed review-003 state is recorded above.
 
 ### V2.2-A — Native readability and visual hierarchy (first UI priority)
 
