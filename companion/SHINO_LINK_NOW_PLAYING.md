@@ -26,11 +26,12 @@ No need for `--configure`, credential files or access to the SHINO Wi-Fi AP: NOW
 
 ```powershell
 py -3 companion/media_sessions.py --demo
+py -3 companion/media_sessions.py --probe
 py -3 companion/media_sessions.py --once
 py -3 companion/media_sessions.py --watch
 ```
 
-`--demo` is clearly labeled fake metadata for offline schema/test confirmation. `--once` reads one actual Windows session and prints bounded JSON; `--watch` prints on changes every ~3s, Ctrl+C stops. No media session means `{"state":"NO_SESSION",...}`; an OS/projection problem returns UNAVAILABLE without exposing raw WinRT errors. Actual title/artist may be empty for sources that do not publish them. Source identification is a publisher-supplied app ID, not a cryptographic identity of a streaming provider.
+`--demo` is clearly labeled fake metadata for offline schema/test confirmation. `--probe` genuinely awaits Windows GSMTC `RequestAsync` (without accessing titles, artists or covers); it requires the pinned `Windows.Foundation` and `Windows.Foundation.Collections` packages as well as `Windows.Media.Control`. `--once` reads one actual Windows session and prints bounded JSON; `--watch` prints on changes every ~3s, Ctrl+C stops. No media session means `{"state":"NO_SESSION",...}`; an OS/projection problem returns UNAVAILABLE without exposing raw WinRT errors. Actual title/artist may be empty for sources that do not publish them. Source identification is a publisher-supplied app ID, not a cryptographic identity of a streaming provider.
 
 If the session reports a cover, and **only if you want a disposable owner-private artwork preview**:
 
