@@ -26,6 +26,19 @@ jobs:
           ref: 77771d3c07668e01d8f52acb03910c1110bb373f
           path: reference-arduinojson
           persist-credentials: false
+      - name: Fetch independently pinned ESP8266 Arduino Core 3.1.2 HTTP parser SOURCE ONLY
+        uses: actions/checkout@v4
+        with:
+          repository: esp8266/Arduino
+          ref: 210897ef83305496947c4e73c937bab52a33cb48
+          path: reference-esp8266-core
+          sparse-checkout: |
+            libraries/ESP8266WebServer/src
+          persist-credentials: false
+      - name: Prove stock 3.1.2 non-form POST body is buffered before route auth (NO DEVICE)
+        run: |
+          test "$(git -C reference-esp8266-core rev-parse HEAD)" = "210897ef83305496947c4e73c937bab52a33cb48"
+          python tools/verify_v06_core_parser.py reference-esp8266-core
       - name: Verify original FslessMetrics.cpp using REAL ArduinoJson on host (NO DEVICE)
         env:
           SHINO_ARDUINOJSON_SRC: reference-arduinojson/src
