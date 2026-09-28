@@ -1,0 +1,4 @@
+# Optional Windows system-tray UI; core sender is still psutil-only.
+-r requirements.txt
+pystray>=0.19,<1
+Pillow>=10,<13

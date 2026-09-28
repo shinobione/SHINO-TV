@@ -42,3 +42,22 @@ jobs:
         run: node --test tools/test_native_ui_v2.cjs
       - name: Check JS syntax
         run: node --check simulator/scene.mjs
+
+  shino-link-windows-smoke:
+    name: SHINO LINK Windows-only smoke (PC, no device)
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Exercise PC-only companion, config and tray imports (no network/device)
+        run: |
+          python -m pip install -r companion/requirements-link.txt
+          python -m compileall -q companion/shino_link.py
+          python -m unittest discover -s companion -p 'test_shino_link.py' -v
+          python -c "import pystray; from PIL import Image; print('Windows tray imports OK')"
+          python companion/shino_link.py --autostart status
