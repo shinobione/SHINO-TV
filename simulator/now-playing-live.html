@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SHINO // TV — V0.4 Live Media Preview</title>
+<style>
+:root{color-scheme:dark;font:14px/1.5 system-ui,Segoe UI,sans-serif;color:#f2ede7;background:#0b0c0f}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 25% 0,#34241c,#17171b 40%,#0b0c0f 74%)}
+main{max-width:1170px;margin:auto;padding:32px 24px 60px}
+header{display:flex;align-items:start;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.kicker{font-size:10px;font-weight:800;letter-spacing:.12em;color:#ddb071}
+h1{font-size:clamp(28px,5vw,48px);line-height:1.04;margin:8px 0 10px;letter-spacing:-.055em}h1 em{color:#e3b171;font-style:normal}
+header p{max-width:650px;color:#b8aaa1;margin:0;font-size:13px}
+.pill{border:1px solid #755333;background:#37271b;color:#f3c486;font-weight:750;font-size:10px;letter-spacing:.06em;padding:8px 13px;border-radius:30px}
+.layout{display:grid;grid-template-columns:minmax(370px,1fr) minmax(340px,1fr);gap:20px;margin-top:26px}
+.panel{background:#19191ddd;border:1px solid #403934;border-radius:19px;padding:23px;box-shadow:0 21px 58px #0005}
+h2{font-size:12px;letter-spacing:.11em;margin:0 0 14px}
+.display{min-height:430px;display:grid;place-items:center;border:1px solid #453930;border-radius:12px;background:radial-gradient(circle,#3b312c,#1d1e23 63%)}
+.frame{border:13px solid #33363a;border-bottom-width:20px;line-height:0;border-radius:17px;box-shadow:8px 17px 39px #000a;display:inline-block}
+canvas{display:block;width:min(65vw,330px);height:min(65vw,330px);aspect-ratio:1}
+.meta{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:13px 0;font-size:11px;color:#bead9d}
+.meta strong{color:#edbc7e}
+.tabs,.actions{display:flex;gap:8px}
+button{background:#2a2729;border:1px solid #5a493e;border-radius:10px;color:#f2eae1;font:750 12px system-ui;cursor:pointer;padding:12px;flex:1}
+button:hover,button:focus-visible,select:focus-visible{outline:2px solid #d1a16c;outline-offset:2px}
+button[aria-pressed=true],button.primary{background:#e2b578;border-color:#e2b578;color:#25190f}
+button:disabled{opacity:.55;cursor:not-allowed}
+.block{border-top:1px solid #453c36;margin-top:18px;padding-top:17px}
+.block h3{font-size:12px;margin:0 0 9px}
+small,.small{color:#b5a9a0;font-size:11px;line-height:1.6;display:block}
+label{display:block;font-size:11px;color:#cfc1b3;margin:9px 0 6px}
+select{width:100%;border:1px solid #574b40;background:#15161a;padding:12px;border-radius:9px;color:#f2eee9}
+.state{border:1px solid #514234;background:#28221e;border-radius:12px;padding:14px}
+.state strong{color:#edc08a}
+.key{color:#a7a09c;font-size:11px;margin:2px 0}
+#live-state{font-size:18px;letter-spacing:.02em;font-weight:800;margin:3px 0}
+#track{font-size:16px;font-weight:750;color:#f2ece5;overflow-wrap:anywhere}
+#artist{font-size:12px;color:#dfb579;overflow-wrap:anywhere}
+.note{margin-top:18px;background:#27211f;border-left:3px solid #ae8254;padding:13px;color:#cbbeb1;font-size:11px;line-height:1.6}
+footer{color:#a69c97;margin-top:17px;font-size:11px}
+@media(max-width:790px){.layout{grid-template-columns:1fr}.display{min-height:375px}}
+</style>
+<script type="module" src="./now-playing-live.mjs"></script>
+</head><body><main>
+<header><div><div class="kicker">SHINO // CONTROL &nbsp; / &nbsp; V0.4 · WINDOWS MEDIA LAB</div>
+<h1>LIVE <em>NOW PLAYING</em></h1>
+<p>Opt-in Windows GSMTC → loopback-only browser preview. Real title, artist, album cover and playback status, with the four-metric scene always available.</p></div>
+<div class="pill">PC-ONLY · NO DEVICE CONNECTION</div></header>
+<section class="layout">
+<div class="panel">
+<h2>240 × 240 SCENE PREVIEW</h2>
+<div class="display"><div class="frame"><canvas id="screen" width="240" height="240" role="img" aria-label="240 by 240 device-size scene preview"></canvas></div></div>
+<div class="meta"><strong id="scene-status">PC HEALTH / DEMO</strong><span>240 × 240 source pixels</span></div>
+<div class="tabs"><button id="health" aria-pressed="true">FOUR METRICS</button><button id="music" aria-pressed="false">NOW PLAYING</button></div>
+<div class="block"><h3>SCENE POLICY</h3><label for="policy">Choose what happens on a new PLAYING track</label>
+<select id="policy"><option value="overlay">5-second overlay, then return to PC HEALTH</option><option value="manual">Manual view selection only</option></select>
+<small>Pause and playback-position changes do not restart the overlay. Manual view selection always works.</small></div>
+<div class="block"><button id="save">SAVE LOCAL 240 × 240 PNG</button></div>
+<small>The enlarged canvas is an illustration, NOT a physical RGB565 LCD capture.</small>
+</div>
+<div class="panel">
+<h2>REAL WINDOWS SESSION · EXPLICIT OPT-IN</h2>
+<div class="state">
+<div class="key">MEDIA BRIDGE</div><div id="live-state" role="status" aria-live="polite">OFF · DEMO ONLY</div>
+<div class="key">SOURCE</div><strong id="source">No live request yet</strong>
+<div class="key" style="margin-top:9px">CURRENT TRACK</div><div id="track">Demo metadata — not your active Spotify session</div><div id="artist">—</div>
+<div class="key" id="cover-status" style="margin-top:8px">Cover: not loaded</div>
+</div>
+<div class="block">
+<div class="actions"><button id="start" class="primary">START LIVE PREVIEW</button><button id="stop" disabled>STOP LIVE</button></div>
+<small>Only when activated, this page asks the same-origin local Python service for a fresh GSMTC snapshot approximately every 3 seconds. The service is already PC-local; it never contacts the SmallTV.</small>
+</div>
+<div class="block"><h3>DEMO / FALLBACK CONTROLS</h3>
+<div class="actions"><button id="demo-a">DEMO / VELVET HAMMER</button><button id="demo-b">DEMO / WEAPON IS FED</button></div>
+<small>Demo buttons stop live mode first. They do not impersonate Spotify or obtain artwork automatically.</small>
+</div>
+<div class="note"><strong>Privacy boundary:</strong> service binds only to 127.0.0.1. It serves three explicitly allowed browser files and read-only media routes; the music response is not a SmallTV protocol. Other local PC processes can potentially reach loopback, so run this only while previewing. Ctrl+C stops this standalone server, not the separate V0.1 metrics tray. No firmware, Wi-Fi changes, credentials, image uploads or autostart modifications.</div>
+</div></section>
+<footer>SHINO // TV · GSMTC local only · no Spotify API · no account login · no device connection · artwork stays in PC RAM.</footer>
+</main></body></html>
