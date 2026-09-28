@@ -36,12 +36,14 @@ jobs:
         run: python -m unittest discover -s tools -p 'test_*.py' -v
       - name: Test Windows telemetry bridge without hardware
         run: python -m unittest discover -s companion -p 'test_*.py' -v
-      - name: Test 240x240 scene renderer
-        run: node --test simulator/scene.test.mjs
+      - name: Test 240x240 scene renderer and isolated NOW PLAYING V0.3 preview
+        run: node --test simulator/scene.test.mjs simulator/now_playing.test.mjs
       - name: Exercise exact PROGMEM UI V2 math and browser four-card states
         run: node --test tools/test_native_ui_v2.cjs
-      - name: Check JS syntax
-        run: node --check simulator/scene.mjs
+      - name: Check JS syntax (existing scene + V0.3 preview)
+        run: |
+          node --check simulator/scene.mjs
+          node --check simulator/now_playing.mjs
 
   shino-link-windows-smoke:
     name: SHINO LINK Windows-only smoke (PC, no device)
