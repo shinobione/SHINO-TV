@@ -139,7 +139,7 @@ function valueCard(ctx,x,y,name,value,unit,percent) {
 export function renderHealth(ctx,metrics) {
   const m=normalizeMetrics(metrics);
   frame(ctx,'PC HEALTH');
-  label(ctx,'FOUR LIVE VALUES  /  PREVIEW',16,55,9,C.muted,600);
+  label(ctx,'FOUR VALUES  /  DEMO PREVIEW',16,55,9,C.muted,600);
   valueCard(ctx,14,65,'CPU',m.cpu,'%',m.cpu);
   valueCard(ctx,122,65,'GPU',m.gpu,'%',m.gpu);
   valueCard(ctx,14,145,'RAM',m.ram,'%',m.ram);
