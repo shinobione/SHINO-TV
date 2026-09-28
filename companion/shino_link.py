@@ -143,7 +143,10 @@ class LinkEngine:
             self.failures += 1
             self.state = "RETRYING"
             delay = min(MAX_RETRY_SECONDS, 2.0 * (2 ** min(self.failures - 1, 4)))
-        self.next_due = now + delay
+        # Delay is measured AFTER collection/HTTP completes, so a 3s timeout
+        # cannot accidentally turn a 2s retry into an immediate retry storm.
+        completed = self.clock() if now is None else now
+        self.next_due = completed + delay
         return self.state
 
     def run(self, stop: threading.Event, report) -> None:
