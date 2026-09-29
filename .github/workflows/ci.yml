@@ -84,6 +84,30 @@ jobs:
       - name: Verify fixed RFC 9421 profile vectors with real host P-256 crypto
         run: node --test tools/test_v08_crypto_lab.js
 
+  v08-single-owner-preparse:
+    name: V0.8 pinned parser handoff and isolated native link (no device)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned research compiler packages
+        run: |
+          python -m pip install 'platformio==6.1.18'
+          pio pkg install -g -t 'platformio/framework-arduinoespressif8266@3.30102.0'
+      - name: Execute transformed pinned C++ preparse and legacy parser source
+        run: python tools/v08_source_executed_preparse.py
+      - name: Link baseline and disabled-by-default research variants
+        run: pio run -d experiments/v08_preparse -e baseline_compile -e preparse_compile
+      - name: Record exact head and linked size evidence
+        run: |
+          python tools/v08_native_size_report.py
+          git rev-parse HEAD
+
   shino-link-windows-smoke:
     name: SHINO LINK Windows-only smoke (PC, no device)
     runs-on: windows-latest
