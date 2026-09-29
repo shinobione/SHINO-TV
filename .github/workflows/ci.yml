@@ -134,7 +134,7 @@ jobs:
           npm ci --prefix experiments/v08_protocol --ignore-scripts --no-audit --no-fund
           pio pkg install -g -t 'platformio/framework-arduinoespressif8266@3.30102.0'
       - name: Retained public vectors and profile 1.1 interoperability
-        run: node --test tools/test_v08_crypto_lab.js tools/test_v08_m3_profile.js
+        run: node --test tools/test_v08_crypto_lab.js tools/test_v08_m3_profile.js tools/test_v08_m5_known_failures.js
       - name: Actual pinned parser path and Basic fallback branch
         run: |
           python tools/v08_m3_parser_lab.py
@@ -143,6 +143,17 @@ jobs:
         run: pio run -d experiments/v08_full_bridge -e bridge_baseline -e bridge_preparse
       - name: Actual unchanged bridge handlers with real ArduinoJson and inert dependencies
         run: python tools/v08_m3_bridge_runner.py
+      - name: Mission 5 actual pinned socket parser dispatch auth and response composition (loopback only)
+        run: |
+          python tools/v08_m5_socket_runner.py > "${{ runner.temp }}/v08-m5-socket-evidence.json"
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
+      - name: Preserve exact-head Mission 5 host measurements and source fingerprints
+        uses: actions/upload-artifact@v4
+        with:
+          name: v08-m5-socket-evidence-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/v08-m5-socket-evidence.json
+          if-no-files-found: error
       - name: Linked size, compiler frame and exact-head provenance
         run: |
           python tools/v08_m3_resource_report.py
