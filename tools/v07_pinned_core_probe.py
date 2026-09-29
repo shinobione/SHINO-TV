@@ -9,9 +9,9 @@ from __future__ import annotations
 import hashlib
 import os
 from pathlib import Path
-import shutil
 import subprocess
 import tempfile
+from v07_cpp_lab_runner import build_and_run
 
 
 EXPECTED = {
@@ -89,19 +89,13 @@ int main() {
 
 
 def run_host_probe(sources: dict[str, str]) -> tuple[str, str]:
-    compiler = shutil.which("g++") or shutil.which("clang++")
-    if compiler is None:
-        return "SKIPPED", "no host C++ compiler on PATH"
-    with tempfile.TemporaryDirectory() as directory:
-        source = Path(directory) / "v07_probe.cpp"
-        binary = Path(directory) / ("v07_probe.exe" if os.name == "nt" else "v07_probe")
-        source.write_text(harness(sources), encoding="utf-8")
-        compiled = subprocess.run([compiler, "-std=c++17", str(source), "-o", str(binary)],
-                                  capture_output=True, text=True, timeout=30)
-        if compiled.returncode:
-            return "FAILED", compiled.stderr[-1500:]
-        executed = subprocess.run([str(binary)], capture_output=True, text=True, timeout=10)
-        return ("PASS", "executed pinned source primitives") if executed.returncode == 0 else ("FAILED", f"exit {executed.returncode}: {executed.stderr[-500:]}")
+    try:
+        result = build_and_run(Path("v07_probe.cpp"), generated=harness(sources), expect_json=False)
+    except RuntimeError as error:
+        if str(error) == "No host C++ compiler available":
+            return "SKIPPED", str(error)
+        return "FAILED", str(error)[-1500:]
+    return "PASS", f"executed pinned source primitives with {result['compiler']}"
 
 
 def run_cross_syntax(sources: dict[str, str]) -> tuple[str, str]:
