@@ -19,6 +19,8 @@ node_modules/
 # Imported PlatformIO build and locally generated device configuration
 firmware/.pio/
 experiments/v08_preparse/.pio/
+experiments/v08_full_bridge/.pio/
+experiments/v08_full_bridge/*.log
 firmware/data/config.json
 firmware/include/project_version.h
 
