@@ -76,6 +76,7 @@ jobs:
           python -m compileall -q companion/media_wire_v1.py
           python -m unittest discover -s companion -p 'test_media_wire_v1.py' -v
           python -m unittest discover -s companion -p 'test_media_auth_transfer.py' -v
+          python -m unittest discover -s companion -p 'test_media_memory_lab.py' -v
           python -c "import winrt.windows.foundation; import winrt.windows.foundation.collections; import winrt.windows.media.control; import winrt.windows.storage.streams; print('All 4 WinRT projections OK')"
           python companion/media_sessions.py --demo
           python companion/media_sessions.py --probe
