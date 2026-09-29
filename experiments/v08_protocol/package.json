@@ -1,0 +1,7 @@
+{
+  "name": "shino-v08-m3-host-profile-research",
+  "private": true,
+  "version": "1.1.0",
+  "description": "Offline research only; no sender or production authentication",
+  "dependencies": { "structured-headers": "2.0.3" }
+}

@@ -16,6 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
@@ -35,6 +36,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
@@ -77,6 +80,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
@@ -91,6 +95,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
@@ -108,6 +113,42 @@ jobs:
           python tools/v08_native_size_report.py
           git rev-parse HEAD
 
+  v08-full-bridge-qualification:
+    name: V0.8 full bridge link and host protocol qualification (no device)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned research packages without Node lifecycle scripts
+        run: |
+          python -m pip install 'platformio==6.1.18'
+          npm ci --prefix experiments/v08_protocol --ignore-scripts --no-audit --no-fund
+          pio pkg install -g -t 'platformio/framework-arduinoespressif8266@3.30102.0'
+      - name: Retained public vectors and profile 1.1 interoperability
+        run: node --test tools/test_v08_crypto_lab.js tools/test_v08_m3_profile.js
+      - name: Actual pinned parser path and Basic fallback branch
+        run: |
+          python tools/v08_m3_parser_lab.py
+          python tools/v08_m3_basic_probe.py
+      - name: Link equivalent unstarted full-bridge baseline and overlay experiment
+        run: pio run -d experiments/v08_full_bridge -e bridge_baseline -e bridge_preparse
+      - name: Actual unchanged bridge handlers with real ArduinoJson and inert dependencies
+        run: python tools/v08_m3_bridge_runner.py
+      - name: Linked size, compiler frame and exact-head provenance
+        run: |
+          python tools/v08_m3_resource_report.py
+          git rev-parse HEAD
+          git diff --exit-code -- firmware companion
+
   shino-link-windows-smoke:
     name: SHINO LINK Windows-only smoke (PC, no device)
     runs-on: windows-latest
@@ -115,6 +156,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
