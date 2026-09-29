@@ -30,6 +30,7 @@ jobs:
           python -m unittest discover -s tools -p 'test_v07_source_executed_lab.py' -v
           python tools/v07_full_parser_probe.py
           python tools/v07_cpp_lab_runner.py
+          python tools/v07_cpp_lab_runner.py v07_single_owner_handoff_lab.cpp
   test:
     runs-on: ubuntu-latest
     steps:

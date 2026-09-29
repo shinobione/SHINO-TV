@@ -60,4 +60,8 @@ def build_and_run(source: Path, *, generated: str | None = None, expect_json: bo
 
 
 if __name__ == "__main__":
-    print(json.dumps(build_and_run(ROOT / "v07_bounded_ingress_lab.cpp"), indent=2))
+    import sys
+    name = sys.argv[1] if len(sys.argv) == 2 else "v07_bounded_ingress_lab.cpp"
+    if name not in ("v07_bounded_ingress_lab.cpp", "v07_single_owner_handoff_lab.cpp"):
+        raise SystemExit("unsupported offline lab source")
+    print(json.dumps(build_and_run(ROOT / name), indent=2))

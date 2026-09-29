@@ -32,6 +32,14 @@ class SourceExecutedIngressLab(unittest.TestCase):
         self.assertEqual(result["body_bytes_before_auth"], 0)
         self.assertEqual(result["max_metric_interval_ms_simulated"], 100)
 
+    def test_synthetic_single_owner_handoff_contract(self):
+        result = build_and_run(ROOT / "v07_single_owner_handoff_lab.cpp")["result"]
+        self.assertEqual(result["handoff_assertions"], 36)
+        self.assertLessEqual(result["max_step_bytes"], 64)
+        self.assertLessEqual(result["max_prefix_bytes"], 130)
+        self.assertEqual(result["metric_updates"], 2)
+        self.assertEqual(result["owned_cleanups"], 2)
+
 
 if __name__ == "__main__":
     unittest.main()
