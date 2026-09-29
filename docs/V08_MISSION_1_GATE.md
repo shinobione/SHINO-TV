@@ -23,7 +23,7 @@ The complete V0.7 [review gate](V07_REVIEW_GATE.md), [host wire contract](V07_HO
 | Node simulator/browser/native UI | **20/20 passed**. |
 | Full `tools` discovery on Windows | **291 run: 182 passed, 11 failed, 1 error, 97 skipped**. Eleven old tests hard-require absent `g++`/preprocessor; the symlink test errors with `WinError 1314`. These are not relabeled passes. |
 | New V0.8 native route, actual TCP owner, ESP heap/stack/CPU, key provisioning, SmallTV | **Not executed / not present**. |
-| V0.8 exact-head CI | **Pending at this documentation draft**; report the observed final SHA and all job conclusions in Mission 1 delivery. |
+| V0.8 code-commit CI | **4/4 jobs passed** at `5b51cabb918e4311b9970fce80321fad171a8761`: [push run 36617821767](https://github.com/shinobione/SHINO-TV/actions/runs/36617821767) and [Draft PR #30 run 36617900485](https://github.com/shinobione/SHINO-TV/actions/runs/36617900485) each passed the pinned C++ lab, Ubuntu suite, Windows smoke and V0.8 public crypto vectors. Exact-head CI for the final documentation commit is reported in Mission 1 delivery. |
 
 ## Gate and unresolved decisions
 
