@@ -14,11 +14,11 @@ Local `V08_MISSION_5_LOCAL_EVIDENCE.json` records three MSVC runs from a working
 
 | Measurement | Stock/default | Overlay/default | Overlay/conditional inert OEM |
 |---|---|---|---|
-| Assertion set | 70+ checks, zero failures | 171+ checks, zero failures | 174+ checks, zero failures |
+| Assertion set | 70 checks, zero failures | 171 checks, zero failures | 174 checks, zero failures |
 | First-line-only maximum bytes/poll | Stock has no preparse slice | 64 | 64 |
 | Whole-poll maximum bytes | 4214 | 4214 | 4214 |
-| Worst deliberately observed poll | About 47 ms, delayed line/header fixture | About 2102 ms, delayed header fixture | About 2105 ms, delayed header fixture |
-| Ready client real-clock wall wait | About 65 ms | About 2045 ms | About 2044 ms |
+| Worst deliberately observed poll | About 47 ms, delayed line/header fixture | About 2.1 s, delayed header fixture | About 2.1 s, delayed header fixture |
+| Ready client real-clock wall wait | About 67 ms | About 2035 ms | About 2041 ms |
 | Injected-clock owner release | At tick31 after >30ms grace | At elapsed2000 | At elapsed2000 |
 | Peak live PC socket descriptors | 13 | 13 | 13 |
 | Cleanup | Every context destroyed; zero live sockets | Same | Same |
