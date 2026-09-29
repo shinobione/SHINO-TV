@@ -70,6 +70,20 @@ jobs:
           node --check simulator/now_playing.mjs
           node --check simulator/now-playing-live.mjs
 
+  v08-host-crypto-vectors:
+    name: V0.8 fixed public crypto vectors (host only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify fixed RFC 9421 profile vectors with real host P-256 crypto
+        run: node --test tools/test_v08_crypto_lab.js
+
   shino-link-windows-smoke:
     name: SHINO LINK Windows-only smoke (PC, no device)
     runs-on: windows-latest

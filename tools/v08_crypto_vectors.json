@@ -1,0 +1,57 @@
+{
+  "note": "Public, non-production fixed vectors. The one-shot generated private key was discarded.",
+  "tx": "11223344556677880000000000000001",
+  "epoch_hex": "1122334455667788",
+  "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE5n+ZbRugCoDGtEZG25TxQzd2jj3c\ndr5Idk9cGZ4YiaeR2oG7l/mKGESuU/G5KFCY0CvGBE0u7Ee0tDY+RduzfA==\n-----END PUBLIC KEY-----\n",
+  "entries": {
+    "begin": {
+      "operation": "begin",
+      "nonce": "AAAAAAAAAAAAAAAAAAAAAA",
+      "header": "POST /api/v2/bridge/media/begin/11223344556677880000000000000001 HTTP/1.1\r\nHost: tv.test\r\nContent-Type: application/vnd.shino-tv.media-wire-v2\r\nContent-Length: 371\r\nContent-Digest: sha-256=:m089HfUsWQVYMPNG1o0KJrdGc9c1liLjlhvkCDadGH4=:\r\nConnection: close\r\nSignature-Input: sig1=(\"@method\" \"@request-target\" \"@authority\" \"content-type\" \"content-length\" \"content-digest\");alg=\"ecdsa-p256-sha256\";keyid=\"media-test\";nonce=\"AAAAAAAAAAAAAAAAAAAAAA\";tag=\"shino-tv-media-v2\"\r\nSignature: sig1=:TnU9jNWpuS7gfOwNZ8XEVvYuhx+RtpxbfFSv7kowDaEYq9z4McXzQ2gW4lKQcvoXQo007Ar2bqdEr2Oucu8uTA==:\r\n\r\n",
+      "body_hex": "53545637020100001122334455667788112233445566778800000000000000010000014b9a5b8f617b22616c62756d223a22416c62756d222c22617274697374223a22417274697374222c22636f7665725f6c656e223a302c22636f7665725f736861323536223a6e756c6c2c226475726174696f6e223a36302c22686569676874223a302c22706978656c5f666f726d6174223a224e4f4e45222c22706f736974696f6e223a302c22736f75726365223a2266697874757265222c227374617465223a22504c4159494e47222c2274696c655f636f756e74223a302c227469746c65223a2254657374222c22747261636b5f6b6579223a2230303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030222c227478223a223131323233333434353536363737383830303030303030303030303030303031222c2276223a322c227769647468223a307d",
+      "base_sha256": "398da6590952dbcf99eaba3ed1b01948db65bfaf1bd50162af70a5f4a38cddc4"
+    },
+    "tile": {
+      "operation": "tile",
+      "nonce": "BBBBBBBBBBBBBBBBBBBBBB",
+      "header": "POST /api/v2/bridge/media/tile/11223344556677880000000000000001 HTTP/1.1\r\nHost: tv.test\r\nContent-Type: application/vnd.shino-tv.media-wire-v2\r\nContent-Length: 552\r\nContent-Digest: sha-256=:aQrC0mLBExRiVMZLwaU+dz1tx/NEiX/sWtz2Oc9yv+8=:\r\nConnection: close\r\nSignature-Input: sig1=(\"@method\" \"@request-target\" \"@authority\" \"content-type\" \"content-length\" \"content-digest\");alg=\"ecdsa-p256-sha256\";keyid=\"media-test\";nonce=\"BBBBBBBBBBBBBBBBBBBBBB\";tag=\"shino-tv-media-v2\"\r\nSignature: sig1=:TrScXGRaLr3Na+t2I9CrVdmx/YxwaNgLL62cOMi9PouTpX/FRp5Ll4ZWojvH1hwHYcukPNkc4ZOB9S6nBAoVIw==:\r\n\r\n",
+      "body_hex": "535456370202000011223344556677881122334455667788000000000000000100000200c906d311a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5",
+      "base_sha256": "cf2f15e8dfd60023f0d8ff83735bd3ac7760b9322de3fbdaabe47a4f3fac6be3"
+    },
+    "commit": {
+      "operation": "commit",
+      "nonce": "CCCCCCCCCCCCCCCCCCCCCC",
+      "header": "POST /api/v2/bridge/media/commit/11223344556677880000000000000001 HTTP/1.1\r\nHost: tv.test\r\nContent-Type: application/vnd.shino-tv.media-wire-v2\r\nContent-Length: 40\r\nContent-Digest: sha-256=:F8f3M0D3v1xNXUXlZBFYaiF3LT8/uP1NW97dff1TYMM=:\r\nConnection: close\r\nSignature-Input: sig1=(\"@method\" \"@request-target\" \"@authority\" \"content-type\" \"content-length\" \"content-digest\");alg=\"ecdsa-p256-sha256\";keyid=\"media-test\";nonce=\"CCCCCCCCCCCCCCCCCCCCCC\";tag=\"shino-tv-media-v2\"\r\nSignature: sig1=:aNbDgKRDz7n3vDHUZRVD2DmePP690RnoEgAQZmg7Sna4Fuf9aGUZZ0X+uewEx48To1AUsQoDo4Xsr7eqZ4I/wg==:\r\n\r\n",
+      "body_hex": "53545637020300001122334455667788112233445566778800000000000000010000000000000000",
+      "base_sha256": "e18bbe5ea375d6fbe845127be268ce7d92933a51a0d0e4a9dfee8e334143093e"
+    },
+    "operation_mismatch": {
+      "operation": "begin",
+      "nonce": "DDDDDDDDDDDDDDDDDDDDDD",
+      "header": "POST /api/v2/bridge/media/begin/11223344556677880000000000000001 HTTP/1.1\r\nHost: tv.test\r\nContent-Type: application/vnd.shino-tv.media-wire-v2\r\nContent-Length: 552\r\nContent-Digest: sha-256=:aQrC0mLBExRiVMZLwaU+dz1tx/NEiX/sWtz2Oc9yv+8=:\r\nConnection: close\r\nSignature-Input: sig1=(\"@method\" \"@request-target\" \"@authority\" \"content-type\" \"content-length\" \"content-digest\");alg=\"ecdsa-p256-sha256\";keyid=\"media-test\";nonce=\"DDDDDDDDDDDDDDDDDDDDDD\";tag=\"shino-tv-media-v2\"\r\nSignature: sig1=:fbXg2V/prxZmzLNytG5XwDXvhRksqbZQp6YrY2YmGLCKktuFVQZACyVlIFRqG+zvvjOAiEXzaGkzPpFSs8v4zQ==:\r\n\r\n",
+      "body_hex": "535456370202000011223344556677881122334455667788000000000000000100000200c906d311a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5",
+      "base_sha256": "c19f0249767cf52ed7f28ecc00767a66a5f60be154413d31255704294086e0a7"
+    },
+    "transaction_mismatch": {
+      "operation": "commit",
+      "nonce": "EEEEEEEEEEEEEEEEEEEEEE",
+      "header": "POST /api/v2/bridge/media/commit/11223344556677880000000000000001 HTTP/1.1\r\nHost: tv.test\r\nContent-Type: application/vnd.shino-tv.media-wire-v2\r\nContent-Length: 40\r\nContent-Digest: sha-256=:dGER7kPPgyVRLbR9buLyWymAIh2rqSGdzZqZKImxtN4=:\r\nConnection: close\r\nSignature-Input: sig1=(\"@method\" \"@request-target\" \"@authority\" \"content-type\" \"content-length\" \"content-digest\");alg=\"ecdsa-p256-sha256\";keyid=\"media-test\";nonce=\"EEEEEEEEEEEEEEEEEEEEEE\";tag=\"shino-tv-media-v2\"\r\nSignature: sig1=:LsClemSRmsVE4unzaz29Xz4tngFV7b13zKJp13wp2dO5wSPnPUn4c56jlqjyeN+qiEdItbFOKl9oXEKhFV/j0Q==:\r\n\r\n",
+      "body_hex": "53545637020300001122334455667788112233445566778800000000000000020000000000000000",
+      "base_sha256": "6d0044cb78155e67eed4fc9dedcc504465fdacfcda6e74f09c5d195d92d8425e"
+    },
+    "epoch_mismatch": {
+      "operation": "commit",
+      "nonce": "FFFFFFFFFFFFFFFFFFFFFF",
+      "header": "POST /api/v2/bridge/media/commit/11223344556677880000000000000001 HTTP/1.1\r\nHost: tv.test\r\nContent-Type: application/vnd.shino-tv.media-wire-v2\r\nContent-Length: 40\r\nContent-Digest: sha-256=:yFmxCIH3GjGIZleqyP8AQPyh0IfsLDwOtsC7QUNdrAw=:\r\nConnection: close\r\nSignature-Input: sig1=(\"@method\" \"@request-target\" \"@authority\" \"content-type\" \"content-length\" \"content-digest\");alg=\"ecdsa-p256-sha256\";keyid=\"media-test\";nonce=\"FFFFFFFFFFFFFFFFFFFFFF\";tag=\"shino-tv-media-v2\"\r\nSignature: sig1=:4n2jj4MNx1k1YGmM5J1RzQRYPolQAQSrpyhgRQ1FZGkDmkWFAVaOIeW7ZitkAAMlEXe8T/Ux3bdLg6Em02Lj9A==:\r\n\r\n",
+      "body_hex": "53545637020300001122334455667789112233445566778800000000000000010000000000000000",
+      "base_sha256": "a6a79bf022ac24c4ed8080962dade8a105c46f4a11d8629110174ffd94431cde"
+    },
+    "wrong_principal": {
+      "operation": "begin",
+      "nonce": "GGGGGGGGGGGGGGGGGGGGGG",
+      "header": "POST /api/v2/bridge/media/begin/11223344556677880000000000000001 HTTP/1.1\r\nHost: tv.test\r\nContent-Type: application/vnd.shino-tv.media-wire-v2\r\nContent-Length: 371\r\nContent-Digest: sha-256=:m089HfUsWQVYMPNG1o0KJrdGc9c1liLjlhvkCDadGH4=:\r\nConnection: close\r\nSignature-Input: sig1=(\"@method\" \"@request-target\" \"@authority\" \"content-type\" \"content-length\" \"content-digest\");alg=\"ecdsa-p256-sha256\";keyid=\"other-key\";nonce=\"GGGGGGGGGGGGGGGGGGGGGG\";tag=\"shino-tv-media-v2\"\r\nSignature: sig1=:G/+iMZVs8yFJjAUm5EGnrNql/uw3Hk2+Gy+Nlt0QiN1ZlrDikDGFL//a5m1BOAIzymiqfJo+NKA0OldDpI+etw==:\r\n\r\n",
+      "body_hex": "53545637020100001122334455667788112233445566778800000000000000010000014b9a5b8f617b22616c62756d223a22416c62756d222c22617274697374223a22417274697374222c22636f7665725f6c656e223a302c22636f7665725f736861323536223a6e756c6c2c226475726174696f6e223a36302c22686569676874223a302c22706978656c5f666f726d6174223a224e4f4e45222c22706f736974696f6e223a302c22736f75726365223a2266697874757265222c227374617465223a22504c4159494e47222c2274696c655f636f756e74223a302c227469746c65223a2254657374222c22747261636b5f6b6579223a2230303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030222c227478223a223131323233333434353536363737383830303030303030303030303030303031222c2276223a322c227769647468223a307d",
+      "base_sha256": "89569ee9c636b13b719b36bfcf69ae2d336addf029dc3bdd972d5b77925f1d5a"
+    }
+  }
+}
