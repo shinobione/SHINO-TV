@@ -16,6 +16,8 @@
 
 PlatformIO's ESP RAM estimate includes sections beyond ELF data/BSS (including IRAM); do not equate either count with free heap. An additional read-only media literal and alignment account for growth outside the server object; no image buffer or production verifier is linked. The ELF text total includes read-only content, not simply executable instructions. BIN sizes are local build outputs only, not installation packages. Absolute link results may differ by build path/tool host; compare equivalent pairs in the same run. CI prints its own pair and exact source head.
 
+Linux [CI run 36628802737](https://github.com/shinobione/SHINO-TV/actions/runs/36628802737) at code head `62d19b8b0dc5790362a6a1806b1379d18ef4ff55` also linked both full images: text **393423/394251**, data **1672/1672**, BSS **26808/26960**, BIN **399184/400016**. Its paired deltas are exactly **+828/0/+152/+832**, and bridge server objects are **272/416** bytes. The small absolute Windows/Linux differences are reported rather than normalized away. No target runtime measurement was made in CI.
+
 Local ELF SHA-256: baseline `89b9ed6a0df20627c793d74882f8bcee0ab16d738f47a85bb1f1baf26f824100`; experiment `153a17eac398c1d2546b0f1420980648f1c3e8565803d207b2e7570960cb1b71`. These identify the local uninstalled outputs; no deployable hash approval is implied. `tools/v08_m3_resource_report.py` also asserts real bridge symbols, exactly one linked bridge server, and overlay-symbol presence only in the experiment.
 
 ## Compiler stack frames, not stack high-water

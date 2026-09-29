@@ -22,9 +22,10 @@
 | Simulator/browser/native UI Node suites | **20/20 PASS** | Host renderer/UI; includes five-second overlay tests. |
 | Full companion Python discovery | **134 run: 130 PASS, 4 SKIPPED** | Historical V0.5/V0.6 and V0.7 models unchanged. All eight V0.5 `test_gap_*` remain present. |
 | Full tools Python discovery on Windows | **291 run: 182 PASS, 11 FAIL, 1 ERROR, 97 SKIPPED** | Eleven old checks require absent GNU C++ compiler/preprocessor; one source-symlink test gets Windows privilege error. No failure relabeled PASS. |
+| Mission 3 code-head CI | **6/6 jobs PASS** at `62d19b8b0dc5790362a6a1806b1379d18ef4ff55`, [Draft PR #32 run 36628802737](https://github.com/shinobione/SHINO-TV/actions/runs/36628802737) | All jobs check out the exact head; full-link/90-parser/5-Basic/35+38-handler checks passed under Linux GCC. General Linux tools: **281 run, 279 PASS, 2 SKIPPED**; companion: **134 PASS**. Host and compile evidence only. |
 | ESP runtime TCP/heap/stack/CPU/WDT/LCD/browser/OEM writer | **NOT RUN** | Excluded by scope. Production authentication and device ingress not implemented. |
 
-The CI workflow runs the new profile tests, actual modified parser path, Basic branch, full native link pair, actual bridge source with real ArduinoJson, and resource/symbol accounting in addition to all existing jobs. Exact-head run outcomes must be verified after the final commit; a prior code-commit run is not substituted for that evidence.
+The CI workflow runs the new profile tests, actual modified parser path, Basic branch, full native link pair, actual bridge source with real ArduinoJson, and resource/symbol accounting in addition to all existing jobs. The successful code-head run is recorded above. Exact-head run outcomes must also be verified after this final evidence commit and reported in delivery; this prior run is not substituted for that result.
 
 ## Gates and unresolved decisions
 
