@@ -9,6 +9,28 @@ permissions:
   contents: read
 
 jobs:
+  v07-source-executed-ingress:
+    name: V0.7 pinned-source C++ ingress lab (host only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install exact pinned ESP8266 Core package for source extraction
+        run: |
+          python -m pip install 'platformio==6.1.18'
+          pio pkg install -g -t 'platformio/framework-arduinoespressif8266@3.30102.0'
+      - name: Execute pinned parser and bounded candidate under host C++ compiler
+        run: |
+          python -c "from pathlib import Path; import sys; sys.path.insert(0, 'tools'); from v07_pinned_core_probe import pinned_sources; print('pinned files:', len(pinned_sources()))"
+          python -m unittest discover -s tools -p 'test_v07_source_executed_lab.py' -v
+          python tools/v07_full_parser_probe.py
+          python tools/v07_cpp_lab_runner.py
+          python tools/v07_cpp_lab_runner.py v07_single_owner_handoff_lab.cpp
   test:
     runs-on: ubuntu-latest
     steps:
