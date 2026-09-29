@@ -75,9 +75,9 @@ Local Windows results on 2026-09-29:
 | Full `tools` discovery | **288 run: 179 passed, 11 failed, 1 error, 97 skipped**. Eleven older tests explicitly require `g++`/host preprocessing absent from Windows PATH; the error is Windows symlink privilege `WinError 1314`. The new tests pass. |
 | Full `companion` discovery | **134 run: 130 passed, 4 skipped**. V0.5 `test_gap_*`, V0.6 memory lab and V0.7 host wire tests remain unchanged and pass. |
 | Node simulator/browser/UI tests | **20 passed**. Includes existing five-second overlay and four-card behavior. |
-| Dedicated Linux CI job | **Registered, not yet observed at report authoring**. A job failure or skip must not be described as a pass; the final task report should state any observed run separately. |
+| Dedicated Linux CI job | [Run 36533874998](https://github.com/shinobione/SHINO-TV/actions/runs/36533874998) at `6c283d94b5e0decb9606468df73ba21180237ec8`: **passed**. Installed the exact package; 3 unit tests passed; extracted parser reported 11 assertions, candidate reported 67. The existing Ubuntu `test` and Windows smoke jobs also passed. This is host CI evidence only. |
 
-The exact C++ parser probe and candidate run under a compiler-capable Windows host. The older `g++`-specific tests remain failures on this machine; MSVC availability does not change their hard-coded compiler requirement. The Linux CI job is intended to execute the new lab with the pinned package and avoid that local limitation. No CI status is inferred from local tests.
+The exact C++ parser probe and candidate run under a compiler-capable Windows host. The older `g++`-specific tests remain failures on this machine; MSVC availability does not change their hard-coded compiler requirement. Linux CI executed the new lab with the pinned package; the first observed run above passed at its stated commit. A later documentation-only commit needs its own exact-head CI result reported separately.
 
 The diff contains no production firmware or companion implementation changes. Numeric metrics, browser read sessions, OEM application-only return, V0.5 frozen codec/gap tests, V0.6 memory laboratory and V0.7 wire-v2 host code have not been altered. This is regression protection by isolation plus unchanged test execution, **not** proof that a future native adapter coexists with the active port-80 owner.
 
