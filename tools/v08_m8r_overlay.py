@@ -27,6 +27,9 @@ def patch_impl(value):
     value=legacy.patch_impl(value)
     value=legacy.previous.once(value,'void ESP8266WebServerTemplate<ServerType>::handleClient() {', '''void ESP8266WebServerTemplate<ServerType>::handleClient() {
 #ifdef SHINO_V08_PREPARSE_EXPERIMENT
+#ifdef ESP8266
+  m8::PollScope m8PollScope;
+#endif
   if (_m7Media) _m7Media->service();
 #endif''','owner timer service')
     value=legacy.previous.once(value,'    _v08Closed = false;','    _v08Closed = false;\n    _m7Active = false;','accept media reset')

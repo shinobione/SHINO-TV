@@ -1,3 +1,128 @@
+# Mission 8 continuation: pinned StackThunk qualification
+
+30 September 2026. Continuation starts at exact existing PR #39 head
+`cb58173495f811787a0fbb2c44bc1df6621c9990` on
+`feature/shino-tv-v08-stack-remediation`; Draft PR #39 is retained.
+
+**Current status: pre-install static/regression/image checks PASS; physical qualification PENDING.**
+The user's continuation replaces the earlier whole-ROM static UNKNOWN stop
+with exact linked isolation and required physical high-water measurements.
+This is not a physical stack, heap, LCD, install or recovery PASS.
+R3 remains PARTIAL; R10 remains BLOCKED. No production key, permanent sender,
+Mission 9 work or merge. The existing one-device physical authorization remains
+in force. Immediate owner LCD recheck and the supported OEM network address are
+pending; no firmware write or media request has occurred in this continuation.
+
+## Exact pinned Core and checked allocation
+
+The installed package is framework-arduinoespressif8266 3.30102.0 / Core 3.1.2
+under espressif8266 4.2.1. Eight exact local Core hashes, including every requested
+file, are in [the manifest](../tools/v08_m8r_core_manifest.json) and are checked
+before the build and linked analysis. No upstream/master substitution is used.
+Pinned StackThunk.cpp explicitly describes its secondary stack as supporting
+BearSSL's large stack demand. `_stackSize (6200/4)` gives 1,550 words / 6,200 bytes.
+
+Stock `add_ref` increments ownership, chooses DRAM, mallocs 6,200, aborts on null,
+sets top to pointer+1549 and save to null, then paints 0xdeadbeef. Stock `del_ref`
+decrements and, at zero, frees and nulls pointer/top/save. `repaint` paints every
+word; `get_max_usage` scans from the bottom and returns the used painted range,
+or zero when unallocated. The exact `make_stack_thunk` saves a 16-byte continuation
+frame, loads the secondary top into a1 before the native call, checks the bottom
+canary through the stock fatal handler, and restores a1/registers before return.
+A canary failure resets; a post-return zero counter cannot prove no prior reset.
+Boot nonce, uptime and reset reason must therefore be monitored across phases.
+
+The isolated LGPL-derived adapter changes ONLY acquisition policy: ownership is
+rejected if busy; heap and largest block are checked; DRAM malloc is checked;
+global fields/refcount are set only after success. Null returns false, increments
+a failure counter, and executes zero ECDSA/body work. No stock add_ref call,
+boot allocation, global allocator replacement, Core edit or enlarged continuation
+stack is introduced. Stock layout, thunk assembly, paint/scan, fatal handler and
+del_ref are retained. The precheck is not proof of malloc success: allocator
+overhead is handled by the actual checked result. Allocation failure is a physical
+STOP even though authentication fails closed.
+
+Chosen provisional lifecycle B allocates/repaints immediately around each proof
+or controlled test-key validation, samples usage before release, and releases
+before any media body/JSON/image work. Lifecycle A would retain 6,200 through the
+9,256-byte receiver peak (15,456 explicit bytes); B avoids that overlap. B can
+still overlap an existing 4,608-byte committed image during proof (10,808 bytes).
+These are explicit object arithmetic, excluding allocator/SDK/request overhead;
+repeated target readings, not arithmetic, must decide whether B is acceptable.
+No lifecycle is physically qualified yet.
+
+## Linked boundaries and instrumentation
+
+Parser/poll return before Proof. The noinline owner proof calls checked acquire,
+thunk, and release in that order. Exact candidate disassembly proves the SP switch
+before raw i15/m31 crypto and restoration before return. Both verify and point
+validation wrappers are linked in the active private candidate. No parser, socket,
+JSON, image or display call is put on the secondary stack. The post-proof admission
+and checked body allocation block is decoded from its linked branch target;
+linear Xtensa disassembly can lose alignment at inline padding. Source guards and
+host denial/revocation tests establish the successful-proof condition as well as
+address order. The known EC chain remains 720+272+592+304+336 = 2,224 bytes, now on
+the secondary stack, plus a 32-byte native verification wrapper. ROM helper bodies
+remain unavailable; they are inside the switched chain and their target high-water
+is now the required evidence. Receiver/JSON/allocator whole-path maxima remain
+UNKNOWN and must be paired with physical continuation measurements.
+
+`ESP.getFreeContStack()` calls the pinned cont paint scan; reset calls cont repaint.
+The latter paints only below current SP minus 64 bytes, so the qualification route
+defers reset until the shallow loop returns from HTTP processing. Each phase reads
+back completion. Resource samples include active crypto allocation, body, JSON
+arena, image staging and owner-loop completion. A qualification-only Digest route
+exports bounded counters and measurements through a fixed 2,048-byte JSON buffer.
+It exposes no credentials/private key. A single controlled test public point can
+be enrolled after boot; synthetic fixed epoch and volatile issue are qualification
+seams, not production provisioning or an R3/R10 completion.
+
+The one-shot fixture process discards its ephemeral private key and retains only
+public point/signed packets locally. The temporary device controller remains in
+ignored research-local; it is not a permanent companion sender. The DisplaySink
+continues to own its committed image without LCD rendering; transfers qualify the
+receiver and dashboard coexistence, not a new NowPlaying screen feature.
+
+## Exact private install candidate and checks
+
+Private `qualification_compile` BIN **446,144 bytes**,
+SHA-256 `8dc18cf5135b4c7da8486d4f00bcc9b944d4bb5e4956a3f9dcbad7603ce47fea`; ELF SHA-256 `34e67a4d3da022fd5d9581628b8e8aa51c2fa0e4273d491a73e910dd1868205e`.
+Text/data/BSS **439,207 / 2,840 / 32,704**.
+Main continuation 4,096; secondary 6,200. Native fixed Authority/Ingress/Receiver
+**2104 / 1432 / 1120** bytes.
+Image/body/JSON explicit allocations are at most 4,608 / 552 / 4,096 bytes.
+The fixed diagnostic buffer adds 2,048 BSS bytes, plus counters and the public point.
+The retained matching private policy is copied only into ignored build shadow.
+No BIN/ELF/private policy or credentials are committed/uploaded. Esptool confirms
+DIO, 4 MiB, 40 MHz and a valid image checksum. Retained pairing and 4m3m geometry
+checks pass; both modeled hops have a 106,496-byte gap and zero inferred stock-FS
+staging overlap. Actual OEM updater behavior and nonbooting recovery remain unproved.
+
+Both focused OEM configurations pass **1,065 checks, zero failures**, with all
+247/247 and 249/249 owner contexts cleaned and zero live descriptors. Wire-v2
+**10,207 cases** and header profile **37 cases** agree with retained host behavior.
+Coverage includes public/synthetic P-256, wrong signature, unknown/used/expired
+challenge, revocation between parse/proof, R1/R2/R4, allocation denial before
+ECDSA/body work, Begin/Tile/Commit/Abort, Mission 6A contention, actual legacy
+dashboard/four metrics and conditional OEM multipart. All three guarded public
+native profiles link, and 4,096/6,144 comparison profiles pass isolation analysis.
+The 6,144 sensitivity profile remains excluded from installation.
+
+Immediate bounded rollback GETs at **21:13:57–21:14:03 UTC** report exact installed
+V2.1 size 405,712, physical flash 4,194,304, live free heap 31,480, fresh four metrics,
+and pinned OEM return enabled. All retained V2.1/OEM/ZIP hashes match. These readings
+belong to V2.1, not the new candidate. The prior owner LCD report remains historical;
+the immediate recheck is pending. Existing OEM→SHINO stock update route is retained;
+its current domestic address must be established before the second write.
+
+Progressive boot/baseline/auth/coverless/32/48 measurements, repeated replacement
+trends and physical LCD/recovery checks are PENDING. No GO is inferred from the
+isolated stack mechanism, successful build or CI. See the machine-readable
+[evidence](V08_MISSION_8R_STACK_EVIDENCE.json).
+
+---
+Historical records preserved below; their gates and zero-contact statements describe those earlier runs.
+
 # Mission 8R: stack remediation and qualification gate
 
 30 September 2026, Europe/Paris. Exact parent:

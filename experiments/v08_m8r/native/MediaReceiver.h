@@ -89,7 +89,12 @@ class JsonArena final : public ArduinoJson::Allocator {
 
 public:
   static constexpr size_t capacity = sizeof(void *) == 8 ? 8192 : 4096;
-  JsonArena() : bytes(new(std::nothrow) uint8_t[capacity]) {}
+  JsonArena() : bytes(new(std::nothrow) uint8_t[capacity]) {
+#ifdef ESP8266
+    if(!bytes) ++m8::runtimeStats.allocationFailures;
+    m8::sampleResources();
+#endif
+  }
   void *allocate(size_t n) override {
     size_t aligned =
         (used + alignof(max_align_t) - 1) & ~(alignof(max_align_t) - 1);
@@ -232,6 +237,8 @@ public:
     outcome = "REBOOT";
   }
   const uint8_t *stagedPointer() const { return staging.get(); }
+  unsigned stagedBytes() const { return staging ? meta.cover : 0; }
+  unsigned imageBytes() const { return sink.image ? meta.cover : 0; }
   M8R_NOINLINE bool receive(const Record &r, uint8_t principal, uint32_t now) {
     if (r.op == 1) {
       if (pending) {
@@ -260,11 +267,17 @@ public:
       staging.reset(parsed.cover ? new (std::nothrow) uint8_t[parsed.cover]
                                  : nullptr);
       if (parsed.cover && !staging) {
+#ifdef ESP8266
+        ++m8::runtimeStats.allocationFailures;
+#endif
         terminal();
         outcome = "ALLOCATION_FAILED";
         return false;
       }
       pending = true;
+#ifdef ESP8266
+      m8::sampleResources();
+#endif
       outcome = "STAGED";
       return true;
     }

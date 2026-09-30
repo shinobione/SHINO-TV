@@ -73,7 +73,7 @@ def run():
                 assert [int(x) for x in probe.stdout.splitlines()]==[int(x['accepted']) for x in cases]
                 profile_differential={'cases':len(cases),'admitted':sum(x['accepted'] for x in cases),'agreement':True}
     inputs=[ROOT/'tools/v08_m8r_runner.py',ROOT/'tools/v08_m8r_lab.cpp',ROOT/'tools/v08_m8r_overlay.py',ROOT/'tools/v08_m8r_bearssl_manifest.json',ROOT/'tools/v08_m7_fixtures.js',ROOT/'tools/v08_m7_profile_cases.js',*sorted((ROOT/'experiments/v08_m8r/native').glob('*.h')),
-            ROOT/'tools/v08_m6a_socket_runner.py',ROOT/'tools/v08_m6a_socket_lab.cpp',ROOT/'firmware/src/boot/FirstBootBridge.cpp',ROOT/'companion/media_wire_v2_host.py']
+            ROOT/'experiments/v08_m8r/native/MediaStackThunk.cpp',ROOT/'tools/v08_m8r_core_manifest.json',ROOT/'tools/v08_m6a_socket_runner.py',ROOT/'tools/v08_m6a_socket_lab.cpp',ROOT/'firmware/src/boot/FirstBootBridge.cpp',ROOT/'companion/media_wire_v2_host.py']
     def git(*args):return subprocess.check_output(['git',*args],cwd=ROOT,text=True).strip()
     changed=git('diff','--name-only',BASE,'--').splitlines()
     allowed=lambda p:p in ('.gitignore','.github/workflows/ci.yml') or p.startswith(('experiments/v08_m8r/','tools/v08_m8r_','docs/V08_MISSION_8'))

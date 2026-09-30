@@ -1,3 +1,23 @@
+# Current continuation resource evidence
+
+30 September 2026. Continuation starts at exact existing PR #39 head
+`cb58173495f811787a0fbb2c44bc1df6621c9990` on
+`feature/shino-tv-v08-stack-remediation`; Draft PR #39 is retained.
+
+**Current status: pre-install static/regression/image checks PASS; physical qualification PENDING.**
+The user's continuation replaces the earlier whole-ROM static UNKNOWN stop
+with exact linked isolation and required physical high-water measurements.
+This is not a physical stack, heap, LCD, install or recovery PASS.
+R3 remains PARTIAL; R10 remains BLOCKED. No production key, permanent sender,
+Mission 9 work or merge. The existing one-device physical authorization remains
+in force. Immediate owner LCD recheck and the supported OEM network address are
+pending; no firmware write or media request has occurred in this continuation.
+
+Private text/data/BSS 439207/2840/32704; BIN 446144. Continuation 4096; secondary 6200; fixed Authority/Ingress/Receiver 2104/1432/1120. Lifecycle B releases the crypto stack before body/JSON. Peak explicit receiver 9256 and prior image+crypto 10808 do not include allocator/SDK overhead. Native canaries/high-water, allocation counts, minima and timing are instrumented but unmeasured physically.
+
+---
+Historical records preserved below; their gates and zero-contact statements describe those earlier runs.
+
 # Current runtime/resource gate after Mission 8R
 
 **BLOCKED: complete native stack maximum UNKNOWN.** Selected 4,096-byte-stack

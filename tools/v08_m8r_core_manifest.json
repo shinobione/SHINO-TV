@@ -1,0 +1,10 @@
+{
+  "cores/esp8266/StackThunk.cpp": "a72b2a4dafc2866a758f74d76703c894a7e9c2fb76cb2a865d93603784756255",
+  "cores/esp8266/StackThunk.h": "6e56d55c550685bd650ea9c3f63b3c5e6e10deae39e90b83ed44647448bfb831",
+  "cores/esp8266/Esp.cpp": "2b6dc6631fd9e0bdfb7c4bf39aa6e4fa90c3b3482af26130b564c9a8bf4075ac",
+  "cores/esp8266/Esp.h": "3db5193be6b6a2b1c3256cbc6ef4b228f8525491ca1781e3f43c36b08abdd41f",
+  "cores/esp8266/cont.h": "30fbb1720956b3f2bb4a91312f1d4322f7825a007cfc8c5bde6d123b9181676e",
+  "cores/esp8266/cont_util.cpp": "8d49c9f5dbffa2755bc5abb1d62c3719f77e9a6e863066237cf16f840f68eba8",
+  "cores/esp8266/cont.S": "723d6d998bc58fca7c1b72e0f0daee99df496b3f4d34a9b8df6d3d809773ba4b",
+  "cores/esp8266/core_esp8266_main.cpp": "2343b606aa24c1ed2e4f6ef36aed84ce9385c8da367cb39e3f97b1892231d8a9"
+}

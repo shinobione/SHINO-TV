@@ -71,6 +71,9 @@ class Authority {
   }
 
 public:
+  unsigned liveChallenges() const {
+    unsigned n=0; for(const auto &c:challenges) if(c.live) ++n; return n;
+  }
   uint32_t ecdsaCalls = 0;
   explicit Authority(uint64_t e) : epoch(e) {}
   bool enroll(const char *id, const uint8_t key[65], uint8_t ops,
@@ -184,8 +187,16 @@ public:
   bool proof(const Ticket &t, const uint8_t hash[32], const uint8_t sig[64]) {
     if (!t.valid || t.principal >= count)
       return false;
+#ifdef ESP8266
+    const uint32_t before=m8::cryptoStats.calls;
+    const bool ok=verify(principals[t.principal].key, hash, sig);
+    ecdsaCalls+=m8::cryptoStats.calls-before;
+    return ok;
+#else
+    if(m8::hostDenyCryptoAllocation) return false;
     ++ecdsaCalls;
     return verify(principals[t.principal].key, hash, sig);
+#endif
   }
   bool consume(int slot, const Ticket &t, uint8_t op, uint32_t now) {
     if (slot < 0 || slot >= 4 || !admit(t, op))

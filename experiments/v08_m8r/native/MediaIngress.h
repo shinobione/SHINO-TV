@@ -212,6 +212,7 @@ class Ingress {
     return proofSlot >= 0;
   }
   bool reject(const char *reason) {
+    ++rejected;
     outcome = reason;
     phase = Done;
     body.reset();
@@ -223,6 +224,7 @@ public:
   Receiver &receiver;
   const char *outcome = "IDLE";
   unsigned bodyReads = 0, bodyAllocations = 0, maxPollReads = 0;
+  uint32_t accepted=0,rejected=0;
   bool gate1Passed = false;
   Ingress(Authority &a, Receiver &r, const char *host, uint32_t (*c)())
       : expectedHost(host), clock(c), authority(a), receiver(r) {}
@@ -245,8 +247,16 @@ public:
     if (uint32_t(clock() - started) >= 2000 ||
         !authority.admit(ticket, request.op)) return reject("GATE1_STALE");
     body.reset(new (std::nothrow) uint8_t[request.length]);
-    if (!body) return reject("ALLOCATION");
+    if (!body) {
+#ifdef ESP8266
+      ++m8::runtimeStats.allocationFailures;
+#endif
+      return reject("ALLOCATION");
+    }
     ++bodyAllocations;
+#ifdef ESP8266
+    m8::sampleResources();
+#endif
     phase = Body;
     outcome = "BODY";
     return true;
@@ -257,6 +267,8 @@ public:
     authority.sweep(now);
     receiver.tick(now);
   }
+  unsigned bodyBytes() const { return body ? request.length : 0; }
+  unsigned phaseCode() const { return unsigned(phase); }
   bool reboot(uint64_t epoch) {
     if (!authority.reboot(epoch))
       return false;
@@ -373,6 +385,7 @@ public:
         if (uint32_t(clock() - started) >= 2000)
           return reject("DEADLINE");
         bool ok = receiver.receive(r, ticket.principal, clock());
+        if(ok) ++accepted; else ++rejected;
         outcome = receiver.outcome;
         phase = Done;
         body.reset();

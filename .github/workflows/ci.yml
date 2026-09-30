@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   v08-m8r-stack-remediation:
-    name: V0.8 Mission 8R focused regressions and honest UNKNOWN stack gate (no device)
+    name: V0.8 Mission 8R focused regressions and linked StackThunk isolation (no device)
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -39,7 +39,7 @@ jobs:
           python tools/v08_m8r_runner.py > "${{ runner.temp }}/v08-m8r-focused.json"
           python tools/v08_m8r_stack.py > "${{ runner.temp }}/v08-m8r-stack.json"
           python tools/v08_m8r_stack.py --environment stack_sensitivity_compile > "${{ runner.temp }}/v08-m8r-sensitivity.json"
-          python -c 'import json,os; h=json.load(open(os.environ["RUNNER_TEMP"]+"/v08-m8r-focused.json")); s=json.load(open(os.environ["RUNNER_TEMP"]+"/v08-m8r-stack.json")); assert h["head"]==s["head_at_analysis"]==os.environ["EXPECTED_HEAD"] and not h["dirty"] and not s["dirty"]; assert len(h["runs"])==2 and all(x["result"]["failed"]==0 and x["result"]["live_descriptors"]==0 for x in h["runs"]); assert h["wire_differential"]["agreement"] and h["profile_differential"]["agreement"]; assert s["known_crypto_chain_lower_bound_bytes"]==2224 and s["cont_stack_bytes"]==4096; assert s["gate"].startswith("UNKNOWN") and s["opaque_targets"]["0x4000dcf0"]=="__umulsidi3" and s["device_contacts"]==s["device_writes"]==0'
+          python -c 'import json,os; h=json.load(open(os.environ["RUNNER_TEMP"]+"/v08-m8r-focused.json")); s=json.load(open(os.environ["RUNNER_TEMP"]+"/v08-m8r-stack.json")); assert h["head"]==s["head_at_analysis"]==os.environ["EXPECTED_HEAD"] and not h["dirty"] and not s["dirty"]; assert len(h["runs"])==2 and all(x["result"]["failed"]==0 and x["result"]["live_descriptors"]==0 for x in h["runs"]); assert h["wire_differential"]["agreement"] and h["profile_differential"]["agreement"]; assert s["known_crypto_chain_lower_bound_bytes"]==2224 and s["cont_stack_bytes"]==4096; assert s["gate"]=="PASS__STACK_ISOLATION_READY_FOR_CONTROLLED_PHYSICAL_MEASUREMENT" and s["opaque_targets"]["0x4000dcf0"]=="__umulsidi3" and s["device_contacts"]==s["device_writes"]==0'
           git diff --exit-code
           test -z "$(git status --porcelain)"
       - uses: actions/upload-artifact@v4

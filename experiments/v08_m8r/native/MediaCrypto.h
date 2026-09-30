@@ -1,6 +1,7 @@
 #pragma once
 // Offline native candidate. Same pinned BearSSL API on host and Xtensa.
 #ifdef ESP8266
+#include <Arduino.h>
 #include <bearssl/bearssl.h>
 #else
 #include <bearssl.h>
@@ -8,6 +9,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include "MediaStackThunk.h"
 #ifdef _MSC_VER
 #define M8R_NOINLINE __declspec(noinline)
 #else
@@ -15,10 +17,18 @@
 #endif
 namespace m7 {
 inline void sha(const void *p, size_t n, uint8_t out[32]) {
+#ifdef ESP8266
+  const uint32_t start=micros();
+#endif
   br_sha256_context c;
   br_sha256_init(&c);
   br_sha256_update(&c, p, n);
   br_sha256_out(&c, out);
+#ifdef ESP8266
+  m8::runtimeStats.shaLastUs=uint32_t(micros()-start);
+  if(m8::runtimeStats.shaLastUs>m8::runtimeStats.shaMaxUs)
+    m8::runtimeStats.shaMaxUs=m8::runtimeStats.shaLastUs;
+#endif
 }
 inline bool equal(const uint8_t *a, const uint8_t *b, size_t n) {
   uint8_t x = 0;
@@ -27,16 +37,25 @@ inline bool equal(const uint8_t *a, const uint8_t *b, size_t n) {
   return x == 0;
 }
 inline bool publicKey(const uint8_t q[65]) {
+#ifdef ESP8266
+  return m8::publicKeyChecked(q);
+#else
   uint8_t copy[65], one[32] = {};
   memcpy(copy, q, 65);
   one[31] = 1;
   return q[0] == 4 &&
          br_ec_p256_m31.mul(copy, 65, one, 32, BR_EC_secp256r1) == 1;
+#endif
 }
 inline bool verify(const uint8_t q[65], const uint8_t hash[32],
                    const uint8_t sig[64]) {
+#ifdef ESP8266
+  return m8::verifyChecked(q, hash, sig);
+#else
+  if (m8::hostDenyCryptoAllocation) return false;
   br_ec_public_key pk = {BR_EC_secp256r1, const_cast<unsigned char *>(q), 65};
   return br_ecdsa_i15_vrfy_raw(&br_ec_p256_m31, hash, 32, &pk, sig, 64) == 1;
+#endif
 }
 inline int hex(char c) {
   return c >= '0' && c <= '9'   ? c - '0'

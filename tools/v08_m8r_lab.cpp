@@ -325,6 +325,23 @@ int main(int argc, char **argv) {
               !a.ecdsaCalls && !r.mutations,
           "stale split-phase proof denied before EC/body/mutation");
   }
+  // Checked lazy crypto allocation: failure rejects before EC/body/mutation.
+  {
+    check(m8::stackEligible(6200,6200,0,false), "exact bounded stack eligibility");
+    check(!m8::stackEligible(6199,6200,0,false) &&
+          !m8::stackEligible(6200,6199,0,false) &&
+          !m8::stackEligible(10000,10000,1,false) &&
+          !m8::stackEligible(10000,10000,0,true), "insufficient/busy stack denial");
+    m7::Authority a(epoch); setup(a,retainedKey);
+    m7::Receiver r; m7::Ingress i(a,r,"tv.test",clockNow);
+    server.setOfflineMedia(&i); host_ms=100;
+    check(a.issue(0,begin.nonce,100,1000), "allocation failure challenge");
+    m8::hostDenyCryptoAllocation=true;
+    nativeTransact(i,raw(begin));
+    m8::hostDenyCryptoAllocation=false;
+    check(!a.ecdsaCalls && !i.bodyReads && !i.bodyAllocations && !r.mutations,
+          "allocation failure fails closed with live legacy owner");
+  }
   // Profile 1.1 normalizations retain the original real signature base.
   for (int variant = 0; variant < 4; ++variant) {
     m7::Authority a(epoch);

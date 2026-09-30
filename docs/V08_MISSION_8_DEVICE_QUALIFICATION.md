@@ -1,3 +1,23 @@
+# Current physical qualification status
+
+30 September 2026. Continuation starts at exact existing PR #39 head
+`cb58173495f811787a0fbb2c44bc1df6621c9990` on
+`feature/shino-tv-v08-stack-remediation`; Draft PR #39 is retained.
+
+**Current status: pre-install static/regression/image checks PASS; physical qualification PENDING.**
+The user's continuation replaces the earlier whole-ROM static UNKNOWN stop
+with exact linked isolation and required physical high-water measurements.
+This is not a physical stack, heap, LCD, install or recovery PASS.
+R3 remains PARTIAL; R10 remains BLOCKED. No production key, permanent sender,
+Mission 9 work or merge. The existing one-device physical authorization remains
+in force. Immediate owner LCD recheck and the supported OEM network address are
+pending; no firmware write or media request has occurred in this continuation.
+
+Live V2.1 rollback GETs pass at 21:13:57–21:14:03 UTC. Candidate boot, LCD, idle, authentication and image cycles remain pending. No physical candidate evidence is claimed.
+
+---
+Historical records preserved below; their gates and zero-contact statements describe those earlier runs.
+
 # Mission 8 continuation through Mission 8R
 
 **Current gate: BLOCKED before installation.** Mission 8R starts at exact M8

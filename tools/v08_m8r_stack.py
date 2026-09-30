@@ -112,10 +112,53 @@ def inspect(environment='media_compile'):
     assert all(e['target']==0x4000dcf0 for e in fs[int(chain[-1]['address'],16)]['edges'])
     verify=next(f for f in fs.values() if f['name']=='m7::Ingress::verifyHeaders()')
     rawaddr=int(chain[0]['address'],16)
-    assert any(e['target']==rawaddr for e in verify['edges'])
+    def named(name):
+        return next((a,f) for a,f in fs.items() if f['name']==name)
+    checkedaddr,checked=named('m8::verifyChecked(unsigned char const*, unsigned char const*, unsigned char const*)')
+    assert any(e['target']==checkedaddr for e in verify['edges'])
+    switches={}
+    wrappers=[('m8CryptoVerifyNative',checked)]
+    keyname='m8::publicKeyChecked(unsigned char const*)'
+    if any(f['name']==keyname for f in fs.values()):
+        wrappers.append(('m8CryptoKeyNative',named(keyname)[1]))
+    else:
+        assert environment!='qualification_compile', 'active enrollment must link checked key wrapper'
+    for stem,wrapper in wrappers:
+        nativeaddr,native=named(stem)
+        thunkaddr,thunk=named('thunk_'+stem)
+        acquireaddr,acquire=named('m8::acquire()')
+        releaseaddr,release=named('m8::release(unsigned int)')
+        calls=[e['target'] for e in wrapper['edges']]
+        assert calls.index(acquireaddr)<calls.index(thunkaddr)<calls.index(releaseaddr)
+        instructions=thunk['instructions']
+        loads=[i for i,x in enumerate(instructions) if x[1] in ('l32i','l32i.n') and x[2]=='a1, a15, 0']
+        call=next(i for i,x in enumerate(instructions) if x[1]=='call0' and int(x[2].split()[0],16)==nativeaddr)
+        assert len(loads)==2 and loads[0]<call<loads[1]
+        assert any(e['target']==named('stack_thunk_fatal_smashing')[0] for e in thunk['edges'])
+        assert any(e['target']==named('stack_thunk_del_ref')[0] for e in release['edges'])
+        if any(f['name']=='stack_thunk_add_ref' for f in fs.values()):
+            assert not any(e['target']==named('stack_thunk_add_ref')[0] for e in acquire['edges'])
+        assert not any('m7::' in fs[e['target']]['name'] for e in native['edges'] if e['target'] in fs)
+        switches[stem]={'thunk_address':hex(thunkaddr),'continuation_frame_bytes':thunk['frame'],
+            'secondary_wrapper_frame_bytes':native['frame'],'switch_instructions':[instructions[i][3] for i in loads],
+            'crypto_call_instruction':instructions[call][3], 'canary':'pinned fatal handler linked',
+            'checked_acquire_thunk_release_order':True}
+    assert any(e['target']==rawaddr for e in named('m8CryptoVerifyNative')[1]['edges'])
+    # Linear Xtensa disassembly can lose alignment across inline padding. Decode
+    # at linked branch targets to inspect the post-proof allocation basic block.
+    proofpc=min(int(e['pc'],16) for e in verify['edges'] if e['target']==checkedaddr)
+    body_blocks=[]
+    for pc,op,arg,line in verify['instructions']:
+        if op!='bgeu' or pc<=proofpc: continue
+        target=int(arg.split(',')[-1].strip().split()[0],16)
+        block=prior.run_tool('objdump','-d','-C','--start-address='+hex(target),'--stop-address='+hex(target+48),ELF)
+        if '<operator new[]' in block:
+            assert target>proofpc and '<m7::Authority::admit' in block
+            body_blocks.append(block.split('Disassembly of section ')[-1])
+    assert body_blocks, 'post-proof admission/allocation block absent'
     for f in fs.values():
         if f['name'] in ('m7::Ingress::parse()','bool m7::Ingress::poll<WiFiClient>(WiFiClient&)'):
-            assert not any(e['target']==rawaddr for e in f['edges'])
+            assert not any(e['target'] in (rawaddr,checkedaddr) for e in f['edges'])
     cont=Path.home()/'.platformio/packages/framework-arduinoespressif8266/cores/esp8266/cont.h'
     assert '#define CONT_STACKSIZE 4096' in cont.read_text()
     config=configparser.ConfigParser(interpolation=None)
@@ -128,7 +171,13 @@ def inspect(environment='media_compile'):
     opaque={hex(e['target']):romnames.get(e['target'],'not in pinned ROM map') for a in cryptoaddrs for e in fs[a]['edges'] if e['target'] not in fs}
     nm=prior.run_tool('nm','-S','-C',ELF).splitlines()
     objects={name:int(next(x.split()[1] for x in nm if x.endswith(' '+name)),16) for name in ('m7Authority','m7Ingress','m7Receiver')}
-    result={'gate':'UNKNOWN__COMPLETE_LINKED_PATH_NOT_YET_ACCOUNTED','elf_sha256':prior.digest(ELF),
+    manifest=json.loads((ROOT/'tools/v08_m8r_core_manifest.json').read_text(encoding='utf-8'))
+    core=Path.home()/'.platformio/packages/framework-arduinoespressif8266'
+    for file,expected in manifest.items():
+        assert prior.digest(core/file)==expected, file
+    result={'gate':'PASS__STACK_ISOLATION_READY_FOR_CONTROLLED_PHYSICAL_MEASUREMENT',
+        'physical_gate':'PENDING','stack_switches':switches,'post_proof_body_blocks':body_blocks,
+        'core_manifest':manifest,'elf_sha256':prior.digest(ELF),
         'head_at_analysis':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
         'source_parent':'5179eb04ea51c2a92c7f796f07ebb963e2167e00',
         'dirty':bool(subprocess.check_output(['git','status','--porcelain'],cwd=ROOT,text=True).strip()),
@@ -147,5 +196,5 @@ def inspect(environment='media_compile'):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--environment',choices=('media_compile','stack_sensitivity_compile'),default='media_compile')
+    parser.add_argument('--environment',choices=('media_compile','stack_sensitivity_compile','qualification_compile'),default='media_compile')
     print(json.dumps(inspect(parser.parse_args().environment),indent=2))
