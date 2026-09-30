@@ -1,27 +1,114 @@
-# Current Mission 8 engineering gate
+# Mission 8 engineering gate: BLOCKED on telemetry continuity
 
-30 September 2026. Continuation starts at exact existing PR #39 head
-`cb58173495f811787a0fbb2c44bc1df6621c9990` on
-`feature/shino-tv-v08-stack-remediation`; Draft PR #39 is retained.
+1 October 2026, Europe/Paris (30 September UTC). Existing branch
+`feature/shino-tv-v08-stack-remediation`, Draft PR #39. Installed source
+`432263feb139c7af2fecc0ecaa0c348b05304914`; pre-install clean documentation head
+`979d2ff3900523a8a46d4fd86677326b515867c2`.
 
-**Current status: pre-install static/regression/image checks PASS; physical qualification PENDING.**
-The user's continuation replaces the earlier whole-ROM static UNKNOWN stop
-with exact linked isolation and required physical high-water measurements.
-This is not a physical stack, heap, LCD, install or recovery PASS.
-R3 remains PARTIAL; R10 remains BLOCKED. No production key, permanent sender,
-Mission 9 work or merge. The existing one-device physical authorization remains
-in force. Immediate owner LCD recheck is pending. The retained OEM address is
-`192.168.1.70` (prior `/v.json` and `/update` visits); its exact model/version must
-be verified live after factory return and before the second write. No firmware
-write or media request has occurred in this continuation.
+**BLOCKED — physical telemetry continuity failed during the boot baseline.**
+The exact StackThunk candidate was installed and booted, but qualification stopped
+before any media request, public-point enrollment or ECDSA. Three authenticated
+metrics GETs reported `stale:true`; the owner confirmed the LCD numbers had stopped
+updating. This is an observed continuity failure with unresolved cause, not a
+physical crypto-stack overflow finding or a renewed static ROM UNKNOWN gate.
 
-Clean committed validation at `432263feb139c7af2fecc0ecaa0c348b05304914`: both focused configurations pass;
-both PR and push CI runs pass all **11 jobs**. A clean-head rebuild produces
-byte-identical private ELF/BIN; public and private isolation analyses pass.
-One-shot offline checks verify all 202 signed packets and 190 receiver records
-across 30 coverless/32/48 groups. This does not substitute for target measurements.
-CI: [PR run](https://github.com/shinobione/SHINO-TV/actions/runs/36779971808),
-[push run](https://github.com/shinobione/SHINO-TV/actions/runs/36779968038).
+The documented OEM → retained V2.1 rollback completed. V2.1 reports 405,712 bytes;
+dashboard and exact OEM recovery capability respond. Restarting the existing
+SHINO // LINK metrics tray companion, with configuration/autostart unchanged,
+restored fresh changing telemetry at 22:13:52–22:13:57 UTC. The owner confirmed restored LCD orientation and all four updating cards
+are normal, without artifacts. Qualification did not resume after the failure. R3 remains PARTIAL,
+R10 BLOCKED; no production key, media sender, Mission 9 work or merge.
+
+SHINO uses its private AP at `192.168.4.1`. The historical OEM LAN address
+`192.168.1.70` is never a fixed assumption: after each factory return, the observed
+device MAC `c4:d8:d5:10:7e:f0` was matched in LAN neighbors, and live `/v.json`
+confirmed `SmallTV-Ultra` / `Ultra-V9.0.44` before `/update`. The actual firmware
+form used multipart field `firmware`, POST to its current `/update` URL.
+
+| Physical phase | Result |
+|---|---|
+| Immediate rollback rehash, V2.1 dashboard/metrics/OEM, owner LCD | PASS at 22:02:51–22:02:56 UTC |
+| V2.1 → OEM factory return | HTTP 200 staged, 22:03:13–22:03:24 UTC |
+| Live OEM model/version and update form | PASS at 22:04:01 UTC; observed MAC reachable |
+| OEM → exact StackThunk candidate | HTTP 200 Update Success, 22:04:13–22:04:21 UTC |
+| Candidate AP/dashboard/OEM return | PASS; actual running bytes 446,144 |
+| Boot with media untouched | Unenrolled, zero crypto allocations/calls, no body/image/staging |
+| Candidate LCD | Owner confirmed correct orientation/four updating cards initially |
+| Real PC telemetry POST | HTTP 200 RAM_SAMPLE_ACCEPTED at 22:06:51 UTC |
+| Three-minute idle baseline | NOT COMPLETED: client read auth failed after ~5 seconds of baseline |
+| Later telemetry continuity | FAIL: stale at 22:08:22, 22:08:23, 22:08:25 and 22:09:40 UTC; owner confirmed frozen numbers |
+| Crypto/authentication/coverless/32/48 | NOT RUN; zero media requests, key checks, ECDSA calls or allocations |
+| Candidate → OEM recovery | HTTP 200 staged, 22:10:46–22:10:57 UTC |
+| Recovery OEM rediscovery | First bounded GET timed out at 22:11:12; live identity/form passed at 22:11:38; no write retried |
+| OEM → exact retained V2.1 | HTTP 200 Update Success, 22:11:49–22:11:57 UTC |
+| Restored V2.1 telemetry | Fresh changing device readings after restarting existing metrics companion |
+
+All four application writes were single attempts with exact locally rehashed
+bytes; all succeeded. Each supported updater scheduled an intentional reboot.
+The candidate boot identifier remained `3667675469` with monotonically increasing
+uptime before rollback. Reset reason `4` was reported (pinned SDK software restart);
+no unexpected reset, watchdog, boot loop or canary event was observed. Continuation
+watermark reset actions repaint instrumentation; they do not reboot the device.
+
+The first local client stop was HTTP 403 because it omitted authenticated GET `/`
+to obtain the required browser metrics cookie. Source and independent live reads
+confirmed that client precondition error, with unchanged boot/no media; the helper
+was corrected and its original stop record retained. A later protected GET failed
+with HTTP 401 `digest auth failed`; subsequent independent GETs succeeded but
+telemetry was stale. Firmware, diagnostic-client Digest behavior and the existing
+sender have not been isolated as the cause. Restoring V2.1 did not by itself
+restart continuous metrics; a single real sample succeeded, and restarting the
+already running metrics companion restored continuity. That recovery does not
+qualify the candidate or establish a firmware-only regression.
+
+| Candidate observation before rollback | Measured value / limit |
+|---|---|
+| Minimum free continuation stack after pinned phase repaint | 2,080 bytes of 4,096 |
+| Minimum free heap across recorded diagnostic minima | 16,336 bytes |
+| Minimum largest free block across recorded diagnostic minima | 16,240 bytes |
+| Maximum recorded diagnostic fragmentation | 22% |
+| Maximum observed media-owner poll / service interval | 34,886 / 65,582 microseconds |
+| Secondary size / allocations / references / measured use | 6,200 / 0 / 0 / NOT EXERCISED |
+| ECDSA/key checks/SHA timing | Zero calls; latency NOT MEASURED |
+| Allocation/busy/canary failures | 0 / 0 / 0 reported |
+| Receiver pending/body/staged/image/challenges | false / 0 / 0 / 0 / 0 |
+
+These are bounded boot/legacy observations under diagnostic HTTP load, not a
+completed idle soak, whole-firmware stack proof, heap trend across transactions
+or crypto high-water proof. In particular, unallocated secondary usage `0` and
+numeric margin `6200` do not constitute measured crypto margin. No image cycle
+was completed, so replacement leaks/fragmentation remain unqualified.
+
+Private candidate: BIN 446,144 bytes, SHA-256
+`8dc18cf5135b4c7da8486d4f00bcc9b944d4bb5e4956a3f9dcbad7603ce47fea`;
+ELF SHA-256 `34e67a4d3da022fd5d9581628b8e8aa51c2fa0e4273d491a73e910dd1868205e`.
+Text/data/BSS: 439207/2840/32704. Authority/Ingress/Receiver: 2104/1432/1120.
+Main stack 4096; secondary 6200. Lifecycle B frees secondary crypto before
+body/JSON/image; explicit receiver peak 9256 and previous-image+crypto 10808
+exclude SDK/TCP/allocator overhead and remain physically untested.
+
+Retained local rollback artifacts are unchanged:
+
+| Image | Bytes | SHA-256 |
+|---|---:|---|
+| V2.1 review-003 | 405712 | `3252ba5cd1f85683945d4d9a87ce49118568c0977605debc089267f54d7f3b0e` |
+| OEM V9.0.44 application | 494144 | `a6421f5bfee7860d97bed26620c346b8008f503e513702d4bfdf6e01010a7718` |
+| Manufacturer ZIP | 349377 | `cfbef50754ec552f9791878931c5f3643734de15f3c81cebdecf7ce05b28230f` |
+
+Kit: `C:\Users\jerry\SHINO-PRIVATE\review-003`. The recovery was exercised
+successfully for this responsive application. This is application-only rollback;
+no full owner flash/filesystem restoration, power-cut safety or nonbooting rescue
+is established. Private images, credentials, policy, one-shot packets and device
+controllers remain ignored/local. No additional firmware writes followed recovery.
+
+Source/host/linked gates remain PASS: both focused OEM configurations pass
+1065 checks with zero failures, 10207 wire cases and 37 profile cases agree;
+202 signed packets / 190 receiver records were checked offline. Clean source
+head `432263feb139c7af2fecc0ecaa0c348b05304914` rebuilds the same private bytes.
+Pre-install head `979d2ff3900523a8a46d4fd86677326b515867c2` passes all 11 jobs in
+[PR CI](https://github.com/shinobione/SHINO-TV/actions/runs/36781108025) and
+[push CI](https://github.com/shinobione/SHINO-TV/actions/runs/36781102151).
+CI proves retained software checks; physical qualification remains BLOCKED.
 
 ---
 Historical records preserved below; their gates and zero-contact statements describe those earlier runs.
