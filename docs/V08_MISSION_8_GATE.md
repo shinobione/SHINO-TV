@@ -1,13 +1,13 @@
 # Current Mission 8 / 8R engineering gate
 
-**BLOCKED â€” complete native stack prerequisite remains UNKNOWN.** Mission 8R
+**BLOCKED — complete native stack prerequisite remains UNKNOWN.** Mission 8R
 implements a separate Proof phase and evaluates unmodified pinned m31 crypto.
 The known EC chain falls to 2,224 bytes; the actual ROM multiplier body and
 full owner/receiver bounds are still unproved. No installation is authorized
 by this result. Local focused regressions pass; retained CI is configured to reproduce the
 blocked static gate and cannot establish physical qualification. M8R device
 contacts/writes are zero; Parts D-live, E and F are NOT RUN. R3 remains PARTIAL,
-R10 BLOCKED. Historical PRs #29â€“38 remain preserved. The physical authorization
+R10 BLOCKED. Historical PRs #29–38 remain preserved. The physical authorization
 persists, conditional on complete static and rollback gates passing; no new
 mission is required to resume once safe. See [M8R report](V08_MISSION_8R_STACK_REMEDIATION.md)
 and [evidence](V08_MISSION_8R_STACK_EVIDENCE.json).
@@ -31,7 +31,7 @@ fit failure, not an arbitrary heap threshold or an observed physical crash.
 |---|---|
 | Exact clean start / separate branch | PASS at Mission 7 head |
 | Mission 7 report/resource/matrix/gate read | PASS; historical evidence unchanged |
-| PRs #29â€“37 | PASS live verification: all preserved OPEN/Draft |
+| PRs #29–37 | PASS live verification: all preserved OPEN/Draft |
 | Actual installed lineage | Consistent with retained V2.1 review-003: exact size, matching Digest credentials, heap schema and capabilities; no device SHA/version label exposed |
 | Physical baseline LCD / four metrics | PASS limited baseline: direct owner observation plus two fresh changing device GET readings |
 | Local rollback artifacts | PASS: exact V2.1 and OEM bytes/hashes verified; no modification |
