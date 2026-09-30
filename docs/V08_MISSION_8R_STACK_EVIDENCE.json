@@ -1,6 +1,6 @@
 {
   "mission": "8 continuation",
-  "engineering_gate": "PREINSTALL_STATIC_PASS__PHYSICAL_PENDING",
+  "engineering_gate": "PREINSTALL_STATIC_PASS__AWAITING_IMMEDIATE_LCD_OBSERVATION",
   "continuation_parent": "cb58173495f811787a0fbb2c44bc1df6621c9990",
   "branch": "feature/shino-tv-v08-stack-remediation",
   "draft_pr": 39,
@@ -2026,7 +2026,11 @@
     "device_firmware_writes": 0,
     "media_requests": 0,
     "immediate_owner_lcd_recheck": "PENDING",
-    "supported_oem_network_address": "PENDING"
+    "supported_oem_network_address": {
+      "address": "192.168.1.70",
+      "basis": "retained browser history /v.json and /update on 2026-09-28",
+      "live_oem_identity_before_second_write": "PENDING_AFTER_AUTHORIZED_FACTORY_RETURN"
+    }
   },
   "r3": "PARTIAL",
   "r10": "BLOCKED",
@@ -8056,10 +8060,188 @@
       "excludes": "allocator, SDK/TCP, graphics, stacks and other application allocations"
     }
   },
-  "evidence_scope": "Private exact ELF analysis and dirty-source local checks; reduced inventories retain frames/prologues and boundary blocks. Full ignored local stack/host reports are identified by digest. Clean-head CI is separately retained; no candidate physical measurement yet.",
+  "evidence_scope": "Private exact ELF analysis and dirty-source local checks; reduced inventories retain frames/prologues and boundary blocks. Full ignored local stack/host reports are identified by digest. Clean-head CI is separately retained; no candidate physical measurement yet. Clean committed-head evidence is now separately recorded; candidate bytes are identical.",
   "local_report_sha256": {
     "m8thunk-private-stack.json": "a13f8fdad92ee705938592dbefc2e8c58721592f76f1f29312585614a091a5f3",
     "m8thunk-public-stack.json": "4373944b5338e754cd61a7cf5cf21583a1d962749dd66f65d01fffd7f3d765ad",
     "m8thunk-focused.json": "8e0a67c0571579ce7227ce60a51f08a6e1208e58da4839c0a1af03b8af5e057d"
+  },
+  "clean_committed_validation": {
+    "head": "432263feb139c7af2fecc0ecaa0c348b05304914",
+    "focused_runs": [
+      {
+        "oem": 0,
+        "compiler": "cl.exe",
+        "result": {
+          "legacy_checks": 224,
+          "checks": 1065,
+          "failed": 0,
+          "live_descriptors": 0,
+          "contexts_created": 247,
+          "contexts_destroyed": 247,
+          "authority_bytes": 2104,
+          "ingress_bytes": 1464,
+          "receiver_bytes": 1144,
+          "sha_context_bytes": 112,
+          "max_media_poll_bytes": 64,
+          "worst_media_poll_us": 775.8
+        }
+      },
+      {
+        "oem": 1,
+        "compiler": "cl.exe",
+        "result": {
+          "legacy_checks": 227,
+          "checks": 1065,
+          "failed": 0,
+          "live_descriptors": 0,
+          "contexts_created": 249,
+          "contexts_destroyed": 249,
+          "authority_bytes": 2104,
+          "ingress_bytes": 1464,
+          "receiver_bytes": 1144,
+          "sha_context_bytes": 112,
+          "max_media_poll_bytes": 64,
+          "worst_media_poll_us": 988.5
+        }
+      }
+    ],
+    "wire_differential": {
+      "cases": 10207,
+      "admitted": 1,
+      "agreement": true
+    },
+    "profile_differential": {
+      "cases": 37,
+      "admitted": 7,
+      "agreement": true
+    },
+    "public_stack_gate": "PASS__STACK_ISOLATION_READY_FOR_CONTROLLED_PHYSICAL_MEASUREMENT",
+    "private_stack_gate": "PASS__STACK_ISOLATION_READY_FOR_CONTROLLED_PHYSICAL_MEASUREMENT",
+    "private_bin_identical_to_retained": true,
+    "private_elf_identical_to_retained": true,
+    "pr_ci": {
+      "run": 36779971808,
+      "url": "https://github.com/shinobione/SHINO-TV/actions/runs/36779971808",
+      "result": {
+        "conclusion": "success",
+        "headSha": "432263feb139c7af2fecc0ecaa0c348b05304914",
+        "jobs": [
+          {
+            "conclusion": "success",
+            "name": "V0.7 pinned-source C++ ingress lab (host only)"
+          },
+          {
+            "conclusion": "success",
+            "name": "V0.8 Mission 8R focused regressions and linked StackThunk isolation (no device)"
+          },
+          {
+            "conclusion": "success",
+            "name": "V0.8 Mission 6B corrected host security and unchanged wire differential (no device)"
+          },
+          {
+            "conclusion": "success",
+            "name": "V0.8 Mission 8 static stop evidence (no device)"
+          },
+          {
+            "conclusion": "success",
+            "name": "test"
+          },
+          {
+            "conclusion": "success",
+            "name": "V0.8 pinned parser handoff and isolated native link (no device)"
+          },
+          {
+            "conclusion": "success",
+            "name": "V0.8 fixed public crypto vectors (host only)"
+          },
+          {
+            "conclusion": "success",
+            "name": "V0.8 Mission 7 offline native receiver and full static links (no device)"
+          },
+          {
+            "conclusion": "success",
+            "name": "V0.8 full bridge link and host protocol qualification (no device)"
+          },
+          {
+            "conclusion": "success",
+            "name": "V0.8 Mission 6C partial R7 and architecture blockers (loopback only)"
+          },
+          {
+            "conclusion": "success",
+            "name": "SHINO LINK Windows-only smoke (PC, no device)"
+          }
+        ],
+        "status": "completed"
+      }
+    },
+    "push_ci": {
+      "run": 36779968038,
+      "url": "https://github.com/shinobione/SHINO-TV/actions/runs/36779968038",
+      "result": {
+        "conclusion": "success",
+        "headSha": "432263feb139c7af2fecc0ecaa0c348b05304914",
+        "jobs": [
+          {
+            "conclusion": "success",
+            "name": "test"
+          },
+          {
+            "conclusion": "success",
+            "name": "V0.7 pinned-source C++ ingress lab (host only)"
+          },
+          {
+            "conclusion": "success",
+            "name": "V0.8 Mission 8 static stop evidence (no device)"
+          },
+          {
+            "conclusion": "success",
+            "name": "V0.8 fixed public crypto vectors (host only)"
+          },
+          {
+            "conclusion": "success",
+            "name": "V0.8 full bridge link and host protocol qualification (no device)"
+          },
+          {
+            "conclusion": "success",
+            "name": "V0.8 Mission 6B corrected host security and unchanged wire differential (no device)"
+          },
+          {
+            "conclusion": "success",
+            "name": "V0.8 Mission 7 offline native receiver and full static links (no device)"
+          },
+          {
+            "conclusion": "success",
+            "name": "SHINO LINK Windows-only smoke (PC, no device)"
+          },
+          {
+            "conclusion": "success",
+            "name": "V0.8 Mission 8R focused regressions and linked StackThunk isolation (no device)"
+          },
+          {
+            "conclusion": "success",
+            "name": "V0.8 pinned parser handoff and isolated native link (no device)"
+          },
+          {
+            "conclusion": "success",
+            "name": "V0.8 Mission 6C partial R7 and architecture blockers (loopback only)"
+          }
+        ],
+        "status": "completed"
+      }
+    }
+  },
+  "one_shot_packet_validation": {
+    "public_signatures_digests_caps": 202,
+    "receiver_packets": 190,
+    "receiver_groups": 30,
+    "widths": [
+      0,
+      32,
+      48
+    ],
+    "aborts": 3,
+    "private_key_used_for_verification": false,
+    "status": "PASS_OFFLINE"
   }
 }

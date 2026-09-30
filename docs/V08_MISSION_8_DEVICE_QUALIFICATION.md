@@ -10,10 +10,20 @@ with exact linked isolation and required physical high-water measurements.
 This is not a physical stack, heap, LCD, install or recovery PASS.
 R3 remains PARTIAL; R10 remains BLOCKED. No production key, permanent sender,
 Mission 9 work or merge. The existing one-device physical authorization remains
-in force. Immediate owner LCD recheck and the supported OEM network address are
-pending; no firmware write or media request has occurred in this continuation.
+in force. Immediate owner LCD recheck is pending. The retained OEM address is
+`192.168.1.70` (prior `/v.json` and `/update` visits); its exact model/version must
+be verified live after factory return and before the second write. No firmware
+write or media request has occurred in this continuation.
 
 Live V2.1 rollback GETs pass at 21:13:57–21:14:03 UTC. Candidate boot, LCD, idle, authentication and image cycles remain pending. No physical candidate evidence is claimed.
+
+Clean committed validation at `432263feb139c7af2fecc0ecaa0c348b05304914`: both focused configurations pass;
+both PR and push CI runs pass all **11 jobs**. A clean-head rebuild produces
+byte-identical private ELF/BIN; public and private isolation analyses pass.
+One-shot offline checks verify all 202 signed packets and 190 receiver records
+across 30 coverless/32/48 groups. This does not substitute for target measurements.
+CI: [PR run](https://github.com/shinobione/SHINO-TV/actions/runs/36779971808),
+[push run](https://github.com/shinobione/SHINO-TV/actions/runs/36779968038).
 
 ---
 Historical records preserved below; their gates and zero-contact statements describe those earlier runs.
