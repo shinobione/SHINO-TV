@@ -9,6 +9,43 @@ permissions:
   contents: read
 
 jobs:
+  v08-m7-native-receiver:
+    name: V0.8 Mission 7 offline native receiver and full static links (no device)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned offline compiler and source packages
+        run: |
+          python -m pip install 'platformio==6.1.18'
+          npm ci --prefix experiments/v08_protocol --ignore-scripts --no-audit --no-fund
+      - name: Link equivalent guarded full legacy and native media candidates
+        run: pio run -d experiments/v08_m7 -e legacy_compile -e media_compile
+      - name: Execute public/synthetic real BearSSL and actual owner over loopback, no skips
+        env:
+          SHINO_ARDUINOJSON_SRC: experiments/v08_m7/.pio/libdeps/legacy_compile/ArduinoJson/src
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          python tools/v08_m7_runner.py > "${{ runner.temp }}/v08-m7-host.json"
+          python tools/v08_m7_resource.py > "${{ runner.temp }}/v08-m7-resource.json"
+          python -c 'import json,os; h=json.load(open(os.environ["RUNNER_TEMP"]+"/v08-m7-host.json")); r=json.load(open(os.environ["RUNNER_TEMP"]+"/v08-m7-resource.json")); assert h["head"]==r["head"]==os.environ["EXPECTED_HEAD"] and not h["dirty"] and not r["dirty"]; assert len(h["runs"])==2 and all(x["result"]["failed"]==0 and x["result"]["live_descriptors"]==0 for x in h["runs"]); assert h["wire_differential"]["agreement"]'
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v08-m7-native-evidence-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/v08-m7-*.json
+          if-no-files-found: error
   v08-m6c-r7-partial:
     name: V0.8 Mission 6C partial R7 and architecture blockers (loopback only)
     runs-on: ubuntu-latest
@@ -16,7 +53,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          # Historical 6C runner enforces its own mission diff. Retain it intact.
+          ref: 4d6180959b843c64e92b72425134c2dfc6688c88
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-python@v5
@@ -35,7 +73,7 @@ jobs:
       - name: Execute six stock, previous and partial R7 compositions, no skips
         env:
           SHINO_ARDUINOJSON_SRC: ${{ runner.temp }}/reference-arduinojson/src
-          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          EXPECTED_HEAD: 4d6180959b843c64e92b72425134c2dfc6688c88
         run: |
           test "$(git -C reference-arduinojson rev-parse HEAD)" = "77771d3c07668e01d8f52acb03910c1110bb373f"
           mv reference-arduinojson "${{ runner.temp }}/reference-arduinojson"
@@ -45,7 +83,7 @@ jobs:
           test -z "$(git status --porcelain)"
       - uses: actions/upload-artifact@v4
         with:
-          name: v08-m6c-r7-evidence-${{ github.event.pull_request.head.sha || github.sha }}
+          name: v08-m6c-r7-evidence-4d6180959b843c64e92b72425134c2dfc6688c88
           path: ${{ runner.temp }}/v08-m6c-evidence.json
           if-no-files-found: error
   v08-m6b-host-security:

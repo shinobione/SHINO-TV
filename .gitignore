@@ -20,6 +20,8 @@ node_modules/
 firmware/.pio/
 experiments/v08_preparse/.pio/
 experiments/v08_m6a/.pio/
+experiments/v08_m7/.pio/
+experiments/v08_m7/*.log
 experiments/v08_m6a/*.log
 experiments/v08_full_bridge/.pio/
 experiments/v08_full_bridge/*.log
