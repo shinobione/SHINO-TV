@@ -154,7 +154,7 @@ instrumented installation binary.** No BIN is committed or uploaded.
 
 Focused tests passed before dispatching the full retained CI suite. On MSVC,
 each default/OEM native composition passed **1,047 checks**, zero failures,
-246/246 contexts, zero live descriptors. The retained legacy portions passed
+246/246 default and 248/248 OEM contexts, zero live descriptors. The retained legacy portions passed
 224 / 227 checks. The wire differential passed 10,207 cases (one admit); profile
 1.1 passed 37 cases (seven admits). Maximum socket work remained 64 bytes/poll.
 The expanded tests stop at the new Proof boundary and independently revoke,
