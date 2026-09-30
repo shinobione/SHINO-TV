@@ -1,0 +1,178 @@
+{
+  "mission7_parent": "84129daa7359c73e738272b1c01131b3292dc315",
+  "started_utc": "2026-09-30T17:57:11.962146+00:00",
+  "device_requests": [
+    {
+      "utc": "2026-09-30T17:57:12.190403+00:00",
+      "http_status": 200,
+      "response_bytes": 4735,
+      "round_trip_ms": 156.0,
+      "dashboard_html_present": true,
+      "path": "/"
+    },
+    {
+      "utc": "2026-09-30T17:57:12.262844+00:00",
+      "http_status": 200,
+      "response_bytes": 1558,
+      "round_trip_ms": 78.0,
+      "data": {
+        "mode": "FIRST_BOOT_BRIDGE",
+        "application_littlefs_begin_called": false,
+        "application_autoformat_enabled": false,
+        "application_eeprom_begin_called": false,
+        "application_eeprom_commit_called": false,
+        "sdk_wifi_persistence_enabled": false,
+        "filesystem_provisioning_route": false,
+        "browser_ui_source": "PROGRAM_FLASH_ONLY",
+        "pc_metrics_storage": "RAM_ONLY",
+        "filesystem_migration_writes_compiled": false,
+        "physical_flash_bytes_observed_at_runtime": 4194304,
+        "running_application_bytes": 405712,
+        "linker_declared_free_sketch_bytes_NOT_stock_OTA_capacity": 638976,
+        "available_heap_bytes": 31168,
+        "heap_observation": {
+          "schema": "OBSERVED_HEAP_V1",
+          "sampling_interval_ms": 1000,
+          "sample_count": 1024,
+          "max_samples": 1024,
+          "state": "SATURATED",
+          "first_free_heap_bytes": 36176,
+          "latest_free_heap_bytes": 32928,
+          "latest_largest_free_block_bytes": 30248,
+          "latest_fragmentation_percent": 9,
+          "lowest_observed_free_heap_bytes": 29152,
+          "lowest_observed_largest_free_block_bytes": 28320,
+          "highest_observed_fragmentation_percent": 11
+        },
+        "factory_app_return_compiled": true,
+        "native_ota_manager": "READ_ONLY_DESIGN_GATE",
+        "native_ota_writer_compiled": false,
+        "physical_flash_or_application_OTA_writes_performed_by_diagnostics": false,
+        "physical_flash_installation_authorized": false
+      },
+      "path": "/api/v1/bridge/status"
+    },
+    {
+      "utc": "2026-09-30T17:57:12.348944+00:00",
+      "http_status": 200,
+      "response_bytes": 330,
+      "round_trip_ms": 78.0,
+      "data": {
+        "mode": "FSLESS_PC_TELEMETRY_RAM_ONLY",
+        "received": true,
+        "stale": false,
+        "ttl_seconds": 6,
+        "cpu_usage": 7.8,
+        "gpu_usage": 39,
+        "memory_used_gb": 10.74,
+        "memory_total_gb": 15.93,
+        "memory_total_available": true,
+        "schema_version": 2,
+        "gpu_vram_mb": 1816,
+        "gpu_temp_c": 56,
+        "gpu_power": 51.2,
+        "gpu_available": true,
+        "filesystem_or_eeprom_write_performed": false
+      },
+      "path": "/api/v1/bridge/metrics"
+    },
+    {
+      "utc": "2026-09-30T17:57:12.459236+00:00",
+      "http_status": 200,
+      "response_bytes": 236,
+      "round_trip_ms": 110.0,
+      "data": {
+        "firmware": "GeekMagic Ultra-V9.0.44",
+        "application_bytes": 494144,
+        "manufacturer_sha256": "a6421f5bfee7860d97bed26620c346b8008f503e513702d4bfdf6e01010a7718",
+        "full_flash_backup": false,
+        "filesystem_layout_verified": false,
+        "write_enabled": true
+      },
+      "path": "/api/v1/bridge/factory-return"
+    },
+    {
+      "utc": "2026-09-30T17:57:12.537852+00:00",
+      "http_status": 200,
+      "response_bytes": 505,
+      "round_trip_ms": 78.0,
+      "data": {
+        "mode": "OTA_MANAGER_READ_ONLY_PREFLIGHT",
+        "model": "SmallTV-Ultra",
+        "physical_flash_bytes_observed_at_runtime": 4194304,
+        "running_application_bytes": 405712,
+        "reported_free_sketch_bytes_NOT_INSTALL_APPROVAL": 638976,
+        "linked_application_ceiling": "0x100000",
+        "filesystem_write_or_migration_enabled": false,
+        "native_ota_writer_compiled": false,
+        "native_ota_upload_route_registered": false,
+        "signature_verification_implemented": false,
+        "physical_installation_authorized": false,
+        "manufacturer_application_return_separate": true
+      },
+      "path": "/api/v1/bridge/ota/capabilities"
+    },
+    {
+      "utc": "2026-09-30T17:57:17.595099+00:00",
+      "http_status": 200,
+      "response_bytes": 328,
+      "round_trip_ms": 62.0,
+      "data": {
+        "mode": "FSLESS_PC_TELEMETRY_RAM_ONLY",
+        "received": true,
+        "stale": false,
+        "ttl_seconds": 6,
+        "cpu_usage": 5,
+        "gpu_usage": 42,
+        "memory_used_gb": 10.82,
+        "memory_total_gb": 15.93,
+        "memory_total_available": true,
+        "schema_version": 2,
+        "gpu_vram_mb": 1817,
+        "gpu_temp_c": 55,
+        "gpu_power": 50.4,
+        "gpu_available": true,
+        "filesystem_or_eeprom_write_performed": false
+      },
+      "path": "/api/v1/bridge/metrics"
+    }
+  ],
+  "device_writes": 0,
+  "media_requests": 0,
+  "known_good_source": "8cef03012ae4a4864d69cbe20e02f141a36e2d54",
+  "artifacts": [
+    {
+      "path": "C:\\Users\\jerry\\SHINO-PRIVATE\\review-003\\SHINO-TV-V21-HEAP-PRIVATE-NOT-A-FLASH-APPROVAL.bin",
+      "bytes": 405712,
+      "sha256": "3252ba5cd1f85683945d4d9a87ce49118568c0977605debc089267f54d7f3b0e"
+    },
+    {
+      "path": "C:\\Users\\jerry\\SHINO-PRIVATE\\review-003\\OEM-V9.0.44-APPLICATION-ONLY.bin",
+      "bytes": 494144,
+      "sha256": "a6421f5bfee7860d97bed26620c346b8008f503e513702d4bfdf6e01010a7718"
+    }
+  ],
+  "manufacturer_zip": {
+    "zip_bytes": 349377,
+    "zip_sha256": "cfbef50754ec552f9791878931c5f3643734de15f3c81cebdecf7ce05b28230f",
+    "firmware_member": "FW-Smalltv-Ultra-V9.0.44.bin",
+    "firmware_bytes": 494144,
+    "firmware_sha256": "a6421f5bfee7860d97bed26620c346b8008f503e513702d4bfdf6e01010a7718",
+    "firmware_magic": "0xE9",
+    "firmware_segments": 2,
+    "recovery_scope": "OEM application OTA only: NOT a complete flash backup or guaranteed brick recovery"
+  },
+  "offline_artifact_gate": "PASS",
+  "device_read_gate": "READS_COMPLETE__REVIEW_REQUIRED",
+  "ended_utc": "2026-09-30T17:57:17.595099+00:00",
+  "physical_display_owner_confirmation": "Orientation correct; four CPU/GPU/RAM/GPU TEMP cards updating; no corruption, mirroring, artifacts or abnormal behavior. Direct owner response during Mission 8.",
+  "network_identity": {
+    "host": "192.168.4.1",
+    "mode": "SHINO private WPA2 AP",
+    "chip_suffix": "107ef0",
+    "windows_connected": true
+  },
+  "installed_version_label_exposed": false,
+  "installed_flash_sha256_exposed": false,
+  "version_assessment": "Consistent with retained V2.1 review-003 via exact size, matching-build Digest credentials, heap schema and capabilities; no device-reported source SHA or flash hash."
+}
