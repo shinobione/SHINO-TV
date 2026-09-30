@@ -2,15 +2,16 @@ import json
 import tempfile
 import unittest
 import io
+import hashlib
 from email.message import Message
 from pathlib import Path
 from urllib.error import URLError, HTTPError
-from urllib.request import BaseHandler
+from urllib.request import BaseHandler, parse_http_list, parse_keqv_list, HTTPDigestAuthHandler, HTTPPasswordMgrWithDefaultRealm, build_opener, ProxyHandler
 from urllib.response import addinfourl
 
 from push_fsless_metrics import (
     ENDPOINT, FIELDS, SenderError, encode_sample, make_opener,
-    read_credentials, send_one, send_sample, SendStatus, validate_host,
+    read_credentials, send_one, send_sample, SendStatus, validate_host, NoRedirect,
 )
 
 
@@ -113,7 +114,7 @@ class SenderSafetyTests(unittest.TestCase):
     def test_digest_opener_has_proxy_and_redirects_disabled(self):
         opener = make_opener("192.168.4.1", "shino", "long-password")
         names = {type(handler).__name__ for handler in opener.handlers}
-        self.assertIn("HTTPDigestAuthHandler", names)
+        self.assertIn("TelemetryDigestAuthHandler", names)
         self.assertIn("NoRedirect", names)
         # urllib may omit a ProxyHandler({}) from opener.handlers entirely,
         # because an empty handler registers no protocol methods. In both
@@ -151,17 +152,31 @@ class DigestTransport(BaseHandler):
         self.unavailable_before_challenge = False
         self.generation = 1
         self.accepted = 0
+        self.anonymous = 0
+        self.challenges = 0
 
     def http_open(self, request):
         if self.unavailable_before_challenge:
             raise URLError(ConnectionRefusedError('fixture private path'))
         headers = Message()
-        if request.get_header('Authorization'):
+        auth = request.get_header('Authorization')
+        valid = False
+        if auth:
             if self.unavailable_after_challenge:
                 raise URLError(TimeoutError('private-password Authorization nonce private-path'))
+            fields = parse_keqv_list(parse_http_list(auth.removeprefix('Digest ')))
+            md5 = lambda value: hashlib.md5(value.encode()).hexdigest()
+            expected = md5(':'.join((md5('shino:SHINO-FirstBoot:fixture-password'),
+                                    f'fixture-{self.generation}', fields['nc'], fields['cnonce'],
+                                    'auth', md5('POST:' + request.selector))))
+            valid = fields['nonce'] == f'fixture-{self.generation}' and fields['response'] == expected
+        else:
+            self.anonymous += 1
+        if valid:
             code, body = 200, b'{"status":"RAM_SAMPLE_ACCEPTED","persisted":false}'
             self.accepted += 1
         else:
+            self.challenges += 1
             code, body = 401, b''
             headers['WWW-Authenticate'] = ('Digest realm="SHINO-FirstBoot", qop="auth", '
                                          f'nonce="fixture-{self.generation}", opaque="fixture"')
@@ -171,14 +186,19 @@ class DigestTransport(BaseHandler):
 
 
 class DigestContinuityTests(unittest.TestCase):
-    def opener(self, transport):
-        opener = make_opener('192.168.4.1', 'shino', 'fixture-password-not-private')
+    def opener(self, transport, stock=False):
+        if stock:
+            store = HTTPPasswordMgrWithDefaultRealm()
+            store.add_password('SHINO-FirstBoot','http://192.168.4.1'+ENDPOINT,'shino','fixture-password')
+            opener = build_opener(ProxyHandler({}), NoRedirect(), HTTPDigestAuthHandler(store))
+        else:
+            opener = make_opener('192.168.4.1', 'shino', 'fixture-password')
         opener.add_handler(transport)
         return opener
 
     def test_interrupted_digest_handshakes_poison_retained_real_urllib_state(self):
         transport = DigestTransport()
-        opener = self.opener(transport)
+        opener = self.opener(transport, stock=True)
         self.assertTrue(send_one('192.168.4.1', opener, SAMPLE))
         transport.unavailable_after_challenge = True
         for _ in range(7):
@@ -190,6 +210,19 @@ class DigestContinuityTests(unittest.TestCase):
         for _ in range(3):
             self.assertFalse(send_one('192.168.4.1', opener, SAMPLE))
         self.assertTrue(send_one('192.168.4.1', self.opener(transport), SAMPLE))
+
+    def test_fixed_handler_reuses_challenge_and_resets_after_interrupted_auth(self):
+        transport = DigestTransport()
+        opener = self.opener(transport)
+        for _ in range(5): self.assertTrue(send_one('192.168.4.1', opener, SAMPLE))
+        self.assertEqual(transport.anonymous, 1)
+        self.assertEqual(transport.challenges, 1)
+        transport.unavailable_after_challenge = True
+        for _ in range(8): self.assertFalse(send_one('192.168.4.1', opener, SAMPLE))
+        transport.unavailable_after_challenge = False
+        transport.generation += 1
+        self.assertTrue(send_one('192.168.4.1', opener, SAMPLE))
+        self.assertEqual(transport.challenges, 2)
 
     def test_fresh_device_digest_challenge_alone_recovers_without_new_opener(self):
         transport = DigestTransport()

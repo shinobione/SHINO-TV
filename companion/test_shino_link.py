@@ -203,8 +203,9 @@ class LinkContinuityTests(unittest.TestCase):
     def test_poisoned_digest_state_is_rebuilt_before_next_bounded_attempt(self):
         engine, transport, created = self.engine()
         self.assertEqual(engine.step(0), 'CONNECTED')
-        digest = next(h for h in engine.opener.handlers if type(h).__name__ == 'HTTPDigestAuthHandler')
+        digest = next(h for h in engine.opener.handlers if type(h).__name__ == 'TelemetryDigestAuthHandler')
         digest.retried = 6 # Exact real urllib poisoned-state reproducer is retained separately.
+        transport.generation += 1 # A recreated device must reject the cached challenge.
         self.assertEqual(engine.step(2), 'RETRYING')
         self.assertIs(engine.last_result, SendStatus.HTTP_401)
         self.assertEqual(engine.step(3), 'RETRYING')

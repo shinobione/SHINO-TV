@@ -16,6 +16,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import (
     HTTPDigestAuthHandler, HTTPPasswordMgrWithDefaultRealm,
     HTTPRedirectHandler, ProxyHandler, Request, build_opener,
+    parse_http_list, parse_keqv_list,
 )
 from metrics_server import collect_metrics, query_nvidia
 
@@ -64,6 +65,32 @@ def failure_status(exc: Exception) -> SendStatus:
 class NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
+
+
+class TelemetryDigestAuthHandler(HTTPDigestAuthHandler):
+    """One endpoint/client's challenge cache; never shared or exposed in diagnostics."""
+    def __init__(self, store, url):
+        super().__init__(store)
+        self.url = url
+        self.challenge = None
+
+    def http_request(self, request):
+        if request.full_url == self.url and self.challenge and not request.has_header('Authorization'):
+            value = self.get_authorization(request, self.challenge)
+            if value:
+                request.add_unredirected_header('Authorization', 'Digest ' + value)
+        return request
+
+    def http_error_401(self, req, fp, code, msg, headers):
+        auth = headers.get('www-authenticate', '')
+        if req.full_url == self.url and auth.lower().startswith('digest '):
+            self.challenge = parse_keqv_list(parse_http_list(auth[7:]))
+        try:
+            return super().http_error_401(req, fp, code, msg, headers)
+        finally:
+            # urllib resets only after normal return; an interrupted nested auth
+            # exchange must not poison future logical attempts. Its recursion cap stays intact.
+            self.reset_retry_count()
 
 
 def validate_host(value: str) -> str:
@@ -117,7 +144,7 @@ def make_opener(host: str, user: str, password: str):
     url = "http://" + validate_host(host) + ENDPOINT
     store = HTTPPasswordMgrWithDefaultRealm()
     store.add_password("SHINO-FirstBoot", url, user, password)
-    return build_opener(ProxyHandler({}), NoRedirect(), HTTPDigestAuthHandler(store))
+    return build_opener(ProxyHandler({}), NoRedirect(), TelemetryDigestAuthHandler(store, url))
 
 
 def send_sample(host: str, opener, sample: dict, timeout: float = 3.0) -> SendStatus:
@@ -144,7 +171,10 @@ def send_sample(host: str, opener, sample: dict, timeout: float = 3.0) -> SendSt
                     data.get("status") == "RAM_SAMPLE_ACCEPTED" and data.get("persisted") is False
                     else SendStatus.MALFORMED)
     except (HTTPError, URLError, TimeoutError, OSError, ValueError) as exc:
-        return failure_status(exc)
+        result = failure_status(exc)
+        if isinstance(exc, HTTPError):
+            exc.close()
+        return result
 
 
 def send_one(host: str, opener, sample: dict, timeout: float = 3.0) -> bool:

@@ -82,6 +82,7 @@ def run():
         'companion/shino_link.py','companion/push_fsless_metrics.py',
         'companion/test_shino_link.py','companion/test_push_fsless_metrics.py',
         'companion/SHINO_LINK.md',
+        'companion/test_native_ota_legacy_client_wire.py',
     }
     allowed=lambda p:p in ('.gitignore','.github/workflows/ci.yml') or p in companion_continuity or p.startswith(('experiments/v08_m8r/','tools/v08_m8r_','docs/V08_MISSION_8'))
     assert all(allowed(p) for p in changed),changed

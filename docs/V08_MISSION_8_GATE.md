@@ -1,3 +1,65 @@
+# Mission 8 continuity continuation: PC client corrected, V2.1 gate running
+
+1 October 2026, Europe/Paris. Continue the existing branch and Draft PR #39
+from `977aed52ec9f631d532f0970faaef15fb32ebc50`. No new branch or PR.
+
+**Current gate: HOLD before further firmware writes.** The corrected PC client
+is undergoing repeated no-flash V2.1 Wi-Fi interruption/recovery and three-minute
+freshness observations. No candidate reinstall, media request or ECDSA has occurred
+in this continuity continuation. The reviewed 446144-byte candidate remains
+byte-identical (`8dc18cf5135b4c7da8486d4f00bcc9b944d4bb5e4956a3f9dcbad7603ce47fea`).
+
+Actual Windows Python 3.12 urllib reproduction proves a PC failure mode: network
+failure inside a Digest retry bypasses the stock success-only retry-counter reset.
+After enough interruptions, the long-lived opener stays at `retried > 5` and
+rejects all later challenges even after the transport returns; a fresh opener
+succeeds. Device challenge rotation alone succeeds. This proves a mechanism, not
+the uninstrumented prior incident's exact cause.
+
+The PC-only correction retains the endpoint, JSON schema, tray states/menu and
+2/4/8/16/30-second backoff measured after attempt completion. Auth/network failure
+discards the opener before the next scheduled attempt; three malformed replies
+also refresh it. A per-client, exact-endpoint Digest handler reuses a successful
+challenge, renews rejected/rebooted challenges, and resets urllib's recursion count
+in `finally` after an interrupted exchange. The original recursion bound remains.
+Steady successful POSTs avoid anonymous re-posts and shared device nonce rotation.
+No global state, immediate retry loop or extra sender process is introduced.
+
+Sanitized results distinguish accepted samples, route/timeout, refused/reset,
+HTTP 401/403, other HTTP, malformed response, invalid sample and client error.
+Optional diagnostics contain only the latest 64 attempts, client generations,
+counters and timing; no credential, Authorization, nonce value, URL, exception
+text or private path is logged. Existing configuration/autostart is unchanged.
+
+The initial opener-refresh correction recovered automatically from two deliberate
+45-second disconnections in the same tray PID, with accepted telemetry returning
+after the backoff. Both attempted freshness soaks later encountered isolated
+sender timeouts and a stale reading, then self-healed without restart. An observed
+~8-second gap between accepted samples exceeded V2.1's 6-second TTL. This was not
+staleness while HTTP 200 acceptance continued every ~2 seconds. Those failed
+soaks remain preserved, and do not satisfy the reinstall gate. The endpoint-bound
+Digest correction is now being tested in a new single process, loaded once before
+the test. No process is restarted during network recovery.
+
+Deterministic focused suite: 28 tests PASS, including actual urllib Digest hashes,
+historical poisoned state, fresh device challenge, automatic refresh, backoff,
+steady-state client retention, sanitized errors and retained legacy bridge contract.
+The first PC-fix commit `0a3f2ed8007f742b64915a600c0ca4cef591d80c` passed all 11 jobs
+in [PR CI](https://github.com/shinobione/SHINO-TV/actions/runs/36787400691) and
+[push CI](https://github.com/shinobione/SHINO-TV/actions/runs/36787395364).
+The latest Digest correction must pass its own exact-head CI and physical gate.
+Firmware/native receiver/Core and candidate bytes remain unchanged. The native
+scope guard adds only named companion files and their necessary contract test.
+
+Only after repeated V2.1 recovery and immediate rollback/LCD/OEM checks pass may
+the already-authorized candidate reinstall proceed. Then the complete three-minute
+candidate baseline must pass before enrollment/ECDSA, followed directly by the
+retained crypto/coverless/32/48 sequence. R3 PARTIAL; R10 BLOCKED. No Mission 9,
+production key, new media sender or merge.
+
+---
+Historical physical attempt and recovery record at 977aed52 preserved below.
+
 # Mission 8 engineering gate: BLOCKED on telemetry continuity
 
 1 October 2026, Europe/Paris (30 September UTC). Existing branch
