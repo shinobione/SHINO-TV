@@ -1,3 +1,16 @@
+# Recovery status after Mission 8R
+
+**No M8R device contact, installation, write, induced reset or recovery.**
+Local review-003 V2.1/OEM files and manufacturer ZIP were rehashed unchanged
+at 19:11:50 UTC / 21:11:50 Europe/Paris on 30 September 2026. Existing paths
+were reused; no credentials or artifact contents were published. Immediate
+live Part D revalidation is NOT RUN because the complete stack gate is
+UNKNOWN. Earlier live OEM-return capability below is historical, not a new
+availability claim. See [M8R gate](V08_MISSION_8R_STACK_REMEDIATION.md).
+
+---
+Historical Mission 8 record (preserved):
+
 # Mission 8 rollback preflight and recovery log
 
 30 September 2026, Europe/Paris. **No installation, device write, reset or recovery

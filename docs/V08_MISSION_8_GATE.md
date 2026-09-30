@@ -1,3 +1,37 @@
+# Current Mission 8 / 8R engineering gate
+
+**BLOCKED — complete native stack prerequisite remains UNKNOWN.** Mission 8R
+implements a separate Proof phase and evaluates unmodified pinned m31 crypto.
+The known EC chain falls to 2,224 bytes; the actual ROM multiplier body and
+full owner/receiver bounds are still unproved. No installation is authorized
+by this result. Local focused regressions pass; retained CI reproduces the
+blocked static gate and cannot establish physical qualification. M8R device
+contacts/writes are zero; Parts D-live, E and F are NOT RUN. R3 remains PARTIAL,
+R10 BLOCKED. Historical PRs #29–38 remain preserved. The physical authorization
+persists, conditional on complete static and rollback gates passing; no new
+mission is required to resume once safe. See [M8R report](V08_MISSION_8R_STACK_REMEDIATION.md)
+and [evidence](V08_MISSION_8R_STACK_EVIDENCE.json).
+
+---
+Historical Mission 8 record (preserved):
+
+# Current Mission 8 / 8R engineering gate
+
+**BLOCKED — complete native stack prerequisite remains UNKNOWN.** Mission 8R
+implements a separate Proof phase and evaluates unmodified pinned m31 crypto.
+The known EC chain falls to 2,224 bytes; the actual ROM multiplier body and
+full owner/receiver bounds are still unproved. No installation is authorized
+by this result. Local focused regressions pass; retained CI is configured to reproduce the
+blocked static gate and cannot establish physical qualification. M8R device
+contacts/writes are zero; Parts D-live, E and F are NOT RUN. R3 remains PARTIAL,
+R10 BLOCKED. Historical PRs #29–38 remain preserved. The physical authorization
+persists, conditional on complete static and rollback gates passing; no new
+mission is required to resume once safe. See [M8R report](V08_MISSION_8R_STACK_REMEDIATION.md)
+and [evidence](V08_MISSION_8R_STACK_EVIDENCE.json).
+
+---
+Historical Mission 8 record (preserved):
+
 # Mission 8 review gate
 
 30 September 2026, Europe/Paris. Exact parent

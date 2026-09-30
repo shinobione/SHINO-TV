@@ -1,3 +1,17 @@
+# Mission 8 continuation through Mission 8R
+
+**Current gate: BLOCKED before installation.** Mission 8R starts at exact M8
+head `5179eb04ea51c2a92c7f796f07ebb963e2167e00`. The phase split and pinned m31
+candidate reduce the accounted EC chain to 2,224 bytes, but complete owner,
+ROM multiplier and receiver bounds remain UNKNOWN. There was no M8R device
+contact. The earlier physical LCD confirmation and GET evidence below remain
+historical baseline evidence; no candidate physical qualification is claimed.
+The already-authorized physical sequence remains conditional on all static
+and immediate rollback gates passing. See [M8R report](V08_MISSION_8R_STACK_REMEDIATION.md).
+
+---
+Historical Mission 8 record (preserved):
+
 # Mission 8 physical SmallTV qualification: stopped before installation
 
 30 September 2026, Europe/Paris. **BLOCKED at the pre-installation stack gate.**

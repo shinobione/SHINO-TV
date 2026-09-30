@@ -1,3 +1,18 @@
+# Current runtime/resource gate after Mission 8R
+
+**BLOCKED: complete native stack maximum UNKNOWN.** Selected 4,096-byte-stack
+guarded M8R graph: text 427,907, data 2,792, BSS 30,488, BIN 434,800; Authority
+2,104, Ingress 1,424, Receiver 1,120. No extra heap scratch. Known EC chain
+2,224 bytes replaces M7's 4,384-byte accounted chain; that is not a stack-fit
+PASS. ROM `__umulsidi3`/copy/clear and complete receiver bounds remain UNKNOWN.
+Unselected 6,144-byte macro sensitivity increases SYS entry reservation by
+2,048 with no BSS/data change; a safe SYS region and target heap margin are
+unproved. There are no instrumented target readings. See [M8R resources and
+stack evidence](V08_MISSION_8R_STACK_REMEDIATION.md).
+
+---
+Historical Mission 8 record (preserved):
+
 # Mission 8 runtime resources and static stack stop
 
 30 September 2026, Europe/Paris. **BLOCKED before candidate installation.**
