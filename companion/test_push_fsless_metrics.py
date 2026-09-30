@@ -1,12 +1,16 @@
 import json
 import tempfile
 import unittest
+import io
 from email.message import Message
 from pathlib import Path
+from urllib.error import URLError, HTTPError
+from urllib.request import BaseHandler
+from urllib.response import addinfourl
 
 from push_fsless_metrics import (
     ENDPOINT, FIELDS, SenderError, encode_sample, make_opener,
-    read_credentials, send_one, validate_host,
+    read_credentials, send_one, send_sample, SendStatus, validate_host,
 )
 
 
@@ -116,6 +120,83 @@ class SenderSafetyTests(unittest.TestCase):
         # cases no inherited HTTP(S) proxy must be installed.
         proxies = [h for h in opener.handlers if type(h).__name__ == "ProxyHandler"]
         self.assertTrue(all(proxy.proxies == {} for proxy in proxies))
+
+    def test_failure_classes_are_sanitized_and_response_shape_is_strict(self):
+        class Broken:
+            def __init__(self, error): self.error = error
+            def open(self, *args, **kwargs): raise self.error
+        secret = 'Authorization nonce password C:/private/credentials.txt'
+        cases = [(URLError(TimeoutError(secret)), SendStatus.NO_ROUTE_TIMEOUT),
+                 (URLError(OSError(10051, secret)), SendStatus.NO_ROUTE_TIMEOUT),
+                 (URLError(OSError(10061, secret)), SendStatus.CONNECTION),
+                 (URLError(ConnectionRefusedError(secret)), SendStatus.CONNECTION),
+                 (ConnectionResetError(secret), SendStatus.CONNECTION),
+                 (HTTPError('http://private', 401, secret, Message(), None), SendStatus.HTTP_401),
+                 (HTTPError('http://private', 403, secret, Message(), None), SendStatus.HTTP_403)]
+        for error, expected in cases:
+            with self.subTest(expected=expected):
+                result = send_sample('192.168.4.1', Broken(error), SAMPLE)
+                self.assertIs(result, expected)
+                self.assertNotIn(secret, result.value)
+        for body in (b'[]', b'null', b'bad-json', b'\xff', b'{"status":"NO"}', b'x' * 257):
+            self.assertIs(send_sample('192.168.4.1', FakeOpener(FakeResponse(body=body)), SAMPLE), SendStatus.MALFORMED)
+
+
+class DigestTransport(BaseHandler):
+    """Real urllib Digest handlers; deterministic in-memory HTTP transport only."""
+    handler_order = 400
+
+    def __init__(self):
+        self.unavailable_after_challenge = False
+        self.unavailable_before_challenge = False
+        self.generation = 1
+        self.accepted = 0
+
+    def http_open(self, request):
+        if self.unavailable_before_challenge:
+            raise URLError(ConnectionRefusedError('fixture private path'))
+        headers = Message()
+        if request.get_header('Authorization'):
+            if self.unavailable_after_challenge:
+                raise URLError(TimeoutError('private-password Authorization nonce private-path'))
+            code, body = 200, b'{"status":"RAM_SAMPLE_ACCEPTED","persisted":false}'
+            self.accepted += 1
+        else:
+            code, body = 401, b''
+            headers['WWW-Authenticate'] = ('Digest realm="SHINO-FirstBoot", qop="auth", '
+                                         f'nonce="fixture-{self.generation}", opaque="fixture"')
+        response = addinfourl(io.BytesIO(body), headers, request.full_url, code)
+        response.msg = 'OK' if code == 200 else 'Unauthorized'
+        return response
+
+
+class DigestContinuityTests(unittest.TestCase):
+    def opener(self, transport):
+        opener = make_opener('192.168.4.1', 'shino', 'fixture-password-not-private')
+        opener.add_handler(transport)
+        return opener
+
+    def test_interrupted_digest_handshakes_poison_retained_real_urllib_state(self):
+        transport = DigestTransport()
+        opener = self.opener(transport)
+        self.assertTrue(send_one('192.168.4.1', opener, SAMPLE))
+        transport.unavailable_after_challenge = True
+        for _ in range(7):
+            self.assertFalse(send_one('192.168.4.1', opener, SAMPLE))
+        digest = next(h for h in opener.handlers if type(h).__name__ == 'HTTPDigestAuthHandler')
+        self.assertGreater(digest.retried, 5)
+        transport.unavailable_after_challenge = False
+        transport.generation += 1
+        for _ in range(3):
+            self.assertFalse(send_one('192.168.4.1', opener, SAMPLE))
+        self.assertTrue(send_one('192.168.4.1', self.opener(transport), SAMPLE))
+
+    def test_fresh_device_digest_challenge_alone_recovers_without_new_opener(self):
+        transport = DigestTransport()
+        opener = self.opener(transport)
+        for _ in range(3):
+            self.assertTrue(send_one('192.168.4.1', opener, SAMPLE))
+            transport.generation += 1
 
 
 if __name__ == "__main__":

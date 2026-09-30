@@ -76,7 +76,14 @@ def run():
             ROOT/'experiments/v08_m8r/native/MediaStackThunk.cpp',ROOT/'tools/v08_m8r_core_manifest.json',ROOT/'tools/v08_m6a_socket_runner.py',ROOT/'tools/v08_m6a_socket_lab.cpp',ROOT/'firmware/src/boot/FirstBootBridge.cpp',ROOT/'companion/media_wire_v2_host.py']
     def git(*args):return subprocess.check_output(['git',*args],cwd=ROOT,text=True).strip()
     changed=git('diff','--name-only',BASE,'--').splitlines()
-    allowed=lambda p:p in ('.gitignore','.github/workflows/ci.yml') or p.startswith(('experiments/v08_m8r/','tools/v08_m8r_','docs/V08_MISSION_8'))
+    # Mission 8 continuity continuation explicitly authorizes these PC-only files.
+    # Retain exact-path scope; firmware and unrelated companion code stay excluded.
+    companion_continuity={
+        'companion/shino_link.py','companion/push_fsless_metrics.py',
+        'companion/test_shino_link.py','companion/test_push_fsless_metrics.py',
+        'companion/SHINO_LINK.md',
+    }
+    allowed=lambda p:p in ('.gitignore','.github/workflows/ci.yml') or p in companion_continuity or p.startswith(('experiments/v08_m8r/','tools/v08_m8r_','docs/V08_MISSION_8'))
     assert all(allowed(p) for p in changed),changed
     return {'head':git('rev-parse','HEAD'),'dirty':bool(git('status','--porcelain')),'base':BASE,'runs':runs,'wire_differential':differential,'profile_differential':profile_differential,'crypto_source_hashes':crypto_hashes,'owner_source_hashes':hashes,'input_hashes':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in inputs},'public_only_generated_vectors':fixtures,'historical_preservation':True}
 

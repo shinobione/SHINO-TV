@@ -1,5 +1,6 @@
 """PC-only SHINO // LINK tests; no psutil, tray, Windows registry or device needed."""
 import json
+import io
 import tempfile
 import threading
 import unittest
@@ -7,9 +8,10 @@ from pathlib import Path
 from unittest.mock import patch
 
 from shino_link import (
-    LinkEngine, LinkError, autostart, exact_keys, load_config, save_config,
+    LinkEngine, LinkError, autostart, exact_keys, load_config, save_config, diagnostics_writer,
 )
-from push_fsless_metrics import ENDPOINT, encode_sample, send_one
+from push_fsless_metrics import ENDPOINT, encode_sample, send_one, make_opener, SendStatus
+from test_push_fsless_metrics import DigestTransport
 
 SAMPLE = {
     "ok": True, "cpu_usage": 22.5, "gpu_usage": 60.0,
@@ -165,6 +167,110 @@ class LinkEngineTests(unittest.TestCase):
                             clock=lambda: 100.0)
         engine.run(stop, states.append)
         self.assertEqual(states, ["CONNECTED"])
+
+
+class LinkContinuityTests(unittest.TestCase):
+    def engine(self):
+        transport = DigestTransport()
+        created = []
+        def factory():
+            opener = make_opener('192.168.4.1', 'shino', 'fixture-password')
+            opener.add_handler(transport)
+            created.append(opener)
+            return opener
+        engine = LinkEngine('192.168.4.1', factory(), lambda: SAMPLE.copy(), opener_factory=factory)
+        return engine, transport, created
+
+    def test_success_network_disappears_returns_success_without_restart(self):
+        engine, transport, created = self.engine()
+        self.assertEqual(engine.step(0), 'CONNECTED')
+        transport.unavailable_before_challenge = True
+        self.assertEqual(engine.step(2), 'RETRYING')
+        self.assertIs(engine.last_result, SendStatus.CONNECTION)
+        transport.unavailable_before_challenge = False
+        self.assertEqual(engine.step(3), 'RETRYING')
+        self.assertEqual(len(created), 1)
+        self.assertEqual(engine.step(4), 'CONNECTED')
+        self.assertEqual(len(created), 2)
+
+    def test_success_fresh_device_challenge_success_same_opener(self):
+        engine, transport, created = self.engine()
+        for now in (0, 2, 4):
+            transport.generation += 1
+            self.assertEqual(engine.step(now), 'CONNECTED')
+        self.assertEqual(len(created), 1)
+
+    def test_poisoned_digest_state_is_rebuilt_before_next_bounded_attempt(self):
+        engine, transport, created = self.engine()
+        self.assertEqual(engine.step(0), 'CONNECTED')
+        digest = next(h for h in engine.opener.handlers if type(h).__name__ == 'HTTPDigestAuthHandler')
+        digest.retried = 6 # Exact real urllib poisoned-state reproducer is retained separately.
+        self.assertEqual(engine.step(2), 'RETRYING')
+        self.assertIs(engine.last_result, SendStatus.HTTP_401)
+        self.assertEqual(engine.step(3), 'RETRYING')
+        self.assertEqual(len(created), 1)
+        self.assertEqual(engine.step(4), 'CONNECTED')
+        self.assertEqual(len(created), 2)
+
+    def test_repeated_interrupted_handshakes_backoff_and_automatic_return(self):
+        engine, transport, created = self.engine()
+        self.assertEqual(engine.step(0), 'CONNECTED')
+        transport.unavailable_after_challenge = True
+        now = 2
+        for delay in (2, 4, 8, 16, 30, 30, 30):
+            self.assertEqual(engine.step(now), 'RETRYING')
+            self.assertIs(engine.last_result, SendStatus.NO_ROUTE_TIMEOUT)
+            self.assertEqual(engine.next_due, now + delay)
+            count = len(created)
+            engine.step(now + delay / 2)
+            self.assertEqual(len(created), count)
+            now += delay
+        transport.unavailable_after_challenge = False
+        transport.generation += 1
+        self.assertEqual(engine.step(now), 'CONNECTED')
+        self.assertEqual(engine.next_due, now + 2)
+        self.assertEqual(engine.failures, 0)
+
+    def test_success_keeps_opener_and_diagnostics_are_bounded(self):
+        engine, transport, created = self.engine()
+        for now in range(0, 200, 2): engine.step(now)
+        self.assertEqual(len(created), 1)
+        self.assertEqual(engine.accepted, 100)
+        self.assertEqual(len(engine.diagnostics()['history']), 64)
+
+    def test_diagnostics_never_include_exception_credentials_headers_or_paths(self):
+        secret = 'password Authorization nonce C:/private/credentials.txt'
+        def broken(*args, **kwargs): raise ValueError(secret)
+        engine = LinkEngine('192.168.4.1', object(), lambda: SAMPLE, sender=broken,
+                            opener_factory=lambda: object())
+        stdout = io.StringIO()
+        with patch('sys.stdout', stdout), patch('sys.stderr', stdout):
+            engine.step(0)
+            with tempfile.TemporaryDirectory() as folder:
+                path = Path(folder) / 'diagnostics.json'
+                diagnostics_writer(path)(engine.diagnostics())
+                encoded = path.read_text(encoding='utf-8')
+        self.assertNotIn(secret, encoded + stdout.getvalue())
+        self.assertNotIn('Authorization', encoded)
+        self.assertNotIn('nonce', encoded)
+        self.assertNotIn('private', encoded)
+        self.assertEqual(json.loads(encoded)['history'][0]['result'], 'client_error')
+
+    def test_invalid_samples_do_not_rebuild_and_factory_errors_remain_bounded(self):
+        created = []
+        def factory():
+            created.append(1)
+            raise OSError('private credential file')
+        values = iter([dict(SAMPLE, cpu_usage='bad'), SAMPLE, SAMPLE])
+        engine = LinkEngine('192.168.4.1', None, lambda: next(values), opener_factory=factory)
+        self.assertEqual(engine.step(0), 'RETRYING')
+        self.assertEqual(created, [])
+        self.assertEqual(engine.step(2), 'RETRYING')
+        self.assertEqual(engine.next_due, 6)
+        self.assertEqual(engine.step(5), 'RETRYING')
+        self.assertEqual(len(created), 1)
+        self.assertEqual(engine.step(6), 'RETRYING')
+        self.assertEqual(engine.next_due, 14)
 
 
 if __name__ == "__main__":
