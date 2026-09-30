@@ -160,6 +160,25 @@ jobs:
           git rev-parse HEAD
           git diff --exit-code -- firmware companion
 
+      - name: Mission 6A stock previous corrected source and socket regressions (PC only)
+        run: |
+          python tools/v08_m6a_source_lab.py > "${{ runner.temp }}/v08-m6a-source-evidence.json"
+          python tools/v08_m6a_socket_runner.py > "${{ runner.temp }}/v08-m6a-socket-evidence.json"
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
+      - name: Mission 6A equivalent isolated native compile and static-memory comparison (no device)
+        run: |
+          pio run -d experiments/v08_m6a -e baseline_compile -e previous_compile -e corrected_compile
+          python tools/v08_m6a_size_report.py > "${{ runner.temp }}/v08-m6a-native-size.json"
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
+      - name: Preserve exact-head Mission 6A evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: v08-m6a-evidence-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/v08-m6a-*.json
+          if-no-files-found: error
+
   shino-link-windows-smoke:
     name: SHINO LINK Windows-only smoke (PC, no device)
     runs-on: windows-latest
