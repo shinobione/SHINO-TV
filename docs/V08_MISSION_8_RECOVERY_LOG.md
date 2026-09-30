@@ -1,3 +1,85 @@
+# Mission 8 continuity gate: PC recovery PASS; current LCD observation pending
+
+1 October 2026, Europe/Paris. Same branch and Draft PR #39, continuing exact
+parent `977aed52ec9f631d532f0970faaef15fb32ebc50`. Current validated code head
+`0f399dd9f435a37ab3ee751dd4751ef08f7472e9`.
+
+**HOLD before the first firmware write: current owner LCD revalidation is pending.**
+The user's Part 6 explicitly requires “revalidate current V2.1/LCD/OEM-return”.
+The PC continuity gate and immediate artifact/device checks pass. The requested
+current physical LCD observation has not yet arrived; it is distinct from new
+installation permission. Existing Mission 8 install/qualification authorization
+persists. Once that observation passes, continue directly here through supported
+OEM return, exact candidate reinstall, a full three-minute baseline with the same
+tray process, and then the retained crypto/coverless/32/48 sequence. No new mission,
+branch, PR, private key or sender is needed. No firmware write or media request has
+occurred in this continuity continuation; the device is still known-good V2.1.
+
+The PC fault mechanism is reproduced with actual Windows Python 3.12 urllib:
+interrupted Digest exchanges can bypass its success-only retry-counter reset.
+After `retried > 5`, a retained stock opener rejects later authentication even
+after the transport returns; fresh state succeeds. Challenge rotation alone
+recovers. This proves a PC failure mode consistent with the previous restart-only
+recovery, but does not identify the exact uninstrumented prior incident.
+
+The corrected engine uses an explicit opener factory, discards HTTP/Digest state
+after auth/network failure before the next scheduled attempt, and keeps successful
+state. An exact-endpoint Digest subclass caches successful challenges, renews
+rejected/rebooted challenges and resets recursion bookkeeping in `finally`.
+Steady sending avoids anonymous repeated POSTs/shared nonce rotation. Backoff remains
+2/4/8/16/30 seconds after attempt completion; no immediate retry loop or duplicate
+sender process. Endpoint, JSON schema, tray states/menu, config and autostart remain
+unchanged. Optional atomic diagnostics retain only the latest 64 sanitized attempt
+classes, counters, client generations and timings. No credentials, Authorization,
+nonce value, raw exception text, URL or private path is recorded.
+
+| Validation | Result |
+|---|---|
+| Deterministic actual-urllib Digest/proof/recovery/security suite | 28 tests PASS |
+| Original stock poisoned state | Reproduced; failure provenance retained |
+| Fresh device challenge / interrupted auth / automatic rebuild | PASS |
+| Backoff / steady-state opener retention / sanitized diagnostics | PASS |
+| Initial opener-refresh-only device trials | Self-healed; two freshness soaks stopped on isolated timeout/stale reading; preserved |
+| Revised client, no-flash V2.1 interruption 1 | Automatic recovery; full three-minute fresh/changing metrics observation PASS |
+| Revised client, no-flash V2.1 interruption 2 | Automatic recovery; full three-minute fresh/changing metrics observation PASS |
+| Process lifecycle in revised test | Same PID 6100 throughout both cycles; no manual restart |
+| Firmware writes / media / enrollment / ECDSA in this continuation | 0 / 0 / 0 / 0 |
+| Immediate rollback artifact rehash and V2.1/OEM GET checks | PASS at 23:08:58–23:09:04 UTC |
+| Current LCD revalidation | PENDING owner observation requested in this chat |
+| Candidate reinstall and candidate physical receiver qualification | NOT RUN; pending that last pre-install observation |
+
+Cycle 1 returned to accepted telemetry in 30.109 seconds after reconnect request, without restart; client generation 6. Cycle 2 returned to accepted telemetry in 30.109 seconds after reconnect request, without restart; client generation 11.
+
+three-minute recovery soak 1: 181.063 seconds, 35 fresh device readings. three-minute recovery soak 2: 181.625 seconds, 35 fresh device readings.
+
+All observed revised-test metrics GETs were fresh with GPU/RAM availability and
+changing CPU/GPU/RAM values; GPU temperature was available even when numerically
+steady. The sender records show actual HTTP 200 RAM_SAMPLE_ACCEPTED responses,
+and failures during outages/recovery remain counted. This is bounded observation,
+not a claim of uninterrupted acceptance at every instant. The earlier ~8-second
+accepted-sample gap explains TTL staleness and self-healed; it was not stale telemetry
+while HTTP 200 acceptance continued every ~2 seconds. No firmware-only cause is
+established by those PC transport failures.
+
+Both retained CI suites passed all 11 jobs at the exact revised code head:
+[PR run 36788914202](https://github.com/shinobione/SHINO-TV/actions/runs/36788914202),
+[push run 36788908785](https://github.com/shinobione/SHINO-TV/actions/runs/36788908785).
+The guarded native scope check permits only the explicitly named companion files
+and necessary contract test. Firmware/Core/native receiver are unchanged. Candidate
+BIN remains exactly 446144 bytes, SHA-256
+`8dc18cf5135b4c7da8486d4f00bcc9b944d4bb5e4956a3f9dcbad7603ce47fea`;
+ELF `34e67a4d3da022fd5d9581628b8e8aa51c2fa0e4273d491a73e910dd1868205e`.
+No crypto stack high-water or image replacement evidence is inferred from PC tests.
+
+SHINO's current private AP is `192.168.4.1`. Any OEM domestic LAN address must be
+rediscovered and verified through live `/v.json` before each `/update` write;
+historical `192.168.1.70` is never a guaranteed address. Retained review-003 V2.1,
+OEM and ZIP hashes are unchanged. R3 remains PARTIAL; R10 BLOCKED. No Mission 9,
+production key/media sender, firmware source change or merge.
+
+---
+Historical checkpoints and prior physical attempt preserved below.
+
 # Mission 8 continuity continuation: PC client corrected, V2.1 gate running
 
 1 October 2026, Europe/Paris. Continue the existing branch and Draft PR #39
