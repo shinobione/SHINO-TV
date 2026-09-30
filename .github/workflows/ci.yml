@@ -9,6 +9,37 @@ permissions:
   contents: read
 
 jobs:
+  v08-m6b-host-security:
+    name: V0.8 Mission 6B corrected host security and unchanged wire differential (no device)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install retained pinned Structured Fields dependency without lifecycle scripts
+        run: npm ci --prefix experiments/v08_protocol --ignore-scripts --no-audit --no-fund
+      - name: Execute corrected candidate and retain vulnerable provenance, with no skips
+        run: |
+          python tools/v08_m6b_evidence.py > "${{ runner.temp }}/v08-m6b-security-evidence.json"
+          python -c 'import json, os; e=json.load(open(os.environ["RUNNER_TEMP"]+"/v08-m6b-security-evidence.json")); assert e["head"] == os.environ["EXPECTED_HEAD"] and e["working_tree_clean"]'
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v08-m6b-security-evidence-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/v08-m6b-security-evidence.json
+          if-no-files-found: error
   v07-source-executed-ingress:
     name: V0.7 pinned-source C++ ingress lab (host only)
     runs-on: ubuntu-latest
