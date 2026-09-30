@@ -1,0 +1,130 @@
+# Mission 8 runtime resources and static stack stop
+
+30 September 2026, Europe/Paris. **BLOCKED before candidate installation.**
+This report separates actual existing-V2.1 device observations from native
+compiler/link evidence. There is no instrumented Mission 8 target measurement.
+
+## Existing device observations
+
+| Existing review-003 reading | Bytes/value | Scope |
+|---|---:|---|
+| Free heap at status GET | 31,168 | One physical device response, including current GET load |
+| Lowest observed free heap | 29,152 | Retained finite accumulator, already SATURATED |
+| Lowest observed largest free block | 28,320 | Same retained accumulator |
+| Highest observed fragmentation | 11% | Same retained accumulator |
+| First/latest recorded free heap | 36,176 / 32,928 | Same retained accumulator |
+| Latest recorded block/fragmentation | 30,248 / 9% | Same retained accumulator |
+| Samples / interval | 1,024 / 1,000 ms | Saturated, no longer recording new extrema |
+
+These extrema were read now but collected earlier during this boot. They do not
+describe Mission 8, the current GET's true transient peak, or a new continuous
+soak. No reset was requested to clear the accumulator. No arbitrary safe heap
+threshold is inferred from these numbers.
+
+## Reproduced unchanged Mission 7 graph
+
+Local PlatformIO **6.2.0**, espressif8266 **4.2.1**, Core **3.1.2**,
+Xtensa GCC **10.3.0**, ArduinoJson **7.4.3**, GFX **1.6.4**, AnimatedGIF **2.2.0**.
+The full build has the inherited zero-valued startup guard and public inert
+policy. It is **not an install candidate**: OEM restore is disabled in that
+public policy and authority remains unprovisioned/epoch zero. No private policy
+was copied into an executable candidate.
+
+| Bytes | Mission 6A legacy equivalent | Mission 7 media equivalent | Delta |
+|---|---:|---:|---:|
+| ELF text | 394,647 | 427,771 | +33,124 |
+| ELF data | 1,672 | 2,792 | +1,120 |
+| ELF BSS | 26,960 | 30,456 | +3,496 |
+| BIN | 400,416 | 434,656 | +34,240 |
+
+| Reproduced local artifact | SHA-256 |
+|---|---|
+| `experiments/v08_m7/.pio/build/media_compile/firmware.elf` | `5a63a5b4c8551a0c23965b2d9c5ed1b01a3af22931e9a00e6f0897be8fe45099` |
+| `experiments/v08_m7/.pio/build/media_compile/firmware.bin` | `3a4ff5b8aa4b9ff7656c8cbed25048d86e52c3ac936b4b742f143b5eeed76b7c` |
+| Legacy equivalent ELF | `a05c873b98b71272238dbbf9dd69acb3c50014b62df5c6e74388755033fece69` |
+| Legacy equivalent BIN | `e1c11c2b011fd446cc520de3bddfae4341852096ee88efb78a4a444d6f4a4f0e` |
+
+These exact local artifacts are identified; CI generates separate artifacts
+and hashes. Local paths/toolchain metadata can change hashes between builds.
+The preserved clean Mission 7 CI resource artifact instead reports text 427,775
+and ELF hash `aec30a993f79e32fcb8f4460df394a91db23995a8b293463e8542472d6dbdaad`.
+It is historical evidence, not this local binary.
+
+Compared with the retained 405,712-byte V2.1 image, the guarded media BIN is
+28,944 bytes larger. That is a size comparison only: startup, private/OEM policy
+and diagnostic composition differ, so this is not an equivalent V2.1 feature delta.
+The linked `4m3m` application ceiling is `0x100000` (1,048,576 bytes; PlatformIO
+maximum program size 1,044,464). This inherited BIN is below the app ceiling.
+Its sector-rounded 438,272 bytes are below the live reported 638,976 free-sketch
+bytes. With the current app rounded to 409,600, the modeled staging gap is
+200,704 bytes. None of that establishes candidate safety or live OEM acceptance:
+**flash fit passes arithmetically; stack fit fails.**
+
+Native fixed objects remain Authority 2,104, Ingress 1,384, Receiver 1,120 and
+existing server 424 bytes. Maximum explicit allocations remain: body 552,
+JSON arena 4,096, image 0/2,048/4,608 bytes. Before a replacement Begin accepts,
+previous image + arena + body can total **9,256 bytes**, excluding allocator,
+TCP/SDK, stack and graphics costs. Arena dies before new image staging; Commit
+moves ownership without another full-image copy. These are inherited bounds,
+not measured target margins.
+
+## Actual linked call-chain evidence
+
+`tools/v08_m8_stack_gate.py` disassembles the actual ELF, verifies prologue
+stack decrements and direct calls, resolves `br_ec_p256_m15`'s offset-24
+function pointer to `api_muladd`, and resolves that adapter's literal-backed
+tail jump to `api_muladd$part$0`. These are nested calls on one continuation
+stack, not a sum of unrelated compiler frames. `p256_mul` computes its initial
+window by calling `p256_add`, which calls `mul_f256`, which calls `mul20`.
+
+| Function on reachable nested path | Actual linked frame, bytes |
+|---|---:|
+| `Ingress::poll<WiFiClient>` | 736 |
+| `Ingress::parse` | 784 |
+| `br_ecdsa_i15_vrfy_raw` | 720 |
+| `api_muladd$part$0` | 528 |
+| `p256_mul` | 1,264 = 32 + 1,232 |
+| `p256_add` | 624 |
+| `mul_f256` | 192 |
+| Xtensa `mul20` | 1,056 = 32 + 1,024 |
+| Crypto-only subtotal | **4,384** |
+| Receiver + crypto subtotal | **5,904** |
+| Core continuation stack | **4,096** |
+
+The crypto subtotal already exceeds available stack by **288 bytes**; receiver
+plus crypto exceeds it by **1,808 bytes**, before owner, application loop,
+continuation entry and other callees. The preserved Core header defines 4,096
+and no project stack override is configured. The SDK multiplier's 1,056-byte
+scratch frame was missing from the earlier C-only compiler-frame view. This
+resolves a concrete concern that Mission 7 explicitly left HOLD.
+
+This does not prove that the physical SmallTV has crashed; the path was never
+sent to it. It proves the inherited native activation fails the static stack
+fit check. Raising stack size, changing crypto, switching stacks or moving parser
+storage is a separate implementation and memory-budget review, not an automatic
+qualification workaround. No such change was made.
+
+Reproduce both inherited links, then run `python tools/v08_m8_stack_gate.py`.
+Expected evidence is BLOCKED with 4,384/5,904 versus 4,096, with all call/prologue
+checks passing. [Local disassembly evidence](V08_MISSION_8_STACK_EVIDENCE.json)
+includes hashes, addresses, call instructions and pointer/tail resolution.
+
+## Required Mission 8 instrumentation and target measurements
+
+| Requested measurement | Mission 8 status |
+|---|---|
+| Free heap / largest block / fragmentation | Existing V2.1 readings above; candidate NOT MEASURED |
+| Stack/high-water | Static blocker proven; physical high-water NOT MEASURED |
+| Allocation failures | NOT MEASURED on candidate |
+| Receiver phase / body buffer / staging size | No candidate activated; inherited bounds only |
+| Challenge count / transaction state | No physical media transaction |
+| ECDSA / SHA duration | NOT MEASURED on ESP8266 |
+| Request/poll / longest application service interval | NOT MEASURED; HTTP GET RTT is not loop timing |
+| Watchdog/reset / boot reason | Existing endpoints do not expose these; UNKNOWN |
+| Wi-Fi reconnect count | Not exposed; current AP connected, no counter evidence |
+| Media accept/reject counters | No candidate active; no physical media requests |
+
+The Phase 2 bounded counter/ring-buffer diagnostic adapter was not implemented
+after identifying this earlier unsafe stack prerequisite. No fabricated zeros,
+host timing, CI or saturated baseline readings substitute for these missing
+candidate measurements.

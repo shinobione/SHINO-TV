@@ -1,0 +1,256 @@
+{
+  "gate": "BLOCKED__NATIVE_STACK_PATH_EXCEEDS_CONT_STACK",
+  "evidence_kind": "linked Xtensa static reachable-path lower bound, NOT device high-water",
+  "source_parent": "84129daa7359c73e738272b1c01131b3292dc315",
+  "head_at_analysis": "84129daa7359c73e738272b1c01131b3292dc315",
+  "instrumented_mission8_candidate_built": false,
+  "sections": {
+    "legacy_compile": {
+      "text": 394647,
+      "data": 1672,
+      "bss": 26960,
+      "bin_bytes": 400416,
+      "elf_sha256": "a05c873b98b71272238dbbf9dd69acb3c50014b62df5c6e74388755033fece69",
+      "bin_sha256": "e1c11c2b011fd446cc520de3bddfae4341852096ee88efb78a4a444d6f4a4f0e"
+    },
+    "media_compile": {
+      "text": 427771,
+      "data": 2792,
+      "bss": 30456,
+      "bin_bytes": 434656,
+      "elf_sha256": "5a63a5b4c8551a0c23965b2d9c5ed1b01a3af22931e9a00e6f0897be8fe45099",
+      "bin_sha256": "3a4ff5b8aa4b9ff7656c8cbed25048d86e52c3ac936b4b742f143b5eeed76b7c"
+    }
+  },
+  "frames": [
+    {
+      "function": "br_ecdsa_i15_vrfy_raw",
+      "frame_bytes": 720,
+      "address": "40233a90",
+      "prologue": [
+        "40233a90:\td0a292               \tmovi\ta9, 0x2d0",
+        "40233a93:\tc01190               \tsub\ta1, a1, a9",
+        "40233a96:\taf61f2               \ts32i\ta15, a1, 0x2bc",
+        "40233a99:\t02fd                \tmov.n\ta15, a2",
+        "40233a9b:\tb261c2               \ts32i\ta12, a1, 0x2c8",
+        "40233a9e:\t0528                \tl32i.n\ta2, a5, 0",
+        "40233aa0:\t05cd                \tmov.n\ta12, a5",
+        "40233aa2:\t0f58                \tl32i.n\ta5, a15, 0",
+        "40233aa4:\tb36102               \ts32i\ta0, a1, 0x2cc",
+        "40233aa7:\tb161d2               \ts32i\ta13, a1, 0x2c4",
+        "40233aaa:\tb061e2               \ts32i\ta14, a1, 0x2c0",
+        "40233aad:\t039d                \tmov.n\ta9, a3"
+      ]
+    },
+    {
+      "function": "api_muladd$part$0",
+      "frame_bytes": 528,
+      "address": "4023398c",
+      "prologue": [
+        "4023398c:\t10a292               \tmovi\ta9, 0x210",
+        "4023398f:\tc01190               \tsub\ta1, a1, a9",
+        "40233992:\t8261c2               \ts32i\ta12, a1, 0x208",
+        "40233995:\t8061e2               \ts32i\ta14, a1, 0x200",
+        "40233998:\t20c330               \tor\ta12, a3, a3",
+        "4023399b:\t02ed                \tmov.n\ta14, a2",
+        "4023399d:\t023d                \tmov.n\ta3, a2",
+        "4023399f:\tf0a022               \tmovi\ta2, 240",
+        "402339a2:\t221a                \tadd.n\ta2, a2, a1",
+        "402339a4:\t7a6172               \ts32i\ta7, a1, 0x1e8",
+        "402339a7:\t836102               \ts32i\ta0, a1, 0x20c",
+        "402339aa:\t8161d2               \ts32i\ta13, a1, 0x204"
+      ]
+    },
+    {
+      "function": "p256_mul",
+      "frame_bytes": 1264,
+      "address": "40233490",
+      "prologue": [
+        "40233490:\te0c112               \taddi\ta1, a1, -32",
+        "40233493:\td0a492               \tmovi\ta9, 0x4d0",
+        "40233496:\t7109                \ts32i.n\ta0, a1, 28",
+        "40233498:\t61c9                \ts32i.n\ta12, a1, 24",
+        "4023349a:\t51d9                \ts32i.n\ta13, a1, 20",
+        "4023349c:\t41e9                \ts32i.n\ta14, a1, 16",
+        "4023349e:\t31f9                \ts32i.n\ta15, a1, 12",
+        "402334a0:\tb4a452               \tmovi\ta5, 0x4b4",
+        "402334a3:\tc01190               \tsub\ta1, a1, a9",
+        "402334a6:\tc0a3c2               \tmovi\ta12, 0x3c0",
+        "402334a9:\tb0a482               \tmovi\ta8, 0x4b0",
+        "402334ac:\t551a                \tadd.n\ta5, a5, a1"
+      ]
+    },
+    {
+      "function": "p256_add",
+      "frame_bytes": 624,
+      "address": "40232a54",
+      "prologue": [
+        "40232a54:\t70a292               \tmovi\ta9, 0x270",
+        "40232a57:\tc01190               \tsub\ta1, a1, a9",
+        "40232a5a:\t9861e2               \ts32i\ta14, a1, 0x260",
+        "40232a5d:\ta0a0e2               \tmovi\ta14, 160",
+        "40232a60:\ta3ea                \tadd.n\ta10, a3, a14",
+        "40232a62:\t9a61c2               \ts32i\ta12, a1, 0x268",
+        "40232a65:\t02cd                \tmov.n\ta12, a2",
+        "40232a67:\t40a122               \tmovi\ta2, 0x140",
+        "40232a6a:\t9961d2               \ts32i\ta13, a1, 0x264",
+        "40232a6d:\t221a                \tadd.n\ta2, a2, a1",
+        "40232a6f:\t03dd                \tmov.n\ta13, a3",
+        "40232a71:\t0a3d                \tmov.n\ta3, a10"
+      ]
+    },
+    {
+      "function": "mul_f256",
+      "frame_bytes": 192,
+      "address": "40232938",
+      "prologue": [
+        "40232938:\tc0a092               \tmovi\ta9, 192",
+        "4023293b:\tc01190               \tsub\ta1, a1, a9",
+        "4023293e:\t2e61c2               \ts32i\ta12, a1, 184",
+        "40232941:\t02cd                \tmov.n\ta12, a2",
+        "40232943:\t012d                \tmov.n\ta2, a1",
+        "40232945:\t2d61d2               \ts32i\ta13, a1, 180",
+        "40232948:\t2f6102               \ts32i\ta0, a1, 188",
+        "4023294b:\t2c61e2               \ts32i\ta14, a1, 176",
+        "4023294e:\t2b61f2               \ts32i\ta15, a1, 172",
+        "40232951:\tff1645               \tcall0\t40231ab8 <mul20>",
+        "40232954:\t4cc132               \taddi\ta3, a1, 76",
+        "40232957:\t01dd                \tmov.n\ta13, a1"
+      ]
+    },
+    {
+      "function": "mul20",
+      "frame_bytes": 1056,
+      "address": "40231ab8",
+      "prologue": [
+        "40231ab8:\te0c112               \taddi\ta1, a1, -32",
+        "40231abb:\t00a492               \tmovi\ta9, 0x400",
+        "40231abe:\t7109                \ts32i.n\ta0, a1, 28",
+        "40231ac0:\t61c9                \ts32i.n\ta12, a1, 24",
+        "40231ac2:\t51d9                \ts32i.n\ta13, a1, 20",
+        "40231ac4:\t41e9                \ts32i.n\ta14, a1, 16",
+        "40231ac6:\t31f9                \ts32i.n\ta15, a1, 12",
+        "40231ac8:\tc01190               \tsub\ta1, a1, a9",
+        "40231acb:\tf76122               \ts32i\ta2, a1, 0x3dc",
+        "40231ace:\t1ca222               \tmovi\ta2, 0x21c",
+        "40231ad1:\t04cd                \tmov.n\ta12, a4",
+        "40231ad3:\t221a                \tadd.n\ta2, a2, a1"
+      ]
+    },
+    {
+      "function": "m7::Ingress::parse()",
+      "frame_bytes": 784,
+      "address": "40206bd4",
+      "prologue": [
+        "40206bd4:\t10a392               \tmovi\ta9, 0x310",
+        "40206bd7:\tffe931               \tl32r\ta3, 40206b7c <m7::text(char const*, unsigned int)+0xdc>",
+        "40206bda:\tc01190               \tsub\ta1, a1, a9",
+        "40206bdd:\tc261c2               \ts32i\ta12, a1, 0x308",
+        "40206be0:\tc36102               \ts32i\ta0, a1, 0x30c",
+        "40206be3:\tc161d2               \ts32i\ta13, a1, 0x304",
+        "40206be6:\tc061e2               \ts32i\ta14, a1, 0x300",
+        "40206be9:\tbf61f2               \ts32i\ta15, a1, 0x2fc",
+        "40206bec:\tac6122               \ts32i\ta2, a1, 0x2b0",
+        "40206bef:\tfff601               \tl32r\ta0, 40206bc8 <m7::text(char const*, unsigned int)+0x128>",
+        "40206bf2:\t0000c0               \tcallx0\ta0",
+        "40206bf5:\t02cd                \tmov.n\ta12, a2"
+      ]
+    },
+    {
+      "function": "bool m7::Ingress::poll<WiFiClient>(WiFiClient&)",
+      "frame_bytes": 736,
+      "address": "4020e0cc",
+      "prologue": [
+        "4020e0cc:\te0a292               \tmovi\ta9, 0x2e0",
+        "4020e0cf:\tc01190               \tsub\ta1, a1, a9",
+        "4020e0d2:\tb361f2               \ts32i\ta15, a1, 0x2cc",
+        "4020e0d5:\t05d2f2               \taddmi\ta15, a2, 0x500",
+        "4020e0d8:\tb661c2               \ts32i\ta12, a1, 0x2d8",
+        "4020e0db:\t02cd                \tmov.n\ta12, a2",
+        "4020e0dd:\t122f22               \tl32i\ta2, a15, 72",
+        "4020e0e0:\tb561d2               \ts32i\ta13, a1, 0x2d4",
+        "4020e0e3:\tb461e2               \ts32i\ta14, a1, 0x2d0",
+        "4020e0e6:\tb76102               \ts32i\ta0, a1, 0x2dc",
+        "4020e0e9:\t220b                \taddi.n\ta2, a2, -1",
+        "4020e0eb:\t20e330               \tor\ta14, a3, a3"
+      ]
+    }
+  ],
+  "direct_edges": [
+    {
+      "caller": "bool m7::Ingress::poll<WiFiClient>(WiFiClient&)",
+      "callee": "m7::Ingress::parse()",
+      "calls": [
+        "4020e24f:\tf89845               \tcall0\t40206bd4 <m7::Ingress::parse()>"
+      ]
+    },
+    {
+      "caller": "m7::Ingress::parse()",
+      "callee": "br_ecdsa_i15_vrfy_raw",
+      "calls": [
+        "402073e0:\t2c6ac5               \tcall0\t40233a90 <br_ecdsa_i15_vrfy_raw>"
+      ]
+    },
+    {
+      "caller": "api_muladd$part$0",
+      "callee": "p256_mul",
+      "calls": [
+        "402339cc:\tffac05               \tcall0\t40233490 <p256_mul>",
+        "402339f6:\tffa985               \tcall0\t40233490 <p256_mul>"
+      ]
+    },
+    {
+      "caller": "p256_mul",
+      "callee": "p256_add",
+      "calls": [
+        "402334eb:\tff5685               \tcall0\t40232a54 <p256_add>",
+        "402335ad:\tff4a45               \tcall0\t40232a54 <p256_add>"
+      ]
+    },
+    {
+      "caller": "p256_add",
+      "callee": "mul_f256",
+      "calls": [
+        "40232a8b:\tffeac5               \tcall0\t40232938 <mul_f256>",
+        "40232a9b:\tffe9c5               \tcall0\t40232938 <mul_f256>",
+        "40232ab0:\tffe845               \tcall0\t40232938 <mul_f256>",
+        "40232acf:\tffe685               \tcall0\t40232938 <mul_f256>",
+        "40232adc:\tffe585               \tcall0\t40232938 <mul_f256>",
+        "40232ae9:\tffe4c5               \tcall0\t40232938 <mul_f256>",
+        "40232bbc:\tffd785               \tcall0\t40232938 <mul_f256>",
+        "40232bcc:\tffd685               \tcall0\t40232938 <mul_f256>",
+        "40232c90:\tffca45               \tcall0\t40232938 <mul_f256>",
+        "40232ca2:\tffc945               \tcall0\t40232938 <mul_f256>",
+        "40232cfe:\tffc385               \tcall0\t40232938 <mul_f256>",
+        "40232d0e:\tffc285               \tcall0\t40232938 <mul_f256>"
+      ]
+    },
+    {
+      "caller": "mul_f256",
+      "callee": "mul20",
+      "calls": [
+        "40232951:\tff1645               \tcall0\t40231ab8 <mul20>"
+      ]
+    }
+  ],
+  "indirect_edge": {
+    "implementation": "br_ec_p256_m15",
+    "muladd_offset": 24,
+    "linked_pointer_dump": "\nC:\\Users\\jerry\\SHINO-TV-V06-AUDIT\\experiments\\v08_m7\\.pio\\build\\media_compile\\firmware.elf:     file format elf32-xtensa-le\n\nContents of section .irom0.text:\n 4025d2f0 00008000 381a2340 441a2340 004f2340  ....8.#@D.#@.O#@\n 4025d300 30392340 50372340 743a2340           09#@P7#@t:#@    \n",
+    "api_muladd_tail": [
+      "40233a88:\t0009a0               \tjx\ta9"
+    ],
+    "tail_literal_dump": "\nC:\\Users\\jerry\\SHINO-TV-V06-AUDIT\\experiments\\v08_m7\\.pio\\build\\media_compile\\firmware.elf:     file format elf32-xtensa-le\n\nContents of section .irom0.text:\n 4021fb84 8c392340                             .9#@            \n"
+  },
+  "cont_stack_bytes": 4096,
+  "crypto_path_lower_bound_bytes": 4384,
+  "receiver_and_crypto_path_lower_bound_bytes": 5904,
+  "omitted": [
+    "application loop",
+    "handleClient owner",
+    "continuation entry",
+    "additional callees"
+  ],
+  "cont_header_sha256": "30fbb1720956b3f2bb4a91312f1d4322f7825a007cfc8c5bde6d123b9181676e",
+  "device_writes": 0
+}
