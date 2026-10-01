@@ -26,13 +26,15 @@ def fixture_source(fixtures):
     lines += [f'const char* retainedKey={literal(fixtures["retained_key"])};',f'const char* syntheticKey={literal(fixtures["synthetic_key"])};']
     for name,e in fixtures['retained'].items():lines.append(f'Fixture {name}={{{literal(e["header"])},{literal(e["body_hex"])},{literal(e["nonce"])}}};')
     for w,entries in fixtures['groups'].items():lines.append(f'Fixture group{w}[]={{'+','.join('{'+','.join(literal(e[k]) for k in ('header','body_hex','nonce'))+'}' for e in entries)+'};')
+    for w,entries in fixtures['negative'].items():
+        for name,e in entries.items():lines.append(f'Fixture {name}{w}={{{literal(e["header"])},{literal(e["body_hex"])},{literal(e["nonce"])}}};')
     return '\n'.join(lines)
 
 def run():
     pinned_sources()
     aj=Path(os.environ.get('SHINO_ARDUINOJSON_SRC',str(ROOT/'experiments/v08_full_bridge/.pio/libdeps/bridge_baseline/ArduinoJson/src'))).resolve()
     assert '#define ARDUINOJSON_VERSION "7.4.3"' in (aj/'ArduinoJson/version.hpp').read_text()
-    fixtures=json.loads(subprocess.check_output(['node',str(ROOT/'tools/v08_m7_fixtures.js')],text=True))
+    fixtures=json.loads(subprocess.check_output(['node',str(ROOT/'tools/v08_m8r_fixtures.js')],text=True))
     bear=core_root()/'tools/sdk/ssl/bearssl'
     # Exact pinned implementation; compile only crypto subset, no signing code.
     sources=[*sorted((bear/'src/int').glob('i15_*.c')),*sorted((bear/'src/codec').glob('*.c')),
@@ -72,7 +74,7 @@ def run():
                 probe=subprocess.run([str(output),'headers'],input='\n'.join(x['hex'] for x in cases)+'\n',env=env,capture_output=True,text=True,timeout=30,check=True)
                 assert [int(x) for x in probe.stdout.splitlines()]==[int(x['accepted']) for x in cases]
                 profile_differential={'cases':len(cases),'admitted':sum(x['accepted'] for x in cases),'agreement':True}
-    inputs=[ROOT/'tools/v08_m8r_runner.py',ROOT/'tools/v08_m8r_lab.cpp',ROOT/'tools/v08_m8r_overlay.py',ROOT/'tools/v08_m8r_bearssl_manifest.json',ROOT/'tools/v08_m7_fixtures.js',ROOT/'tools/v08_m7_profile_cases.js',*sorted((ROOT/'experiments/v08_m8r/native').glob('*.h')),
+    inputs=[ROOT/'tools/v08_m8r_runner.py',ROOT/'tools/v08_m8r_lab.cpp',ROOT/'tools/v08_m8r_overlay.py',ROOT/'tools/v08_m8r_bearssl_manifest.json',ROOT/'tools/v08_m8r_fixtures.js',ROOT/'tools/v08_m8r_metadata_runner.py',ROOT/'tools/v08_m8r_metadata_lab.cpp',ROOT/'tools/v08_m8r_transfer_plan.py',ROOT/'tools/v08_m7_fixtures.js',ROOT/'tools/v08_m7_profile_cases.js',*sorted((ROOT/'experiments/v08_m8r/native').glob('*.h')),
             ROOT/'experiments/v08_m8r/native/MediaStackThunk.cpp',ROOT/'tools/v08_m8r_core_manifest.json',ROOT/'tools/v08_m6a_socket_runner.py',ROOT/'tools/v08_m6a_socket_lab.cpp',ROOT/'firmware/src/boot/FirstBootBridge.cpp',ROOT/'companion/media_wire_v2_host.py']
     def git(*args):return subprocess.check_output(['git',*args],cwd=ROOT,text=True).strip()
     changed=git('diff','--name-only',BASE,'--').splitlines()

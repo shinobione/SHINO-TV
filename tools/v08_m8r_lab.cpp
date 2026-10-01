@@ -521,6 +521,24 @@ int main(int argc, char **argv) {
     check(!r.pending && !r.sink.image && !strcmp(i.outcome, "INTERRUPTED"),
           "signed Abort");
   }
+  // Independent signature and Content-Digest cover the transmitted BAD CRC.
+  // Authentication succeeds and the entire body is read before wire Gate2 denies.
+  for (int width : {32,48}) {
+    const Fixture *group=width==32?group32:group48;
+    const Fixture &bad=width==32?wrong_crc32:wrong_crc48;
+    const Fixture &abort=width==32?abort_after_wrong_crc32:abort_after_wrong_crc48;
+    m7::Authority a(epoch);setup(a,syntheticKey);m7::Receiver r;
+    m7::Ingress i(a,r,"tv.test",clockNow);server.setOfflineMedia(&i);host_ms=100;
+    check(a.issue(0,group[0].nonce,100,1000),"CRC-negative Begin challenge");nativeTransact(i,raw(group[0]));
+    auto *pointer=r.stagedPointer();auto changes=r.mutations;auto calls=a.ecdsaCalls;
+    check(a.issue(0,bad.nonce,100,1000),"independent bad-CRC challenge");nativeTransact(i,raw(bad));
+    check(i.gate1Passed && a.ecdsaCalls==calls+1 && i.bodyReads==552 && i.bodyBytes()==0 &&
+      !strcmp(i.outcome,"GATE2") && r.pending && r.stagedPointer()==pointer && r.mutations==changes,
+      "independently signed wrong CRC denied after authentication without mutation");
+    check(a.issue(0,abort.nonce,100,1000),"owned image Abort challenge");nativeTransact(i,raw(abort));
+    check(i.gate1Passed && !r.pending && !r.sink.image && r.stagedBytes()==0 && i.bodyBytes()==0 &&
+      !strcmp(i.outcome,"INTERRUPTED"),"32/48 image-specific authenticated Abort cleanup");
+  }
   {
     m7::Authority a(epoch);
     setup(a, syntheticKey);

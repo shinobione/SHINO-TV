@@ -21,6 +21,7 @@ struct RuntimeStats {
   uint32_t pollMaxUs=0, serviceMaxUs=0, serviceLastUs=0, polls=0;
   uint32_t minHeap=UINT32_MAX,minBlock=UINT32_MAX,maxFragmentation=0;
   uint32_t minCont=4096;
+  uint32_t arenaLast=0,arenaMax=0,arenaDenials=0;
 };
 extern RuntimeStats runtimeStats;
 void sampleResources();

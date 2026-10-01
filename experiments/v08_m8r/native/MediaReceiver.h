@@ -39,11 +39,11 @@ inline bool wire(const uint8_t *b, size_t n, uint8_t op, const uint8_t tx[16],
 }
 // Strict UTF-8, codepoint count, no C0/C1/surrogates. Matches retained text
 // contract.
-inline bool text(const char *s, size_t max) {
-  size_t count = 0;
+inline bool text(const char *s, size_t max, size_t bytes) {
+  size_t count = 0, at = 0;
   const auto *p = reinterpret_cast<const uint8_t *>(s);
-  while (*p) {
-    uint32_t c = *p++;
+  while (at < bytes) {
+    uint32_t c = p[at++];
     unsigned more = 0;
     uint32_t min = 0;
     if (c >= 0x80) {
@@ -61,10 +61,11 @@ inline bool text(const char *s, size_t max) {
         min = 0x10000;
       } else
         return false;
+      if (more > bytes - at) return false;
       for (unsigned i = 0; i < more; ++i) {
-        if ((*p & 0xc0) != 0x80)
+        if ((p[at] & 0xc0) != 0x80)
           return false;
-        c = (c << 6) | (*p++ & 63);
+        c = (c << 6) | (p[at++] & 63);
       }
       if (c < min)
         return false;
@@ -82,44 +83,92 @@ struct Metadata {
   uint8_t digest[32] = {};
 };
 // Hard cap for the temporary JSON document; allocated only after Gate2.
-// Bump allocator never grows, and all storage dies before image staging.
+// Fixed arena reuses only its newest block; all storage dies before staging.
 class JsonArena final : public ArduinoJson::Allocator {
   std::unique_ptr<uint8_t[]> bytes;
-  size_t used = 0;
+  struct Header { size_t size, previous; };
+#ifdef M8R_ARENA_TEST_PROFILE
+  // Pinned Xtensa max_align_t is 8; GCC x86 -m32 reports 16. The dedicated
+  // profile uses the linked native alignment, not the host's larger default.
+  static constexpr size_t alignment = 8;
+#else
+  static constexpr size_t alignment = alignof(max_align_t);
+#endif
+  static constexpr size_t prefix = (sizeof(Header)+alignment-1)&~(alignment-1);
+  size_t used = 0, peak = 0;
+  bool denied = false;
 
 public:
-  static constexpr size_t capacity = sizeof(void *) == 8 ? 8192 : 4096;
+#ifdef SHINO_M8_METADATA_ARENA_BYTES
+  static constexpr size_t capacity = SHINO_M8_METADATA_ARENA_BYTES;
+#else
+  static constexpr size_t capacity = sizeof(void *) == 8 ? 8192 : 2048;
+#endif
+  static_assert(capacity >= prefix, "bounded arena header must fit");
+#ifdef M8R_ARENA_TEST_PROFILE
+  inline static size_t lastUsage = 0, maxUsage = 0;
+  inline static bool lastDenied = false, denyBackingAllocation = false;
+#endif
   JsonArena() : bytes(new(std::nothrow) uint8_t[capacity]) {
+#ifdef M8R_ARENA_TEST_PROFILE
+    if (denyBackingAllocation) bytes.reset();
+#endif
 #ifdef ESP8266
     if(!bytes) ++m8::runtimeStats.allocationFailures;
     m8::sampleResources();
 #endif
   }
+  ~JsonArena() {
+#ifdef ESP8266
+    m8::runtimeStats.arenaLast=uint32_t(peak);
+    if(peak>m8::runtimeStats.arenaMax)m8::runtimeStats.arenaMax=uint32_t(peak);
+    if(denied)++m8::runtimeStats.arenaDenials;
+#endif
+#ifdef M8R_ARENA_TEST_PROFILE
+    lastUsage = peak;
+    if (peak > maxUsage) maxUsage = peak;
+    lastDenied = denied;
+#endif
+  }
   void *allocate(size_t n) override {
     size_t aligned =
-        (used + alignof(max_align_t) - 1) & ~(alignof(max_align_t) - 1);
-    if (!bytes || n > capacity - sizeof(size_t) ||
-        aligned > capacity - n - sizeof(size_t))
+        (used + alignment - 1) & ~(alignment - 1);
+    if (!bytes || n > capacity - prefix || aligned > capacity - n - prefix) {
+      denied = true;
       return nullptr;
-    const size_t prefix = alignof(max_align_t);
-    if (n > capacity - prefix || aligned > capacity - n - prefix)
-      return nullptr;
+    }
     auto *p = bytes.get() + aligned;
-    memcpy(p, &n, sizeof n);
+    Header h{n, used};
+    memcpy(p, &h, sizeof h);
     used = aligned + prefix + n;
+    if (used > peak) peak = used;
     return p + prefix;
   }
-  void deallocate(void *) override {}
+  // Reclaim only the newest block; older nodes stay put until arena teardown.
+  void deallocate(void *p) override {
+    if (!p) return;
+    Header h;
+    memcpy(&h, static_cast<uint8_t *>(p) - prefix, sizeof h);
+    if (static_cast<uint8_t *>(p) + h.size == bytes.get() + used)
+      used = h.previous;
+  }
   void *reallocate(void *p, size_t n) override {
     if (!p)
       return allocate(n);
-    size_t old = 0;
-    memcpy(&old, static_cast<uint8_t *>(p) - alignof(max_align_t), sizeof old);
-    if (n <= old)
+    Header h;
+    memcpy(&h, static_cast<uint8_t *>(p) - prefix, sizeof h);
+    const size_t offset = size_t(static_cast<uint8_t *>(p) - bytes.get());
+    if (offset + h.size == used && n <= capacity - offset) {
+      used = offset + n;
+      h.size = n;
+      memcpy(static_cast<uint8_t *>(p) - prefix, &h, sizeof h);
+      if (used > peak) peak = used;
       return p;
+    }
+    if (n <= h.size) return p;
     void *next = allocate(n);
     if (next)
-      memcpy(next, p, old);
+      memcpy(next, p, h.size);
     return next;
   }
 };
@@ -130,6 +179,13 @@ M8R_NOINLINE inline bool metadata(const Record &r, Metadata &out) {
                              DeserializationOption::NestingLimit(2));
   if (err || d.overflowed() || !d.is<JsonObject>() || d.size() != 16)
     return false;
+  for (JsonPair pair : d.as<JsonObject>()) {
+    if (pair.key().size() != strlen(pair.key().c_str())) return false;
+    if (pair.value().is<const char *>()) {
+      JsonString s=pair.value().as<JsonString>();
+      if (s.size()!=strlen(s.c_str())) return false;
+    }
+  }
   static const char *const names[] = {
       "album",      "artist",       "cover_len", "cover_sha256", "duration",
       "height",     "pixel_format", "position",  "source",       "state",
@@ -164,7 +220,8 @@ M8R_NOINLINE inline bool metadata(const Record &r, Metadata &out) {
   const char *texts[] = {"source", "title", "artist", "album"};
   const size_t limits[] = {80, 60, 60, 48};
   for (unsigned i = 0; i < 4; ++i)
-    if (!d[texts[i]].is<const char *>() || !text(d[texts[i]], limits[i]))
+    if (!d[texts[i]].is<const char *>() ||
+        !text(d[texts[i]], limits[i], d[texts[i]].as<JsonString>().size()))
       return false;
   for (auto name : {"position", "duration"})
     if (!d[name].isNull() &&

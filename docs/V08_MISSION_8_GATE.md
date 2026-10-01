@@ -1,3 +1,72 @@
+# Mission 8 finalization gate: HOLD with offline memory fix
+
+1 October 2026. Continued exact `c5bb1a813113af802b8736939a22de5a78097acd`
+on the existing branch and Draft PR #39. **Implemented and tested offline; overall
+HOLD.** One new private instrumented candidate is prepared, **not installed**.
+This task made zero device contacts, writes, reboots, factory returns or companion
+restarts. Installed 446144-byte reference and all prior physical results remain valid.
+R3 PARTIAL; R10 BLOCKED. No production provisioning, permanent sender or merge.
+
+The 4096-byte arena could not simply be halved: original allocator peak was
+3048 bytes. Reusing only its most recent block reduces peak to **1984/2048**
+across **21388 metadata cases, 17728 valid**. Both 4096/2048 new profiles agree
+with the independent wire-v2 oracle. The 1024 pressure profile fails closed.
+The dedicated 32-bit profile matches linked Xtensa pointer/alignment/slot/string
+offset **4/8/8/8**, rather than relying on the default 8192-byte host arena.
+
+Strict 16-field canonical/duplicate/UTF8/nesting/overflow validation remains.
+The corpus exposed 29 preexisting embedded-NUL acceptances; parsed byte-length
+checks close that gap and retain those original failures in the evidence.
+Rejected metadata and arena allocation failure preserve the committed old image.
+Image allocation failure after valid Begin follows retained terminal cleanup;
+host failure injection ends with zero live image/arena arrays.
+
+Gross transient saving **2048 bytes**; additional linked persistent DRAM **208**;
+net budget recovery **1840**, exceeding the old 856-byte deficit by **984 bytes**.
+Replacement overlap becomes **4608 image + 2048 arena + 552 body = 7208**;
+with unchanged 4096 reserve required block is **11304**. Historical block 12496
+leaves projected 1192, or conservative **984** after charging all new DRAM.
+The separate crypto/image heap requirement remains 14904; projected heap margin
+after DRAM is 1272. These are models, **not new physical memory qualification**.
+
+32/48 image-specific authenticated Abort and independently signed wrong-CRC
+regressions PASS on real BearSSL/native host ingress. Wrong-CRC bytes have their
+own valid signature and Content-Digest: Gate1 passes, ECDSA increments, 552 bytes
+are read, then CRC Gate2 denies without receiver mutation; matching Abort cleans
+up. Physical execution on the new candidate is NOT RUN. Nineteen future bounded
+transactions use a new qualification-only key retained locally outside Git;
+the discarded old private key is neither recreated nor reused.
+
+The finite sender plan preissues Begin/first tile, reuses necessary issue-control
+responses, removes active-window idle waits and extra snapshots, bounds explicit
+401 recovery to four control requests and sends each media body once. Per-tile
+ECDSA and native 8000-ms deadline remain unchanged; terminal native verification
+is mandatory. Six deterministic plan tests pass. Historical transport ranges
+calibrate the model with 595-ms ECDSA: 48 quiet post-Begin 7455 ms (545 margin),
+one Digest interaction 7645 (355), stress 8250 (-250). Conservative inclusion of
+Begin transmission is still tighter. **48 remains experimental; timing margin
+is not demonstrated.** 32 remains the physically validated fallback.
+
+New BIN **446944 bytes**, SHA256 `269fcf2be7e61b4f581f892f36c519cca5ebf1ef41759d9923d9df90aad682fa`.
+All three guarded native graphs and the private graph link; StackThunk crypto
+chain remains 2224 bytes with 4096 continuation stack. Focused runs: **1189 checks
+per OEM configuration**, retained legacy 224/227, zero failures/descriptors;
+wire differential 10207 and header-profile 37 cases agree. Full retained 11-job
+CI, including the new 32-bit arena and timing steps, is tracked at the exact
+implementation head on [Draft PR #39](https://github.com/shinobione/SHINO-TV/pull/39).
+Detailed numeric evidence is in [stack evidence](V08_MISSION_8R_STACK_EVIDENCE.json).
+
+Installation decision remains with the owner. A future authorized run must
+remeasure live heap/block/arena peak and telemetry, use fresh boot/LCD/recovery
+checks, and exercise the newly available negatives. Do not repeat old successful
+receiver evidence merely to regenerate it. 48 replacement needs both live memory
+review and a justified experimental timing decision. Strict six-second telemetry
+continuity remains a separate HOLD; its historical gap is preserved.
+
+---
+
+Historical checkpoints retained verbatim below.
+
 # Mission 8 final physical receiver result: HOLD
 
 1 October 2026. **Coverless PASS; 32x32 PASS for exercised paths; 48x48 single

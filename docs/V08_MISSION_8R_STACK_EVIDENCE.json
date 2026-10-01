@@ -1,6 +1,6 @@
 {
   "mission": "8 continuation",
-  "engineering_gate": "HOLD__COVERLESS_AND_32X32_SCOPED_PASS__48X48_SINGLE_TRANSFER_PASS_REPLACEMENT_MEMORY_MARGIN__TELEMETRY_OPEN",
+  "engineering_gate": "HOLD__NEW_CANDIDATE_NOT_PHYSICALLY_VALIDATED__48_TIMING_EXPERIMENTAL__STRICT_TELEMETRY_OPEN",
   "continuation_parent": "fa926bedc9ea91d7fd1160b871f5d31c3a3c5626",
   "branch": "feature/shino-tv-v08-stack-remediation",
   "draft_pr": 39,
@@ -22004,5 +22004,479 @@
         "jobs": 11
       }
     }
+  },
+  "implementation_finalization": {
+    "status": "IMPLEMENTED_OFFLINE__NEW_CANDIDATE_PREPARED_NOT_INSTALLED",
+    "starting_head": "c5bb1a813113af802b8736939a22de5a78097acd",
+    "date": "2026-10-01",
+    "device_contacts": 0,
+    "firmware_writes": 0,
+    "reboots": 0,
+    "factory_returns": 0,
+    "companion_restarts": 0,
+    "physical_reference_and_prior_results_preserved": true,
+    "source_input_hashes": {
+      "experiments/v08_m8r/native/MediaAuthority.h": "263ed0b8158a3e084b88fcc194c38cd2dbe56599dcad2248266d35dbf2e89fc8",
+      "experiments/v08_m8r/native/MediaCrypto.h": "d5c36e09f2445fb5191154e6d472afa8acfae9671f04d9e3de416a1e6a1fc3da",
+      "experiments/v08_m8r/native/MediaIngress.h": "05f751c75d31bd25d482a1223586b963722498fff764b55bd99811d745092006",
+      "experiments/v08_m8r/native/MediaProfile.h": "9368c668cce60eb4259decbda3c4304e0005b4c48f0bb43177c825dc24b48330",
+      "experiments/v08_m8r/native/MediaQualification.inc": "3c9cb6769065392de58f21920bc20c12964a8ae6cd3b0d64710253aa096f3fb8",
+      "experiments/v08_m8r/native/MediaReceiver.h": "8f00f190f410e6ba290f35060559830eac0dfb2b5292e6dcf0b28a93dad876be",
+      "experiments/v08_m8r/native/MediaStackThunk.cpp": "3325af76772989d42927698f17d60ab7cb92abdf003e303c66cb9352bc0d2102",
+      "experiments/v08_m8r/native/MediaStackThunk.h": "cf31eda3642c83e9d8e085eb62d234ea3cfba0cda82c957476801f0a72bbde89",
+      ".github/workflows/ci.yml": "b7598192de2ec10e514592f4348c916074c7c0ccdc62b0e6084ff05b30d3ac2d",
+      "tools/v08_m8r_runner.py": "9b521dd30a3b7ae4f8fd7a9c6458f5738a5113f50c53a6c89487ed3d3a711312",
+      "tools/v08_m8r_lab.cpp": "43186645e2b36706117243c202a0e8c94710db41a819f4bc19d079f25d7f852c",
+      "tools/v08_m8r_fixtures.js": "1aea3ac02d89b0bcc778611fd03e37084bae57c2618416f1ba9b49c23dbc3372",
+      "tools/v08_m8r_metadata_lab.cpp": "adaf485c401d4c63dcf6c2b1fef249970c76bfc8b6d37fc503703697ee517f70",
+      "tools/v08_m8r_metadata_runner.py": "e6c6b102d0fa067f75289f7e082f28432e4d290097efe619072a592778c037ba",
+      "tools/v08_m8r_transfer_plan.py": "e0a8ca2414fb74c6d61b1d85673bb11961376a8ae7a9c9f222df78560ebad2ef",
+      "tools/v08_m8r_memory.py": "ce775854c0bbe07e53b2a8d7d801d755814bf53982400c2c8692f3373566f9af"
+    },
+    "metadata32": {
+      "profiles": [
+        {
+          "variant": "baseline",
+          "pointer_bytes": 4,
+          "native_arena_alignment": 8,
+          "capacity": 4096,
+          "cases": 21388,
+          "valid": 17728,
+          "max_valid_usage": 3048,
+          "max_all_usage": 3048,
+          "denials": 0,
+          "known_baseline_NUL_failures": [
+            "0-NUL-value-album",
+            "0-NUL-value-artist",
+            "0-NUL-value-pixel_format",
+            "0-NUL-value-source",
+            "0-NUL-value-state",
+            "0-NUL-value-title",
+            "0-NUL-value-track_key",
+            "0-NUL-value-tx",
+            "0-escape-5c7530303030",
+            "32-NUL-value-album",
+            "32-NUL-value-artist",
+            "32-NUL-value-cover_sha256",
+            "32-NUL-value-pixel_format",
+            "32-NUL-value-source",
+            "32-NUL-value-state",
+            "32-NUL-value-title",
+            "32-NUL-value-track_key",
+            "32-NUL-value-tx",
+            "32-escape-5c7530303030",
+            "48-NUL-value-album",
+            "48-NUL-value-artist",
+            "48-NUL-value-cover_sha256",
+            "48-NUL-value-pixel_format",
+            "48-NUL-value-source",
+            "48-NUL-value-state",
+            "48-NUL-value-title",
+            "48-NUL-value-track_key",
+            "48-NUL-value-tx",
+            "48-escape-5c7530303030"
+          ],
+          "ABI_and_lifetime": [
+            "layout 4 8 8 8",
+            "lifetime 8704 2 0 0"
+          ]
+        },
+        {
+          "variant": "new",
+          "pointer_bytes": 4,
+          "native_arena_alignment": 8,
+          "capacity": 4096,
+          "cases": 21388,
+          "valid": 17728,
+          "max_valid_usage": 1984,
+          "max_all_usage": 1984,
+          "denials": 0,
+          "known_baseline_NUL_failures": [],
+          "ABI_and_lifetime": [
+            "layout 4 8 8 8",
+            "lifetime 8704 2 0 0"
+          ]
+        },
+        {
+          "variant": "new",
+          "pointer_bytes": 4,
+          "native_arena_alignment": 8,
+          "capacity": 2048,
+          "cases": 21388,
+          "valid": 17728,
+          "max_valid_usage": 1984,
+          "max_all_usage": 1984,
+          "denials": 0,
+          "known_baseline_NUL_failures": [],
+          "ABI_and_lifetime": [
+            "layout 4 8 8 8",
+            "lifetime 6656 2 0 0"
+          ]
+        },
+        {
+          "variant": "pressure",
+          "pointer_bytes": 4,
+          "native_arena_alignment": 8,
+          "capacity": 1024,
+          "cases": 21388,
+          "valid": 17728,
+          "max_valid_usage": 0,
+          "max_all_usage": 48,
+          "denials": 18417,
+          "known_baseline_NUL_failures": [],
+          "ABI_and_lifetime": [
+            "layout 4 8 8 8"
+          ]
+        }
+      ],
+      "device_contacts": 0,
+      "corpus_sha256": "65a1631afb54a70bbc7335372073783f4879f5af1d3d37b74704153497aefce4",
+      "target_capacity_test_is_not_8192_host_profile": true
+    },
+    "native_old_new": {
+      "old": {
+        "elf_sha256": "34e67a4d3da022fd5d9581628b8e8aa51c2fa0e4273d491a73e910dd1868205e",
+        "bin_bytes": 446144,
+        "bin_sha256": "8dc18cf5135b4c7da8486d4f00bcc9b944d4bb5e4956a3f9dcbad7603ce47fea",
+        "size_text_data_bss": {
+          "text": 439207,
+          "data": 2840,
+          "bss": 32704
+        },
+        "sections": {
+          ".data": 2784,
+          ".noinit": 56,
+          ".text": 258,
+          ".irom0.text": 393116,
+          ".text1": 29021,
+          ".rodata": 16812,
+          ".bss": 32704
+        },
+        "persistent_DRAM_sections": 52300,
+        "objects": {
+          "m7Authority": 2104,
+          "m7Ingress": 1432,
+          "m7Receiver": 1120,
+          "m8Json": 2048,
+          "m8::runtimeStats": 44
+        },
+        "linked_metadata_layout": null
+      },
+      "new": {
+        "elf_sha256": "92c8b374f4745818718d0a2ce5c1805e0d1b9ef52d26c24feeda84ef5cd43823",
+        "bin_bytes": 446944,
+        "bin_sha256": "269fcf2be7e61b4f581f892f36c519cca5ebf1ef41759d9923d9df90aad682fa",
+        "size_text_data_bss": {
+          "text": 439983,
+          "data": 2872,
+          "bss": 32712
+        },
+        "sections": {
+          ".data": 2816,
+          ".noinit": 56,
+          ".text": 258,
+          ".irom0.text": 393724,
+          ".text1": 29021,
+          ".rodata": 16980,
+          ".bss": 32712
+        },
+        "persistent_DRAM_sections": 52508,
+        "objects": {
+          "m7Authority": 2104,
+          "m7Ingress": 1432,
+          "m7Receiver": 1120,
+          "m8Json": 2048,
+          "m8::runtimeStats": 56,
+          "m8MetadataLayout": 20
+        },
+        "linked_metadata_layout": [
+          4,
+          8,
+          8,
+          8,
+          2048
+        ]
+      },
+      "persistent_DRAM_delta": 208,
+      "persistent_heap_allocations_changed": false,
+      "persistent_heap_reason": "Same image and secondary-stack lifetimes; metadata arena is temporary. No new persistent new/malloc.",
+      "host_array_concurrency": {
+        "old_peak_bytes": 8704,
+        "new_peak_bytes": 6656,
+        "old_count": 2,
+        "new_count": 2,
+        "terminal_bytes": 0
+      },
+      "replacement_overlap": {
+        "old_explicit_bytes": 9256,
+        "new_explicit_bytes": 7208,
+        "overhead_reserve_bytes": 4096,
+        "old_required_block": 13352,
+        "new_required_block": 11304,
+        "historical_settled_block": 12496,
+        "arithmetic_margin_bytes": 1192,
+        "conservative_margin_after_DRAM_delta": 984,
+        "gross_transient_recovered": 2048,
+        "net_budget_recovered_after_DRAM_delta": 1840,
+        "separate_crypto_image_explicit_bytes": 10808,
+        "separate_crypto_required_heap": 14904,
+        "historical_settled_heap": 16384,
+        "conservative_heap_margin_after_DRAM_delta": 1272
+      },
+      "physical_memory_qualification": "NOT RUN on new candidate; contiguous block/SDK/allocator behavior must be remeasured",
+      "device_contacts": 0,
+      "device_writes": 0
+    },
+    "heap_measurement_scope": "Array lifetimes measured on exact-cap 32-bit host; linked DRAM measured natively; no new live ESP heap measurement.",
+    "allocator_contract": {
+      "fixed_arena": 2048,
+      "newest_allocation_only_reuse": true,
+      "older_live_nodes_moved": false,
+      "old_image_survives_failed_metadata_validation": true,
+      "invalid_Begin_backing_failure_image_failure_cleanup_tests": "PASS",
+      "canonical_16_fields_UTF8_duplicate_nesting_overflow_parity": "PASS",
+      "preexisting_embedded_NUL_gap": "FIXED; 29 original-baseline acceptances retained as known failures; new profile agrees with independent host contract."
+    },
+    "focused_tests": {
+      "runs": [
+        {
+          "oem": 0,
+          "compiler": "cl.exe",
+          "result": {
+            "legacy_checks": 224,
+            "checks": 1189,
+            "failed": 0,
+            "live_descriptors": 0,
+            "contexts_created": 253,
+            "contexts_destroyed": 253,
+            "authority_bytes": 2104,
+            "ingress_bytes": 1464,
+            "receiver_bytes": 1144,
+            "sha_context_bytes": 112,
+            "max_media_poll_bytes": 64,
+            "worst_media_poll_us": 669.4
+          }
+        },
+        {
+          "oem": 1,
+          "compiler": "cl.exe",
+          "result": {
+            "legacy_checks": 227,
+            "checks": 1189,
+            "failed": 0,
+            "live_descriptors": 0,
+            "contexts_created": 255,
+            "contexts_destroyed": 255,
+            "authority_bytes": 2104,
+            "ingress_bytes": 1464,
+            "receiver_bytes": 1144,
+            "sha_context_bytes": 112,
+            "max_media_poll_bytes": 64,
+            "worst_media_poll_us": 696.6
+          }
+        }
+      ],
+      "wire_differential": {
+        "cases": 10207,
+        "admitted": 1,
+        "agreement": true
+      },
+      "profile_differential": {
+        "cases": 37,
+        "admitted": 7,
+        "agreement": true
+      }
+    },
+    "native_stack": {
+      "public": {
+        "gate": "PASS__STACK_ISOLATION_READY_FOR_CONTROLLED_PHYSICAL_MEASUREMENT",
+        "cont_stack_bytes": 4096,
+        "known_crypto_chain_lower_bound_bytes": 2224,
+        "device_contacts": 0,
+        "device_writes": 0
+      },
+      "sensitivity": {
+        "gate": "PASS__STACK_ISOLATION_READY_FOR_CONTROLLED_PHYSICAL_MEASUREMENT",
+        "cont_stack_bytes": 6144,
+        "known_crypto_chain_lower_bound_bytes": 2224,
+        "device_contacts": 0,
+        "device_writes": 0
+      },
+      "private": {
+        "gate": "PASS__STACK_ISOLATION_READY_FOR_CONTROLLED_PHYSICAL_MEASUREMENT",
+        "cont_stack_bytes": 4096,
+        "known_crypto_chain_lower_bound_bytes": 2224,
+        "device_contacts": 0,
+        "device_writes": 0
+      }
+    },
+    "negative_coverage": {
+      "32_and_48_authenticated_image_Abort": "HOST PASS; physical NOT RUN on new candidate",
+      "independently_signed_wrong_CRC": "HOST PASS; valid independent signature and Content-Digest over actual invalid-CRC bytes; Gate1 passes, ECDSA increments, 552 bytes read, Gate2 denies, pending staging unchanged, authenticated Abort cleans up.",
+      "old_discarded_private_key_recovered_or_reused": false,
+      "future_local_qualification_fixture_transactions": 19,
+      "future_kinds": [
+        "abort",
+        "commit",
+        "interrupted",
+        "replacement",
+        "wrong_crc"
+      ],
+      "private_material_git_ignored": true,
+      "production_keys": false,
+      "candidate_has_new_qualification_public_key": true
+    },
+    "deadline": {
+      "tests": 6,
+      "failed": 0,
+      "deadline_ms": 8000,
+      "reserve_ms": 750,
+      "timing_kind": "bounded_model_not_physical_measurement",
+      "profiles": [
+        {
+          "width": 32,
+          "profile": "quiet_48_bound",
+          "ecdsa_ms_each": 595,
+          "conservative_begin_send_to_commit_ms": 4340,
+          "post_begin_close_to_commit_ms": 3680,
+          "conservative_margin_ms": 3660,
+          "post_begin_margin_ms": 4320,
+          "reserve_gate": true
+        },
+        {
+          "width": 32,
+          "profile": "one_Digest_interaction",
+          "ecdsa_ms_each": 595,
+          "conservative_begin_send_to_commit_ms": 4530,
+          "post_begin_close_to_commit_ms": 3870,
+          "conservative_margin_ms": 3470,
+          "post_begin_margin_ms": 4130,
+          "reserve_gate": true
+        },
+        {
+          "width": 32,
+          "profile": "transport_stress",
+          "ecdsa_ms_each": 595,
+          "conservative_begin_send_to_commit_ms": 4890,
+          "post_begin_close_to_commit_ms": 4175,
+          "conservative_margin_ms": 3110,
+          "post_begin_margin_ms": 3825,
+          "reserve_gate": true
+        },
+        {
+          "width": 48,
+          "profile": "quiet_48_bound",
+          "ecdsa_ms_each": 595,
+          "conservative_begin_send_to_commit_ms": 8115,
+          "post_begin_close_to_commit_ms": 7455,
+          "conservative_margin_ms": -115,
+          "post_begin_margin_ms": 545,
+          "reserve_gate": false
+        },
+        {
+          "width": 48,
+          "profile": "one_Digest_interaction",
+          "ecdsa_ms_each": 595,
+          "conservative_begin_send_to_commit_ms": 8305,
+          "post_begin_close_to_commit_ms": 7645,
+          "conservative_margin_ms": -305,
+          "post_begin_margin_ms": 355,
+          "reserve_gate": false
+        },
+        {
+          "width": 48,
+          "profile": "transport_stress",
+          "ecdsa_ms_each": 595,
+          "conservative_begin_send_to_commit_ms": 8965,
+          "post_begin_close_to_commit_ms": 8250,
+          "conservative_margin_ms": -965,
+          "post_begin_margin_ms": -250,
+          "reserve_gate": false
+        }
+      ],
+      "48_status": "EXPERIMENTAL__TIMING_MARGIN_NOT_DEMONSTRATED",
+      "32_status": "PHYSICALLY_VALIDATED_FALLBACK",
+      "device_contacts": 0,
+      "device_writes": 0
+    },
+    "historical_transport_calibration": {
+      "32_media_ms": [
+        625,
+        672
+      ],
+      "48_media_ms": [
+        640,
+        657
+      ],
+      "protected_control_wire_ms": [
+        16,
+        94
+      ],
+      "new_physical_timing_run": false
+    },
+    "qualification_sender": {
+      "finite_tracked_plan": "tools/v08_m8r_transfer_plan.py",
+      "local_adapter_sha256": "89d2e2caf6edf6338777ff283f67fef2f62fdebc79b74d5deb595808a8e8cbe5",
+      "first_two_challenges_issued_before_Begin": true,
+      "extra_in_transaction_snapshot_or_sleep": false,
+      "body_retry": false,
+      "explicit_401_control_bound": 4,
+      "per_tile_authentication_unchanged": true,
+      "native_Commit_confirmation_required": true,
+      "telemetry_pause_requires_supported_Abort_or_expiry_and_cleanup": true
+    },
+    "new_candidate": {
+      "elf_sha256": "92c8b374f4745818718d0a2ce5c1805e0d1b9ef52d26c24feeda84ef5cd43823",
+      "bin_bytes": 446944,
+      "bin_sha256": "269fcf2be7e61b4f581f892f36c519cca5ebf1ef41759d9923d9df90aad682fa",
+      "size_text_data_bss": {
+        "text": 439983,
+        "data": 2872,
+        "bss": 32712
+      },
+      "sections": {
+        ".data": 2816,
+        ".noinit": 56,
+        ".text": 258,
+        ".irom0.text": 393724,
+        ".text1": 29021,
+        ".rodata": 16980,
+        ".bss": 32712
+      },
+      "persistent_DRAM_sections": 52508,
+      "objects": {
+        "m7Authority": 2104,
+        "m7Ingress": 1432,
+        "m7Receiver": 1120,
+        "m8Json": 2048,
+        "m8::runtimeStats": 56,
+        "m8MetadataLayout": 20
+      },
+      "linked_metadata_layout": [
+        4,
+        8,
+        8,
+        8,
+        2048
+      ]
+    },
+    "diagnostic_fixed_buffer_bytes": 2048,
+    "diagnostic_worst_format_bytes": 1681,
+    "private_evidence_sha256": {
+      "m8-memory-metadata.json": "4207424de16f8ce1323491e8a0f645f5e584090689d2293965989faecc961225",
+      "m8-memory-focused.json": "a8a40ddee2745d595eced2195b5ec324953a8588fd1527a0e73aebf08dc8d7a1",
+      "m8-memory-timing.json": "4a0665929cc9cb4fda7e79e7a48d108cea2285e4c0afd3e8f41663d065619382",
+      "m8-memory-native-comparison.json": "69d36e4ef5560aed415c346e5a5ac0b956ae9c28daafd0f1b0956634fcd0e333",
+      "m8-memory-private-stack.json": "abe149cf449ad626117e3bc906b4f07cf47a8ae5548b2bc58b5359f576fbfdb1",
+      "m8-memory-public-stack.json": "8e2ac5d7498b271554dbfe797b9ece27d92993995a0912a1abbfd822e29bb755",
+      "m8-memory-sensitivity-stack.json": "feea81889d4dd4007267b0ee48a6aeb837377695ea394f1488f573c7ddfa9027",
+      "m8-memory-qualification/packets.json": "863f84579e3e642f64d3734b67942ce18049cddc73f229674932749241febd50",
+      "m8_memory_receiver.py": "89d2e2caf6edf6338777ff283f67fef2f62fdebc79b74d5deb595808a8e8cbe5"
+    },
+    "full_retained_CI": "Exact implementation-head checks are recorded on existing Draft PR #39; all 11 retained jobs remain required.",
+    "historical_c5bb_CI": "Both runs 36871845406 and 36871836734 passed 11/11.",
+    "overall": "HOLD__NEW_CANDIDATE_NOT_PHYSICALLY_VALIDATED__48_TIMING_EXPERIMENTAL__STRICT_TELEMETRY_OPEN",
+    "R3": "PARTIAL",
+    "R10": "BLOCKED"
   }
 }

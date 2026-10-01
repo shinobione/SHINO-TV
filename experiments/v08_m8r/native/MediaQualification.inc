@@ -9,6 +9,12 @@ static bool m8Enrolled=false,m8ResetPending=false;
 static uint32_t m8Boot=0,m8Phase=0,m8Reconnects=0;
 static unsigned m8PriorStations=0;
 static char m8Json[2048];
+// Linked values let the host ABI measurement be checked against the native ELF.
+extern "C" {
+extern const volatile uint32_t m8MetadataLayout[5]={
+  sizeof(void*),alignof(max_align_t),ArduinoJson::detail::ResourceManager::slotSize,
+  offsetof(ArduinoJson::detail::StringNode,data),m7::JsonArena::capacity};
+}
 static void m8QualDiagnostic() {
   if(!requireAuth()) return;
   const String action=server.arg("action");
@@ -32,6 +38,8 @@ static void m8QualDiagnostic() {
     "\"ecdsa_calls\":%u,\"key_checks\":%u,\"ecdsa_us_last\":%u,\"crypto_us_max\":%u,"
     "\"crypto_before_heap\":%u,\"crypto_before_block\":%u,\"crypto_before_frag\":%u,\"crypto_after_heap\":%u,\"crypto_after_block\":%u,\"crypto_after_frag\":%u,"
     "\"allocation_failures\":%u,\"sha_us_last\":%u,\"sha_us_max\":%u,\"poll_us_max\":%u,\"service_us_max\":%u,"
+    "\"arena_capacity\":%u,\"arena_used_last\":%u,\"arena_used_max\":%u,\"arena_denials\":%u,"
+    "\"arena_pointer_bytes\":%u,\"arena_alignment\":%u,\"arena_slot_bytes\":%u,\"arena_string_offset\":%u,"
     "\"receiver_pending\":%s,\"body_bytes\":%u,\"staged_bytes\":%u,\"image_bytes\":%u,\"challenges\":%u,\"ingress_phase\":%u,"
     "\"body_reads\":%u,\"body_allocations\":%u,\"accepted\":%u,\"rejected\":%u,\"commits\":%u,\"highest\":%u,\"outcome\":\"%s\"}",
     m8Boot,uint32_t(millis()),m8Phase,m8ResetPending?"true":"false",actionOk?"true":"false",m8Enrolled?"true":"false",
@@ -40,7 +48,9 @@ static void m8QualDiagnostic() {
     ESP.getFreeContStack(),s.minCont,stack_thunk_get_refcnt(),c.allocations,c.allocationFailures,c.busyFailures,
     c.lastUsed,c.maxUsed,c.maxUsed<=6200?6200-c.maxUsed:0,c.canaryFailures,c.calls,c.keyChecks,c.lastUs,c.maxUs,
     c.beforeHeap,c.beforeBlock,c.beforeFragmentation,c.afterHeap,c.afterBlock,c.afterFragmentation,
-    s.allocationFailures,s.shaLastUs,s.shaMaxUs,s.pollMaxUs,s.serviceMaxUs,m7Receiver.pending?"true":"false",
+    s.allocationFailures,s.shaLastUs,s.shaMaxUs,s.pollMaxUs,s.serviceMaxUs,
+    m8MetadataLayout[4],s.arenaLast,s.arenaMax,s.arenaDenials,
+    m8MetadataLayout[0],m8MetadataLayout[1],m8MetadataLayout[2],m8MetadataLayout[3],m7Receiver.pending?"true":"false",
     m7Ingress.bodyBytes(),m7Receiver.stagedBytes(),m7Receiver.imageBytes(),m7Authority.liveChallenges(),m7Ingress.phaseCode(),
     m7Ingress.bodyReads,m7Ingress.bodyAllocations,m7Ingress.accepted,m7Ingress.rejected,m7Receiver.sink.commits,
     uint32_t(m7Receiver.highest),m7Ingress.outcome);
