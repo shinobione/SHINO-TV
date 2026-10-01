@@ -1,5 +1,108 @@
 # SHINO // TV — Roadmap
 
+> **Active product status — 1 October 2026.** This section supersedes the 28 September status claims preserved further below for historical traceability. One owner SmallTV-Ultra, exact 240×240 LCD, Wi-Fi-only maintenance (USB-C power; no UART/JTAG/solder). This is planning, not permission to flash, merge, provision a production key or deploy.
+
+## 1 October 2026 — Canonical agent handoff and square design references
+
+**Agents / Codex: read [AGENTS.md](../AGENTS.md) then [docs/AGENT_HANDOFF.md](AGENT_HANDOFF.md) before implementation.** They specify source precedence, verified status, one-unit Wi-Fi safety constraints, scene state transitions, prerequisites and acceptance checks. The older material below is retained without dropping any original detail. For canonical visual targets use [docs/design-reference/README.md](design-reference/README.md) and the actual **240×240 SVG images** (not scaled rectangular contact sheets):
+
+| IDLE (clock + weather + 4 cards) | PLAYING (square cover, no metrics) | PAUSED (no metrics) | NO ARTWORK (no metrics) |
+| --- | --- | --- | --- |
+| ![IDLE 240x240](design-reference/idle.svg) | ![PLAYING 240x240](design-reference/playing.svg) | ![PAUSED 240x240](design-reference/paused.svg) | ![NO ARTWORK 240x240](design-reference/no-artwork.svg) |
+
+**Visual direction only, not a claimed native LCD screenshot.** Use native font/driver previews and measured ESP8266 resource tests to finalize. The [marquee overflow reference](design-reference/marquee-scrolled.svg) illustrates a long title moving *inside its own clipped line*, not shrinking the whole UI. The previous PR #40 96×96 cover + four metrics scene is a validated offline integration **test fixture only**; it is not the intended shipped mixed mode. Do not mistake the dated "native media BLOCKED" claims in the historical 28 September text for today's physically qualified 32×32 RAM receiver.
+
+## Product contract — owner clarification, 1 October 2026
+
+**One 240×240 (1:1) scene at a time. No mixed music + four-metric screen as the final product.** The PR #40 combined-artwork/four-card mock-up is a working *offline renderer/receiver integration pilot*, not accepted final interaction design. All future reference previews must be actual independently rendered 240×240-pixel PNGs (album covers square and not stretched), not wide illustration panels merely labelled 240×240.
+
+| Scene / trigger | Display policy | Status |
+| --- | --- | --- |
+| IDLE / no active media session / music stopped | Large clock, optional current weather (temperature, configurable city and age), **all four PC cards CPU/GPU/RAM/GPU TEMP in 2×2**, no decorative micro-charts. Dynamic percent bars: 0–20 green; 20–50 yellow; 50–80 dark orange; 80–100 dark burgundy, with boundary/hysteresis and an explicit meaningful scale for RAM and temperature. Stale/unavailable values stay marked unknown, never fabricated. | Owner-preferred concept; scene/clock/weather integration NOT implemented on device |
+| PLAYING | Dedicated music screen: prominent **square** committed artwork, title, artist, PLAYING indicator and progress/time when available. **No CPU/GPU/RAM/GPU TEMP cards.** Keep receiving PC metrics in background but do not paint them here. | Physical authenticated 32×32 RGB565LE *RAM receiver* qualified; LCD artwork only an offline PR #40 pilot |
+| PAUSED | Artwork may be retained with a clear paused state, or return to IDLE after an owner-configurable delay. Exact pause timeout/transition is **OPEN OWNER DECISION**; never keep a false PLAYING indicator. **No metric cards while the PAUSED music scene is shown.** | Behaviour not finalized |
+| PLAYING, artwork unavailable | Same dedicated music scene with a bounded tasteful placeholder/text and title/artist/progress. **No metric cards.** | Offline fallback pilot only |
+| No PC / disconnected | Clock only if time was genuinely synchronized and its age is known; no invented local time or fresh PC values. Optional weather only when cached with displayed age; otherwise an explicit waiting/offline presentation. | Planned |
+
+**Long title/artist:** do not squeeze, reduce the font to illegibility, or aggressively truncate. Implement a slow, bounded horizontal marquee **only on text overflow**, with a short initial hold, smooth/legible travel and pause/loop at endpoints; reset on track change and respect the existing metadata byte/UTF-8 limits and bitmap-font capabilities. No full-screen framebuffer or unbounded heap. Artist overflow follows the same bounded principle if needed. Native host preview and real LCD timing/readability checks required.
+
+**Mode transitions to finalize before physical UI deployment:** PLAYING selects music; STOPPED/NO_SESSION returns to IDLE after a short debounced transition; PAUSED handling requires explicit owner choice (brief retained cover vs immediate return); incomplete/aborted cover transfers show deterministic fallback, never partial art. Music display never prevents reception of telemetry; media network outage must not blank a working clock/metrics scene.
+
+## Current verified engineering position
+
+| Workstream | Actual current state (1 October) | What this does NOT prove |
+| --- | --- | --- |
+| Device + SHINO // LINK | New 446,944-byte Mission 8 candidate installed; four PC readings, Digest-aware Windows tray and tested automatic recovery. SHINO private AP at 192.168.4.1. | Not household-LAN STA; prior 7.266-second accepted-sample gap means strict 6-second long-term telemetry continuity remains HOLD. |
+| Native media wire and crypto | PR #39 Draft, validated HEAD `9fce7137f9fadd83678887442bf91cf60ea86b2e`. Physical current-candidate 32×32 Commit + replacement PASS, negative Abort/CRC and 2,048-byte arena peak (1,984 bytes) measured. R3 freshness PARTIAL, R10 production provisioning BLOCKED. | Not permanent signed media sender, production release or physical LCD cover rendering. 48×48 current-image replacement remains experimental: conservative 10.142 s against unchanged 8 s. |
+| LCD artwork / V2.2 scenes | Existing PR #40 Draft now implements exclusive IDLE / PLAYING / PAUSED / NO ARTWORK / OFFLINE scenes, 160×160 integer cover (128 alternative also tested), bounded clipped title/artist marquee, 448-byte owned row, zero renderer heap. 33 actual native-receiver host cases pass at both sizes; linked +1,080 static DRAM / +5,456 BIN bytes versus the prior PR #40 graph. [Implementation, eight native-font 240×240 PNGs and numeric evidence](artwork-pilot/README.md). Prior mixed-screen proof and its reports/previews remain historical. | **OFFLINE PASS; physical UI NOT RUN.** Real LCD latency/readability, heap/block/stack and exact-image installation remain separately gated. No new owner-device write; current installed M8 candidate is unchanged. |
+| Clock/weather | Earlier desktop scene ideas and product requirements only; authoritative on-device clock source and weather provider not finalized. | Neither trustworthy clock after power loss nor live weather is already shipping. |
+| Household Wi-Fi (STA) | Existing product code operates in private AP mode. The separate upstream WiFiManager does not make STA available in the currently active FirstBoot bridge. | Current SHINO is not normally reachable on the owner's home LAN. |
+| SHINO→SHINO native OTA | Existing `GET /api/v1/bridge/ota/capabilities` is **READ-ONLY** and reports `native_ota_writer_compiled=false`, `native_ota_upload_route_registered=false`. PR #20 and inherited safety work have signed-package verification, intent/request/precommit, pinned Core 3.1.2 and extensive **host/compile-only** evidence; only the *exact OEM-only factory-return* writer is physically exercised. Today each changed SHINO BIN still goes SHINO→verified OEM→SHINO. | There is currently **NO enabled in-firmware generic SHINO→SHINO upload/install path**, no seamless/atomic rollback, and no Wi-Fi rescue if neither application can boot. |
+
+## Priority roadmap (product milestones, NOT another 40 independent missions)
+
+> **LATEST VERIFIED P0 STATUS — 1 October 2026, PR #40 `332eaa48580de60eba06faaa6dbb67c301b2b1be`: OFFLINE GO / PHYSICAL LCD HOLD.** The mutually exclusive `IDLE`, `PLAYING`, `PAUSED`, `NO ARTWORK`, `OFFLINE` C++ scene engine, 160×160 5× cover upscale and bounded title/artist scrolling are implemented. Actual eight independently produced 240×240 renderer previews. 33 host scenarios pass for both 128 and 160px artwork, ASan/UBSan pass, exact-head push and PR CI each 12/12. Public paired build delta against preceding PR #40 pilot: **+5,456 padded BIN bytes, +1,080 static DRAM bytes, 448-byte row buffer, zero observed renderer dynamic heap; Receiver Begin compiler frame +64 B.** No live native LCD timing/heap/stack has been measured, providers for clock and weather do not exist yet, and no device flash/reboot has occurred. The IDLE concept-city background is not a requirement to store or render large native art without resource proof. `GPU TEMP` bar remains neutral until a documented scale is approved. The next implementation priority is **P1 secure normal-home-LAN STA with protected private-AP fallback**, followed by P2 integrated signed SHINO→SHINO OTA. Do not conflate OFFLINE GO with physical approval.
+
+### P0 — Freeze interaction specification and finish offline scene prototype (OFFLINE IMPLEMENTED; physical acceptance pending)
+- [x] Implement the 240×240 IDLE clock/weather validity seams, four cards, reviewed bar boundaries/hysteresis and explicit RAM denominator. No micro-curves; GPU temperature has a neutral track pending an approved scale. Native clock/weather providers remain absent; previews label synthetic data.
+- [x] Refactor PR #40's combined view into **mutually exclusive** IDLE / PLAYING / PAUSED / NO ARTWORK / OFFLINE scenes, with eight actual C++/pinned-font 240×240 PNG outputs and native resource comparison. Physical LCD qualification NOT RUN.
+- [x] Add bounded slow clipped marquees for title and artist, preserving full 60-codepoint metadata, receiver ownership, wire-v2 bounds and loop-side rendering. Both 4× and 5× host/native options validated; exact-head Linux CI runs ASan/UBSan.
+- [ ] Record owner decision on PAUSED duration/return to IDLE and artwork fallback; do not silently pick a scene-switch policy.
+- **Implementation status:** offline scene milestone complete. PAUSED timeout seam defaults to disabled/retain; final owner timeout remains OPEN. STOPPED debounce is bounded at 300 ms. Signed position is labelled REPORTED, without invented interpolation because wire-v2 has no observation timestamp. Real providers and physical LCD timing/readability remain open. The historical roadmap appendix below is unchanged.
+- **Exit:** tested offline UI/state machine, signed 32×32 receiver handoff preserved, measured linked RAM/individual compiler-frame budget and bounded SPI work. Actual native LCD timing/high-water awaits separate physical approval. No flash.
+
+### P1 — Home LAN as the normal operating network (high priority, before further routine UI flashing)
+- [ ] Add an explicitly provisioned **STA/home-Wi-Fi mode** in the active FS-less FirstBoot profile. PC and SmallTV share the owner's usual router/LAN, without Windows repeatedly joining SHINO's isolated AP. DHCP plus discoverability (mDNS if reviewed, documented address fallback); no requirement to expose device to Internet.
+- [ ] Define secure owner-local Wi-Fi credential onboarding/storage without publishing secrets or introducing unsafe stock-filesystem writes. Never substitute household SSID security for API auth.
+- [ ] Maintain a tested **private AP recovery/provisioning fallback** if SSID/password/router is unavailable; model STA timeout, retry/backoff, reboot, IP changes, mode transition and lost-connection recovery. AP+STA hybrid is optional only if heap/radio/load measurements allow it.
+- [ ] Audit the HTTP Host/Origin/peer/IP/session and OTA policies: several existing privileged contracts are deliberately hard-coded to the private AP at 192.168.4.1; adding STA must not accidentally expose write routes or bypass authentication.
+- **Exit:** offline tests, bounded field transition plan and a demonstrable no-lockout path; still no device write without exact-image approval.
+
+### P2 — Native signed SHINO→SHINO OTA (top platform priority; eliminate recurring OEM detour)
+- [ ] Integrate a real owner-authenticated, bounded, one-use signed updater **inside running SHINO**; current read-only Phase A and isolated gates are research components, not a callable writer. Exact image/size/header/layout/hash, independently pinned signing key, challenge/consent, signed transport and core `Update.end(false)` verification.
+- [ ] Resolve ESP8266 global `Update.installSignature` interaction: signature verification can suppress legacy OEM `setMD5` verification. Preserve a separately reviewed **signed AND byte-exact pinned-OEM return**, or a demonstrably safe separated arrangement. Never silently sacrifice the proven OEM escape route.
+- [ ] Authenticate privileged operation BEFORE unbounded request-body reads, single-owner streaming and strict lengths, interrupt/error cleanup, staging/eboot limits and actual flash geometry. Investigate interrupted transfer resume only if it can be implemented safely and bounded; distinguish network resume from true power-loss-safe rollback.
+- [ ] Stage host/CI tests, memory/link reviews, interrupted-transfer fault injection and a separate explicit owner go/no-go for the exact release image. No claim of no-boot Wi-Fi rescue.
+- **Exit:** physically validated running SHINO→new signed SHINO update without OEM downgrade, while preserving authenticated OEM return. Until then, the documented double-hop is still the only demonstrated field route.
+
+### P3 — Planned next hardware release (only after independent gates)
+- [ ] Review whether STA + native OTA can fit and be activated together without risking the owner's only unit; prefer a staged safer rollout if combined change increases recovery risk. One further OEM-assisted transition may be needed to *introduce* the first self-updating SHINO build.
+- [ ] Build/hash exact private owner candidate, prove rollback and live capability, request specific owner approval. Physical check: STA association, PC telemetry over normal LAN, AP fallback, signed OTA flow/recovery and all four IDLE cards.
+- [ ] Confirm single-scene UX, native 32×32 actual artwork/display colours/orientation, title marquee and render/stack/heap margin. No extra firmware writes for cosmetic preview iteration.
+
+### P4 — Deliver the end-to-end Now Playing user feature
+- [ ] Extend separate Windows SHINO // LINK GSMTC pilot into a **reviewed opt-in bounded media sender**, detecting track/cover/state changes, sourcing and cropping artwork on PC, converting to 32×32 RGB565LE, authenticating media without disturbing numeric telemetry. No hardcoded player dependence or cloud secrets on TV.
+- [ ] Display PLAYING art/title/artist/progress **instead of** metrics, PAUSED behaviour per owner sign-off, fallback without artwork, then return to clock/weather/metrics IDLE on stopped/no session. Confirm slow marquee on real 240px LCD.
+- [ ] Keep the four metrics updating silently in the background during music; use safe explicit unknown/stale representation in IDLE.
+- **Exit:** demonstrable normal-home-LAN end-to-end music and health scenes with measured LCD/heap/telemetry continuity.
+
+### P5 — Clock, weather and comfort
+- [ ] Clock sync from authenticated PC time initially; consider NTP after STA is safe. Track sync/age, timezone and DST; never invent a wall clock after unsynced boot.
+- [ ] Configurable city/weather provider and cache (PC-fed first, opt-in) with freshness and offline fallback. No embedded weather/API secret on the TV.
+- [ ] Brightness/night mode, stable visual states, typography and optional scene transition timing, subject to 240px/RGB565 limits.
+
+### P6 — Optional improvements, never blockers for the 32×32 product
+- [ ] 48×48 replacement needs meaningful 8-second timing headroom AND actual same-state retained-4608-image heap/largest-block measurements before a new physical attempt; no deadline/auth weakening.
+- [ ] Strict longer-term telemetry six-second continuity analysis independent of demonstrated receiver PASS.
+- [ ] R3 persistent freshness/replay and R10 production-key provisioning remain separate *release* blockers.
+- [ ] Any additional widgets (code/agent/SHINOBIWAN release) only after stable base product.
+
+## Decision register (unresolved, do not invent approval)
+
+1. **Confirmed:** four metrics only in IDLE/PC health, **none** in music screens; each scene and artwork must obey 240×240 / 1:1 geometry. Curves above metrics removed; adaptive bar levels retained.
+2. **Confirmed priority:** normal home-LAN STA instead of mandatory private SHINO AP; retain a reliable AP recovery/configuration option.
+3. **Confirmed priority:** native signed SHINO→SHINO updating without OEM detour for every revision; current implementation is NOT ready.
+4. **Confirmed:** overflowing titles scroll slowly and legibly, not compressed to fit.
+5. **To decide:** PAUSED scene duration and return-to-IDLE behaviour; music-progress visibility if source reports incomplete times; fallback after cover interruption.
+6. **To decide:** city, weather source/refresh policy, clock sync and optional idle background artwork (respect measured PROGMEM/flash/RAM).
+7. **Safety boundary:** documentation or an offline prototype does not authorize any flash. No UART/JTAG/solder assumed; OEM application-only fallback cannot rescue an unbootable device.
+
+---
+
+## Historical product roadmap — retained for provenance (28 September 2026)
+
+> The historical section below uses statements such as “current review-003” and “native media BLOCKED” in their original dated context. They are superseded by the **1 October active status and priorities above**, not current device facts.
+
 > **Current owner-reported state, corrected 28 September 2026 during the V0.6 review:** the SmallTV Ultra runs private **V2.1 review-003**, frozen at source `8cef03012ae4a4864d69cbe20e02f141a36e2d54`. Its four metrics (CPU, GPU, RAM, GPU TEMP) work through the standalone **SHINO // LINK V0.1 Windows tray**. V0.4 music metadata/artwork/progress/pause-resume remain PC-local; V0.5 media transfer is host-only. Native media remains **BLOCKED** by pre-allocation HTTP bounds, production authentication and unproven heap headroom; see [V0.6 security review](V06_MEDIA_AUTH_AND_TRANSFER_REVIEW.md). This corrects the former review-002/current and review-003/not-installed wording using owner evidence, without a new device connection or private image inspection.
 
 > **Binding constraint:** development/install via **Wi-Fi only**, USB-C for power. **No proposed adapter, UART, pogo pins, solder, PCB access, extra device or purchase as a normal dependency.** Hardware recovery is a break-glass discussion **only after an actual brick and only at the owner's request**. Older hardware-gate research retained below is superseded for this owner. The manufacturer OTA application image is **not** a 4 MiB full-chip backup. No guarantee of Wi-Fi rescue if the application fails to boot.
