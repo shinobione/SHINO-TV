@@ -257,7 +257,9 @@ class ExistingLegacyClientWireTests(unittest.TestCase):
         self.assertIn("credentials:'same-origin'",ui)
         self.assertIn("if(response.status===401||response.status===403)",ui)
         self.assertIn("pollingDenied=true",ui)
-        self.assertIn("HTTPDigestAuthHandler(store)",companion)
+        # Mission 8 PC continuity uses an endpoint-bound subclass of real urllib Digest.
+        opener=sender.make_opener('192.168.4.1','shino','public-fixture-only')
+        self.assertTrue(any(isinstance(h,HTTPDigestAuthHandler) for h in opener.handlers))
         self.assertIn('ENDPOINT = "/api/v1/bridge/metrics"',companion)
         with self.assertRaises(sender.SenderError):
             sender.validate_host("127.0.0.1")

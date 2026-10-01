@@ -7,6 +7,7 @@ Never send private credentials in command arguments, log or public artifacts.
 from __future__ import annotations
 
 import argparse
+from enum import Enum
 import ipaddress
 import json
 from pathlib import Path
@@ -15,6 +16,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import (
     HTTPDigestAuthHandler, HTTPPasswordMgrWithDefaultRealm,
     HTTPRedirectHandler, ProxyHandler, Request, build_opener,
+    parse_http_list, parse_keqv_list,
 )
 from metrics_server import collect_metrics, query_nvidia
 
@@ -32,9 +34,63 @@ class SenderError(ValueError):
     pass
 
 
+class SendStatus(str, Enum):
+    ACCEPTED = 'accepted_sample'
+    NO_ROUTE_TIMEOUT = 'no_route_or_timeout'
+    CONNECTION = 'connection_refused_or_reset'
+    HTTP_401 = 'http_401'
+    HTTP_403 = 'http_403'
+    HTTP_ERROR = 'http_error'
+    MALFORMED = 'malformed_response'
+    NETWORK_ERROR = 'network_error'
+    INVALID_SAMPLE = 'invalid_sample'
+    CLIENT_ERROR = 'client_error'
+
+
+def failure_status(exc: Exception) -> SendStatus:
+    """Classify by type/code only. Never retain exception text, URLs or headers."""
+    if isinstance(exc, HTTPError):
+        return {401: SendStatus.HTTP_401, 403: SendStatus.HTTP_403}.get(exc.code, SendStatus.HTTP_ERROR)
+    if isinstance(exc, URLError):
+        return failure_status(exc.reason) if isinstance(exc.reason, Exception) else SendStatus.NETWORK_ERROR
+    if isinstance(exc, (ConnectionError, BrokenPipeError)) or getattr(exc, 'errno', None) in (10054, 10061) or getattr(exc, 'winerror', None) in (10054, 10061):
+        return SendStatus.CONNECTION
+    if isinstance(exc, TimeoutError) or getattr(exc, 'errno', None) in (101, 113, 10051, 10060, 10065) or getattr(exc, 'winerror', None) in (10051, 10060, 10065):
+        return SendStatus.NO_ROUTE_TIMEOUT
+    if isinstance(exc, OSError):
+        return SendStatus.NETWORK_ERROR
+    return SendStatus.MALFORMED if isinstance(exc, (ValueError, UnicodeError)) else SendStatus.CLIENT_ERROR
+
+
 class NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
+
+
+class TelemetryDigestAuthHandler(HTTPDigestAuthHandler):
+    """One endpoint/client's challenge cache; never shared or exposed in diagnostics."""
+    def __init__(self, store, url):
+        super().__init__(store)
+        self.url = url
+        self.challenge = None
+
+    def http_request(self, request):
+        if request.full_url == self.url and self.challenge and not request.has_header('Authorization'):
+            value = self.get_authorization(request, self.challenge)
+            if value:
+                request.add_unredirected_header('Authorization', 'Digest ' + value)
+        return request
+
+    def http_error_401(self, req, fp, code, msg, headers):
+        auth = headers.get('www-authenticate', '')
+        if req.full_url == self.url and auth.lower().startswith('digest '):
+            self.challenge = parse_keqv_list(parse_http_list(auth[7:]))
+        try:
+            return super().http_error_401(req, fp, code, msg, headers)
+        finally:
+            # urllib resets only after normal return; an interrupted nested auth
+            # exchange must not poison future logical attempts. Its recursion cap stays intact.
+            self.reset_retry_count()
 
 
 def validate_host(value: str) -> str:
@@ -88,10 +144,10 @@ def make_opener(host: str, user: str, password: str):
     url = "http://" + validate_host(host) + ENDPOINT
     store = HTTPPasswordMgrWithDefaultRealm()
     store.add_password("SHINO-FirstBoot", url, user, password)
-    return build_opener(ProxyHandler({}), NoRedirect(), HTTPDigestAuthHandler(store))
+    return build_opener(ProxyHandler({}), NoRedirect(), TelemetryDigestAuthHandler(store, url))
 
 
-def send_one(host: str, opener, sample: dict, timeout: float = 3.0) -> bool:
+def send_sample(host: str, opener, sample: dict, timeout: float = 3.0) -> SendStatus:
     if not 0.1 <= timeout <= 10:
         raise SenderError("Timeout out of range")
     url = "http://" + validate_host(host) + ENDPOINT
@@ -103,17 +159,27 @@ def send_one(host: str, opener, sample: dict, timeout: float = 3.0) -> bool:
     try:
         with opener.open(request, timeout=timeout) as response:
             if response.getcode() != 200:
-                return False
+                return {401: SendStatus.HTTP_401, 403: SendStatus.HTTP_403}.get(response.getcode(), SendStatus.HTTP_ERROR)
             if response.headers.get("Content-Length", "").isdigit() and int(
                     response.headers["Content-Length"]) > 256:
-                return False
+                return SendStatus.MALFORMED
             body = response.read(257)
             if len(body) > 256:
-                return False
+                return SendStatus.MALFORMED
             data = json.loads(body)
-            return data.get("status") == "RAM_SAMPLE_ACCEPTED" and data.get("persisted") is False
-    except (HTTPError, URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError):
-        return False
+            return (SendStatus.ACCEPTED if isinstance(data, dict) and
+                    data.get("status") == "RAM_SAMPLE_ACCEPTED" and data.get("persisted") is False
+                    else SendStatus.MALFORMED)
+    except (HTTPError, URLError, TimeoutError, OSError, ValueError) as exc:
+        result = failure_status(exc)
+        if isinstance(exc, HTTPError):
+            exc.close()
+        return result
+
+
+def send_one(host: str, opener, sample: dict, timeout: float = 3.0) -> bool:
+    # Retained bool API for existing host/loopback callers.
+    return send_sample(host, opener, sample, timeout) is SendStatus.ACCEPTED
 
 
 def main() -> int:
@@ -143,13 +209,18 @@ def main() -> int:
         print("Use Ctrl+C to stop. Stale PC stats expire automatically after 6 seconds.")
         while True:
             sample = collect_metrics(psutil, query_nvidia)
-            accepted = send_one(host, opener, sample)
-            print("RAM telemetry accepted" if accepted else "No response / rejected (no device write attempted)")
+            result = send_sample(host, opener, sample)
+            accepted = result is SendStatus.ACCEPTED
+            print(result.value)
+            if not accepted:
+                opener = make_opener(host, user, password) # Next attempt still waits below.
             if args.once:
                 return 0 if accepted else 1
             time.sleep(2)
-    except (SenderError, OSError) as exc:
+    except SenderError as exc:
         parser.exit(1, f"Telemetry sender stopped: {exc}\n")
+    except OSError:
+        parser.exit(1, "Telemetry sender stopped: local file unavailable\n")
     except KeyboardInterrupt:
         print("\nSender stopped. Device statistics will become stale.")
     return 0

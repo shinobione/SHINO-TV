@@ -8,6 +8,7 @@ Neither a config command nor a dry run contacts the SmallTV.
 from __future__ import annotations
 
 import argparse
+from collections import deque
 import json
 import os
 from pathlib import Path
@@ -20,7 +21,7 @@ import webbrowser
 
 from metrics_server import collect_metrics, query_nvidia
 from push_fsless_metrics import (
-    SenderError, encode_sample, make_opener, read_credentials, send_one, validate_host,
+    SenderError, SendStatus, encode_sample, make_opener, read_credentials, send_sample, validate_host,
 )
 
 APP_NAME = "SHINO // LINK"
@@ -113,13 +114,19 @@ def save_config(path: Path, host: str, credentials: Path) -> None:
 class LinkEngine:
     """Purely PC-side rate-limited state machine; no startup network side effects."""
 
-    def __init__(self, host: str, opener, sampler, sender=send_one,
-                 clock=time.monotonic):
+    def __init__(self, host: str, opener, sampler, sender=send_sample,
+                 clock=time.monotonic, opener_factory=None):
         self.host = validate_host(host)
         self.opener = opener
         self.sampler = sampler
         self.sender = sender
         self.clock = clock
+        self.opener_factory = opener_factory
+        self.generation = 1
+        self.attempts = 0
+        self.accepted = 0
+        self.last_result = None
+        self.history = deque(maxlen=64)
         self.next_due = 0.0
         self.failures = 0
         self.state = "WAITING"
@@ -129,14 +136,27 @@ class LinkEngine:
         now = self.clock() if use_live_clock else now
         if now < self.next_due:
             return self.state
+        started = self.clock()
         try:
             sample = self.sampler()
             encode_sample(sample)  # Do not send invalid, stale or unbounded readings.
-            accepted = self.sender(self.host, self.opener, sample, timeout=3.0)
         except Exception:
-            # Never log exception bodies: they may include local paths or HTTP headers.
-            accepted = False
+            result = SendStatus.INVALID_SAMPLE
+        else:
+            try:
+                if self.opener is None:
+                    self.opener = self.opener_factory()
+                    self.generation += 1
+                sent = self.sender(self.host, self.opener, sample, timeout=3.0)
+                # Existing injected bool senders stay supported; enum truthiness is not success.
+                result = sent if isinstance(sent, SendStatus) else SendStatus.ACCEPTED if sent is True else SendStatus.CLIENT_ERROR
+            except Exception:
+                result = SendStatus.CLIENT_ERROR
+        self.last_result = result
+        self.attempts += 1
+        accepted = result is SendStatus.ACCEPTED
         if accepted:
+            self.accepted += 1
             self.failures = 0
             self.state = "CONNECTED"
             delay = CONNECTED_INTERVAL_SECONDS
@@ -144,19 +164,42 @@ class LinkEngine:
             self.failures += 1
             self.state = "RETRYING"
             delay = min(MAX_RETRY_SECONDS, 2.0 * (2 ** min(self.failures - 1, 4)))
+            if self.opener_factory and (result in (
+                    SendStatus.NO_ROUTE_TIMEOUT, SendStatus.CONNECTION, SendStatus.NETWORK_ERROR,
+                    SendStatus.HTTP_401, SendStatus.HTTP_403, SendStatus.CLIENT_ERROR) or
+                    (result is SendStatus.MALFORMED and self.failures % 3 == 0)):
+                # Fresh state on NEXT scheduled attempt. No immediate POST/retry loop.
+                self.opener = None
         # Delay is measured AFTER collection/HTTP completes, so a 3s timeout
         # cannot accidentally turn a 2s retry into an immediate retry storm.
         completed = self.clock() if use_live_clock else now
         self.next_due = completed + delay
+        self.history.append({'attempt': self.attempts, 'result': result.value,
+                             'http_status': 200 if accepted else 401 if result is SendStatus.HTTP_401 else 403 if result is SendStatus.HTTP_403 else None,
+                             'generation': self.generation, 'failures': self.failures,
+                             'completed_monotonic': completed, 'retry_seconds': delay,
+                             'duration_ms': round(max(0, self.clock() - started) * 1000, 3)})
         return self.state
 
-    def run(self, stop: threading.Event, report) -> None:
+    def diagnostics(self) -> dict:
+        return {'state': self.state, 'attempts': self.attempts, 'accepted': self.accepted,
+                'generation': self.generation, 'failures': self.failures,
+                'history': list(self.history)}
+
+    def run(self, stop: threading.Event, report, observe=None) -> None:
         last_state = None
+        last_attempt = 0
         while not stop.is_set():
             state = self.step()
             if state != last_state:
                 report(state)
                 last_state = state
+            if observe and self.attempts != last_attempt:
+                last_attempt = self.attempts
+                try:
+                    observe(self.diagnostics())
+                except OSError:
+                    pass # Diagnostics must not stop telemetry or expose local paths.
             # Never spin or immediately retry on a network/collection failure.
             stop.wait(max(0.01, self.next_due - self.clock()))
 
@@ -165,14 +208,32 @@ def make_engine(config: dict[str, str]) -> LinkEngine:
     # Lazy import: --dry-run/configure/autostart status never need to read secrets
     # or contact the device. The credentials file is never copied into link.json.
     user, password = read_credentials(Path(config["credentials_file"]))
-    opener = make_opener(config["host"], user, password)
+    factory = lambda: make_opener(config["host"], user, password)
+    opener = factory()
     import psutil
     psutil.cpu_percent(interval=None)  # Prime nonblocking first CPU sample.
     return LinkEngine(config["host"], opener,
-                      lambda: collect_metrics(psutil, query_nvidia))
+                      lambda: collect_metrics(psutil, query_nvidia), opener_factory=factory)
 
 
-def run_tray(config: dict[str, str]) -> int:
+def diagnostics_writer(path: Path):
+    """Opt-in bounded sanitized snapshot, never a raw HTTP/credential log."""
+    def write(data):
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile('w', encoding='utf-8', dir=path.parent,
+                                             prefix='.shino-diag-', suffix='.tmp', delete=False) as stream:
+                temporary = Path(stream.name)
+                json.dump(data, stream, allow_nan=False)
+            os.replace(temporary, path)
+            temporary = None
+        finally:
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)
+    return write
+
+
+def run_tray(config: dict[str, str], observe=None) -> int:
     try:
         import pystray
         from PIL import Image, ImageDraw
@@ -208,7 +269,7 @@ def run_tray(config: dict[str, str]) -> int:
         pystray.MenuItem("Exit SHINO // LINK", quit_app),
     )
     icon = pystray.Icon("SHINO_LINK", picture, APP_NAME + " · WAITING", menu)
-    worker = threading.Thread(target=engine.run, args=(stop, state_changed),
+    worker = threading.Thread(target=engine.run, args=(stop, state_changed, observe),
                               name="SHINO-LINK-metrics", daemon=True)
     worker.start()
     try:
@@ -295,6 +356,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="Private IPv4 destination for --configure (default 192.168.4.1)")
     parser.add_argument("--credentials-file", type=Path,
                         help="Private matching-build file; used ONLY for --configure, no password on CLI")
+    parser.add_argument('--diagnostics-file', type=Path,
+                        help='Optional bounded sanitized status snapshot for --run/--tray')
     args = parser.parse_args(argv)
     try:
         if args.dry_run:
@@ -316,8 +379,9 @@ def main(argv: list[str] | None = None) -> int:
             print("SHINO // LINK auto-start:", autostart(args.autostart, path))
             return 0
         config = load_config(path)
+        observe = diagnostics_writer(args.diagnostics_file) if args.diagnostics_file else None
         if args.tray:
-            return run_tray(config)
+            return run_tray(config, observe)
         engine = make_engine(config)
         if args.once:
             state = engine.step()
@@ -326,15 +390,18 @@ def main(argv: list[str] | None = None) -> int:
         stop = threading.Event()
         print("SHINO // LINK started (RAM-only metrics, Ctrl+C to stop).")
         try:
-            engine.run(stop, lambda state: print("SHINO // LINK:", state, flush=True))
+            engine.run(stop, lambda state: print("SHINO // LINK:", state, flush=True), observe)
         except KeyboardInterrupt:
             stop.set()
             print("\nSHINO // LINK stopped; device metrics expire after six seconds.")
         return 0
-    except (LinkError, SenderError, OSError) as exc:
+    except (LinkError, SenderError) as exc:
         # These are deliberately sanitized errors; never print raw credentials,
         # HTTP challenges, config content or third-party tracebacks.
         print("SHINO // LINK STOP:", exc, file=sys.stderr)
+        return 1
+    except OSError:
+        print('SHINO // LINK STOP: local file unavailable', file=sys.stderr)
         return 1
 
 

@@ -1,4 +1,4 @@
-# Mission 8: equal-ownership physical resource comparison
+# Mission 8: corrected qualification controller and completed Commit
 
 1 October 2026. Continued exact `1e7bfce6844c0d0ac58713534a6f32d3ae07fb9c`
 on the existing branch and Draft PR #39. **Current 446944-byte candidate: 32x32
@@ -9,22 +9,25 @@ failure; it did not exercise/fail native Commit. All earlier evidence is retaine
 Zero firmware writes, reboots, factory returns or LINK restarts in this continuation.
 R3 PARTIAL; R10 BLOCKED. No production provisioning, permanent sender, Mission 9 or merge.
 
-Equal image-ownership comparison (2048-byte committed image, clean temporary
-ownership): six retained old-reference positive cycles settled at heap
-18528–18944 and block 16768–17568. New initial/replacement settled at heap
-18736/18736, blocks 16672/16504 and fragmentation 11%/12%. Different HTTP timing
-and allocator histories prevent a causal claim that the arena fix added 2048
-bytes to settled heap or largest block. Native temporary arena peak 1984/2048
-from the preceding physical run remains valid. Current-cycle transient minima:
-initial 11768/10176, replacement 11768/10296; maximum fragmentation 17%/19%.
-Final clean snapshot: heap18816, block16504, fragmentation12%, image2048.
+The retained reader already cached challenges, but retried 401s immediately
+while LINK could be authenticating. Pinned ESP8266WebServer replaces its sole
+server nonce/opaque pair on every challenge, so these exchanges can invalidate
+each other. The corrected research-local controller uses one endpoint-scoped
+preemptive Digest context, serial protected controls, and locally observed LINK
+quiet slots (1.25-second bound). Recovery is limited to three requests, lower
+than the old four. An explicit 401 can retry; accepted operations, malformed
+success and uncertain transport cannot. A dedicated cookie-only opener observes
+metrics; the browser cookie never authorizes `/m8`. Inside Begin..Commit there
+are only necessary nonce-issue GETs, no extra snapshots or parallel protected
+polling. Begin/first tile are the only two preissued media challenges; unused
+matching Abort proofs are prepared, not preissued. No body retry or nonce replay.
 
-Live initial 48 memory gate passed at heap18816/block16504 with retained32 image.
-This is not a measured retained-4608-image state. Replacement thresholds remain
-heap14904/block11304 with 4096 reserve, necessary but not sufficient. Measured
-32 span and worst tile/control/peer waits give a conservative 48 projection
-10142 ms, before 750 ms reserve, against unchanged 8000 ms. Therefore no initial
-48 Begin or replacement was sent, and no observed 48 failure is claimed.
+Twelve controller tests and six finite-plan tests passed before device access;
+an additional offline immediate-storm reproduction passed afterward. The
+13-test controller suite covers real MD5 Digest/query parity, concurrent rotation,
+peer-aware recovery, scope/serialization, secret-free failures and no repeat of
+accepted/uncertain operations. The exact tested injected core is used by the
+private adapter and added to the existing CI job; it has no network I/O itself.
 
 | Focused physical scope | Actual result |
 |---|---|
@@ -55,7 +58,7 @@ Detailed scoped evidence: [stack evidence](V08_MISSION_8R_STACK_EVIDENCE.json), 
 
 The following records describe the earlier runs, not the current qualification result.
 
-# Mission 8 actual new-candidate resource measurements
+# Mission 8 StackThunk physical finalization
 
 1 October 2026. Executed the owner's approved physical qualification from exact
 `ff617d4afb6bb1cb9ac05577da3c3a88e4e3ca0a`, on the existing branch and Draft PR #39.
@@ -64,6 +67,24 @@ regression.** Further body transfers stopped after supported signed Abort and
 verified cleanup. The installed 446944-byte candidate remains running; no
 firmware rebuild, additional flash, reboot or companion restart followed the stop.
 R3 PARTIAL; R10 BLOCKED. No provisioning, permanent sender, Mission 9 or merge.
+
+Fresh owner LCD observations passed before the first write and after the new
+candidate boot: correct orientation and four continuously updating cards without
+artifacts. Boot `2962927510`, existing LINK PID `9972`, 11 real ECDSA calls,
+maximum crypto 596139 microseconds; no unexpected reset, canary or allocation
+failure. The receiver remains an inert RAM transport; no LCD artwork claim.
+
+Wrong CRC was set before signing; signature and Content-Digest independently
+verified. Native ECDSA count advanced 4→5, Gate2 rejected, accepted count stayed
+4 and rejected increased. The valid first tile then advanced accepted 4→5 with
+STAGED (not duplicate), preserving the tile index through denial. Diagnostic
+access subsequently hit four HTTP 401s; unused matching signed Abort cleaned up.
+The selected maximum-usage metadata Begin staged successfully at 1984/2048.
+Two image tiles staged, then another four-request diagnostic-auth bound stopped
+the cycle before the next tile. Abort and automatic freshness recovery completed
+within 6.531 seconds. No body was retried and no Commit was falsely inferred
+from socket closure. New-image replacement/invalid-metadata preservation tests
+remain NOT RUN because no new committed image exists.
 
 | Measured new-boot scope | Bytes / result |
 |---|---|
@@ -97,7 +118,7 @@ Measured details and sanitized snapshots are in [stack evidence](V08_MISSION_8R_
 
 The following records describe their earlier checkpoints, not the current installed state.
 
-# Mission 8 measured native build and predicted replacement budget
+# Mission 8 implementation finalization: bounded metadata arena
 
 1 October 2026. Continued exact `c5bb1a813113af802b8736939a22de5a78097acd`
 on the existing branch and Draft PR #39. **Implemented and tested offline; overall
@@ -162,21 +183,6 @@ receiver evidence merely to regenerate it. 48 replacement needs both live memory
 review and a justified experimental timing decision. Strict six-second telemetry
 continuity remains a separate HOLD; its historical gap is preserved.
 
-| Linked/build measure | Old reference | New candidate |
-|---|---:|---:|
-| GNU size text | 439207 | 439983 |
-| GNU size data (includes 56 noinit) | 2840 | 2872 |
-| BSS | 32704 | 32712 |
-| DRAM data + rodata + BSS | 52300 | 52508 |
-| Arena reserved / corpus peak | 4096 / 3048 | 2048 / 1984 |
-| Image + arena allocation peak / concurrent arrays | 8704 / 2 | 6656 / 2 |
-| BIN bytes | 446144 | 446944 |
-
-Receiver/Ingress/Authority native objects remain 1120/1432/2104 bytes. The arena
-dies before new-image staging; no new persistent heap allocation is introduced.
-DRAM growth includes new diagnostics/constants, not just the 12-byte stats change.
-The unchanged 2048-byte diagnostic buffer has a conservative 1681-byte format bound.
-
 Initial implementation CI at `82a5173` passed 10/11 jobs in both runs. The new
 metadata runner failed to resolve a relative dependency include before compiling
 in a temporary directory. This test-runner path bug is fixed; the CI-style
@@ -240,6 +246,13 @@ pending=false, body/staging/challenges/secondary refs=0, image=4608, commits=12,
 ECDSA calls=92, same boot/PID. OEM recovery still enabled with unchanged OEM hash;
 two subsequent accepted HTTP 200 samples and fresh device telemetry were confirmed.
 
+The third body-test window was 2026-10-01T13:44:24.283250+00:00 to 2026-10-01T13:44:51.404674+00:00
+(27.125 s): 12 accepted POSTs, 13 fresh readings,
+maximum accepted interval 2.64 s. GPU TEMP remained
+fresh at 43 C; no numerical change is invented. Separate windows are not stitched
+into a continuous soak. The earlier 7.266-second strict TTL failure is retained,
+automatically recovered and still unresolved; it does not erase successful media paths.
+
 All six existing reports now reflect the completed safe phases and the actual
 replacement blocker. Historical checkpoints below remain intact, including the
 corrected timing projection. Native resource frames and sanitized private evidence
@@ -291,15 +304,20 @@ secondary refs/challenges/body/staging zero, receiver pending=false, image=2048
 (expected retained Commit allocation), cumulative commits=11. OEM recovery GET
 remained enabled with the unchanged retained OEM hash; no recovery write occurred.
 
-| 32x32 fixture cycle | Case | Before heap/block | Peak min heap/block | After heap/block | Settled heap/block | Min continuation |
-|---|---|---:|---:|---:|---:|---:|
-| 2 | positive | 21080/17088 | 11408/10048 | 18944/17488 | 18944/17488 | 2048 |
-| 4 | interrupted | 21416/20272 | 12568/11552 | 21000/19688 | 21000/19688 | 2080 |
-| 5 | positive | 21080/19688 | 10472/9336 | 18944/16768 | 18944/16768 | 2080 |
-| 6 | positive | 19024/16768 | 11976/10240 | 18944/17064 | 18944/17064 | 2080 |
-| 7 | positive | 19024/17064 | 11976/9672 | 18944/16896 | 18944/16896 | 2048 |
-| 8 | positive | 19024/16896 | 11952/10072 | 18944/17232 | 18944/17232 | 1968 |
-| 9 | positive | 19024/17232 | 11976/10128 | 18528/17568 | 18944/17568 | 1936 |
+The initial ignored controller paused four times on **its protected GET HTTP
+401s**, with every captured sender POST accepted and every device reading fresh.
+Its generic `client_error` / `REPEATED_TRANSPORT_PREVENTS_PHASE_32` label was too
+broad. The fifth coverless Commit completed before its observer rejection:
+the retained native frame at 13:13:51.866769 UTC reports COMMITTED, commits=4,
+ECDSA=32, highest=8, no pending/body/staging/image. It remains valid receiver
+evidence even though that controller did not record a settled cycle PASS.
+The corrected ignored reader combines required challenge controls with snapshots
+and retries only explicit rejected 401s, at most four wire requests per control.
+Ten bounded reader resynchronizations occurred. No media body was retried.
+Cookie metrics GETs generated no independent Digest challenge. The production
+sender, cadence and six-second TTL were unchanged. These reader 401s demonstrate
+shared Digest observation contention; they are not sender 401s or firmware safety
+failures. The historical independent network timeout remains unresolved.
 
 The 48x48 review used actual image-bearing 32x32 replacement cycles, not the
 historical 10592-byte minimum as approval. With 2560 extra retained-image bytes
@@ -708,7 +726,7 @@ production key, new media sender or merge.
 ---
 Historical physical attempt and recovery record at 977aed52 preserved below.
 
-# Mission 8 measured boot resources and unqualified crypto margin
+# Mission 8 pinned StackThunk: installed, baseline stopped, V2.1 restored
 
 1 October 2026, Europe/Paris (30 September UTC). Existing branch
 `feature/shino-tv-v08-stack-remediation`, Draft PR #39. Installed source
@@ -797,160 +815,303 @@ Main stack 4096; secondary 6200. Lifecycle B frees secondary crypto before
 body/JSON/image; explicit receiver peak 9256 and previous-image+crypto 10808
 exclude SDK/TCP/allocator overhead and remain physically untested.
 
-Source/host/linked gates remain PASS: both focused OEM configurations pass
-1065 checks with zero failures, 10207 wire cases and 37 profile cases agree;
-202 signed packets / 190 receiver records were checked offline. Clean source
-head `432263feb139c7af2fecc0ecaa0c348b05304914` rebuilds the same private bytes.
-Pre-install head `979d2ff3900523a8a46d4fd86677326b515867c2` passes all 11 jobs in
-[PR CI](https://github.com/shinobione/SHINO-TV/actions/runs/36781108025) and
-[push CI](https://github.com/shinobione/SHINO-TV/actions/runs/36781102151).
-CI proves retained software checks; physical qualification remains BLOCKED.
+## Exact pinned Core and checked allocation
+
+The installed package is framework-arduinoespressif8266 3.30102.0 / Core 3.1.2
+under espressif8266 4.2.1. Eight exact local Core hashes, including every requested
+file, are in [the manifest](../tools/v08_m8r_core_manifest.json) and are checked
+before the build and linked analysis. No upstream/master substitution is used.
+Pinned StackThunk.cpp explicitly describes its secondary stack as supporting
+BearSSL's large stack demand. `_stackSize (6200/4)` gives 1,550 words / 6,200 bytes.
+
+Stock `add_ref` increments ownership, chooses DRAM, mallocs 6,200, aborts on null,
+sets top to pointer+1549 and save to null, then paints 0xdeadbeef. Stock `del_ref`
+decrements and, at zero, frees and nulls pointer/top/save. `repaint` paints every
+word; `get_max_usage` scans from the bottom and returns the used painted range,
+or zero when unallocated. The exact `make_stack_thunk` saves a 16-byte continuation
+frame, loads the secondary top into a1 before the native call, checks the bottom
+canary through the stock fatal handler, and restores a1/registers before return.
+A canary failure resets; a post-return zero counter cannot prove no prior reset.
+Boot nonce, uptime and reset reason must therefore be monitored across phases.
+
+The isolated LGPL-derived adapter changes ONLY acquisition policy: ownership is
+rejected if busy; heap and largest block are checked; DRAM malloc is checked;
+global fields/refcount are set only after success. Null returns false, increments
+a failure counter, and executes zero ECDSA/body work. No stock add_ref call,
+boot allocation, global allocator replacement, Core edit or enlarged continuation
+stack is introduced. Stock layout, thunk assembly, paint/scan, fatal handler and
+del_ref are retained. The precheck is not proof of malloc success: allocator
+overhead is handled by the actual checked result. Allocation failure is a physical
+STOP even though authentication fails closed.
+
+Chosen provisional lifecycle B allocates/repaints immediately around each proof
+or controlled test-key validation, samples usage before release, and releases
+before any media body/JSON/image work. Lifecycle A would retain 6,200 through the
+9,256-byte receiver peak (15,456 explicit bytes); B avoids that overlap. B can
+still overlap an existing 4,608-byte committed image during proof (10,808 bytes).
+These are explicit object arithmetic, excluding allocator/SDK/request overhead;
+repeated target readings, not arithmetic, must decide whether B is acceptable.
+No lifecycle is physically qualified yet.
+
+## Linked boundaries and instrumentation
+
+Parser/poll return before Proof. The noinline owner proof calls checked acquire,
+thunk, and release in that order. Exact candidate disassembly proves the SP switch
+before raw i15/m31 crypto and restoration before return. Both verify and point
+validation wrappers are linked in the active private candidate. No parser, socket,
+JSON, image or display call is put on the secondary stack. The post-proof admission
+and checked body allocation block is decoded from its linked branch target;
+linear Xtensa disassembly can lose alignment at inline padding. Source guards and
+host denial/revocation tests establish the successful-proof condition as well as
+address order. The known EC chain remains 720+272+592+304+336 = 2,224 bytes, now on
+the secondary stack, plus a 32-byte native verification wrapper. ROM helper bodies
+remain unavailable; they are inside the switched chain and their target high-water
+is now the required evidence. Receiver/JSON/allocator whole-path maxima remain
+UNKNOWN and must be paired with physical continuation measurements.
+
+`ESP.getFreeContStack()` calls the pinned cont paint scan; reset calls cont repaint.
+The latter paints only below current SP minus 64 bytes, so the qualification route
+defers reset until the shallow loop returns from HTTP processing. Each phase reads
+back completion. Resource samples include active crypto allocation, body, JSON
+arena, image staging and owner-loop completion. A qualification-only Digest route
+exports bounded counters and measurements through a fixed 2,048-byte JSON buffer.
+It exposes no credentials/private key. A single controlled test public point can
+be enrolled after boot; synthetic fixed epoch and volatile issue are qualification
+seams, not production provisioning or an R3/R10 completion.
+
+The one-shot fixture process discards its ephemeral private key and retains only
+public point/signed packets locally. The temporary device controller remains in
+ignored research-local; it is not a permanent companion sender. The DisplaySink
+continues to own its committed image without LCD rendering; transfers qualify the
+receiver and dashboard coexistence, not a new NowPlaying screen feature.
+
+## Exact private install candidate and checks
+
+Private `qualification_compile` BIN **446,144 bytes**,
+SHA-256 `8dc18cf5135b4c7da8486d4f00bcc9b944d4bb5e4956a3f9dcbad7603ce47fea`; ELF SHA-256 `34e67a4d3da022fd5d9581628b8e8aa51c2fa0e4273d491a73e910dd1868205e`.
+Text/data/BSS **439,207 / 2,840 / 32,704**.
+Main continuation 4,096; secondary 6,200. Native fixed Authority/Ingress/Receiver
+**2104 / 1432 / 1120** bytes.
+Image/body/JSON explicit allocations are at most 4,608 / 552 / 4,096 bytes.
+The fixed diagnostic buffer adds 2,048 BSS bytes, plus counters and the public point.
+The retained matching private policy is copied only into ignored build shadow.
+No BIN/ELF/private policy or credentials are committed/uploaded. Esptool confirms
+DIO, 4 MiB, 40 MHz and a valid image checksum. Retained pairing and 4m3m geometry
+checks pass; both modeled hops have a 106,496-byte gap and zero inferred stock-FS
+staging overlap. Actual OEM updater behavior and nonbooting recovery remain unproved.
+
+Both focused OEM configurations pass **1,065 checks, zero failures**, with all
+247/247 and 249/249 owner contexts cleaned and zero live descriptors. Wire-v2
+**10,207 cases** and header profile **37 cases** agree with retained host behavior.
+Coverage includes public/synthetic P-256, wrong signature, unknown/used/expired
+challenge, revocation between parse/proof, R1/R2/R4, allocation denial before
+ECDSA/body work, Begin/Tile/Commit/Abort, Mission 6A contention, actual legacy
+dashboard/four metrics and conditional OEM multipart. All three guarded public
+native profiles link, and 4,096/6,144 comparison profiles pass isolation analysis.
+The 6,144 sensitivity profile remains excluded from installation.
+
+Physical installation, stop and rollback evidence is recorded above and in the other five Mission 8 documents. Native crypto high-water and image phases were not exercised.
+
+Clean committed validation at `432263feb139c7af2fecc0ecaa0c348b05304914`: both focused configurations pass;
+both PR and push CI runs pass all **11 jobs**. A clean-head rebuild produces
+byte-identical private ELF/BIN; public and private isolation analyses pass.
+One-shot offline checks verify all 202 signed packets and 190 receiver records
+across 30 coverless/32/48 groups. This does not substitute for target measurements.
+CI: [PR run](https://github.com/shinobione/SHINO-TV/actions/runs/36779971808),
+[push run](https://github.com/shinobione/SHINO-TV/actions/runs/36779968038).
 
 ---
 Historical records preserved below; their gates and zero-contact statements describe those earlier runs.
 
-# Current runtime/resource gate after Mission 8R
+# Mission 8R: stack remediation and qualification gate
 
-**BLOCKED: complete native stack maximum UNKNOWN.** Selected 4,096-byte-stack
-guarded M8R graph: text 427,907, data 2,792, BSS 30,488, BIN 434,800; Authority
-2,104, Ingress 1,424, Receiver 1,120. No extra heap scratch. Known EC chain
-2,224 bytes replaces M7's 4,384-byte accounted chain; that is not a stack-fit
-PASS. ROM `__umulsidi3`/copy/clear and complete receiver bounds remain UNKNOWN.
-Unselected 6,144-byte macro sensitivity increases SYS entry reservation by
-2,048 with no BSS/data change; a safe SYS region and target heap margin are
-unproved. There are no instrumented target readings. See [M8R resources and
-stack evidence](V08_MISSION_8R_STACK_REMEDIATION.md).
+30 September 2026, Europe/Paris. Exact parent:
+`5179eb04ea51c2a92c7f796f07ebb963e2167e00` (Mission 8 / Draft PR #38).
+Branch: `feature/shino-tv-v08-stack-remediation`.
 
----
-Historical Mission 8 record (preserved):
+**Final engineering gate: BLOCKED before installation.** The known linked EC
+chain is reduced from 4,384 to **2,224 bytes**, and parsing returns before ECDSA.
+This is a verified improvement, **not a complete stack-fit PASS**. The actual
+linked m31 multiplier calls ROM `__umulsidi3` at `0x4000dcf0`; its instruction
+body and stack bound are absent from the retained ELF and pinned Core sources.
+ROM `memcpy` and `memset` are also reachable. Full owner, JSON, allocator and
+receiver bounds remain UNKNOWN. The user's explicit UNKNOWN rule prohibits
+installation. No Mission 8R device contact or write occurred.
 
-# Mission 8 runtime resources and static stack stop
+## Remediation evaluated in the requested order
 
-30 September 2026, Europe/Paris. **BLOCKED before candidate installation.**
-This report separates actual existing-V2.1 device observations from native
-compiler/link evidence. There is no instrumented Mission 8 target measurement.
+**A1: separate lifetimes.** A new bounded `Proof` state stores the signature
+digest and prechecked challenge slot. Header parsing finishes and returns from
+the noinline poll. The existing single owner invokes noinline `verifyHeaders`
+on a later service call. Neither parser nor poll remains live during ECDSA.
+The verification phase has no client reference and cannot read body bytes.
+Challenge precheck runs again before ECDSA; slot, serial, principal revision
+and epoch must still match. Final consume uses a fresh clock after verification.
+Admission and the absolute 2,000 ms deadline are rechecked before body allocation.
+Splitting alone cannot repair the inherited **crypto-only 4,384-byte** excess.
 
-## Existing device observations
+**A2: bound large objects without new scratch allocations.** Signature digest
+32 bytes plus slot 4 bytes move into the fixed Ingress owner; alignment makes
+the native Ingress increase **40 bytes**, from 1,384 to 1,424. This state lives
+for the receiver object's lifetime, is reset on begin, becomes unreachable on
+terminal phase, and is overwritten before reuse. It cannot fail allocation.
+It coexists with the existing bounded buffers; no additional heap scratch is
+introduced. `metadata` and `receive` are noinline so the 552-byte Metadata
+automatic is not merged into the poll frame. No unbounded container replaces
+an automatic. The Begin parsed Metadata still lives on stack; that path's
+complete nested bound remains UNKNOWN.
 
-| Existing review-003 reading | Bytes/value | Scope |
-|---|---:|---|
-| Free heap at status GET | 31,168 | One physical device response, including current GET load |
-| Lowest observed free heap | 29,152 | Retained finite accumulator, already SATURATED |
-| Lowest observed largest free block | 28,320 | Same retained accumulator |
-| Highest observed fragmentation | 11% | Same retained accumulator |
-| First/latest recorded free heap | 36,176 / 32,928 | Same retained accumulator |
-| Latest recorded block/fragmentation | 30,248 / 9% | Same retained accumulator |
-| Samples / interval | 1,024 / 1,000 ms | Saturated, no longer recording new extrema |
+**A3: use an existing pinned implementation.** The precompiled Core archive
+exports m15/i15, not m31/i31. The exact pinned Core package nevertheless ships
+the public `br_ec_p256_m31` API and unmodified `src/ec/ec_p256_m31.c`. The new
+project compiles that exact source with its pinned inner/config headers, checks
+its SHA-256, and passes its EC table to the same SDK
+`br_ecdsa_i15_vrfy_raw`. SHA-256, P-256 and raw 64-byte r||s are unchanged.
+Point validation uses the same table. Public retained and synthetic vectors
+pass. The object is named `ec_p256_m31.c.o` to use the Core's existing `*.c.o`
+flash placement rule; an ordinary `.o` consumed IRAM and failed the link. No
+SDK source, assembly, algorithm, partition or linker script was changed.
 
-These extrema were read now but collected earlier during this boot. They do not
-describe Mission 8, the current GET's true transient peak, or a new continuous
-soak. No reset was requested to clear the accumulator. No arbitrary safe heap
-threshold is inferred from these numbers.
+**A4: inspect and measure, do not select a larger constant.** `cont.h` guards
+its 4,096 default with `#ifndef CONT_STACKSIZE`; project build flags can override
+it consistently in Core compilation. The disabled `stack_sensitivity_compile`
+comparison uses 6,144 solely to measure a +2,048-byte change, not as a selected
+safe value. Both full graphs link. Actual `app_entry_redefinable` frame changes
+**4,160 -> 6,208 bytes**; text/data/BSS/BIN sizes remain identical. The pinned
+Core allocates `cont_t` on SYS's DRAM stack, not a heap allocation or BSS array.
+Its own explanation describes reclaiming roughly 4 KiB and warns that SDK
+features can use that region. A larger SYS reservation has no established
+capacity proof here. Static heap figures therefore do **not** prove spare SYS
+stack or a target heap margin. No target heap delta was measured or invented.
+The existing Core secondary BearSSL stack instead allocates 6,200 DRAM heap
+bytes and aborts on allocation failure; it was not selected. The chosen phase
+split/m31 candidate retains **4,096**, with no Core or assembly patch.
 
-## Reproduced unchanged Mission 7 graph
+## Actual linked evidence and remaining blocker
 
-Local PlatformIO **6.2.0**, espressif8266 **4.2.1**, Core **3.1.2**,
-Xtensa GCC **10.3.0**, ArduinoJson **7.4.3**, GFX **1.6.4**, AnimatedGIF **2.2.0**.
-The full build has the inherited zero-valued startup guard and public inert
-policy. It is **not an install candidate**: OEM restore is disabled in that
-public policy and authority remains unprovisioned/epoch zero. No private policy
-was copied into an executable candidate.
+The address-keyed analyzer reads the actual ELF, `nm -S` function extents,
+instruction prologues, direct calls, literal-backed indirect calls, and the
+linked 28-byte EC table. It excludes trailing literal pools from function
+instruction inventories. It resolves offset 24 to the actual m31 `api_muladd`
+and verifies each edge below. It asserts that parse and poll no longer call
+the raw verifier and that `verifyHeaders` does. Compiler `.su` files are only
+supplementary resource evidence.
 
-| Bytes | Mission 6A legacy equivalent | Mission 7 media equivalent | Delta |
-|---|---:|---:|---:|
-| ELF text | 394,647 | 427,771 | +33,124 |
-| ELF data | 1,672 | 2,792 | +1,120 |
-| ELF BSS | 26,960 | 30,456 | +3,496 |
-| BIN | 400,416 | 434,656 | +34,240 |
-
-| Reproduced local artifact | SHA-256 |
-|---|---|
-| `experiments/v08_m7/.pio/build/media_compile/firmware.elf` | `5a63a5b4c8551a0c23965b2d9c5ed1b01a3af22931e9a00e6f0897be8fe45099` |
-| `experiments/v08_m7/.pio/build/media_compile/firmware.bin` | `3a4ff5b8aa4b9ff7656c8cbed25048d86e52c3ac936b4b742f143b5eeed76b7c` |
-| Legacy equivalent ELF | `a05c873b98b71272238dbbf9dd69acb3c50014b62df5c6e74388755033fece69` |
-| Legacy equivalent BIN | `e1c11c2b011fd446cc520de3bddfae4341852096ee88efb78a4a444d6f4a4f0e` |
-
-These exact local artifacts are identified; CI generates separate artifacts
-and hashes. Local paths/toolchain metadata can change hashes between builds.
-The preserved clean Mission 7 CI resource artifact instead reports text 427,775
-and ELF hash `aec30a993f79e32fcb8f4460df394a91db23995a8b293463e8542472d6dbdaad`.
-It is historical evidence, not this local binary.
-
-Compared with the retained 405,712-byte V2.1 image, the guarded media BIN is
-28,944 bytes larger. That is a size comparison only: startup, private/OEM policy
-and diagnostic composition differ, so this is not an equivalent V2.1 feature delta.
-The linked `4m3m` application ceiling is `0x100000` (1,048,576 bytes; PlatformIO
-maximum program size 1,044,464). This inherited BIN is below the app ceiling.
-Its sector-rounded 438,272 bytes are below the live reported 638,976 free-sketch
-bytes. With the current app rounded to 409,600, the modeled staging gap is
-200,704 bytes. None of that establishes candidate safety or live OEM acceptance:
-**flash fit passes arithmetically; stack fit fails.**
-
-Native fixed objects remain Authority 2,104, Ingress 1,384, Receiver 1,120 and
-existing server 424 bytes. Maximum explicit allocations remain: body 552,
-JSON arena 4,096, image 0/2,048/4,608 bytes. Before a replacement Begin accepts,
-previous image + arena + body can total **9,256 bytes**, excluding allocator,
-TCP/SDK, stack and graphics costs. Arena dies before new image staging; Commit
-moves ownership without another full-image copy. These are inherited bounds,
-not measured target margins.
-
-## Actual linked call-chain evidence
-
-`tools/v08_m8_stack_gate.py` disassembles the actual ELF, verifies prologue
-stack decrements and direct calls, resolves `br_ec_p256_m15`'s offset-24
-function pointer to `api_muladd`, and resolves that adapter's literal-backed
-tail jump to `api_muladd$part$0`. These are nested calls on one continuation
-stack, not a sum of unrelated compiler frames. `p256_mul` computes its initial
-window by calling `p256_add`, which calls `mul_f256`, which calls `mul20`.
-
-| Function on reachable nested path | Actual linked frame, bytes |
+| Reachable EC path | Linked frame bytes |
 |---|---:|
-| `Ingress::poll<WiFiClient>` | 736 |
-| `Ingress::parse` | 784 |
-| `br_ecdsa_i15_vrfy_raw` | 720 |
-| `api_muladd$part$0` | 528 |
-| `p256_mul` | 1,264 = 32 + 1,232 |
-| `p256_add` | 624 |
-| `mul_f256` | 192 |
-| Xtensa `mul20` | 1,056 = 32 + 1,024 |
-| Crypto-only subtotal | **4,384** |
-| Receiver + crypto subtotal | **5,904** |
-| Core continuation stack | **4,096** |
+| SDK raw i15 verifier | 720 |
+| m31 `api_muladd` | 272 |
+| m31 `p256_mul` | 592 |
+| m31 `p256_add` | 304 |
+| m31 `mul_f256` | 336 |
+| Accounted EC chain subtotal | **2,224** |
+| `verifyHeaders` frame, preceding this chain | 128 |
+| `handleClient` / FirstBoot loop / loop wrapper | 48 / 16 / 16 |
+| App `loop` tail adapter / continuation wrapper | 0 / 0 |
+| Accounted normal owner + EC prefix | **2,432** |
 
-The crypto subtotal already exceeds available stack by **288 bytes**; receiver
-plus crypto exceeds it by **1,808 bytes**, before owner, application loop,
-continuation entry and other callees. The preserved Core header defines 4,096
-and no project stack override is configured. The SDK multiplier's 1,056-byte
-scratch frame was missing from the earlier C-only compiler-frame view. This
-resolves a concrete concern that Mission 7 explicitly left HOLD.
+The last subtotal excludes ROM multiplier/copy/clear bodies and other branches;
+**1,664 bytes is not a proven spare margin**. The m15 `mul20` assembly frame is
+no longer on this selected EC chain. The replacement's multiplication helper
+is now an important **ROM assembly UNKNOWN**, not an assumed zero-frame leaf.
+Pinned `eagle.rom.addr.v6.ld` proves its name/address, not its implementation.
+Obtaining a target ROM dump would require device contact while the gate fails,
+which the mission prohibits. Adding private probes or global ROM replacements
+would broaden this bounded remediation without proving the complete gate.
 
-This does not prove that the physical SmallTV has crashed; the path was never
-sent to it. It proves the inherited native activation fails the static stack
-fit check. Raising stack size, changing crypto, switching stacks or moving parser
-storage is a separate implementation and memory-budget review, not an automatic
-qualification workaround. No such change was made.
+| Important path | Accounted evidence | Complete maximum |
+|---|---|---|
+| Continuation/loop/owner | Actual entry and owner frames; cont assembly switches SYS/continuation stack | UNKNOWN; callbacks and switched contexts require full bounds |
+| Header/profile | poll 208, parse 736; no nested ECDSA | UNKNOWN; formatting, ROM/string calls and clock callback |
+| Gate 1 | verification 128 + EC 2,224; actual EC table and multiplier calls | UNKNOWN; ROM `__umulsidi3`, memcpy/memset and admission/clock/allocation branches |
+| SHA update | linked update 48 -> compression 384, known chain 432 | Full enclosing request path UNKNOWN |
+| SHA final | output tail -> finalizer 128 -> compression 384, known chain 512 | UNKNOWN; reachable ROM copy/clear |
+| Gate 2 | poll 208, wire and admission; actual body SHA calls | UNKNOWN; complete owner/ROM/client bounds |
+| Begin | receive 640 -> metadata 400; JSON nesting explicitly capped at 2 | UNKNOWN; JSON recursion and virtual arena callbacks need context-sensitive bounds |
+| Tile | same noinline receiver, bounded 512-byte copy and conflict cleanup | UNKNOWN; ROM and allocator/cleanup bounds |
+| Commit | receiver, final image SHA and unique ownership move | UNKNOWN; ROM SHA/cleanup bounds |
+| Abort/expiry/revocation | terminal releases staging and sink | UNKNOWN; allocator/cleanup bounds |
 
-Reproduce both inherited links, then run `python tools/v08_m8_stack_gate.py`.
-Expected evidence is BLOCKED with 4,384/5,904 versus 4,096, with all call/prologue
-checks passing. [Local disassembly evidence](V08_MISSION_8_STACK_EVIDENCE.json)
-includes hashes, addresses, call instructions and pointer/tail resolution.
+No unconstrained sum of all SDK branches, recursion, abort/reset paths or data
+decoded as instructions is presented as a valid maximum. JSON and allocator
+inventory is evidence of work remaining, not proof that those paths exceed
+4,096. Increasing the stack cannot turn an unknown maximum into a proof.
 
-## Required Mission 8 instrumentation and target measurements
+## Resource accounting
 
-| Requested measurement | Mission 8 status |
-|---|---|
-| Free heap / largest block / fragmentation | Existing V2.1 readings above; candidate NOT MEASURED |
-| Stack/high-water | Static blocker proven; physical high-water NOT MEASURED |
-| Allocation failures | NOT MEASURED on candidate |
-| Receiver phase / body buffer / staging size | No candidate activated; inherited bounds only |
-| Challenge count / transaction state | No physical media transaction |
-| ECDSA / SHA duration | NOT MEASURED on ESP8266 |
-| Request/poll / longest application service interval | NOT MEASURED; HTTP GET RTT is not loop timing |
-| Watchdog/reset / boot reason | Existing endpoints do not expose these; UNKNOWN |
-| Wi-Fi reconnect count | Not exposed; current AP connected, no counter evidence |
-| Media accept/reject counters | No candidate active; no physical media requests |
+| Bytes | Retained M7 local media | M8R selected 4 KiB | Delta |
+|---|---:|---:|---:|
+| ELF text | 427,771 | 427,907 | +136 |
+| ELF data | 2,792 | 2,792 | 0 |
+| ELF BSS | 30,456 | 30,488 | +32 |
+| BIN | 434,656 | 434,800 | +144 |
+| Authority | 2,104 | 2,104 | 0 |
+| Ingress | 1,384 | 1,424 | +40 |
+| Receiver | 1,120 | 1,120 | 0 |
 
-The Phase 2 bounded counter/ring-buffer diagnostic adapter was not implemented
-after identifying this earlier unsafe stack prerequisite. No fabricated zeros,
-host timing, CI or saturated baseline readings substitute for these missing
-candidate measurements.
+The independently linked unchanged legacy comparison is text 394,647, data
+1,672, BSS 26,960, BIN 400,416. New media deltas versus that comparison are
+33,260 / 1,120 / 3,528 / 34,384. BSS delta need not equal an individual object's
+size delta because linked padding/layout changes. Server remains 424 bytes in
+media and 416 in legacy. Native `sizeof` comes from ELF symbols; the MSVC host
+sizes differ with 64-bit pointers and are not used for target RAM budgets.
+
+Explicit heap buffers are unchanged: body 40..552, JSON arena 4,096, one image
+0/2,048/4,608 bytes. Maximum replacement overlap is old 48x48 sink image + new
+Begin body + temporary arena = **9,256 bytes**, excluding allocator/TCP/SDK/
+graphics and stacks. Arena dies before new staging. A checked body allocation
+failure rejects and frees on terminal; checked arena allocation/overflow rejects
+metadata; checked staging failure calls terminal cleanup. Tile/Commit/Abort
+terminal paths release owned buffers; Commit transfers ownership without a
+second image allocation. These are explicit bounds, not total target peak RAM.
+
+Compared with retained review-003 V2.1 BIN 405,712, this guarded public BIN is
+29,088 bytes larger. Policy/startup/instrumentation differ, so that comparison
+does not establish an equivalent V2.1 feature cost or OEM upload acceptance.
+Local selected ELF SHA-256:
+`269783955c3e0b9b2de26fa47e1177f2a6fb319a9e691b1e3178df71ddbbd9a1`.
+BIN SHA-256:
+`dec8669d412e29c1c800e560f45cd63fd84496c5453a7147b912603c38b06abc`.
+**434,800 bytes; startup disabled, epoch zero, inert public policy, not an
+instrumented installation binary.** No BIN is committed or uploaded.
+
+## Regression and physical gates
+
+Focused tests passed before dispatching the full retained CI suite. On MSVC,
+each default/OEM native composition passed **1,047 checks**, zero failures,
+246/246 default and 248/248 OEM contexts, zero live descriptors. The retained legacy portions passed
+224 / 227 checks. The wire differential passed 10,207 cases (one admit); profile
+1.1 passed 37 cases (seven admits). Maximum socket work remained 64 bytes/poll.
+The expanded tests stop at the new Proof boundary and independently revoke,
+expire, rotate the same key, advance epoch or expire the ingress deadline;
+all deny before ECDSA/body allocation/body reads/receiver mutation.
+
+Inherited real public P-256 vectors, R1 revocation, R2 literal STV7, R4 cheap
+challenge denial, Begin/Tile/Commit/Abort, >30 ms contention, 2,000 ms/wrap
+deadline, dashboard/four metrics and authorized conditional OEM multipart pass.
+The legacy parser is still exactly the Mission 6A handoff; Mission 6C multipart
+denial is not substituted. Host timing is not ESP8266 ECDSA latency or LCD proof.
+
+Local rollback files were rehashed at **19:11:50 UTC / 21:11:50 Europe/Paris**:
+exact V2.1, OEM and original ZIP pins unchanged. Previous live M8 GETs and the
+owner's LCD/four-card confirmation are preserved, **not refreshed device proof**.
+Part D's immediate live revalidation is NOT RUN because Part B does not PASS.
+Parts E/F are NOT RUN: no activated instrumented build, install, reboot,
+baseline, physical invalid/valid auth, coverless, 32x32 or 48x48 escalation.
+No recovery was attempted. No device success or incident resolution is inferred.
+
+R3 remains **PARTIAL**; R10 remains **BLOCKED**. No production key/provisioning,
+permanent sender, public deployment, merge or Mission 9 work was introduced.
+Historical PRs #29–38 and their files are preserved. The separate Draft PR
+contains a candidate improvement and a reproducible **blocked** static gate.
+Green CI means regression and UNKNOWN stop evidence reproduce, not permission
+to install. Qualification can resume within the existing authorization only
+after complete static bounds and the exact instrumented installation gate PASS.
+
+Reproduce with `pio run -d experiments/v08_m8r -e legacy_compile -e media_compile
+-e stack_sensitivity_compile`, then `python tools/v08_m8r_runner.py` with the
+pinned ArduinoJson source, and `python tools/v08_m8r_stack.py`. The sensitivity
+analyzer adds `--environment stack_sensitivity_compile`. Source hashes, native
+addresses, local resources and regression results are retained in
+[stack evidence](V08_MISSION_8R_STACK_EVIDENCE.json). Historical M7/M8 CI jobs
+remain pinned to their own exact heads; all retained jobs remain enabled.
