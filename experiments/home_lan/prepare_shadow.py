@@ -1,4 +1,4 @@
-"""P0/P1 matched full graphs, public fixtures, volatile disabled boot, no upload."""
+"""Guarded public graphs; explicit private owner preparation, never upload."""
 from pathlib import Path
 import sys
 Import('env')
@@ -34,3 +34,6 @@ bool homeLanMediaBusy() { return m7Receiver.pending || (m7Ingress.phaseCode()>0 
     (shadow/'include/MediaIngress.h').write_text(source,encoding='utf-8')
     env.Prepend(CPPPATH=[str(shadow/'include')])
     (shadow/'include/project_version.h').write_text('#pragma once\n#define PROJECT_VER_STR "P1-OFFLINE-UNSTARTED"\n',encoding='utf-8')
+if env['PIOENV']=='owner_compile':
+    from home_lan_owner_packet import prepare_owner_shadow
+    prepare_owner_shadow(repo,shadow,main,env.GetProjectOption('build_flags'))
