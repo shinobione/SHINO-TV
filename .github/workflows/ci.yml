@@ -9,6 +9,39 @@ permissions:
   contents: read
 
 jobs:
+  home-lan:
+    name: P1 persistent SDK Wi-Fi and LAN boundaries (offline only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned build orchestrator
+        run: python -m pip install 'platformio==6.1.18' 'Pillow>=10,<13'
+      - name: Compile matched P0, P1 and exact-OEM-enabled guarded graphs
+        run: pio run -d experiments/home_lan -e p0_compile -e p1_compile -e p1_oem_compile
+      - name: Shared persistence/reconnect model and native HTTP handlers
+        run: |
+          python tools/home_lan_runner.py > "${{ runner.temp }}/p1-host.json"
+          python tools/home_lan_http_runner.py > "${{ runner.temp }}/p1-http.json"
+          SHINO_ARDUINOJSON_SRC=experiments/home_lan/.pio/libdeps/p1_compile/ArduinoJson/src SHINO_GFX_SRC="experiments/home_lan/.pio/libdeps/p1_compile/GFX Library for Arduino/src" python tools/home_lan_media_runner.py > "${{ runner.temp }}/p1-media.json"
+          python tools/home_lan_resources.py > "${{ runner.temp }}/p1-resources.json"
+          python -m unittest discover -s companion -p 'test_provision_home_wifi.py' -v
+          python -m unittest discover -s companion -p 'test_shino_link.py' -v
+          python -c 'import json,os; p=os.environ["RUNNER_TEMP"]; h=json.load(open(p+"/p1-host.json")); w=json.load(open(p+"/p1-http.json")); r=json.load(open(p+"/p1-resources.json")); m=json.load(open(p+"/p1-media.json")); assert h["checks"]>=183 and w["checks"]>=34 and h["failed"]==w["failed"]==0; assert all(x["cases_passed"]>=33 and x["render_heap_allocations"]==0 and x["sanitizers"]=="ASan + UBSan" for x in m["runs"]); assert h["device_contacts"]==w["device_contacts"]==r["device_contacts"]==m["device_contacts"]==0 and h["device_writes"]==w["device_writes"]==r["device_writes"]==m["device_writes"]==0'
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p1-offline-evidence-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/p1-*.json
+          if-no-files-found: error
   artwork-pilot:
     name: V2.2 native scenes, clipped marquee and linked resources (no device)
     runs-on: ubuntu-latest
@@ -16,7 +49,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          # Freeze completed P0 graph/resource assertions; P1 builds its own pair.
+          ref: a3d9fdb4fc1fe1eb1b49837551e0610c9ca88e5d
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-python@v5

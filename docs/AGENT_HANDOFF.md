@@ -1,6 +1,22 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+**P1 offline implementation update:** owner requires persistent Wi-Fi, configured
+once locally and retained across normal failures/boots. Follow-on branch
+`codex/shino-tv-p1-home-lan` starts from verified PR #40 `a3d9fdb`; older Home
+Wi-Fi "unimplemented" rows below are prior-state provenance. Opt-in active
+FirstBoot P1 now loads reviewed SDK parameters (`0x3FD000–0x400000`), writes only
+on Digest/AP/one-use-intent protected Change/Forget with readback, reconnects and
+retains secure AP fallback. LINK supports live local IP retargeting. Three native
+guarded graphs compile; P1 versus P0 adds 11,136 BIN / 1,180 static DRAM bytes.
+183 shared assertions, 34 target-handler loopback checks and 33 real signed
+receiver/scene cases at each AP/LAN authority pass locally. See
+[P1 contract, exact local password procedure, resource evidence and HOLD gates](home-lan/README.md).
+**P1 device/release remains HOLD:** persistence under real power loss, native
+heap/block/stack, radio/DHCP and OEM return after saved-config writes NOT RUN.
+No owner-device contact/install/provision/migration; current M8 remains installed.
+Recheck final branch SHA and exact-head CI; host SDK/radio models are not DEVICE PASS.
+
 **V2.2 implementation update (offline only):** PR #40 now has exclusive scenes,
 160px integer artwork (128px alternative also built/tested), clipped title/artist
 marquees, explicit provider leases and a disabled-by-default paused timeout seam.

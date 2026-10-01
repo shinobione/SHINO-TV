@@ -58,3 +58,13 @@ Auto-start uses pythonw.exe adjacent to the running Python interpreter; it refus
 After about 6s without accepted telemetry, the device's existing RAM-only TTL marks measurements STALE, not zero or falsely live. Device power depends on USB-C remaining powered when PC turns off. GPU temporarily unavailable is explicit; sampler exceptions or invalid samples cannot replace a good numeric payload. No browser cookie reuse grants POST permission; the same per-build Digest credentials are used on every real connection. No log/registry entry contains credential values. No new SHINO application BIN, OTA, filesystem image, cover or second firmware writer.
 
 Develop/test the software on the isolated V2.2 work branch; do not merge/cherry-pick any changes into the **frozen review-003 V2.1** source/PR #20. The separate roadmap is PR #21. The software-only Windows UX pilot needs no device reflash.
+# P1 household LAN continuation (offline candidate)
+
+The P1 branch supports `--set-target --host <actual-private-DHCP-IP>` and
+`--recovery-target` on an existing LINK configuration. A running tray/foreground
+sender reloads its target on the next scheduled attempt and refreshes Digest;
+these commands do not start a second sender, change autostart or switch Windows
+Wi-Fi. Identify the lease through the router / authenticated P1 status. Keep the
+matching HTTP credentials file private. Household Wi-Fi passwords are entered
+only with the separate masked local provisioning command after exact-image
+approval; see [P1 procedure and HOLD gates](../docs/home-lan/README.md).
