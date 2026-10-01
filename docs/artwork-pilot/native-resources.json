@@ -36,11 +36,11 @@
     ]
   },
   "pilot": {
-    "elf_sha256": "53d73364a013eeeacc6429be17508da41d6f151a21421b53e71af26317b8b984",
-    "bin_bytes": 443600,
-    "bin_sha256": "684e798cdad614a24eac5e4f329934b56df767fcad028bb63f43da1d2858a765",
+    "elf_sha256": "fbb74e7c86c2775a13feae77b5b94457bcf06a9d1b704d32e32343ac62e38893",
+    "bin_bytes": 443616,
+    "bin_sha256": "442cb47a2267840e7f831aff1a6b2b7adffa80fff4471cf829003e0ed48dfaac",
     "size_text_data_bss": {
-      "text": 436159,
+      "text": 436175,
       "data": 3352,
       "bss": 32640
     },
@@ -48,7 +48,7 @@
       ".data": 3296,
       ".noinit": 56,
       ".text": 258,
-      ".irom0.text": 389880,
+      ".irom0.text": 389896,
       ".text1": 29021,
       ".rodata": 17000,
       ".bss": 32640
@@ -71,9 +71,9 @@
     ]
   },
   "delta": {
-    "bin_bytes": -16,
+    "bin_bytes": 0,
     "text_data_bss": {
-      "text": -484,
+      "text": -468,
       "data": 480,
       "bss": -56
     },

@@ -40,6 +40,7 @@ def report(reference=None):
     bridge=(shadow/'src/boot/FirstBootBridge.cpp').read_text()
     loop=bridge[bridge.index('void loop()'):bridge.index('} // namespace FirstBootBridge')]
     assert loop.index('server.handleClient()')<loop.index('artworkPilotAfterHttp()')
+    assert 'if (networkReady) artworkPilotAfterHttp();' in loop
     gfx=ROOT/'experiments/artwork_pilot/.pio/libdeps/pilot_compile/GFX Library for Arduino/src'
     driver_hashes={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in
                    (gfx/'Arduino_TFT.cpp',gfx/'databus/Arduino_HWSPI.cpp',gfx/'display/Arduino_ST7789.cpp',gfx/'font/glcdfont.h')}

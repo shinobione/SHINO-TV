@@ -35,7 +35,7 @@ if pilot:
     value = value.replace('    paintNativeDashboard();', '    // Artwork pilot initializes cooperatively on the loop side.')
     begin = value.index('    if (networkReady &&\n', value.index('void loop()'))
     end = value.index('    m8QualAfterLoop();', begin)
-    value = value[:begin] + '    artworkPilotAfterHttp();\n' + value[end:]
+    value = value[:begin] + '    if (networkReady) artworkPilotAfterHttp();\n' + value[end:]
     value += '\n#include "ArtworkAdapter.inc"\n'
     bridge.write_text(value, encoding='utf-8')
     (shadow/'include/project_version.h').write_text('#pragma once\n#define PROJECT_VER_STR "ARTWORK-32-OFFLINE-PILOT"\n', encoding='utf-8')

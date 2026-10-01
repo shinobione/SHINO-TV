@@ -24,7 +24,9 @@ come from the existing `DashboardV2` rules. The six-second telemetry TTL and
 Arduino_ST7789/Arduino_HWSPI driver and `FslessMetrics`. The offline build
 generator inserts its call after `server.handleClient()` returns, in the
 existing FirstBootBridge loop. No authentication or receiver handler calls LCD
-code. Both public native graphs have a volatile, zero-valued startup guard.
+code. The existing `networkReady` guard is retained so an AP startup failure
+keeps its diagnostic LCD screen. Both public native graphs have a volatile,
+zero-valued startup guard.
 Their default setup does not start Wi-Fi or the receiver; their loop sleeps.
 **These compiled BINs are not owner installation candidates.**
 
@@ -86,13 +88,14 @@ become one `?`; title/artist truncation uses `...` without widening the schema.
 | --- | ---: | ---: | ---: | ---: |
 | Frozen validated M8 owner candidate | 446,944 | 2,816 | 32,712 | 52,508 |
 | Equivalent public offline baseline | 443,616 | 2,816 | 32,696 | 52,416 |
-| Equivalent public offline pilot | 443,600 | 3,296 | 32,640 | 52,936 |
-| Paired pilot delta | -16 | +480 | -56 | **+520** |
+| Equivalent public offline pilot | 443,616 | 3,296 | 32,640 | 52,936 |
+| Paired pilot delta | 0 | +480 | -56 | **+520** |
 
 The paired graphs use identical inert OEM policy and public test key. The frozen
 owner candidate has its previously compiled recovery policy; comparing its raw
 size directly to the public graph does not isolate the renderer. Paired GNU
-text/data/bss deltas are -484/+480/-56 bytes. The renderer is 276 bytes, including
+text/data/bss deltas are -468/+480/-56 bytes (+12 linked text/data bytes before
+BIN padding). The renderer is 276 bytes, including
 its 192-byte row; timing counters are 12 bytes. Receiver object size is 1,328
 versus 1,120 bytes. There is no new image or heap buffer. The 2,048-byte JSON
 arena and 6,200-byte temporary crypto stack are unchanged.
