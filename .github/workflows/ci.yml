@@ -34,6 +34,7 @@ jobs:
           python tools/home_lan_resources.py > "${{ runner.temp }}/p1-resources.json"
           python -m unittest discover -s companion -p 'test_provision_home_wifi.py' -v
           python -m unittest discover -s companion -p 'test_shino_link.py' -v
+          python -m unittest discover -s tools -p 'test_home_lan_owner_packet.py' -v
           python -c 'import json,os; p=os.environ["RUNNER_TEMP"]; h=json.load(open(p+"/p1-host.json")); w=json.load(open(p+"/p1-http.json")); r=json.load(open(p+"/p1-resources.json")); m=json.load(open(p+"/p1-media.json")); assert h["checks"]>=183 and w["checks"]>=34 and h["failed"]==w["failed"]==0; assert all(x["cases_passed"]>=33 and x["render_heap_allocations"]==0 and x["sanitizers"]=="ASan + UBSan" for x in m["runs"]); assert h["device_contacts"]==w["device_contacts"]==r["device_contacts"]==m["device_contacts"]==0 and h["device_writes"]==w["device_writes"]==r["device_writes"]==m["device_writes"]==0'
           git diff --exit-code
           test -z "$(git status --porcelain)"

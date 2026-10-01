@@ -1,5 +1,7 @@
 # P1 persistent household Wi-Fi — offline implementation
 
+**2 October owner preparation:** the guarded CI images below remain offline evidence. An actual private active candidate and its exact-image approval gate are now documented in [OWNER_INSTALL_GATE.md](OWNER_INSTALL_GATE.md). No installation or first credential write is authorized; do not use the procedure below against today's Mission 8.
+
 Implementation continues from PR #40 head `a3d9fdb4fc1fe1eb1b49837551e0610c9ca88e5d` on `codex/shino-tv-p1-home-lan`. PR #39, PR #40 and the installed Mission 8 image are unchanged. **Offline implementation PASS; P1 device/release gate HOLD. No device contact, installation, network migration, merge or production provisioning has been performed or authorized.** R3 PARTIAL / R10 BLOCKED remain unchanged.
 
 ## Configure once, reconnect independently

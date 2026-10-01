@@ -78,11 +78,14 @@ void p1OwnerObservation(JsonDocument& doc) {
   const auto& r=m8::runtimeStats; const auto& c=m8::cryptoStats;
   JsonObject q=doc["p1_observation"].to<JsonObject>();
   q["boot"]=m8Boot; q["reset_reason"]=ESP.getResetInfoPtr()->reason;
+  q["wifi_mode"]=unsigned(WiFi.getMode()); q["ap_clients"]=WiFi.softAPgetStationNum();
   q["min_heap"]=r.minHeap; q["min_block"]=r.minBlock; q["min_cont"]=r.minCont;
   q["allocation_failures"]=r.allocationFailures+c.allocationFailures;
   q["canary_failures"]=c.canaryFailures; q["secondary_refs"]=stack_thunk_get_refcnt();
   q["secondary_used_max"]=c.maxUsed; q["arena_used_max"]=r.arenaMax;
+  q["secondary_busy"]=c.busyFailures; q["arena_denials"]=r.arenaDenials;
   q["image_bytes"]=m7Receiver.imageBytes(); q["receiver_pending"]=m7Receiver.pending;
+  q["body_bytes"]=m7Ingress.bodyBytes(); q["staged_bytes"]=m7Receiver.stagedBytes();
   q["render_max_us"]=artworkTiming.maxUs; q["render_slices"]=artworkTiming.slices;
 }
 '''
@@ -110,6 +113,8 @@ def checksum(path):
 def verify_candidate(build,paths,point,official):
     app=build/'firmware.bin';elf=build/'firmware.elf';data=app.read_bytes()
     pairing=private_pair(paths['POLICY'],paths['CREDENTIALS'],official,data)
+    # This preparation rehashes the retained pinned OEM BIN, not its ZIP.
+    pairing['policy_matches_pinned_OEM_binary']=pairing.pop('policy_matches_oem_archive')
     if point not in data or b'PUBLIC-INERT-LAB' in data or b'P1-OFFLINE-UNSTARTED' in data:
         raise ValueError('Private active identity mismatch')
     for marker in (b'P1-OWNER-QUALIFICATION',b'SDK_SYSTEM_PARAMETERS_3FD000_400000',b'p1_observation',b'render_max_us'):

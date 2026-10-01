@@ -1,6 +1,20 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+**2 October owner preparation gate:** existing PR #41 continues from accepted
+`ce718f0`. Actual private active P0+P1 candidate is 464256 B, SHA-256
+`649d17c271396689ab1f11046f82c633fb963d883675e8e5d8c015dea96a834f`;
+matching retained credentials/media identity and OEM/V2.1/M8 rollback are locally
+verified outside Git. New owner profile adds read-only numeric runtime/LCD counters
+to existing authenticated status, without exposing qualification write controls
+on LAN. [Exact image, lifetime review, abort limits and physical sequence](home-lan/OWNER_INSTALL_GATE.md).
+Fresh GET-only current-M8 preflight: 446944 B, boot 2962927510, actual 4 MiB,
+exact OEM capability enabled, native OTA absent. No upload/reboot/network switch or
+persistent credential write. **STOP at new exact-image/chain owner approval.**
+Installation consent must name both M8→OEM and OEM→exact P1 hops; first credential
+write needs a later separate confirmation after boot/display/AP/telemetry checks.
+P1 physical qualification remains NOT RUN, R3 PARTIAL/R10 BLOCKED unchanged.
+
 **P1 offline implementation update:** owner requires persistent Wi-Fi, configured
 once locally and retained across normal failures/boots. Follow-on branch
 `codex/shino-tv-p1-home-lan` starts from verified PR #40 `a3d9fdb`; older Home
