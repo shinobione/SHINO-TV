@@ -1,3 +1,56 @@
+# Mission 8: current 32x32 receiver qualified
+
+1 October 2026. Continued exact `1e7bfce6844c0d0ac58713534a6f32d3ae07fb9c`
+on the existing branch and Draft PR #39. **Current 446944-byte candidate: 32x32
+Commit + replacement PASS; rejected-metadata ownership preservation PASS.**
+Overall HOLD remains for experimental 48 timing and independent long-term
+telemetry continuity. The earlier interrupted cycle was a qualification-client
+failure; it did not exercise/fail native Commit. All earlier evidence is retained.
+Zero firmware writes, reboots, factory returns or LINK restarts in this continuation.
+R3 PARTIAL; R10 BLOCKED. No production provisioning, permanent sender, Mission 9 or merge.
+
+| Focused physical scope | Actual result |
+|---|---|
+| Same candidate / boot / LINK | 446944 bytes, boot 2962927510, existing PID9972 |
+| Initial 32x32 four-tile Commit | PASS; 4.329 s including Begin, 3.672 s after Begin socket close |
+| Bounded 32x32 replacement | PASS; 4.672 s including Begin, 4.016 s after Begin socket close |
+| Rejected metadata with committed image | PASS ownership: image 2048, Commits 2 and high-water 402 unchanged; BAD_METADATA |
+| Focused transient heap / block minima | 11768 / 10176 bytes |
+| Settled replacement heap / block / fragmentation | 18736 / 16504 / 12% |
+| Focused minimum continuation margin | 1728 bytes |
+| Current-boot secondary maximum / crypto maximum | 2708/6200 bytes; 596139 microseconds |
+| Real ECDSA | 13 new calls; current-boot total 24 |
+| Telemetry during focused run | 33/33 accepted POSTs; 35/35 fresh reads; max accepted gap 2.391 s |
+| Current-controller Digest | 49 requests, 38 successful controls, 11 explicit 401s; no bound exhaustion |
+| New 48 single / replacement | NOT RUN / HOLD timing margin |
+| Final OEM recovery / ownership | Enabled exact OEM; image 2048 retained, pending/body/staging/secondary refs zero |
+
+Native Commit verification occurred after socket closure and required complete
+image SHA256/CRC outcomes, ECDSA/count and ownership checks. Rejected metadata
+preservation is verified through native ownership, Commit and sequence counters;
+arbitrary image bytes are not exposed by the diagnostic API. This qualifies
+bounded 32x32 RAM transport on the new candidate, not LCD artwork rendering.
+There were no unexpected resets, canary or allocation failures.
+
+The focused run had 33 accepted POSTs, zero sender failures, 35 fresh readings
+and zero stale flags; LINK generation stayed80. Genuine control 401s recovered
+without an immediate retry storm or manual restart. Final separate passive
+observation lasted30.047 seconds. This proves the exercised coexistence window,
+not indefinite immunity to the firmware's shared challenge design.
+
+An independent pre-execution sender snapshot showed attempt11829 timeout and
+automatic accepted recovery at11830/11831, with a7.266-second acceptance gap.
+No simultaneous device stale flag was observed at that gap. It is retained
+separately from successful receiver tests; long-term strict six-second continuity
+remains HOLD. TTL and sender frequency were unchanged. Previous baseline,
+Abort, CRC and arena results, and all old-reference successes/failures, remain valid.
+
+Detailed scoped evidence: [stack evidence](V08_MISSION_8R_STACK_EVIDENCE.json), `controller_continuation`.
+
+## Preserved earlier checkpoints
+
+The following records describe the earlier runs, not the current qualification result.
+
 # Mission 8 physical finalization: HOLD
 
 1 October 2026. Executed the owner's approved physical qualification from exact

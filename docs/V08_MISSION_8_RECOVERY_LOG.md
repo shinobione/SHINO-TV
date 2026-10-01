@@ -1,3 +1,39 @@
+# Mission 8: no-OTA controller continuation
+
+1 October 2026. Continued exact `1e7bfce6844c0d0ac58713534a6f32d3ae07fb9c`
+on the existing branch and Draft PR #39. **Current 446944-byte candidate: 32x32
+Commit + replacement PASS; rejected-metadata ownership preservation PASS.**
+Overall HOLD remains for experimental 48 timing and independent long-term
+telemetry continuity. The earlier interrupted cycle was a qualification-client
+failure; it did not exercise/fail native Commit. All earlier evidence is retained.
+Zero firmware writes, reboots, factory returns or LINK restarts in this continuation.
+R3 PARTIAL; R10 BLOCKED. No production provisioning, permanent sender, Mission 9 or merge.
+
+Bounded preflight verified the same running size/hash, boot, clean receiver state,
+fresh LINK samples and exact enabled OEM recovery. Final read-only recovery
+remained enabled; the committed2048-byte image is expected persistent RAM
+ownership, while pending/body/staging/secondary references are zero. No cleanup
+reboot or firmware write was used.
+
+The focused run had 33 accepted POSTs, zero sender failures, 35 fresh readings
+and zero stale flags; LINK generation stayed80. Genuine control 401s recovered
+without an immediate retry storm or manual restart. Final separate passive
+observation lasted30.047 seconds. This proves the exercised coexistence window,
+not indefinite immunity to the firmware's shared challenge design.
+
+An independent pre-execution sender snapshot showed attempt11829 timeout and
+automatic accepted recovery at11830/11831, with a7.266-second acceptance gap.
+No simultaneous device stale flag was observed at that gap. It is retained
+separately from successful receiver tests; long-term strict six-second continuity
+remains HOLD. TTL and sender frequency were unchanged. Previous baseline,
+Abort, CRC and arena results, and all old-reference successes/failures, remain valid.
+
+Detailed scoped evidence: [stack evidence](V08_MISSION_8R_STACK_EVIDENCE.json), `controller_continuation`.
+
+## Preserved earlier checkpoints
+
+The following records describe the earlier runs, not the current qualification result.
+
 # Mission 8 controlled installation and final cleanup
 
 1 October 2026. Executed the owner's approved physical qualification from exact
