@@ -1,3 +1,40 @@
+# Mission 8 controlled installation and final cleanup
+
+1 October 2026. Executed the owner's approved physical qualification from exact
+`ff617d4afb6bb1cb9ac05577da3c3a88e4e3ca0a`, on the existing branch and Draft PR #39.
+**Overall HOLD: repeated diagnostic HTTP 401 prevented completing the new 32x32
+regression.** Further body transfers stopped after supported signed Abort and
+verified cleanup. The installed 446944-byte candidate remains running; no
+firmware rebuild, additional flash, reboot or companion restart followed the stop.
+R3 PARTIAL; R10 BLOCKED. No provisioning, permanent sender, Mission 9 or merge.
+
+All preflight hashes matched, including unchanged old reference, approved new
+candidate, OEM and V2.1 review-003 rollback images. The first supported factory
+return wrote the exact OEM once. Its domestic LAN address was rediscovered by
+MAC and live `/v.json` verified SmallTV-Ultra / Ultra-V9.0.44; historical IP was
+not assumed. The genuine OEM update form then received the exact approved
+446944-byte candidate once, with hash verified immediately before upload.
+
+OEM acknowledged `Update Success! Rebooting...`. The helper incorrectly
+required literal `OK` and stopped; this was a client predicate error, and the
+write was not retried. A later 70-second return observer also stopped. A bounded
+read-only diagnosis then found SHINO reachable, actual application 446944,
+new boot and fresh automatically recovered LINK samples. Exact return time and
+cause of the delayed host observation are unresolved; repeated host AP connect
+commands were recorded, without claiming they caused the delay. No extra
+firmware write, reboot or companion restart was used to recover.
+
+Final signed Abort released pending/staging/body and secondary references.
+Final recovery GET remained enabled and verified exact OEM 494144 bytes, hash
+`a6421f5bfee7860d97bed26620c346b8008f503e513702d4bfdf6e01010a7718`.
+Recovery availability does not guarantee recovery from an unbootable image.
+
+Measured details and sanitized snapshots are in [stack evidence](V08_MISSION_8R_STACK_EVIDENCE.json).
+
+## Preserved historical records
+
+The following records describe their earlier checkpoints, not the current installed state.
+
 # Mission 8 recovery boundary: reference and rollback retained
 
 1 October 2026. Continued exact `c5bb1a813113af802b8736939a22de5a78097acd`

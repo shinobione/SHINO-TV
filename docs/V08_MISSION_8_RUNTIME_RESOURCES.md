@@ -1,3 +1,45 @@
+# Mission 8 actual new-candidate resource measurements
+
+1 October 2026. Executed the owner's approved physical qualification from exact
+`ff617d4afb6bb1cb9ac05577da3c3a88e4e3ca0a`, on the existing branch and Draft PR #39.
+**Overall HOLD: repeated diagnostic HTTP 401 prevented completing the new 32x32
+regression.** Further body transfers stopped after supported signed Abort and
+verified cleanup. The installed 446944-byte candidate remains running; no
+firmware rebuild, additional flash, reboot or companion restart followed the stop.
+R3 PARTIAL; R10 BLOCKED. No provisioning, permanent sender, Mission 9 or merge.
+
+| Measured new-boot scope | Bytes / result |
+|---|---|
+| Lowest free heap / largest free block | 11768 / 9400 |
+| Final clean snapshot heap / block / fragmentation | 21632 / 18728 / 13% |
+| Highest fragmentation across recorded frames | 32% |
+| Selected metadata arena high-water | 1984 / 2048 |
+| Secondary maximum / minimum remaining | 2708 / 3492 of 6200 |
+| Minimum continuation margin across baseline/enrollment/media | 1680 |
+| Final body / staging / image / secondary references | 0 / 0 / 0 / 0 |
+| ECDSA / maximum crypto | 11 calls / 596139 microseconds |
+| Allocation / secondary allocation / canary failures | 0 / 0 / 0 |
+
+Per-watermark minima: image Abort 11824 heap / 9848 block; wrong-CRC sequence
+11768 / 10296; selected-boundary interrupted transaction 12056 / 9400.
+These include native transient watermarks, not just settled GET snapshots.
+The old 446144-byte comparison retained a 4608-byte committed image; the new
+final snapshot retains none. Different ownership and HTTP allocation overlap
+prevent an equal-state measurement of the predicted 48x48 budget recovery.
+2048-byte allocation/peak is physically proven for the exercised metadata path;
+the 21388-case exhaustive corpus remains host evidence. Old committed-image
+preservation on rejected metadata is NOT RUN on the new candidate.
+
+48 replacement requires live heap ≥14904 and block ≥11304 with retained 4608
+image and the 4096 reserve. No such equal-state measurement or successful new
+32 timing cycle exists. No 48 Begin was sent. The deadline remains 8000 ms.
+
+Measured details and sanitized snapshots are in [stack evidence](V08_MISSION_8R_STACK_EVIDENCE.json).
+
+## Preserved historical records
+
+The following records describe their earlier checkpoints, not the current installed state.
+
 # Mission 8 measured native build and predicted replacement budget
 
 1 October 2026. Continued exact `c5bb1a813113af802b8736939a22de5a78097acd`

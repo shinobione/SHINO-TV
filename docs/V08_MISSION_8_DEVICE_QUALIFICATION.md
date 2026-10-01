@@ -1,3 +1,71 @@
+# Mission 8 physical finalization: HOLD
+
+1 October 2026. Executed the owner's approved physical qualification from exact
+`ff617d4afb6bb1cb9ac05577da3c3a88e4e3ca0a`, on the existing branch and Draft PR #39.
+**Overall HOLD: repeated diagnostic HTTP 401 prevented completing the new 32x32
+regression.** Further body transfers stopped after supported signed Abort and
+verified cleanup. The installed 446944-byte candidate remains running; no
+firmware rebuild, additional flash, reboot or companion restart followed the stop.
+R3 PARTIAL; R10 BLOCKED. No provisioning, permanent sender, Mission 9 or merge.
+
+| Physical scope (new 446944-byte candidate) | Actual result |
+|---|---|
+| Controlled installation | PASS, two single writes via live-verified OEM; incidents retained |
+| Three-minute baseline | PASS, 180.125 s; 83 accepted POSTs, 84 fresh reads, zero failures/stale |
+| Image-specific signed Abort | PASS, Begin + one tile + Abort; all temporary ownership released |
+| Independently signed wrong CRC | PASS, real ECDSA then Gate2; correct first tile still STAGED; signed Abort cleanup |
+| 2048-byte metadata arena | Physical peak 1984 bytes, 64 bytes remaining; ABI 4/8/8/8; zero allocation failures |
+| 32x32 regression | FAIL qualification: Begin + two tiles; bounded control 401 stop; Commit not sent |
+| 48x48 single | NOT RUN on new candidate; prior 446144-byte single PASS retained |
+| 48x48 replacement | HOLD, prerequisites/timing and retained-image memory margin not demonstrated |
+| Native heap / largest block minimum | 11768 / 9400 bytes across recorded new-boot frames |
+| Secondary stack maximum | 2708/6200 bytes; minimum continuation margin 1680 bytes |
+| Telemetry | Current observed windows fresh; two sender 401s automatically recovered; historical strict continuity HOLD |
+| OEM recovery | Verified enabled, exact 494144-byte OEM/hash, final read-only check |
+
+Fresh owner LCD observations passed before the first write and after the new
+candidate boot: correct orientation and four continuously updating cards without
+artifacts. Boot `2962927510`, existing LINK PID `9972`, 11 real ECDSA calls,
+maximum crypto 596139 microseconds; no unexpected reset, canary or allocation
+failure. The receiver remains an inert RAM transport; no LCD artwork claim.
+
+Wrong CRC was set before signing; signature and Content-Digest independently
+verified. Native ECDSA count advanced 4→5, Gate2 rejected, accepted count stayed
+4 and rejected increased. The valid first tile then advanced accepted 4→5 with
+STAGED (not duplicate), preserving the tile index through denial. Diagnostic
+access subsequently hit four HTTP 401s; unused matching signed Abort cleaned up.
+The selected maximum-usage metadata Begin staged successfully at 1984/2048.
+Two image tiles staged, then another four-request diagnostic-auth bound stopped
+the cycle before the next tile. Abort and automatic freshness recovery completed
+within 6.531 seconds. No body was retried and no Commit was falsely inferred
+from socket closure. New-image replacement/invalid-metadata preservation tests
+remain NOT RUN because no new committed image exists.
+
+The one new baseline passed for 180.125 seconds with 83 accepted POSTs,
+84 fresh readings, zero failed attempts/stale readings and maximum accepted
+interval 2.188 seconds; metrics observation used the dashboard cookie and no
+protected polling inside that window. Recorded disjoint qualification windows
+contain 110 accepted POSTs, two sender HTTP 401s, 117 fresh readings, zero stale
+readings and maximum accepted gap 5.032 seconds among contiguous recorded
+attempts. The final separate 30.062-second passive check had 14 accepted POSTs
+and 14 fresh readings with zero failures. Unobserved intervals are not soaks.
+
+Both sender 401s recovered automatically on PID9972/boot2962927510. The reader
+recorded 30 protected 401s across these windows and twice exhausted its four
+explicit control-request bound. Pinned ESP8266WebServer authentication compares
+the single server nonce/opaque pair and replaces both when issuing a challenge;
+concurrent reader/sender 401s are consistent with retained Digest-interference
+evidence. Exact challenge values are intentionally unlogged; these observations
+do not establish every 401 cause or a new firmware/StackThunk regression.
+Strict historical six-second continuity remains HOLD, including the previously
+recorded 7.266-second gap. TTL and sender frequency remain unchanged.
+
+Measured details and sanitized snapshots are in [stack evidence](V08_MISSION_8R_STACK_EVIDENCE.json).
+
+## Preserved historical records
+
+The following records describe their earlier checkpoints, not the current installed state.
+
 # Mission 8 qualification scope: new candidate awaiting installation decision
 
 1 October 2026. Continued exact `c5bb1a813113af802b8736939a22de5a78097acd`
