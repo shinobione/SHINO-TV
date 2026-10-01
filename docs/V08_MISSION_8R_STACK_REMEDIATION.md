@@ -1,3 +1,88 @@
+# Mission 8 receiver qualification: HOLD with scoped receiver PASS
+
+1 October 2026. Continued exact `fa926bedc9ea91d7fd1160b871f5d31c3a3c5626` on the existing branch and Draft PR #39.
+The owner confirmed the CURRENT LCD once before body testing: correct orientation,
+four updating cards and no artifacts. Same candidate boot **298452474**, companion
+PID **9972**, and unchanged 446144-byte candidate/hash. No firmware write, factory
+return, reboot or companion restart. The original three-minute baseline was not rerun.
+
+| Gate / phase | Actual physical result |
+|---|---|
+| A: Coverless | **PASS**: five native Commits, three authenticated Aborts, invalid-transaction denial and terminal cleanup. |
+| A: 32x32 | **PASS for exercised paths**: six full four-tile Commits; four consecutive replacements; corrupted-digest denial, interrupted TCP and authenticated incomplete-Commit cleanup. Image-specific Abort remains NOT RUN. |
+| A: 48x48 | **HOLD - transaction deadline margin**; live memory review passed conservatively; no 48x48 body sent. |
+| Native crypto/stack | 81 cumulative ECDSA calls (18 historical + 63 new); secondary maximum 2740/6200 bytes, margin 3460; maximum crypto 595838 us. No reset/canary/allocation failure. |
+| B: PC telemetry | **HOLD independently**: earlier 7.266-second timeout gap remains a strict six-second continuity failure. During these two body-test windows: 85 accepted POSTs, 87 fresh readings, zero sender failures/stale readings. |
+| Overall Mission 8 | **HOLD**: receiver results retained; full image Abort/CRC-negative coverage, 48x48 deadline margin and long-term telemetry continuity remain open. R3 PARTIAL; R10 BLOCKED. |
+
+The candidate receives images into an inert RAM sink. PASS proves native body,
+digest/CRC and transaction paths; it does not claim visible cover rendering.
+There is no retained signature for Abort bound to an image transaction, and no
+retained enrolled private signing key to create one without changing device state.
+Authenticated coverless Abort passed; authenticated INCOMPLETE Commit and existing
+eight-second expiry cleaned image staging. Neither is mislabeled as image Abort.
+Valid CRCs passed; the corrupt-body denial is Gate2, not a separately signed
+wrong-CRC negative test. Those unexercised cases remain NOT RUN.
+
+Body-cycle minimum continuation margin was **1936 bytes**; the first preflight
+still carried the earlier 1776-byte watermark. Resource watermark resets are diagnostic
+counter resets, not MCU reboots. All recorded boot identities stayed unchanged.
+Across this run, heap/block minima were **10472/9336 bytes**, maximum fragmentation
+27%. Settled heap did not decline monotonically over repeated replacements; the
+last instantaneous 18528-byte snapshot returned to 18944 after settlement and 19024
+at the final snapshot. This bounded evidence does not establish long-term leak freedom.
+Final heap/block: **19024/17568**, fragmentation 8%, continuation 1936,
+secondary refs/challenges/body/staging zero, receiver pending=false, image=2048
+(expected retained Commit allocation), cumulative commits=11. OEM recovery GET
+remained enabled with the unchanged retained OEM hash; no recovery write occurred.
+
+The initial ignored controller paused four times on **its protected GET HTTP
+401s**, with every captured sender POST accepted and every device reading fresh.
+Its generic `client_error` / `REPEATED_TRANSPORT_PREVENTS_PHASE_32` label was too
+broad. The fifth coverless Commit completed before its observer rejection:
+the retained native frame at 13:13:51.866769 UTC reports COMMITTED, commits=4,
+ECDSA=32, highest=8, no pending/body/staging/image. It remains valid receiver
+evidence even though that controller did not record a settled cycle PASS.
+The corrected ignored reader combines required challenge controls with snapshots
+and retries only explicit rejected 401s, at most four wire requests per control.
+Ten bounded reader resynchronizations occurred. No media body was retried.
+Cookie metrics GETs generated no independent Digest challenge. The production
+sender, cadence and six-second TTL were unchanged. These reader 401s demonstrate
+shared Digest observation contention; they are not sender 401s or firmware safety
+failures. The historical independent network timeout remains unresolved.
+
+The 48x48 review used actual image-bearing 32x32 replacement cycles, not the
+historical 10592-byte minimum as approval. With 2560 extra retained-image bytes
+and a conservative 4096-byte SDK/allocator/TCP reserve, projected preallocation
+heap/block were **16104/14336**, projected peak residual heap/block **9392/7112**.
+Explicit metadata overlap is 9256 bytes and separate crypto/image overlap is
+10808 bytes; mutually exclusive peaks were not added together. Memory review
+therefore passed conservatively; it is not an actual 48x48 allocation measurement.
+
+Observed post-Begin 32x32 spans were 3.953-6.360 seconds in the corrected positive
+cycles. Doubling the worst last-four replacement span for ten post-Begin operations
+yields a conservative **12.720-second projection against the unchanged 8-second
+deadline**. This includes required controls, bounded observer authentication recovery
+and terminal snapshot, not just native crypto. Deadline headroom was not demonstrated
+with this client; 48x48 was held rather than blindly sending an eleven-packet
+transaction. This is a qualification-client timing limit, not a measured 48x48
+failure, memory failure, reset or StackThunk regression.
+
+All prior report text and evidence are preserved below as historical checkpoints;
+their old BLOCKED/NOT RUN statements are superseded only by this dated scoped result.
+Machine-readable measurements, cycle resources and private log hashes are in
+[stack evidence](V08_MISSION_8R_STACK_EVIDENCE.json). Only these six reports changed;
+firmware/companion source and private candidate/rollback bytes were reverified unchanged.
+No credentials, Authorization values, raw challenges, nonce values or private paths
+are published. Starting-head PR CI passed 11/11; its duplicate push run passed 10/11
+with the focused link job cancelled after stalling. Final-head offline CI is tracked
+separately in Draft PR #39 and cannot close physical gates. No production provisioning,
+permanent sender, Mission 9 or merge.
+
+---
+
+Historical checkpoints retained verbatim below.
+
 # Mission 8 continuation: BLOCKED after a separate post-window timeout
 
 1 October 2026. Same branch, existing Draft PR #39; no firmware operation or
