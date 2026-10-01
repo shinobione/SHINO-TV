@@ -1,6 +1,6 @@
 {
   "mission": "8 continuation",
-  "engineering_gate": "HOLD__DIGEST_ISOLATION_AND_NATIVE_QUALIFICATION",
+  "engineering_gate": "BLOCKED__UNRESOLVED_POST_WINDOW_TIMEOUT_EXCEEDS_SIX_SECOND_FRESHNESS",
   "continuation_parent": "cb58173495f811787a0fbb2c44bc1df6621c9990",
   "branch": "feature/shino-tv-v08-stack-remediation",
   "draft_pr": 39,
@@ -16585,8 +16585,8 @@
   },
   "historical_engineering_gate_07a1800": "BLOCKED__PHYSICAL_TELEMETRY_FRESHNESS_DURING_ECDSA",
   "physical_qualification": {
-    "status": "HOLD",
-    "gate_reason": "Current LCD gate pending; no media body sent.",
+    "status": "BLOCKED",
+    "gate_reason": "Outside passed measurement windows, no_route_or_timeout caused complete 7.266-second acceptance gap. Stop media escalation; underlying timeout cause unresolved. Current LCD gate also pending.",
     "starting_head": "07a180087a578abef5bc37689ca7ba81f6f9e561",
     "date": "2026-10-01",
     "firmware_writes": 0,
@@ -17999,12 +17999,19 @@
     },
     "transaction_cycles": [],
     "48_margin_reviews": [],
-    "stop": null,
+    "stop": {
+      "phase": "AFTER_COMPLETED_CRYPTO_AND_SOAK__BEFORE_MEDIA_BODIES",
+      "condition": "RENEWED_UNEXPLAINED_ACCEPTANCE_GAP",
+      "body_transfers_performed": 0,
+      "firmware_writes": 0,
+      "sender_restarts": 0,
+      "candidate_kept_installed": true
+    },
     "classification": {
       "observed_digest_interference": "Single independent GET rotated the shared challenge pair. It did not cause terminal sender 401 or stale telemetry in Test B. Cached challenge invalidation follows exact pinned authenticate comparison. Prior repeated-reader 401/backoff TTL failure is consistent, but its precise race is not captured.",
-      "companion_problem": "Prior poisoned urllib retry state was fixed before this head. Same PID accepted continuously in measured windows; no new lasting companion fault demonstrated. Internal automatically recovered wire 401 responses are not exposed by unchanged sender diagnostics.",
+      "companion_problem": "Prior poisoned urllib retry state was fixed before this head. Same PID accepted continuously in measured windows; no new lasting companion fault demonstrated. Internal automatically recovered wire 401 responses are not exposed by unchanged sender diagnostics. Timeout recovery rebuilt the opener automatically on the next scheduled attempt, with no PID restart. The class does not establish that opener/auth state caused the timeout.",
       "firmware_regression": "No stale device telemetry alongside continuous accepted POSTs demonstrated. No reset/canary/allocation failure in quiet crypto. Receiver scope and any later stop recorded separately.",
-      "unresolved_cause": "Exact interleaving causing the historical consecutive terminal 401 responses remains unresolved; no challenge storm recreated."
+      "unresolved_cause": "Exact interleaving causing the historical consecutive terminal 401 responses remains unresolved; no challenge storm recreated. A later timeout occurred without diagnostic polling; exact route/connect/response cause remains unresolved. Automatic recovery does not close this new freshness stop."
     },
     "observer_failure_history": [
       {
@@ -18028,7 +18035,11 @@
       "m8-digest-isolation-corrected.jsonl": "916a163dcf56ae9df7d844248143b87ea1edbcb64e4e35bfb99539f82aee51ea",
       "m8-digest-isolation-corrected2.jsonl": "9ddc7d9011fe23dc064359defc1fc17100c888b7f98e7d65ce7d7912816dcc2c",
       "m8_quiet_isolation.py": "7f4082c8545f4764966710fa099162bff92d4633e4473b3a655d23a9b43792f9",
-      "m8_quiet_transactions.py": "f711489192e96696cadfab1da72959cee806caf54a304c6e7ea2f7f771871dac"
+      "m8_quiet_transactions.py": "f711489192e96696cadfab1da72959cee806caf54a304c6e7ea2f7f771871dac",
+      "m8-post-window-network.jsonl": "fc7cc02502b38104fec9462419435637ef9a7eb659f95b2a08a88e3375280265",
+      "m8-post-window-device.jsonl": "a6df204bb0823526f9d501f1c54b91ec835af5867cf21ecbec4524701d4df9c8",
+      "m8_post_window_watch.py": "84f0a56d9a2766c0b2902fbd923453b9bf166551bd7238bc39c52680f645385c",
+      "m8_post_window_device.py": "631b2f02b34290a53d486fe6b8226ca5c656410a4b78b5cf36dbfd4af9a0e6c8"
     },
     "R3": "PARTIAL",
     "R10": "BLOCKED",
@@ -18782,6 +18793,174 @@
           "digest_challenge_present": false
         }
       }
-    ]
+    ],
+    "post_window_failure": {
+      "observed_consecutive_attempts": [
+        {
+          "attempt": 2543,
+          "result": "accepted_sample",
+          "http_status": 200,
+          "generation": 31,
+          "failures": 0,
+          "completed_monotonic": 6333.921,
+          "retry_seconds": 2.0,
+          "duration_ms": 140.0
+        },
+        {
+          "attempt": 2544,
+          "result": "no_route_or_timeout",
+          "http_status": null,
+          "generation": 31,
+          "failures": 1,
+          "completed_monotonic": 6338.984,
+          "retry_seconds": 2.0,
+          "duration_ms": 3047.0
+        },
+        {
+          "attempt": 2545,
+          "result": "accepted_sample",
+          "http_status": 200,
+          "generation": 32,
+          "failures": 0,
+          "completed_monotonic": 6341.187,
+          "retry_seconds": 2.0,
+          "duration_ms": 187.0
+        }
+      ],
+      "accepted_gap_seconds": 7.266,
+      "ttl_seconds": 6,
+      "stale_flag_observed_during_gap": false,
+      "observer_HTTP_polling_active_during_failure": false,
+      "last_observer_HTTP_utc": "2026-10-01T12:13:30.313321+00:00",
+      "capture_utc": "2026-10-01T12:26:33.738484+00:00",
+      "recovery": "AUTOMATIC_SAME_PID_9972",
+      "opener_generation_before_after": [
+        31,
+        32
+      ],
+      "network_inventory": {
+        "SHINO_AP_named_in_connected_interface": true,
+        "interface_text_values_logged": false
+      },
+      "TCP_check": {
+        "port": 80,
+        "reachable": true,
+        "HTTP_bytes_sent": 0
+      },
+      "watch_HTTP_bytes_sent": 0,
+      "device_recheck": {
+        "utc": "2026-10-01T12:28:49.212551+00:00",
+        "monotonic": 6535.031,
+        "label": "post-timeout device identity and resources",
+        "data": {
+          "mode": "M8_STACKTHUNK_QUALIFICATION",
+          "boot": 298452474,
+          "uptime_ms": 5724973,
+          "phase": 26,
+          "reset_pending": false,
+          "action_ok": true,
+          "enrolled": true,
+          "reset_reason": 4,
+          "wifi_mode": 2,
+          "stations": 1,
+          "reconnects": 0,
+          "heap": 21840,
+          "block": 20272,
+          "frag": 8,
+          "min_heap": 14512,
+          "min_block": 12048,
+          "max_frag": 26,
+          "cont_free": 1968,
+          "min_cont": 1968,
+          "secondary_bytes": 6200,
+          "secondary_refs": 0,
+          "secondary_allocs": 19,
+          "secondary_alloc_failures": 0,
+          "secondary_busy": 0,
+          "secondary_used_last": 2708,
+          "secondary_used_max": 2740,
+          "secondary_margin": 3460,
+          "canary_failures": 0,
+          "ecdsa_calls": 18,
+          "key_checks": 1,
+          "ecdsa_us_last": 595622,
+          "crypto_us_max": 595734,
+          "crypto_before_heap": 20992,
+          "crypto_before_block": 20120,
+          "crypto_before_frag": 5,
+          "crypto_after_heap": 20992,
+          "crypto_after_block": 20120,
+          "crypto_after_frag": 5,
+          "allocation_failures": 0,
+          "sha_us_last": 0,
+          "sha_us_max": 0,
+          "poll_us_max": 599982,
+          "service_us_max": 600582,
+          "receiver_pending": false,
+          "body_bytes": 0,
+          "staged_bytes": 0,
+          "image_bytes": 0,
+          "challenges": 0,
+          "ingress_phase": 4,
+          "body_reads": 0,
+          "body_allocations": 1,
+          "accepted": 0,
+          "rejected": 36,
+          "commits": 0,
+          "highest": 0,
+          "outcome": "OWNER_CLOSED"
+        }
+      },
+      "metrics_recheck": {
+        "utc": "2026-10-01T12:28:49.304103+00:00",
+        "monotonic": 6535.125,
+        "label": "device metrics",
+        "data": {
+          "mode": "FSLESS_PC_TELEMETRY_RAM_ONLY",
+          "received": true,
+          "stale": false,
+          "ttl_seconds": 6,
+          "cpu_usage": 13.4,
+          "gpu_usage": 7,
+          "memory_used_gb": 9.02,
+          "memory_total_gb": 15.93,
+          "memory_total_available": true,
+          "schema_version": 2,
+          "gpu_vram_mb": 1117,
+          "gpu_temp_c": 43,
+          "gpu_power": 26.8,
+          "gpu_available": true,
+          "filesystem_or_eeprom_write_performed": false
+        }
+      },
+      "earlier_unretained_post_window_failure": {
+        "generations": [
+          30,
+          31
+        ],
+        "class": "UNKNOWN",
+        "attempt": "NOT_RETAINED",
+        "not_attributed_to_Digest": true
+      },
+      "classification": "TIMEOUT_CLASS_CONFIRMED__UNDERLYING_PC_NETWORK_OR_RESPONSE_CAUSE_UNRESOLVED__NOT_FIRMWARE_REGRESSION_PROOF"
+    }
+  },
+  "historical_digest_checkpoint_5cb0b50": {
+    "status": "HOLD",
+    "reason": "Current LCD gate pending; no media body sent.",
+    "head": "5cb0b50cb6afd6173f2aeced8853d57d68024372",
+    "ci": {
+      "pull_request": {
+        "id": 36861421250,
+        "jobs": 11,
+        "passed": 11
+      },
+      "push": {
+        "id": 36861414797,
+        "jobs": 11,
+        "passed": 11
+      }
+    },
+    "all_window_and_native_frames_still_retained_in_current_evidence": true
   }
 }

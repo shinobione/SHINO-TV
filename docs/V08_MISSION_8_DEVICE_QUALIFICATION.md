@@ -1,3 +1,55 @@
+# Mission 8 continuation: BLOCKED after a separate post-window timeout
+
+1 October 2026. Same branch, existing Draft PR #39; no firmware operation or
+sender restart. **BLOCKED: an unexplained sender timeout produced a 7.266-second
+accepted-sample gap, exceeding the unchanged six-second TTL.** Media escalation
+stopped. Coverless, 32x32 and 48x48 body transfers remain NOT RUN. The requested
+current owner LCD observation is also pending; prior LCD reports were not reused.
+R3 remains PARTIAL; R10 remains BLOCKED.
+
+The completed cookie-only baselines, bounded Test B, nine additional real ECDSA
+calls, and post-crypto three-minute soak below all passed their measured windows.
+The later failure is outside those windows and is preserved separately, rather
+than erased by automatic recovery. It occurred more than twelve minutes after
+the last observer HTTP request at 12:13:30.313321 UTC. No diagnostic HTTP polling was
+running when this timeout occurred; a later evidence watcher sent zero HTTP bytes.
+
+| Sender attempt | Sanitized result | Completion monotonic | Retry delay | Duration |
+|---|---|---:|---:|---:|
+| 2543 | HTTP 200 RAM_SAMPLE_ACCEPTED | 6333.921 | 2 s | 140 ms |
+| 2544 | no_route_or_timeout; no HTTP status | 6338.984 | 2 s | 3047 ms |
+| 2545 | HTTP 200 RAM_SAMPLE_ACCEPTED | 6341.187 | 2 s | 187 ms |
+
+This is a complete consecutive-attempt acceptance gap, not the earlier history
+with missing attempts. The device's stale flag was **not sampled during this gap**;
+the acceptance interval violates the continuous six-second freshness target.
+The class does not distinguish connect/route delay from a delayed HTTP response.
+It is not evidence of HTTP 401, permanently poisoned Digest state, or StackThunk
+regression. Its underlying cause remains unresolved.
+
+Recovery needed no intervention: opener generation 31 to 32, same PID 9972.
+The later sanitized interface inventory still showed SHINO AP association, and
+a read-only port-80 connect succeeded without sending HTTP bytes. One bounded
+post-timeout device check confirmed boot 298452474, cumulative ECDSA calls 18,
+fresh metrics, heap 21840 bytes and largest block 20272 bytes,
+no canary/allocation failure, no staged/body/image bytes, and no receiver pending.
+It used one dashboard bootstrap and cookie metrics outside any measurement window.
+The post-window generation 30 to 31 transition predating attempt 2544 also implies
+an earlier logical failure; its attempt/status was no longer in the bounded
+history and is explicitly UNKNOWN. No exact timing or Digest attribution is inferred.
+
+All six reports, prior failures, private evidence hashes and rollback/candidate
+bytes are retained. The 446144-byte candidate stays installed. No reflash,
+factory return, reboot, production/source change, TTL enlargement or sender-rate
+change was made. The preliminary report commit `5cb0b50cb6afd6173f2aeced8853d57d68024372`
+passed both CI runs, 11/11 jobs each; final-head CI is tracked separately in PR #39.
+48x48 margin/deadline review was prepared but **not executed on image-bearing
+32x32 state**. Successful crypto and the historical 10592-byte block minimum
+cannot qualify the 9256-byte metadata overlap or 10808-byte crypto/image overlap.
+
+---
+Earlier Digest/crypto results and checkpoints retained below.
+
 # Mission 8 Digest isolation and crypto qualification: HOLD
 
 1 October 2026. Continuation from exact `07a180087a578abef5bc37689ca7ba81f6f9e561`
