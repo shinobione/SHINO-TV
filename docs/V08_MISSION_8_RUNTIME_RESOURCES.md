@@ -1,3 +1,68 @@
+# Mission 8 final physical receiver result: HOLD
+
+1 October 2026. **Coverless PASS; 32x32 PASS for exercised paths; 48x48 single
+nine-tile transfer PASS, replacement HOLD - memory margin.** Same installed
+candidate, boot 298452474 and companion PID 9972. Current owner LCD confirmation
+was obtained once before body tests. No firmware write, reboot, factory return,
+companion restart, TTL change or sender-frequency change. R3 PARTIAL; R10 BLOCKED.
+
+The conservative timing projection in checkpoint `a026e10` included an authenticated
+snapshot after Commit, outside the pending transaction. Its 32x32 socket spans were
+actually 3.593-3.875 s. After correcting that observation boundary and retaining the
+passed live memory review, one bounded 48x48 trial was authorized by the existing
+receiver-test scope and completed **nine 552-byte tiles and Commit in 7.781 s after
+Begin**. Valid content digests/CRCs and final complete image SHA256 passed natively;
+the retained image is 4608 bytes. No deadline extension or body retry occurred.
+
+Replacement was stopped before any next Begin: measured settled heap/block
+**16384/12496 bytes** versus required **14904/13352** with the conservative 4096-byte
+overhead reserve. The block budget is short by **856 bytes** against 9256 bytes of
+explicit metadata overlap plus that reserve. The separate crypto/image overlap is
+10808 bytes; mutually exclusive peaks are not added together. **48x48: HOLD - memory
+margin** for replacement, preserving the successful single transfer and all 0/32 results.
+No allocation failed; this is a prospective reserve gate, not an unsafe receiver claim.
+
+| Phase | Final scoped evidence |
+|---|---|
+| Coverless | PASS: five native Commits, three authenticated Aborts, invalid-transaction denial and cleanup. |
+| 32x32 | PASS exercised paths: six complete four-tile Commits, four consecutive replacements, corrupt-digest denial, interrupted TCP and authenticated INCOMPLETE-Commit cleanup. |
+| 48x48 | Single nine-tile Commit PASS; replacement HOLD memory margin, NOT RUN. |
+| Native crypto/stack | 92 cumulative real ECDSA calls (18 historical + 74 new); secondary high-water 2740/6200 bytes, margin 3460; maximum crypto 595838 us. |
+| Long-term telemetry | HOLD independently: prior 7.266 s timeout gap retained. Across three body-test windows, 97 accepted POSTs / 100 fresh device readings, no sender failures or stale readings. |
+| Overall Mission 8 | HOLD: image-specific Abort/CRC-negative coverage, 48x48 replacement margin and long-term strict telemetry continuity remain open. |
+
+Image-specific Abort and separately signed wrong-CRC negative remain NOT RUN:
+the retained enrolled-key fixtures lack those proofs and the private signing key
+was not retained. Coverless Abort, incomplete Commit and expiry are distinct paths.
+The candidate's sink is inert RAM; image reception PASS does not claim LCD artwork.
+The initial diagnostic-reader 401 incidents below remain observation-client evidence,
+not sender failures. The later 48x48 stop was the measured replacement reserve gate.
+
+48x48 preflight and watermark-reset cycle before heap/block were
+**19528/17568**; peak minima **9304/6288**,
+maximum fragmentation 34%, continuation margin 1968. Terminal and settled snapshots
+were **16464/12496** and **16384/12496**.
+Across all body cycles minimum continuation remains 1936 bytes (inherited preflight
+watermark 1776). The new image accounts for the expected additional 2560 retained
+bytes relative to 32x32. No reset, canary, stack reference leak or allocation failure
+was observed. Final read-only native snapshot: heap/block **16224/12496**,
+pending=false, body/staging/challenges/secondary refs=0, image=4608, commits=12,
+ECDSA calls=92, same boot/PID. OEM recovery still enabled with unchanged OEM hash;
+two subsequent accepted HTTP 200 samples and fresh device telemetry were confirmed.
+
+All six existing reports now reflect the completed safe phases and the actual
+replacement blocker. Historical checkpoints below remain intact, including the
+corrected timing projection. Native resource frames and sanitized private evidence
+hashes are in [stack evidence](V08_MISSION_8R_STACK_EVIDENCE.json). Candidate and
+rollback bytes, firmware and production companion source remain unchanged.
+Both `a026e10` CI runs passed 11/11; final report-head CI is tracked in Draft PR #39.
+Offline CI remains separate from physical HOLD. No production provisioning,
+permanent sender, Mission 9, new branch/PR or merge.
+
+---
+
+Historical report checkpoints retained verbatim below.
+
 # Mission 8 receiver qualification: HOLD with scoped receiver PASS
 
 1 October 2026. Continued exact `fa926bedc9ea91d7fd1160b871f5d31c3a3c5626` on the existing branch and Draft PR #39.
