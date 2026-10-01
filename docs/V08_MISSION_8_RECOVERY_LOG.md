@@ -1,3 +1,109 @@
+# Mission 8 physical resume: BLOCKED on telemetry continuity during ECDSA
+
+1 October 2026, Europe/Paris. Resume from exact clean head
+`6d52243cdfa1ea8fa3c59f08f415f922537f9490` on the existing
+`feature/shino-tv-v08-stack-remediation` branch and Draft PR #39.
+
+**BLOCKED: a physical telemetry freshness regression stopped escalation during
+the ECDSA phase.** The full three-minute candidate baseline passed, but a later
+device GET reported `stale:true` at 11:09:03.367 UTC (13:09:03 Europe/Paris).
+At that point the companion was RETRYING after consecutive HTTP 401 failures,
+already using refreshed client state. No coverless/32x32/48x48 transaction was
+attempted. Candidate/source remain unchanged; no reflash or sender restart was
+performed after the stop. R3 remains PARTIAL; R10 remains BLOCKED.
+
+The current candidate is retained running for diagnosis with its supported OEM
+recovery route responding. This resume performed exactly two single-attempt
+application writes: verified OEM return and the exact retained candidate. There
+was no rollback write or blind retry. Post-stop metrics recovered automatically
+and four independent device readings were fresh, with the same boot and tray PID.
+The owner confirmed today's V2.1 LCD and the candidate's initial orientation,
+four updating cards and absence of artifacts. The additional post-stop LCD
+observation requested in this chat is pending and is not inferred from API reads.
+
+| Physical phase | Actual result |
+|---|---|
+| Current V2.1 LCD; clean branch/head; rollback/candidate rehash | PASS |
+| Current V2.1 identity, fresh sender/device samples, OEM-return capability | PASS |
+| V2.1 to OEM | HTTP 200 staged; exact 494144-byte retained OEM image |
+| OEM rediscovery | Observed MAC on domestic LAN, then live `/v.json` identity; historical IP not assumed |
+| OEM to exact StackThunk candidate | HTTP 200 Update Success; 446144 bytes; retained SHA-256 unchanged |
+| Candidate boot/dashboard/four metrics/recovery | PASS; running size 446144; owner LCD confirmed normal |
+| Companion continuity across OEM to SHINO | Same PID 9972; automatic recovery in 28.219 seconds after AP reconnect; no restart |
+| Full pre-enrollment baseline | PASS: 185.187 seconds; 35 fresh idle-baseline readings |
+| Malformed headers, unknown/expired/used challenges | Exercised cheap denials with zero added ECDSA/body work |
+| Controlled test public-point validation | One key check; native secondary stack exercised |
+| Real ECDSA | 9 calls completed: three wrong-signature verifications and six valid proofs; phase then stopped on telemetry |
+| Coverless Begin/Commit/Abort and repeated transactions | NOT RUN |
+| 32x32 and 48x48 transfers/replacement cycles | NOT RUN |
+
+The historical test PID 6100 had ended before today's resume; the existing tray
+was PID 3224. One controlled PC restart before the first write loaded the same
+committed files with optional diagnostics (PID 9972). No source, credentials,
+configuration or autostart setting changed, and there was one sender process.
+PID 9972 remained unchanged throughout installation, baseline, crypto and recovery.
+
+| Native resource evidence, boot/baseline/authentication subset | Measured |
+|---|---:|
+| Stable candidate boot identifier / reset reason | 298452474 / 4 (scheduled SDK software restart) |
+| Diagnostic frames / fresh metrics / stale metrics | 75 / 74 / 1 |
+| Lowest observed free heap / largest free block | 13200 / 10592 bytes |
+| Highest recorded fragmentation | 29% |
+| Minimum continuation-stack margin | 1776 of 4096 bytes |
+| Secondary stack size / measured maximum use / margin | 6200 / 2740 / 3460 bytes |
+| Secondary allocations / live refs after calls | 10 / 0 |
+| Key checks / ECDSA calls | 1 / 9 |
+| Maximum measured crypto / media-owner poll / service interval | 595734 / 599377 / 600255 microseconds |
+| Allocation / secondary-allocation / busy / canary failures | 0 / 0 / 0 / 0 |
+| Media requests / commits / image bytes | 18 / 0 / 0 |
+| Final pending receiver / body bytes / staged bytes / challenges | false / 0 / 0 / 0 |
+
+These measurements establish bounded native key/verification stack behavior for
+the exercised inputs, including real ROM/core calls; they do not qualify every
+crypto input, full receiver body/SHA paths, transaction cleanup or image-replacement
+heap trends. Successful Gate 1 headers were intentionally closed without a body:
+one bounded body allocation can occur after authentication, but body reads stayed
+zero and the buffer was released. Cheap denials allocated/read no body. No persistent
+heap decline is inferred from transient minima; replacement-cycle trends were not run.
+
+The stale reading is correlated with sender acceptance, rather than attributed
+to StackThunk. Accepted attempt 417 completed at monotonic 1742.546. Attempts 418
+and 419 returned HTTP 401 at 1744.859 and 1747.203, with 2- and 4-second backoff.
+At the stale GET the sender snapshot was RETRYING, generation 26. Its earliest
+next scheduled attempt was 1751.203: an accepted-sample gap of at least 8.657
+seconds, exceeding the device's six-second TTL. Thus this is not continuous
+HTTP 200 RAM_SAMPLE_ACCEPTED every ~2 seconds with stale device storage. Fresh
+opener state was already being rebuilt, and recovery needed no manual restart;
+the previously fixed permanently poisoned opener is not demonstrated here.
+
+The pinned SDK uses one shared server Digest nonce/opaque pair and replaces both
+on each challenge. The diagnostic reader also recorded HTTP 401 near the stop.
+Concurrent protected-read/POST challenge interference is a source-supported
+hypothesis, not a conclusively isolated root cause. Further work must isolate
+that authentication coexistence/freshness failure without another candidate write.
+The retained late accepted-record spacing of 17.485 seconds has missing attempts
+420–423 and is not claimed as a complete acceptance gap; the 8.657-second lower
+bound is supported by the known failure/backoff schedule.
+
+Earlier local observer attempts failed initial authentication or stopped a short
+read-only baseline on HTTP 401, with no enrollment or media. Those records are
+preserved. The local observation helper gained bounded fresh-reader retries only
+after explicit HTTP 401 rejection, retaining sanitized events/cookies; no network
+failure, firmware upload or media packet is retried. Successful full baseline and
+the final telemetry stop belong to the same unchanged candidate boot. No firmware
+or production companion source was changed to obtain these measurements.
+
+All prior evidence/checkpoints/PRs are preserved. The candidate BIN remains
+`8dc18cf5135b4c7da8486d4f00bcc9b944d4bb5e4956a3f9dcbad7603ce47fea`;
+the retained V2.1/OEM/ZIP digests pass. SHINO AP is `192.168.4.1`. Any OEM address
+must be rediscovered and its live `/v.json` verified before `/update`.
+The starting head's 11/11 CI in both runs remains software evidence; final report
+head CI is tracked in PR #39 and does not override this physical BLOCKED result.
+No production key, permanent media sender, Mission 9 work, new branch/PR or merge.
+
+---
+Historical checkpoints retained below; the current result above supersedes their pending gates.
+
 # Mission 8 continuity gate: PC recovery PASS; current LCD observation pending
 
 1 October 2026, Europe/Paris. Same branch and Draft PR #39, continuing exact
