@@ -2,8 +2,8 @@
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
 **2 October owner preparation gate:** existing PR #41 continues from accepted
-`ce718f0`. Actual private active P0+P1 candidate is 464256 B, SHA-256
-`649d17c271396689ab1f11046f82c633fb963d883675e8e5d8c015dea96a834f`;
+`ce718f0`. Actual private active P0+P1 candidate is 464544 B, SHA-256
+`31e3f225744bd806df3302dbf3355770a313f8b71f65b33fd6e2f431449b0be5`;
 matching retained credentials/media identity and OEM/V2.1/M8 rollback are locally
 verified outside Git. New owner profile adds read-only numeric runtime/LCD counters
 to existing authenticated status, without exposing qualification write controls

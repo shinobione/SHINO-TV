@@ -6,7 +6,7 @@
 
 | Artifact | Bytes | SHA-256, locally reverified |
 | --- | ---: | --- |
-| New private P1 owner candidate | 464256 | `649d17c271396689ab1f11046f82c633fb963d883675e8e5d8c015dea96a834f` |
+| New private P1 owner candidate | 464544 | `31e3f225744bd806df3302dbf3355770a313f8b71f65b33fd6e2f431449b0be5` |
 | Current Mission 8 retained image | 446944 | `269fcf2be7e61b4f581f892f36c519cca5ebf1ef41759d9923d9df90aad682fa` |
 | OEM Ultra-V9.0.44 application | 494144 | `a6421f5bfee7860d97bed26620c346b8008f503e513702d4bfdf6e01010a7718` |
 | V2.1 review-003 rollback | 405712 | `3252ba5cd1f85683945d4d9a87ce49118568c0977605debc089267f54d7f3b0e` |
@@ -15,9 +15,11 @@ The exact source/ELF and pairing metadata are recorded in the private packet and
 
 Private `owner_compile` is active, without the public volatile zero startup guard. Public P0/P1 CI profiles remain inactive and refuse owner preparation in CI. OEM-only return is enabled with the actual manufacturer MD5 pin; native signed OTA remains zero, no global signature installation is added. Receiver, 6200-byte StackThunk, 2048-byte metadata arena, six-second metrics TTL and eight-second media deadline remain unchanged. V2.2 exclusive scenes use the existing 448-byte row; no clock/weather provider or 48px qualification is added.
 
+The final firmware was compiled at `32814f661975046d287d8ecc1f8fbc17934448a8`. Individual compiler frames are owner observation 96 B, provisioning apply 432 B, parser 240 B and HTTP owner 128 B; these are not cumulative/native high-water.
+
 Image validation: both DIO/4 MiB/40 MHz ESP8266 image headers; pinned Core whole-image CRC and both original segment XOR checks after zeroing Core-reserved CRC fields; actual ELF `_FS_start=0x40300000`, `_FS_end=0x405FA000`, `_EEPROM_start=0x405FB000`; pinned storage source/archive hashes. Relative flash offsets are FS `0x100000–0x3FA000`, unused EEPROM `0x3FB000`, RF `0x3FC000`, SDK parameters `0x3FD000–0x400000`. No filesystem image/mount or EEPROM initialization is introduced.
 
-Private candidate static DRAM is **55,440 bytes**, +1,424 versus public paired P0 (54,016). This includes private OEM/credentials and read-only qualification observations; the accepted public P1 delta remains +1,180. BIN is 29,888 bytes smaller than the pinned OEM application. OTA arithmetic gives 86,016 bytes of gap in both OEM→P1 and P1→OEM staging, below the 1 MiB ceiling and outside inferred stock FS/SDK sectors. These are linked/image/model results, not live P1 heap, OEM upload acceptance or power-interruption proof. [Sanitized numeric evidence](owner-preflight.json).
+Private candidate static DRAM is **55,504 bytes**, +1,488 versus public paired P0 (54,016). This includes private OEM/credentials and read-only qualification observations; the accepted public P1 delta remains +1,180. BIN is 29,600 bytes smaller than the pinned OEM application. OTA arithmetic gives 86,016 bytes of gap in both OEM→P1 and P1→OEM staging, below the 1 MiB ceiling and outside inferred stock FS/SDK sectors. These are linked/image/model results, not live P1 heap, OEM upload acceptance or power-interruption proof. [Sanitized numeric evidence](owner-preflight.json).
 
 ## Current installed unit — refreshed read-only evidence
 

@@ -1,8 +1,8 @@
 {
   "candidate": {
     "name": "P1 private candidate",
-    "size_bytes": 464256,
-    "sha256": "649d17c271396689ab1f11046f82c633fb963d883675e8e5d8c015dea96a834f",
+    "size_bytes": 464544,
+    "sha256": "31e3f225744bd806df3302dbf3355770a313f8b71f65b33fd6e2f431449b0be5",
     "segments": 2,
     "flash_mode": "DIO",
     "flash_size_flag": "4MB",
@@ -11,11 +11,11 @@
     "entry_address": "0x4010F480"
   },
   "linked": {
-    "elf_sha256": "cc967908f5df8914554c849b019965d3f9400027dc2b9ca9613bab24820c4c83",
-    "bin_bytes": 464256,
-    "bin_sha256": "649d17c271396689ab1f11046f82c633fb963d883675e8e5d8c015dea96a834f",
+    "elf_sha256": "c40dde6b1cb1b9ad93acfe3d551d7088a5a68cb0d50631fffd8cd4fcda3edf45",
+    "bin_bytes": 464544,
+    "bin_sha256": "31e3f225744bd806df3302dbf3355770a313f8b71f65b33fd6e2f431449b0be5",
     "size_text_data_bss": {
-      "text": 456075,
+      "text": 456363,
       "data": 4080,
       "bss": 32824
     },
@@ -23,12 +23,12 @@
       ".data": 4024,
       ".noinit": 56,
       ".text": 294,
-      ".irom0.text": 408168,
+      ".irom0.text": 408392,
       ".text1": 29021,
-      ".rodata": 18592,
+      ".rodata": 18656,
       ".bss": 32824
     },
-    "persistent_DRAM_sections": 55440,
+    "persistent_DRAM_sections": 55504,
     "objects": {
       "m7Authority": 2104,
       "m7Ingress": 1432,
@@ -117,7 +117,7 @@
       "sha256": "269fcf2be7e61b4f581f892f36c519cca5ebf1ef41759d9923d9df90aad682fa"
     }
   },
-  "source_commit": "24ddc77aef0e838e65bf938badd21d93dd4c24fa",
+  "source_commit": "32814f661975046d287d8ecc1f8fbc17934448a8",
   "status": "PRIVATE_OFFLINE_READY__INSTALL_AUTHORIZATION_PENDING",
   "permission_to_flash": false,
   "private_preparation_device_contacts": 0,
@@ -178,5 +178,11 @@
     },
     "status": "READ_ONLY_PASS"
   },
-  "P1_device_qualification": "NOT RUN"
+  "P1_device_qualification": "NOT RUN",
+  "individual_compiler_frames_NOT_stack_high_water": {
+    "owner_observation": 96,
+    "HomeLan_apply": 432,
+    "parser": 240,
+    "HTTP_owner": 128
+  }
 }
