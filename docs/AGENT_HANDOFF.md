@@ -1,6 +1,20 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+**2 October controlled installation attempt — HOLD:** owner explicitly authorized
+the exact M8→OEM and OEM→P1 hashes from starting PR #41 HEAD `d63b58b`.
+Immediate hashes/pairing/current-M8/LINK/resource/recovery/LCD preflight passed.
+One OEM-return POST raised an HTTP error without a staged acknowledgement; the
+client did not preserve the code/body. No retry or Hop 2 was performed. Subsequent
+GETs show responsive M8 446944 B, unchanged boot 2962927510, fresh telemetry,
+heap/block/continuation 18584/16672/1728 B, zero failure counters and enabled exact
+OEM capability. Owner confirms normal LCD after the attempt. OTA staging writes
+are unknown; no installation reboot observed. P1 remains NOT INSTALLED / DEVICE
+NOT RUN; no persistent Wi-Fi write or credential confirmation yet. Preserve the
+responsive application and single-attempt stop; do not automatically retry or
+rollback. [Actual device attempt and evidence limits](home-lan/DEVICE_INSTALLATION_2026-10-02.md).
+R3 PARTIAL / R10 BLOCKED. The preparation paragraphs below are prior-state evidence.
+
 **2 October owner preparation gate:** existing PR #41 continues from accepted
 `ce718f0`. Actual private active P0+P1 candidate is 464544 B, SHA-256
 `31e3f225744bd806df3302dbf3355770a313f8b71f65b33fd6e2f431449b0be5`;

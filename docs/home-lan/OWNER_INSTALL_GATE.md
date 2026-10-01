@@ -1,4 +1,15 @@
-# P1 private owner candidate — installation authorization pending
+# P1 private owner candidate — controlled installation HOLD
+
+**Current 2 October state:** the owner authorized both exact installation hops
+below, including expected installation reboots, and confirmed current normal LCD.
+Immediate preflight passed. One M8→OEM upload attempt raised an HTTP error without
+staged acknowledgement. STOP without retry or Hop 2; same M8 boot remains
+responsive, telemetry fresh and recovery capability enabled. P1 NOT INSTALLED /
+DEVICE NOT RUN; zero persistent household credential writes. The cause and any
+OTA staging-sector writes remain unknown. [Actual attempt/evidence](DEVICE_INSTALLATION_2026-10-02.md).
+The preparation record and unexecuted future sequence below are preserved as
+dated provenance; their earlier authorization-pending language is superseded by
+the explicit owner authorization and the single-attempt stop above.
 
 2 October 2026, Europe/Paris. Continue Draft PR #41 from accepted `ce718f0c47398ff70043b012cd3fb5d94c25aa74`; prior 13/13 push/PR CI is historical OFFLINE PASS. **STOP: no firmware upload, OEM return, reboot, network switch or persistent credential write has been performed in this preparation.** P1 DEVICE qualification is NOT RUN. The only current-unit contact was bounded authenticated GET-only preflight.
 
