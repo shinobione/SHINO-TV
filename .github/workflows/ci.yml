@@ -2,13 +2,47 @@ name: Offline audit and simulator tests
 
 on:
   push:
-    branches: [main, 'planning/**', 'feature/**', 'safety/**']
+    branches: [main, 'planning/**', 'feature/**', 'safety/**', 'codex/**']
   pull_request:
 
 permissions:
   contents: read
 
 jobs:
+  artwork-pilot:
+    name: Native 32px artwork adapter, software LCD and linked resources (no device)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned offline compiler and host preview dependency
+        run: python -m pip install 'platformio==6.1.18' 'Pillow>=10,<13'
+      - name: Link equivalent unstarted baseline and artwork pilot
+        run: pio run -d experiments/artwork_pilot -e baseline_compile -e pilot_compile
+      - name: Real native authentication/receiver and software LCD under ASan/UBSan
+        run: |
+          python tools/artwork_pilot_runner.py --previews "${{ runner.temp }}/artwork-previews" > "${{ runner.temp }}/artwork-host.json"
+          python tools/artwork_pilot_resources.py > "${{ runner.temp }}/artwork-resources.json"
+          python -c 'import json,os; p=os.environ["RUNNER_TEMP"]; h=json.load(open(p+"/artwork-host.json")); r=json.load(open(p+"/artwork-resources.json")); assert h["cases_passed"]>=16 and h["render_heap_allocations"]==0 and h["sanitizers"]=="ASan + UBSan"; assert r["delta"]["persistent_DRAM_bytes"]<1024 and not r["full_240_framebuffer_native"]; assert h["device_contacts"]==h["device_writes"]==r["device_contacts"]==r["device_writes"]==0'
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: artwork-offline-evidence-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            ${{ runner.temp }}/artwork-*.json
+            ${{ runner.temp }}/artwork-previews
+          if-no-files-found: error
   v08-m8r-stack-remediation:
     name: V0.8 Mission 8R focused regressions and linked StackThunk isolation (no device)
     runs-on: ubuntu-latest
@@ -16,7 +50,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          # Freeze completed Mission 8 evidence; pilot tests exercise the new head.
+          ref: 9fce7137f9fadd83678887442bf91cf60ea86b2e
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-python@v5
@@ -36,7 +71,7 @@ jobs:
       - name: Regress real crypto, split-phase security and retained owner behavior
         env:
           SHINO_ARDUINOJSON_SRC: experiments/v08_m8r/.pio/libdeps/media_compile/ArduinoJson/src
-          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          EXPECTED_HEAD: 9fce7137f9fadd83678887442bf91cf60ea86b2e
         run: |
           python tools/v08_m8r_runner.py > "${{ runner.temp }}/v08-m8r-focused.json"
           python tools/v08_m8r_metadata_runner.py > "${{ runner.temp }}/v08-m8r-metadata32.json"
@@ -49,7 +84,7 @@ jobs:
           test -z "$(git status --porcelain)"
       - uses: actions/upload-artifact@v4
         with:
-          name: v08-m8r-offline-evidence-${{ github.event.pull_request.head.sha || github.sha }}
+          name: v08-m8r-frozen-evidence-9fce7137f9fadd83678887442bf91cf60ea86b2e
           path: ${{ runner.temp }}/v08-m8r-*.json
           if-no-files-found: error
   v08-m8-preinstall-stack-gate:

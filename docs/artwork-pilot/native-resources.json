@@ -1,0 +1,258 @@
+{
+  "scope": "paired equivalent offline full graphs; public inert OEM policy, unstarted volatile guard",
+  "baseline": {
+    "elf_sha256": "bdca3d52e879106b975874821ed091fa910a625aeb159a2da588c3ccc78ed908",
+    "bin_bytes": 443616,
+    "bin_sha256": "5b59b6fdb7b0bbade5f2671f0200413434087b7e4bcab5d9035789d8df2a70ae",
+    "size_text_data_bss": {
+      "text": 436643,
+      "data": 2872,
+      "bss": 32696
+    },
+    "sections": {
+      ".data": 2816,
+      ".noinit": 56,
+      ".text": 258,
+      ".irom0.text": 390460,
+      ".text1": 29021,
+      ".rodata": 16904,
+      ".bss": 32696
+    },
+    "persistent_DRAM_sections": 52416,
+    "objects": {
+      "m7Authority": 2104,
+      "m7Ingress": 1432,
+      "m7Receiver": 1120,
+      "m8Json": 2048,
+      "m8::runtimeStats": 56,
+      "m8MetadataLayout": 20
+    },
+    "linked_metadata_layout": [
+      4,
+      8,
+      8,
+      8,
+      2048
+    ]
+  },
+  "pilot": {
+    "elf_sha256": "53d73364a013eeeacc6429be17508da41d6f151a21421b53e71af26317b8b984",
+    "bin_bytes": 443600,
+    "bin_sha256": "684e798cdad614a24eac5e4f329934b56df767fcad028bb63f43da1d2858a765",
+    "size_text_data_bss": {
+      "text": 436159,
+      "data": 3352,
+      "bss": 32640
+    },
+    "sections": {
+      ".data": 3296,
+      ".noinit": 56,
+      ".text": 258,
+      ".irom0.text": 389880,
+      ".text1": 29021,
+      ".rodata": 17000,
+      ".bss": 32640
+    },
+    "persistent_DRAM_sections": 52936,
+    "objects": {
+      "m7Authority": 2104,
+      "m7Ingress": 1432,
+      "m7Receiver": 1328,
+      "m8Json": 2048,
+      "m8::runtimeStats": 56,
+      "m8MetadataLayout": 20
+    },
+    "linked_metadata_layout": [
+      4,
+      8,
+      8,
+      8,
+      2048
+    ]
+  },
+  "delta": {
+    "bin_bytes": -16,
+    "text_data_bss": {
+      "text": -484,
+      "data": 480,
+      "bss": -56
+    },
+    "persistent_DRAM_bytes": 520
+  },
+  "pilot_objects": {
+    "m7Receiver": 1328,
+    "(anonymous namespace)::artworkLcd": 4,
+    "(anonymous namespace)::artworkTiming": 12,
+    "(anonymous namespace)::artworkRenderer": 276
+  },
+  "compiler_frames_baseline": {
+    "virtual size_t Arduino_GFX::write(uint8_t)": {
+      "bytes": 48,
+      "kind": "static"
+    },
+    "virtual void Arduino_GFX::drawChar(int16_t, int16_t, unsigned char, uint16_t, uint16_t)": {
+      "bytes": 80,
+      "kind": "static"
+    },
+    "virtual void Arduino_TFT::draw16bitRGBBitmap(int16_t, int16_t, uint16_t*, int16_t, int16_t)": {
+      "bytes": 48,
+      "kind": "static"
+    },
+    "virtual void Arduino_TFT::writeFillRectPreclipped(int16_t, int16_t, int16_t, int16_t, uint16_t)": {
+      "bytes": 48,
+      "kind": "static"
+    },
+    "virtual void Arduino_TFT::draw16bitRGBBitmap(int16_t, int16_t, const uint16_t*, int16_t, int16_t)": {
+      "bytes": 48,
+      "kind": "static"
+    },
+    "virtual void Arduino_HWSPI::writePixels(uint16_t*, uint32_t)": {
+      "bytes": 48,
+      "kind": "static"
+    },
+    "bool m7::metadata(const m7::Record&, m7::Metadata&)": {
+      "bytes": 432,
+      "kind": "static"
+    },
+    "bool m7::Receiver::receive(const m7::Record&, uint8_t, uint32_t)": {
+      "bytes": 624,
+      "kind": "static"
+    },
+    "void FirstBootBridge::loop()": {
+      "bytes": 32,
+      "kind": "static"
+    }
+  },
+  "compiler_frames_pilot": {
+    "virtual size_t Arduino_GFX::write(uint8_t)": {
+      "bytes": 48,
+      "kind": "static"
+    },
+    "virtual void Arduino_GFX::drawChar(int16_t, int16_t, unsigned char, uint16_t, uint16_t)": {
+      "bytes": 80,
+      "kind": "static"
+    },
+    "virtual void Arduino_TFT::draw16bitRGBBitmap(int16_t, int16_t, uint16_t*, int16_t, int16_t)": {
+      "bytes": 48,
+      "kind": "static"
+    },
+    "virtual void Arduino_TFT::writeFillRectPreclipped(int16_t, int16_t, int16_t, int16_t, uint16_t)": {
+      "bytes": 48,
+      "kind": "static"
+    },
+    "virtual void Arduino_TFT::draw16bitRGBBitmap(int16_t, int16_t, const uint16_t*, int16_t, int16_t)": {
+      "bytes": 48,
+      "kind": "static"
+    },
+    "virtual void Arduino_HWSPI::writePixels(uint16_t*, uint32_t)": {
+      "bytes": 48,
+      "kind": "static"
+    },
+    "{anonymous}::ArtworkLcd::~ArtworkLcd()": {
+      "bytes": 0,
+      "kind": "static"
+    },
+    "virtual {anonymous}::ArtworkLcd::~ArtworkLcd()": {
+      "bytes": 0,
+      "kind": "static"
+    },
+    "virtual void {anonymous}::ArtworkLcd::row(int, int, uint16_t*, int, int)": {
+      "bytes": 48,
+      "kind": "static"
+    },
+    "virtual void {anonymous}::ArtworkLcd::text(int, int, const char*, uint16_t, uint8_t)": {
+      "bytes": 48,
+      "kind": "static"
+    },
+    "virtual void {anonymous}::ArtworkLcd::fill(int, int, int, int, uint16_t)": {
+      "bytes": 48,
+      "kind": "static"
+    },
+    "static void ArtworkPilot::Renderer::line(ArtworkPilot::Canvas&, int, const char*, unsigned int, uint16_t)": {
+      "bytes": 80,
+      "kind": "static"
+    },
+    "void ArtworkPilot::Renderer::paintCard(ArtworkPilot::Canvas&, unsigned int)": {
+      "bytes": 80,
+      "kind": "static"
+    },
+    "void ArtworkPilot::Renderer::setMetrics(const ArtworkPilot::Metrics&)": {
+      "bytes": 96,
+      "kind": "static"
+    },
+    "bool ArtworkPilot::Renderer::step(ArtworkPilot::Canvas&, const ArtworkPilot::View&)": {
+      "bytes": 48,
+      "kind": "static"
+    },
+    "void artworkPilotAfterHttp()": {
+      "bytes": 128,
+      "kind": "static"
+    },
+    "bool m7::metadata(const m7::Record&, m7::Metadata&)": {
+      "bytes": 432,
+      "kind": "static"
+    },
+    "bool m7::Receiver::receive(const m7::Record&, uint8_t, uint32_t)": {
+      "bytes": 720,
+      "kind": "static"
+    },
+    "void FirstBootBridge::loop()": {
+      "bytes": 32,
+      "kind": "static"
+    }
+  },
+  "driver_source_hashes": {
+    "Arduino_TFT.cpp": "dd1e2c556c9034411239f4169f15a425ebafa56125e10023f8e2d3b881d3bb6a",
+    "Arduino_HWSPI.cpp": "98683a4c194902ca924cf3774d0d396ab127457ca0e62edf508faff0cf8369c2",
+    "Arduino_ST7789.cpp": "ddc8e53ee0bb5999a3d144d40698d6746ee5266c035e334547c8ed6333b7b406",
+    "glcdfont.h": "04d399ad4a25a132b52239b3c53c5638350845dfc3a2d036a0fb67bac353025e"
+  },
+  "additional_renderer_heap_allocations": 0,
+  "renderer_scanline_bytes": 192,
+  "full_240_framebuffer_native": false,
+  "timing": {
+    "native_LCD_us": "NOT MEASURED",
+    "96px_cover_SPI_data_only_minimum_us_at_40MHz": 3686.4,
+    "clear_top_SPI_data_only_minimum_us_at_40MHz": 10752,
+    "max_tested_slice_9840_pixels_SPI_data_only_minimum_us_at_40MHz": 3936,
+    "limitations": "Wire-time arithmetic excludes commands, glyph/SPI/SDK costs. No native high-water or elapsed LCD timing claim."
+  },
+  "device_contacts": 0,
+  "device_writes": 0,
+  "frozen_M8_candidate": {
+    "elf_sha256": "92c8b374f4745818718d0a2ce5c1805e0d1b9ef52d26c24feeda84ef5cd43823",
+    "bin_bytes": 446944,
+    "bin_sha256": "269fcf2be7e61b4f581f892f36c519cca5ebf1ef41759d9923d9df90aad682fa",
+    "size_text_data_bss": {
+      "text": 439983,
+      "data": 2872,
+      "bss": 32712
+    },
+    "sections": {
+      ".data": 2816,
+      ".noinit": 56,
+      ".text": 258,
+      ".irom0.text": 393724,
+      ".text1": 29021,
+      ".rodata": 16980,
+      ".bss": 32712
+    },
+    "persistent_DRAM_sections": 52508,
+    "objects": {
+      "m7Authority": 2104,
+      "m7Ingress": 1432,
+      "m7Receiver": 1120,
+      "m8Json": 2048,
+      "m8::runtimeStats": 56,
+      "m8MetadataLayout": 20
+    },
+    "linked_metadata_layout": [
+      4,
+      8,
+      8,
+      8,
+      2048
+    ]
+  },
+  "reference_note": "Existing ELF/BIN read only. Public graph uses inert OEM policy; paired delta isolates renderer. Pilot BIN is not an owner installation candidate."
+}

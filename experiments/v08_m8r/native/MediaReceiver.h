@@ -3,15 +3,35 @@
 #include <ArduinoJson.h>
 #include <memory>
 #include <new>
+#ifdef SHINO_ARTWORK_DISPLAY_PILOT
+#include <display/ArtworkPilot.h>
+#endif
 namespace m7 {
 // Inert sink owns the single image allocation after Commit; no LCD API.
 struct DisplaySink {
   std::unique_ptr<uint8_t[]> image;
   char metadata[513] = {};
   unsigned commits = 0;
+#ifdef SHINO_ARTWORK_DISPLAY_PILOT
+  // Extent/provenance travel with the owning allocation, never with staging.
+  size_t committedBytes = 0;
+  uint32_t revision = 0;
+  bool committed = false;
+  ArtworkPilot::Caption caption;
+  ArtworkPilot::View borrow() const {
+    return ArtworkPilot::committedView(image.get(), committedBytes, caption,
+                                       committed, revision);
+  }
+#endif
   void clear() {
     image.reset();
     metadata[0] = 0;
+#ifdef SHINO_ARTWORK_DISPLAY_PILOT
+    committedBytes = 0;
+    committed = false;
+    caption = ArtworkPilot::Caption{};
+    ++revision;
+#endif
   }
 };
 struct Record {
@@ -81,6 +101,9 @@ struct Metadata {
   uint16_t cover = 0;
   uint8_t tiles = 0;
   uint8_t digest[32] = {};
+#ifdef SHINO_ARTWORK_DISPLAY_PILOT
+  ArtworkPilot::Caption caption;
+#endif
 };
 // Hard cap for the temporary JSON document; allocated only after Gate2.
 // Fixed arena reuses only its newest block; all storage dies before staging.
@@ -252,6 +275,13 @@ M8R_NOINLINE inline bool metadata(const Record &r, Metadata &out) {
     return false;
   out.cover = uint16_t(len);
   out.tiles = uint8_t(tiles);
+#ifdef SHINO_ARTWORK_DISPLAY_PILOT
+  // Copy bounded presentation text only after every metadata check passes.
+  // No LCD calls and no retained JsonDocument/string pointers in ingress.
+  ArtworkPilot::captionText(out.caption.title, d["title"].as<const char*>());
+  ArtworkPilot::captionText(out.caption.artist, d["artist"].as<const char*>());
+  out.caption.state = ArtworkPilot::stateFrom(d["state"].as<const char*>());
+#endif
   return true;
 }
 class Receiver {
@@ -399,6 +429,12 @@ public:
     sink.image = std::move(staging);
     memcpy(sink.metadata, meta.canonical, sizeof meta.canonical);
     ++sink.commits;
+#ifdef SHINO_ARTWORK_DISPLAY_PILOT
+    sink.committedBytes = meta.cover;
+    sink.caption = meta.caption;
+    sink.committed = true;
+    ++sink.revision;
+#endif
     pending = false;
     ++mutations;
     outcome = "COMMITTED";
