@@ -2,6 +2,16 @@
 
 > **Active product status — 1 October 2026.** This section supersedes the 28 September status claims preserved further below for historical traceability. One owner SmallTV-Ultra, exact 240×240 LCD, Wi-Fi-only maintenance (USB-C power; no UART/JTAG/solder). This is planning, not permission to flash, merge, provision a production key or deploy.
 
+## 1 October 2026 — Canonical agent handoff and square design references
+
+**Agents / Codex: read [AGENTS.md](../AGENTS.md) then [docs/AGENT_HANDOFF.md](AGENT_HANDOFF.md) before implementation.** They specify source precedence, verified status, one-unit Wi-Fi safety constraints, scene state transitions, prerequisites and acceptance checks. The older material below is retained without dropping any original detail. For canonical visual targets use [docs/design-reference/README.md](design-reference/README.md) and the actual **240×240 SVG images** (not scaled rectangular contact sheets):
+
+| IDLE (clock + weather + 4 cards) | PLAYING (square cover, no metrics) | PAUSED (no metrics) | NO ARTWORK (no metrics) |
+| --- | --- | --- | --- |
+| ![IDLE 240x240](design-reference/idle.svg) | ![PLAYING 240x240](design-reference/playing.svg) | ![PAUSED 240x240](design-reference/paused.svg) | ![NO ARTWORK 240x240](design-reference/no-artwork.svg) |
+
+**Visual direction only, not a claimed native LCD screenshot.** Use native font/driver previews and measured ESP8266 resource tests to finalize. The [marquee overflow reference](design-reference/marquee-scrolled.svg) illustrates a long title moving *inside its own clipped line*, not shrinking the whole UI. The previous PR #40 96×96 cover + four metrics scene is a validated offline integration **test fixture only**; it is not the intended shipped mixed mode. Do not mistake the dated "native media BLOCKED" claims in the historical 28 September text for today's physically qualified 32×32 RAM receiver.
+
 ## Product contract — owner clarification, 1 October 2026
 
 **One 240×240 (1:1) scene at a time. No mixed music + four-metric screen as the final product.** The PR #40 combined-artwork/four-card mock-up is a working *offline renderer/receiver integration pilot*, not accepted final interaction design. All future reference previews must be actual independently rendered 240×240-pixel PNGs (album covers square and not stretched), not wide illustration panels merely labelled 240×240.
