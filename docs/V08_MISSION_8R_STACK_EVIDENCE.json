@@ -22029,7 +22029,7 @@
       "tools/v08_m8r_lab.cpp": "43186645e2b36706117243c202a0e8c94710db41a819f4bc19d079f25d7f852c",
       "tools/v08_m8r_fixtures.js": "1aea3ac02d89b0bcc778611fd03e37084bae57c2618416f1ba9b49c23dbc3372",
       "tools/v08_m8r_metadata_lab.cpp": "adaf485c401d4c63dcf6c2b1fef249970c76bfc8b6d37fc503703697ee517f70",
-      "tools/v08_m8r_metadata_runner.py": "e6c6b102d0fa067f75289f7e082f28432e4d290097efe619072a592778c037ba",
+      "tools/v08_m8r_metadata_runner.py": "2673908ae565a19288a8ded78103f70a3cfa73c62e4686347c53f53ac5d3b49b",
       "tools/v08_m8r_transfer_plan.py": "e0a8ca2414fb74c6d61b1d85673bb11961376a8ae7a9c9f222df78560ebad2ef",
       "tools/v08_m8r_memory.py": "ce775854c0bbe07e53b2a8d7d801d755814bf53982400c2c8692f3373566f9af"
     },
@@ -22471,12 +22471,26 @@
       "m8-memory-public-stack.json": "8e2ac5d7498b271554dbfe797b9ece27d92993995a0912a1abbfd822e29bb755",
       "m8-memory-sensitivity-stack.json": "feea81889d4dd4007267b0ee48a6aeb837377695ea394f1488f573c7ddfa9027",
       "m8-memory-qualification/packets.json": "863f84579e3e642f64d3734b67942ce18049cddc73f229674932749241febd50",
-      "m8_memory_receiver.py": "89d2e2caf6edf6338777ff283f67fef2f62fdebc79b74d5deb595808a8e8cbe5"
+      "m8_memory_receiver.py": "89d2e2caf6edf6338777ff283f67fef2f62fdebc79b74d5deb595808a8e8cbe5",
+      "m8-memory-metadata-relative.json": "4207424de16f8ce1323491e8a0f645f5e584090689d2293965989faecc961225"
     },
     "full_retained_CI": "Exact implementation-head checks are recorded on existing Draft PR #39; all 11 retained jobs remain required.",
     "historical_c5bb_CI": "Both runs 36871845406 and 36871836734 passed 11/11.",
     "overall": "HOLD__NEW_CANDIDATE_NOT_PHYSICALLY_VALIDATED__48_TIMING_EXPERIMENTAL__STRICT_TELEMETRY_OPEN",
     "R3": "PARTIAL",
-    "R10": "BLOCKED"
+    "R10": "BLOCKED",
+    "ci_initial_82a5173": {
+      "head": "82a517388c177a79c4c05b3250f652d76c0e5850",
+      "runs": [
+        36886600032,
+        36886596796
+      ],
+      "jobs_passed_each": 10,
+      "jobs_total_each": 11,
+      "failure": "Dedicated metadata runner did not resolve relative ArduinoJson include path before changing compiler cwd to temp.",
+      "correction": "Resolve dependency path once; CI-style relative path regression passes the unchanged 21388-case profile.",
+      "native_candidate_unchanged": true,
+      "device_contacts": 0
+    }
   }
 }

@@ -76,7 +76,7 @@ def compiler32(directory):
     return shutil.which('cl.exe',path=env.get('PATH')),env,[]
 
 def run():
-    tx,cases=corpus();aj=Path(os.environ.get('SHINO_ARDUINOJSON_SRC',ROOT/'experiments/v08_m8r/.pio/libdeps/media_compile/ArduinoJson/src'))
+    tx,cases=corpus();aj=Path(os.environ.get('SHINO_ARDUINOJSON_SRC',ROOT/'experiments/v08_m8r/.pio/libdeps/media_compile/ArduinoJson/src')).resolve()
     assert '#define ARDUINOJSON_VERSION "7.4.3"' in (aj/'ArduinoJson/version.hpp').read_text()
     bear=core_root()/'tools/sdk/ssl/bearssl';profiles=[]
     with tempfile.TemporaryDirectory(prefix='m8-metadata32-') as td:

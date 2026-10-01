@@ -78,6 +78,13 @@ dies before new-image staging; no new persistent heap allocation is introduced.
 DRAM growth includes new diagnostics/constants, not just the 12-byte stats change.
 The unchanged 2048-byte diagnostic buffer has a conservative 1681-byte format bound.
 
+Initial implementation CI at `82a5173` passed 10/11 jobs in both runs. The new
+metadata runner failed to resolve a relative dependency include before compiling
+in a temporary directory. This test-runner path bug is fixed; the CI-style
+relative-path regression passes the identical corpus. Candidate bytes and all
+native/physical measurements remain unchanged. Final full-suite status is tracked
+at the updated exact head on Draft PR #39; the initial failure is retained in JSON.
+
 ---
 
 Historical checkpoints retained verbatim below.
