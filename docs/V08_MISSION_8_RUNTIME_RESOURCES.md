@@ -85,9 +85,9 @@ The retained late accepted-record spacing of 17.485 seconds has missing attempts
 420–423 and is not claimed as a complete acceptance gap; the 8.657-second lower
 bound is supported by the known failure/backoff schedule.
 
-Earlier local observer attempts failed initial authentication or stopped a short
-read-only baseline on HTTP 401, with no enrollment or media. Those records are
-preserved. The local observation helper gained bounded fresh-reader retries only
+Earlier local observer attempts encountered initialization/GET HTTP errors,
+including one observed HTTP 401; the other failing HTTP statuses were not retained.
+No enrollment or media occurred in those attempts. Their records are preserved. The local observation helper gained bounded fresh-reader retries only
 after explicit HTTP 401 rejection, retaining sanitized events/cookies; no network
 failure, firmware upload or media packet is retried. Successful full baseline and
 the final telemetry stop belong to the same unchanged candidate boot. No firmware
