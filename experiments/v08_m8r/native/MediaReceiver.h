@@ -17,20 +17,35 @@ struct DisplaySink {
   size_t committedBytes = 0;
   uint32_t revision = 0;
   bool committed = false;
+  bool presented = false;
   ArtworkPilot::Caption caption;
   ArtworkPilot::View borrow() const {
-    return ArtworkPilot::committedView(image.get(), committedBytes, caption,
-                                       committed, revision);
+    auto view = ArtworkPilot::committedView(image.get(), committedBytes, caption,
+                                            committed, revision);
+    if (presented && !committed) {
+      view.caption = &caption; // validated/authenticated Begin, never staging
+      view.cover = ArtworkPilot::Cover::Missing;
+    }
+    return view;
   }
 #endif
-  void clear() {
+  #ifdef SHINO_ARTWORK_DISPLAY_PILOT
+  void releaseImage() {
     image.reset();
     metadata[0] = 0;
-#ifdef SHINO_ARTWORK_DISPLAY_PILOT
     committedBytes = 0;
     committed = false;
-    caption = ArtworkPilot::Caption{};
     ++revision;
+  }
+  #endif
+  void clear() {
+#ifdef SHINO_ARTWORK_DISPLAY_PILOT
+    releaseImage();
+    caption = ArtworkPilot::Caption{};
+    presented = false;
+#else
+    image.reset();
+    metadata[0] = 0;
 #endif
   }
 };
@@ -278,9 +293,16 @@ M8R_NOINLINE inline bool metadata(const Record &r, Metadata &out) {
 #ifdef SHINO_ARTWORK_DISPLAY_PILOT
   // Copy bounded presentation text only after every metadata check passes.
   // No LCD calls and no retained JsonDocument/string pointers in ingress.
-  ArtworkPilot::captionText(out.caption.title, d["title"].as<const char*>());
-  ArtworkPilot::captionText(out.caption.artist, d["artist"].as<const char*>());
+  ArtworkPilot::captionText(out.caption.title, d["title"].as<const char*>(),
+                            d["title"].as<JsonString>().size());
+  ArtworkPilot::captionText(out.caption.artist, d["artist"].as<const char*>(),
+                            d["artist"].as<JsonString>().size());
   out.caption.state = ArtworkPilot::stateFrom(d["state"].as<const char*>());
+  unhex(d["track_key"], out.caption.trackKey, 32); // already validated above
+  out.caption.positionValid = !d["position"].isNull();
+  out.caption.durationValid = !d["duration"].isNull();
+  out.caption.position = d["position"].as<unsigned>();
+  out.caption.duration = d["duration"].as<unsigned>();
 #endif
   return true;
 }
@@ -292,7 +314,13 @@ class Receiver {
   void terminal() {
     pending = false;
     staging.reset();
+#ifdef SHINO_ARTWORK_DISPLAY_PILOT
+    // Keep authenticated presentation as a music-only fallback after Abort,
+    // expiry or a rejected tile/Commit. Image/transaction cleanup is unchanged.
+    sink.releaseImage();
+#else
     sink.clear();
+#endif
   }
 
 public:
@@ -313,12 +341,18 @@ public:
   void cancelPrincipal(uint8_t i) {
     if (pending && owner == i) {
       terminal();
+#ifdef SHINO_ARTWORK_DISPLAY_PILOT
+      sink.clear(); // a revoked presentation must not survive cancellation
+#endif
       ++mutations;
       outcome = "REVOKED";
     }
   }
   void reboot() {
     terminal();
+#ifdef SHINO_ARTWORK_DISPLAY_PILOT
+    sink.clear();
+#endif
     highest = 0;
     ++mutations;
     outcome = "REBOOT";
@@ -347,6 +381,10 @@ public:
       sink.clear();
       ++mutations;
       meta = parsed;
+#ifdef SHINO_ARTWORK_DISPLAY_PILOT
+      sink.caption = meta.caption;
+      sink.presented = true;
+#endif
       memcpy(tx, r.tx, 16);
       owner = principal;
       next = 0;
@@ -433,6 +471,7 @@ public:
     sink.committedBytes = meta.cover;
     sink.caption = meta.caption;
     sink.committed = true;
+    sink.presented = true;
     ++sink.revision;
 #endif
     pending = false;

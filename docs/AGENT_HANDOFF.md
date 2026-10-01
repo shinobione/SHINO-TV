@@ -1,6 +1,16 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+**V2.2 implementation update (offline only):** PR #40 now has exclusive scenes,
+160px integer artwork (128px alternative also built/tested), clipped title/artist
+marquees, explicit provider leases and a disabled-by-default paused timeout seam.
+33 actual native-receiver host cases pass at both sizes; the final linked delta
+versus the previous PR #40 graph is +1,080 static DRAM / +5,456 BIN bytes.
+See [current implementation and eight 240×240 previews](artwork-pilot/README.md)
+and active roadmap P0. The older mixed-screen row below is retained prior-proof
+provenance, superseded for current UI implementation. Physical UI NOT RUN;
+installed M8 candidate and PR #39 remain unchanged. Recheck exact-head CI.
+
 ## A. Quick state — differentiate firmware, experiments and future goals
 
 | Axis | Verified current engineering evidence | Gap / prohibition |

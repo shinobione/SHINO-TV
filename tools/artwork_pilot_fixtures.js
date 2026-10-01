@@ -45,9 +45,9 @@ function signed(op,body) {
   const header="POST "+target+" HTTP/1.1\r\nHost: tv.test\r\nContent-Type: "+fields["content-type"]+"\r\nContent-Length: "+body.length+"\r\nContent-Digest: "+fields["content-digest"]+"\r\nConnection: close\r\nSignature-Input: "+si+"\r\nSignature: sig1=:"+sig.toString("base64")+":\r\n\r\n";
   return {header,body_hex:body.toString("hex"),nonce};
 }
-function group(name,{kind=0,width=32,title="Midnight Signals",artist="SHINO LAB",state="PLAYING",invalid=false}={}) {
+function group(name,{kind=0,width=32,title="Midnight Signals",artist="SHINO LAB",state="PLAYING",position=42,duration=180,trackKey=null,invalid=false}={}) {
   const seq=++sequence, cover=width ? image(kind) : Buffer.alloc(0);
-  const meta={album:"",artist,cover_len:cover.length,cover_sha256:width?crypto.createHash("sha256").update(cover).digest("hex"):null,duration:180,height:width,pixel_format:width?"RGB565LE":"NONE",position:42,source:"fixture",state,tile_count:cover.length/512,title,track_key:"0".repeat(64),tx:record(3,seq).subarray(16,32).toString("hex"),v:2,width};
+  const meta={album:"",artist,cover_len:cover.length,cover_sha256:width?crypto.createHash("sha256").update(cover).digest("hex"):null,duration,height:width,pixel_format:width?"RGB565LE":"NONE",position,source:"fixture",state,tile_count:cover.length/512,title,track_key:trackKey||crypto.createHash("sha256").update(title+"\0"+artist).digest("hex"),tx:record(3,seq).subarray(16,32).toString("hex"),v:2,width};
   if(invalid)meta.state="INVALID";
   const bytes=Buffer.from(JSON.stringify(meta));if(bytes.length>512)throw Error("fixture budget");
   const packets=[signed(1,record(1,seq,bytes))];
@@ -55,5 +55,14 @@ function group(name,{kind=0,width=32,title="Midnight Signals",artist="SHINO LAB"
   packets.push(signed(3,record(3,seq)),signed(4,record(4,seq)));
   return {name,image_hex:cover.toString("hex"),packets};
 }
-const groups=[group("first"),group("replacement",{kind:1,title:"Neon Streets",artist:"SmallTV / Offline"}),group("repeat"),group("paused",{state:"PAUSED"}),group("stopped",{state:"STOPPED"}),group("no_session",{width:0,state:"NO_SESSION",title:"",artist:""}),group("missing",{width:0}),group("long",{title:"Midnight Signals / Extended Offline SmallTV Display Pilot Mix".padEnd(60," ").slice(0,60),artist:"SHINO LAB / Deterministic Native Receiver Qualification Set".padEnd(60," ").slice(0,60)}),group("utf8",{title:"Café / 夜",artist:"Björk"}),group("rejected",{invalid:true})];
+const groups=[group("first"),group("replacement",{kind:1,title:"Neon Streets",artist:"SmallTV / Offline"}),group("repeat"),group("paused",{state:"PAUSED"}),group("stopped",{state:"STOPPED"}),group("no_session",{width:0,state:"NO_SESSION",title:"",artist:""}),group("missing",{width:0}),group("long",{title:"Midnight Signals / Extended Offline SmallTV Display Pilot Mix".padEnd(60," ").slice(0,60),artist:"SHINO LAB / Deterministic Native Receiver Qualification Set".padEnd(60," ").slice(0,60)}),group("utf8",{title:"Café / 夜",artist:"Björk"}),group("rejected",{invalid:true}),
+  group("resume"),group("unknown_progress",{position:null,duration:null}),
+  group("zero_duration",{position:0,duration:0}),group("position_only",{duration:null}),
+  group("invalid_progress",{position:181}),group("unavailable",{width:0,state:"UNAVAILABLE"}),
+  group("after_long",{kind:1,title:"A New Track",artist:"New Artist"}),
+  group("same_labels_new_track",{title:"Midnight Signals / Extended Offline SmallTV Display Pilot Mix".padEnd(60," ").slice(0,60),artist:"SHINO LAB / Deterministic Native Receiver Qualification Set".padEnd(60," ").slice(0,60),trackKey:"1".repeat(64)}),
+  group("hour_progress",{position:3601,duration:604800}),
+  group("empty_labels",{width:0,title:"",artist:""}),
+  group("accented_long",{width:0,title:"é".repeat(60),artist:"Zoë"}),
+  group("paused_missing",{width:0,state:"PAUSED"})];
 process.stdout.write(JSON.stringify({public_point:point.toString("hex"),groups}));

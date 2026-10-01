@@ -6,7 +6,7 @@ from v07_pinned_core_probe import core_root, pinned_sources
 
 ROOT = Path(__file__).resolve().parents[1]
 
-def run(previews):
+def run(previews, scale=5):
     from PIL import Image
     pinned_sources()
     deps = ROOT/'experiments/artwork_pilot/.pio/libdeps/pilot_compile'
@@ -49,10 +49,10 @@ def run(previews):
         exe=directory/'artwork.exe'
         includes += [ROOT/'experiments/v08_m8r/native',ROOT/'firmware/include',aj,gfx,directory]
         if msvc:
-            cmd=[compiler,'/nologo','/std:c++20','/EHsc','/O2','/utf-8','/DSHINO_ARTWORK_DISPLAY_PILOT=1',*[f'/I{x}' for x in includes],str(ROOT/'tools/artwork_pilot_lab.cpp'),*map(str,objects),'/link',f'/OUT:{exe}']
+            cmd=[compiler,'/nologo','/std:c++20','/EHsc','/O2','/utf-8','/DSHINO_ARTWORK_DISPLAY_PILOT=1',f'/DSHINO_ARTWORK_SCALE={scale}',*[f'/I{x}' for x in includes],str(ROOT/'tools/scene_engine_lab.cpp'),*map(str,objects),'/link',f'/OUT:{exe}']
         else:
             cmd=[compiler,'-std=c++20','-O2','-g','-fsanitize=address,undefined','-fno-omit-frame-pointer',
-                 '-DSHINO_ARTWORK_DISPLAY_PILOT=1',*[f'-I{x}' for x in includes],str(ROOT/'tools/artwork_pilot_lab.cpp'),*map(str,objects),'-o',str(exe)]
+                 '-DSHINO_ARTWORK_DISPLAY_PILOT=1',f'-DSHINO_ARTWORK_SCALE={scale}',*[f'-I{x}' for x in includes],str(ROOT/'tools/scene_engine_lab.cpp'),*map(str,objects),'-o',str(exe)]
         execute(cmd)
         report=json.loads(execute([str(exe),str(directory)]).stdout)
         for ppm in sorted(directory.glob('*.ppm')):
@@ -60,17 +60,23 @@ def run(previews):
                 assert image.size==(240,240)
                 image.save(previews/(ppm.stem+'.png'),optimize=True)
         # Compact review sheet only; each underlying preview remains 240x240.
-        sheet=Image.new('RGB',(720,480),(16,19,24))
-        for i,name in enumerate(('playing','replacement','paused','long-title','missing-artwork','stale-telemetry')):
-            with Image.open(previews/(name+'.png')) as image: sheet.paste(image,((i%3)*240,(i//3)*240))
+        sheet=Image.new('RGB',(960,480),(3,8,20))
+        for i,name in enumerate(('idle','playing','paused','no-artwork','marquee-start','marquee-middle','marquee-end','offline')):
+            with Image.open(previews/(name+'.png')) as image: sheet.paste(image,((i%4)*240,(i//4)*240))
         sheet.save(previews/'contact-sheet.png',optimize=True)
         report.update(compiler=Path(compiler).name, sanitizers='ASan + UBSan' if not msvc else 'not enabled (MSVC)',
                       font_sha256=hashlib.sha256((gfx/'font/glcdfont.h').read_bytes()).hexdigest(),
                       preview_hashes={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(previews.glob('*.png'))},
                       native_render_time='NOT MEASURED - no device contact',device_writes=0)
+        for name in ('idle','playing','paused','no-artwork','marquee-start','marquee-middle','marquee-end','offline'):
+            with Image.open(previews/(name+'.png')) as image:
+                assert image.size==(240,240), name
+        report['individual_preview_size']=[240,240]
         return report
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--previews',type=Path,default=ROOT/'docs/artwork-pilot/previews')
-    print(json.dumps(run(p.parse_args().previews),indent=2))
+    p.add_argument('--previews',type=Path,default=ROOT/'docs/artwork-pilot/scenes')
+    p.add_argument('--scale',type=int,choices=(3,4,5),default=5)
+    args=p.parse_args()
+    print(json.dumps(run(args.previews,args.scale),indent=2))

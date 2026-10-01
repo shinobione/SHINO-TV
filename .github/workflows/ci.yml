@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   artwork-pilot:
-    name: Native 32px artwork adapter, software LCD and linked resources (no device)
+    name: V2.2 native scenes, clipped marquee and linked resources (no device)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -27,13 +27,14 @@ jobs:
           node-version: '22'
       - name: Install pinned offline compiler and host preview dependency
         run: python -m pip install 'platformio==6.1.18' 'Pillow>=10,<13'
-      - name: Link equivalent unstarted baseline and artwork pilot
-        run: pio run -d experiments/artwork_pilot -e baseline_compile -e pilot_compile
+      - name: Link previous PR40 and both scene scaling options, all unstarted
+        run: pio run -d experiments/artwork_pilot -e baseline_compile -e previous_pilot_compile -e scene128_compile -e pilot_compile
       - name: Real native authentication/receiver and software LCD under ASan/UBSan
         run: |
           python tools/artwork_pilot_runner.py --previews "${{ runner.temp }}/artwork-previews" > "${{ runner.temp }}/artwork-host.json"
-          python tools/artwork_pilot_resources.py > "${{ runner.temp }}/artwork-resources.json"
-          python -c 'import json,os; p=os.environ["RUNNER_TEMP"]; h=json.load(open(p+"/artwork-host.json")); r=json.load(open(p+"/artwork-resources.json")); assert h["cases_passed"]>=16 and h["render_heap_allocations"]==0 and h["sanitizers"]=="ASan + UBSan"; assert r["delta"]["persistent_DRAM_bytes"]<1024 and not r["full_240_framebuffer_native"]; assert h["device_contacts"]==h["device_writes"]==r["device_contacts"]==r["device_writes"]==0'
+          python tools/artwork_pilot_runner.py --scale 4 --previews "${{ runner.temp }}/artwork-128-previews" > "${{ runner.temp }}/artwork-128-host.json"
+          python tools/artwork_pilot_resources.py --host-report "${{ runner.temp }}/artwork-host.json" > "${{ runner.temp }}/artwork-resources.json"
+          python -c 'import json,os; p=os.environ["RUNNER_TEMP"]; h=json.load(open(p+"/artwork-host.json")); s=json.load(open(p+"/artwork-128-host.json")); r=json.load(open(p+"/artwork-resources.json")); assert min(h["cases_passed"],s["cases_passed"])>=33 and h["render_heap_allocations"]==s["render_heap_allocations"]==0 and h["sanitizers"]==s["sanitizers"]=="ASan + UBSan"; assert r["delta"]["persistent_DRAM_bytes"]<2048 and not r["full_240_framebuffer_native"]; assert h["individual_preview_size"]==s["individual_preview_size"]==[240,240]; assert h["device_contacts"]==h["device_writes"]==r["device_contacts"]==r["device_writes"]==0'
           git diff --exit-code
           test -z "$(git status --porcelain)"
       - uses: actions/upload-artifact@v4
@@ -42,6 +43,7 @@ jobs:
           path: |
             ${{ runner.temp }}/artwork-*.json
             ${{ runner.temp }}/artwork-previews
+            ${{ runner.temp }}/artwork-128-previews
           if-no-files-found: error
   v08-m8r-stack-remediation:
     name: V0.8 Mission 8R focused regressions and linked StackThunk isolation (no device)

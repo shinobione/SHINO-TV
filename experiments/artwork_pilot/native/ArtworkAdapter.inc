@@ -1,6 +1,7 @@
 // Included only in the pilot's generated FirstBootBridge translation unit.
 // The only LCD entry point is called AFTER HTTP service returns, from loop().
 #include <display/ArtworkPilot.h>
+#include <font/glcdfont.h>
 namespace {
 class ArtworkLcd final : public ArtworkPilot::Canvas {
 public:
@@ -21,6 +22,9 @@ public:
         // Renderer decoded RGB565LE into native words; no reinterpret cast.
         for (int i = 0; i < repeats; ++i)
             DisplayManager::getGfx()->draw16bitRGBBitmap(x, y + i, pixels, count, 1);
+    }
+    uint8_t glyphColumn(uint8_t ascii, unsigned column) override {
+        return pgm_read_byte(&font[ascii*5+column]);
     }
 };
 static ArtworkLcd artworkLcd;
@@ -47,7 +51,10 @@ void artworkPilotAfterHttp() {
     // replacement while this synchronous borrow is in progress. GFX's SDK
     // yield does not call this loop's HTTP owner or mutate receiver ownership.
     const uint32_t before = micros();
-    if (artworkRenderer.step(artworkLcd, m7Receiver.sink.borrow())) {
+    // Clock/weather providers deliberately absent. Invalid defaults render
+    // an honest unsynchronized state. No preview fixtures enter this graph.
+    // Default policy keeps PAUSED; a later owner choice can call setPolicy().
+    if (artworkRenderer.step(artworkLcd, m7Receiver.sink.borrow(), now)) {
         artworkTiming.lastUs = uint32_t(micros()-before);
         if (artworkTiming.lastUs > artworkTiming.maxUs) artworkTiming.maxUs = artworkTiming.lastUs;
         ++artworkTiming.slices;
