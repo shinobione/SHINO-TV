@@ -1,3 +1,76 @@
+# Mission 8 Digest isolation and crypto qualification: HOLD
+
+1 October 2026. Continuation from exact `07a180087a578abef5bc37689ca7ba81f6f9e561`
+on `feature/shino-tv-v08-stack-remediation`, existing Draft PR #39.
+**HOLD: Current LCD gate pending; no media body sent.** R3 remains PARTIAL; R10 remains BLOCKED.
+
+The exact 446144-byte StackThunk candidate remains installed, SHA-256
+`8dc18cf5135b4c7da8486d4f00bcc9b944d4bb5e4956a3f9dcbad7603ce47fea`. This investigation performed **zero firmware writes,
+reboots, factory returns or sender restarts**. Boot 298452474 and tray PID 9972
+are unchanged. Retained V2.1/OEM rollback hashes were reverified without modifying
+the kit. Firmware and production companion source are unchanged; only ignored
+research observation/qualification clients changed. No TTL or sender-rate change.
+
+| Window | Seconds | Fresh reads | Accepted POSTs | Terminal failures | Maximum accepted gap |
+|---|---:|---:|---:|---|---:|
+| Test A PASS | 180.031 | 84 | 83 | {} | 2.172 s |
+| Test B PASS | 20.953 | 10 | 10 | {} | 2.188 s |
+| Unexercised crypto attempt: telemetry only | 15.61 | 8 | 7 | {} | 2.203 s |
+| Corrected reader quiet baseline telemetry PASS | 180.031 | 84 | 84 | {} | 2.172 s |
+| Test C telemetry PASS | 17.688 | 8 | 8 | {} | 2.188 s |
+| Post-crypto three-minute soak telemetry PASS | 180.031 | 84 | 84 | {} | 2.172 s |
+
+Every measured device read was fresh under the unchanged six-second TTL, with
+real accepted `HTTP 200 RAM_SAMPLE_ACCEPTED` sender responses. Sender histories
+were captured continuously, with consecutive attempt numbering. These counts
+cover logical attempts: an internally handled wire 401 is not separately exposed
+by the unchanged companion diagnostics and is not claimed absent.
+
+The exact core's `authenticate()` compares one server-wide realm/nonce/opaque
+pair. `requestAuthentication()` replaces that pair on every challenge. The single
+independent protected GET in Test B produced an anonymous 401 challenge and an
+authenticated 200; the pair changed from the reader's cached pair (values never
+logged). No terminal sender failure or stale reading followed in that bounded
+window. Thus shared challenge invalidation is demonstrated by pinned source and
+physical rotation, while the precise earlier consecutive-401 race remains
+unresolved. A challenge storm was not recreated. The installed overlay retains
+stock legacy Digest; Mission 6C's replay-count overlay is not active.
+
+Each reader session bootstraps one authenticated dashboard cookie, then metrics
+GETs carry only that cookie, no Authorization or challenge. Passive windows do
+not poll protected status/factory-return. Necessary native issue controls and
+resource snapshots remain authenticated. No auth boundary is removed.
+
+The first nine-header attempt reached only Gate 1 because the ignored client
+omitted `action=` in its queries: ECDSA remained 9. Its telemetry observation
+passed, **its crypto qualification did not**. That record is preserved. A second
+reader failed with PermissionError before measurement/media; its exact location
+was not retained. A narrow four-attempt, 50 ms diagnostic-file sharing retry was
+added only to the observer. The corrected run confirmed watermark-phase advance
+and actual challenge issuance before sending any further headers.
+
+The corrected subset added **nine real ECDSA calls**, three invalid signatures
+and six valid proofs; cumulative calls are 18. No body/image bytes were sent in
+this subset. Native minima were 14512 bytes free heap and
+12048 largest block, fragmentation max 17%,
+continuation margin 2080 bytes. Secondary maximum use remains
+2740/6200 bytes, margin 3460.
+Latest ECDSA duration was 595622 us; cumulative maximum remains
+595734 us. No reset, watchdog, canary or allocation failure.
+The subsequent complete three-minute cookie-only soak also passed.
+
+Previous telemetry stale/401 failure and every historical checkpoint remain
+below. No firmware-side stale-storage failure under continuous accepted POSTs
+has been demonstrated; no new permanently poisoned companion is demonstrated.
+Physical qualification is bounded to exercised native inputs and concurrent PC
+telemetry. No production key/provisioning, permanent media sender, Mission 9,
+new branch/PR or merge. Exact final-head CI is tracked in Draft PR #39 and cannot
+override a physical stop. OEM address must still be rediscovered and `/v.json`
+verified before any future separately authorized `/update` operation.
+
+---
+Historical checkpoints retained below; current measured result appears above.
+
 # Mission 8 physical resume: BLOCKED on telemetry continuity during ECDSA
 
 1 October 2026, Europe/Paris. Resume from exact clean head
