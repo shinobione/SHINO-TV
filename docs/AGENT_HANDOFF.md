@@ -7,7 +7,8 @@ returned HTTP 200 / complete `staged` acknowledgement in 10765 ms. LINK was
 temporarily suspended across the final fresh Digest challenge/upload and resumed
 as the same single process; configuration, credentials and autostart are unchanged.
 Read-only MAC rediscovery and live `/v.json` verify SmallTV-Ultra / Ultra-V9.0.44
-on the home LAN. OEM LCD confirmation is pending. Current firmware is **OEM**;
+on the home LAN. Owner confirms OEM display normal and correctly oriented,
+without corruption. Current firmware is **OEM**;
 M8 observations below are dated prior-state provenance, not the current boot.
 P1 NOT INSTALLED / DEVICE NOT RUN; no Hop 2, retry or household credential write.
 The newest single-hop stop supersedes older two-hop consent. No further actual

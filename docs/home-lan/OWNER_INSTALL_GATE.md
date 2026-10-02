@@ -3,8 +3,8 @@
 **Latest physical state, 2 October 09:23 CEST:** ONE newly and separately
 authorized corrected M8→exact OEM upload at PR #41 `0bae281` is acknowledged
 HTTP 200 / `staged`, 10765 ms. OEM SmallTV-Ultra / Ultra-V9.0.44 boot identity
-is verified by read-only owner-unit rediscovery and live `/v.json`; OEM LCD
-confirmation is pending. LINK paused only across the final challenge/upload,
+is verified by read-only owner-unit rediscovery and live `/v.json`; owner confirms
+normal OEM display, correct orientation and no corruption. LINK paused only across the final challenge/upload,
 then resumed as the same single process with config/credentials/autostart unchanged.
 **STOP at OEM. No retry, Hop 2 or household credential write.** P1 NOT INSTALLED
 / DEVICE NOT RUN. This consumes the new single-hop authorization and supersedes

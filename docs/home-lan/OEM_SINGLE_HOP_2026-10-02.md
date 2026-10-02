@@ -1,4 +1,4 @@
-# Corrected single OEM hop — acknowledged / OEM identity verified
+# Corrected single OEM hop — acknowledged / OEM boot and display PASS
 
 2 October 2026, Europe/Paris. Starting Draft PR #41 HEAD
 `0bae281f8d8c4061d12cdfe50781c137e1fb9876`. Owner separately authorized **ONE**
@@ -58,8 +58,10 @@ Its preserved SHINO target is not a claim of telemetry compatibility with OEM.
 At **07:23:01 UTC**, bounded read-only home-LAN rediscovery matched the retained
 owner-unit MAC and live GET `/v.json` returned HTTP 200:
 `{"m":"SmallTV-Ultra","v":"Ultra-V9.0.44"}`. This verifies the expected OEM
-application boot. No further firmware POST followed it. Owner OEM display
-confirmation is pending.
+application boot. No further firmware POST followed it. In response to the current
+post-boot LCD check, owner confirms: **"OEM display normal and correctly
+oriented"**, including no corruption. Physical display evidence is owner-reported;
+the live HTTP identity check is separate machine-observed evidence.
 
 The original failed upload's HTTP status/body remain unrecoverable. This
 successful corrected attempt with LINK paused demonstrates current request
