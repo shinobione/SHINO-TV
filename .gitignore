@@ -26,6 +26,8 @@ experiments/v08_m8r/.pio/
 experiments/v08_m8r/*.log
 experiments/artwork_pilot/.pio/
 experiments/artwork_pilot/*.log
+experiments/home_lan/.pio/
+experiments/home_lan/*.log
 experiments/v08_m6a/*.log
 experiments/v08_full_bridge/.pio/
 experiments/v08_full_bridge/*.log

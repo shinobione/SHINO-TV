@@ -1,7 +1,7 @@
 """SHINO // LINK — opt-in Windows tray companion for the already-installed V2.1.
 
 PC-side ONLY. Uses the existing validated per-build Digest RAM telemetry sender.
-No firmware routes, OTA, media/image upload, Wi-Fi switching, device discovery,
+No OTA, media/image upload, Windows Wi-Fi switching, device scanning,
 registry modification except a *separately requested* per-user auto-start action.
 Neither a config command nor a dry run contacts the SmallTV.
 """
@@ -131,6 +131,15 @@ class LinkEngine:
         self.failures = 0
         self.state = "WAITING"
 
+    def retarget(self, host: str) -> None:
+        host=validate_host(host)
+        if host==self.host: return
+        self.host=host
+        self.opener=None
+        self.failures=0
+        self.next_due=0
+        self.state="WAITING"
+
     def step(self, now: float | None = None) -> str:
         use_live_clock = now is None
         now = self.clock() if use_live_clock else now
@@ -186,10 +195,13 @@ class LinkEngine:
                 'generation': self.generation, 'failures': self.failures,
                 'history': list(self.history)}
 
-    def run(self, stop: threading.Event, report, observe=None) -> None:
+    def run(self, stop: threading.Event, report, observe=None, target_supplier=None) -> None:
         last_state = None
         last_attempt = 0
         while not stop.is_set():
+            if target_supplier:
+                try: self.retarget(target_supplier())
+                except (OSError,ValueError): pass
             state = self.step()
             if state != last_state:
                 report(state)
@@ -212,8 +224,10 @@ def make_engine(config: dict[str, str]) -> LinkEngine:
     opener = factory()
     import psutil
     psutil.cpu_percent(interval=None)  # Prime nonblocking first CPU sample.
-    return LinkEngine(config["host"], opener,
+    engine=LinkEngine(config["host"], opener,
                       lambda: collect_metrics(psutil, query_nvidia), opener_factory=factory)
+    engine.opener_factory=lambda: make_opener(engine.host,user,password)
+    return engine
 
 
 def diagnostics_writer(path: Path):
@@ -269,7 +283,7 @@ def run_tray(config: dict[str, str], observe=None) -> int:
         pystray.MenuItem("Exit SHINO // LINK", quit_app),
     )
     icon = pystray.Icon("SHINO_LINK", picture, APP_NAME + " · WAITING", menu)
-    worker = threading.Thread(target=engine.run, args=(stop, state_changed, observe),
+    worker = threading.Thread(target=engine.run, args=(stop, state_changed, observe, lambda: load_config(config_path())["host"]),
                               name="SHINO-LINK-metrics", daemon=True)
     worker.start()
     try:
@@ -344,6 +358,8 @@ def main(argv: list[str] | None = None) -> int:
                          help="Local PC schema validation only, NO secrets or network")
     actions.add_argument("--configure", action="store_true",
                          help="Save local host and private credential FILE PATH, never password values")
+    actions.add_argument("--set-target",action="store_true",help="Change existing sender's LAN IP without starting another sender")
+    actions.add_argument("--recovery-target",action="store_true",help="Retarget existing sender to private AP; does not change Windows Wi-Fi")
     actions.add_argument("--once", action="store_true",
                          help="One explicitly initiated RAM telemetry sample to configured SHINO")
     actions.add_argument("--run", action="store_true",
@@ -368,6 +384,11 @@ def main(argv: list[str] | None = None) -> int:
             print("OFFLINE ONLY | validated bounded PC telemetry | bytes=" + str(len(encoded)))
             return 0
         path = config_path()
+        if args.set_target or args.recovery_target:
+            current=load_config(path)
+            save_config(path,DEFAULT_HOST if args.recovery_target else args.host,Path(current["credentials_file"]))
+            print("Existing sender target updated locally; no device contacted or new sender started.")
+            return 0
         if args.configure:
             if args.credentials_file is None:
                 parser.error("--configure requires --credentials-file")
@@ -390,7 +411,8 @@ def main(argv: list[str] | None = None) -> int:
         stop = threading.Event()
         print("SHINO // LINK started (RAM-only metrics, Ctrl+C to stop).")
         try:
-            engine.run(stop, lambda state: print("SHINO // LINK:", state, flush=True), observe)
+            engine.run(stop, lambda state: print("SHINO // LINK:", state, flush=True), observe,
+                       lambda: load_config(path)["host"])
         except KeyboardInterrupt:
             stop.set()
             print("\nSHINO // LINK stopped; device metrics expire after six seconds.")

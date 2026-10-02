@@ -1,0 +1,295 @@
+{
+  "scope": "public guarded full links; no installable owner image or device measurement",
+  "graphs": {
+    "p0_compile": {
+      "elf_sha256": "a94aa767a0f446bf48acde0f9ec138fc73fcc8e5e13e449f4a6e683d90c8e3f9",
+      "bin_bytes": 449072,
+      "bin_sha256": "d40f6794e7f18851c60ef43ec87fd4aeba0b195e0c036242ead530e50ac3448c",
+      "size_text_data_bss": {
+        "text": 440895,
+        "data": 4080,
+        "bss": 32640
+      },
+      "sections": {
+        ".data": 4024,
+        ".noinit": 56,
+        ".text": 258,
+        ".irom0.text": 394264,
+        ".text1": 29021,
+        ".rodata": 17352,
+        ".bss": 32640
+      },
+      "persistent_DRAM_sections": 54016,
+      "objects": {
+        "m7Authority": 2104,
+        "m7Ingress": 1432,
+        "m7Receiver": 1472,
+        "m8Json": 2048,
+        "m8::runtimeStats": 56,
+        "m8MetadataLayout": 20
+      },
+      "linked_metadata_layout": [
+        4,
+        8,
+        8,
+        8,
+        2048
+      ]
+    },
+    "p1_compile": {
+      "elf_sha256": "632eb73ffc90b78ad27f8a8f7534077bc9801bb0293f379672317c3fc3e8bb72",
+      "bin_bytes": 460208,
+      "bin_sha256": "8876b1a03a2fe771ecf4600966f8cde0404da1fd7aeba725f7490b60530b3f65",
+      "size_text_data_bss": {
+        "text": 452031,
+        "data": 4080,
+        "bss": 32816
+      },
+      "sections": {
+        ".data": 4024,
+        ".noinit": 56,
+        ".text": 294,
+        ".irom0.text": 404360,
+        ".text1": 29021,
+        ".rodata": 18356,
+        ".bss": 32816
+      },
+      "persistent_DRAM_sections": 55196,
+      "objects": {
+        "m7Authority": 2104,
+        "m7Ingress": 1432,
+        "m7Receiver": 1472,
+        "m8Json": 2048,
+        "m8::runtimeStats": 56,
+        "m8MetadataLayout": 20
+      },
+      "linked_metadata_layout": [
+        4,
+        8,
+        8,
+        8,
+        2048
+      ]
+    },
+    "p1_oem_compile": {
+      "elf_sha256": "1b336babfffab04e7ccfea42e93f30c877b68f3fa6ef7c66b0ea4bc749141ff0",
+      "bin_bytes": 463440,
+      "bin_sha256": "cd1f037ca74cdb55f32fd77fa7f876d145b60880b9d0b451724feaf4c4bf9dcc",
+      "size_text_data_bss": {
+        "text": 455263,
+        "data": 4080,
+        "bss": 32832
+      },
+      "sections": {
+        ".data": 4024,
+        ".noinit": 56,
+        ".text": 294,
+        ".irom0.text": 407560,
+        ".text1": 29021,
+        ".rodata": 18388,
+        ".bss": 32832
+      },
+      "persistent_DRAM_sections": 55244,
+      "objects": {
+        "m7Authority": 2104,
+        "m7Ingress": 1432,
+        "m7Receiver": 1472,
+        "m8Json": 2048,
+        "m8::runtimeStats": 56,
+        "m8MetadataLayout": 20
+      },
+      "linked_metadata_layout": [
+        4,
+        8,
+        8,
+        8,
+        2048
+      ]
+    }
+  },
+  "delta": {
+    "bin_bytes": 11136,
+    "static_DRAM_bytes": 1180
+  },
+  "pinned_core_storage_hashes": {
+    "tools/sdk/ld/eagle.flash.4m3m.ld": "7862e2f950f36915d60f77bdb2e996339006e838738b4c8096ca36ddf58f3707",
+    "cores/esp8266/core_esp8266_phy.cpp": "e70ff4664c0c2f970151230b3b1b955fc937a69ad8df1cd253af4ce9e80b8470",
+    "cores/esp8266/core_esp8266_main.cpp": "2343b606aa24c1ed2e4f6ef36aed84ce9385c8da367cb39e3f97b1892231d8a9",
+    "libraries/ESP8266WiFi/src/ESP8266WiFiSTA.cpp": "9623ef3cc1fc7b6151ae85e2fe90fbd3ceb60dcb30497857439a9fe42b344288",
+    "libraries/ESP8266WiFi/src/ESP8266WiFiGeneric.cpp": "c5e808fb804f423cddb507bd3ee0cef34f485a54e12f5588a3fa0238b720f8ba",
+    "tools/sdk/include/user_interface.h": "c0f7cd44a228df6edc83df6a2ed9d5393528f3b18ab62bafc43714de3a81754b",
+    "tools/platformio-build.py": "3b2fc7e9d704ae8775c8dc3ce87f752a9d31d2cad486c02113e3d71071dd17ed",
+    "tools/sdk/lib/NONOSDK22x_190703/libmain.a": "c568a76e32b044c86dfb50ae9cae10b0ceb4aeef66e2dcd435c794525773f2b3"
+  },
+  "sdk": "NONOSDK22x_190703, NONOSDK=0x22100; same SDK as P0",
+  "layout_offsets": {
+    "application_and_OTA_end": 1048576,
+    "unmounted_FS_start": 1048576,
+    "unmounted_FS_end": 4169728,
+    "EEPROM_start_unused": 4173824,
+    "RF_calibration": 4177920,
+    "SDK_system_start": 4182016,
+    "SDK_system_end": 4194304
+  },
+  "linked_storage_functions": {
+    "user_rf_cal_sector_set": "b25598e7f6506204a05d26720cdb1b643e5dbe15cf141030a773dc1d3cb67e16",
+    "system_param_save_with_protect": "0a5a9a203734c8a9983cc84f0fefec93d75aa495e5f1bbafd1089b1530c11288",
+    "wifi_station_get_config_default": "bc2d842bd48f9e9d05ddfd6bc73cd27d63e852ca0ba8edb9292a8eee33f1fd60",
+    "wifi_station_ap_number_set": "8dbfa3547bf35bcfe30cc19ba3c05d5d4ccaacbe895d4ece7eb6ce0c21610b14",
+    "wifi_station_set_config": "a39e23c89f9d9dce8d90cc491b14c9cb423143090f9d2779e7adf3366b32a1d8",
+    "wifi_station_set_config_current": "f2680ca6b5ca65100459c4fffcaf155212ae8a0a9f972c14263bbcdca08acad9"
+  },
+  "sdk_disassembly_checks": {
+    "shared_helper_protected_save_and_load": true,
+    "sector_start_chip_minus_3": true,
+    "persistent_selector_1_current_selector_0": true
+  },
+  "compiler_frames_not_high_water": {
+    "bool HomeLan::endpoint(bool, const char*)": {
+      "bytes": 16,
+      "kind": "static"
+    },
+    "esp8266webserver::ESP8266WebServerTemplate<ServerType>::ClientFuture esp8266webserver::ESP8266WebServerTemplate<ServerType>::_parseRequest(esp8266webserver::ESP8266WebServerTemplate<ServerType>::ClientType&, const char*) [with ServerType = WiFiServer]": {
+      "bytes": 240,
+      "kind": "static"
+    },
+    "void esp8266webserver::ESP8266WebServerTemplate<ServerType>::handleClient() [with ServerType = WiFiServer]": {
+      "bytes": 128,
+      "kind": "static"
+    },
+    "), _Functor>::_M_manager(std::_Any_data&, const std::_Any_data&, std::_Manager_operation) [with _Res = void; _Functor = HomeLan::registerRoutes(ESP8266WebServer&, const char*, const char*)::<lambda()>; _ArgTypes = {}]": {
+      "bytes": 16,
+      "kind": "static"
+    },
+    "bool HomeLan::{anonymous}::Sdk::safe() const": {
+      "bytes": 16,
+      "kind": "static"
+    },
+    "uint32_t HomeLan::{anonymous}::networkOrder(const IPAddress&)": {
+      "bytes": 16,
+      "kind": "static"
+    },
+    "void HomeLan::wipe(void*, size_t)": {
+      "bytes": 0,
+      "kind": "static"
+    },
+    "bool HomeLan::{anonymous}::Sdk::write(const HomeLan::Credentials&)": {
+      "bytes": 128,
+      "kind": "static"
+    },
+    "HomeLan::registerRoutes(ESP8266WebServer&, const char*, const char*)::<lambda()>::<lambda()>": {
+      "bytes": 16,
+      "kind": "static"
+    },
+    "bool HomeLan::{anonymous}::effects(unsigned int)": {
+      "bytes": 160,
+      "kind": "static"
+    },
+    "bool HomeLan::{anonymous}::Sdk::read(HomeLan::Credentials&)": {
+      "bytes": 160,
+      "kind": "static"
+    },
+    "bool HomeLan::Credentials::valid() const": {
+      "bytes": 0,
+      "kind": "static"
+    },
+    "bool HomeLan::Store<Backend>::load(HomeLan::Credentials&) [with Backend = HomeLan::{anonymous}::Sdk]": {
+      "bytes": 16,
+      "kind": "static"
+    },
+    "bool HomeLan::Credentials::same(const HomeLan::Credentials&) const": {
+      "bytes": 16,
+      "kind": "static"
+    },
+    "HomeLan::Credentials::~Credentials()": {
+      "bytes": 0,
+      "kind": "static"
+    },
+    "bool HomeLan::authority(const char*, const char*, const char*)": {
+      "bytes": 160,
+      "kind": "static"
+    },
+    "bool HomeLan::peerOnSubnet(uint32_t, uint32_t, uint32_t)": {
+      "bytes": 0,
+      "kind": "static"
+    },
+    "void HomeLan::Intent::clear()": {
+      "bytes": 16,
+      "kind": "static"
+    },
+    "bool HomeLan::storageSafe()": {
+      "bytes": 0,
+      "kind": "static"
+    },
+    "bool HomeLan::configured()": {
+      "bytes": 0,
+      "kind": "static"
+    },
+    "bool HomeLan::changePending()": {
+      "bytes": 0,
+      "kind": "static"
+    },
+    "bool HomeLan::begin(const char*, const char*)": {
+      "bytes": 128,
+      "kind": "static"
+    },
+    "bool HomeLan::poll(bool)": {
+      "bytes": 144,
+      "kind": "static"
+    },
+    "bool HomeLan::apRequest(ESP8266WebServer&)": {
+      "bytes": 48,
+      "kind": "static"
+    },
+    "bool HomeLan::apply(const uint8_t*, size_t)": {
+      "bytes": 432,
+      "kind": "static"
+    },
+    "const char* HomeLan::stateName()": {
+      "bytes": 0,
+      "kind": "static"
+    },
+    "bool HomeLan::requestAllowed(ESP8266WebServer&)": {
+      "bytes": 96,
+      "kind": "static"
+    },
+    "void HomeLan::registerRoutes(ESP8266WebServer&, const char*, const char*)": {
+      "bytes": 64,
+      "kind": "static"
+    },
+    "bool HomeLan::{anonymous}::digest(ESP8266WebServer&, const char*, const char*)": {
+      "bytes": 48,
+      "kind": "static"
+    },
+    "void HomeLan::{anonymous}::answer(ESP8266WebServer&, int, const char*)": {
+      "bytes": 64,
+      "kind": "static"
+    },
+    ") [with _Res = void; _Functor = HomeLan::registerRoutes(ESP8266WebServer&, const char*, const char*)::<lambda()>; _ArgTypes = {}]": {
+      "bytes": 16,
+      "kind": "static"
+    },
+    "bool HomeLan::beforeBody(ESP8266WebServer&, const char*, const char*, bool)": {
+      "bytes": 112,
+      "kind": "static"
+    }
+  },
+  "new_persistent_application_heap_allocations": 0,
+  "provisioning_body_cap_bytes": 99,
+  "sdk_station_config_bytes": 112,
+  "physical_heap": "NOT RUN",
+  "physical_largest_block": "NOT RUN",
+  "physical_stack": "NOT RUN",
+  "physical_power_loss_storage": "NOT RUN",
+  "physical_OEM_return_after_storage": "NOT RUN",
+  "device_contacts": 0,
+  "device_writes": 0,
+  "historical_M8_only_arithmetic": {
+    "prior_settled_heap": 16384,
+    "prior_settled_block": 12496,
+    "subtract_P0_and_P1_static_only": 2780,
+    "heap_after_static_subtraction_only": 13604,
+    "block_after_static_subtraction_only_NOT_allocator_prediction": 9716,
+    "SDK_AP_STA_extra_cost": "unknown; physical measurement required before installation"
+  }
+}

@@ -13,6 +13,16 @@
 #include <Logger.h>
 #include "display/DisplayManager.h"
 #include "boot/FslessMetrics.h"
+#include "boot/HomeLan.h"
+#if SHINO_ENABLE_HOME_LAN
+#include "boot/HomeLanPolicy.h"
+#include <Updater.h>
+static_assert(SHINO_ENABLE_HOME_LAN == 1, "Unknown P1 policy");
+#ifdef DEBUG_ESP_HTTP_SERVER
+#error "HTTP argument debug logs are forbidden with owner-local Wi-Fi provisioning"
+#endif
+bool homeLanMediaBusy();
+#endif
 #include "boot/FslessWebUI.h"
 #include "boot/DashboardV2.h"
 // Explicit opt-in, never enabled in the default V2/esp12e build.
@@ -82,6 +92,9 @@ constexpr uint32_t BROWSER_SESSION_LIFETIME_MS = 2UL * 60UL * 60UL * 1000UL;
 struct BrowserSession {
     String token;
     IPAddress peer;
+#if SHINO_ENABLE_HOME_LAN
+    IPAddress local;
+#endif
     uint32_t issuedAtMs = 0;
 };
 std::array<BrowserSession, 2> browserSessions;
@@ -113,11 +126,17 @@ String browserCookieToken() {
 }
 
 bool browserSessionValid() {
+#if SHINO_ENABLE_HOME_LAN
+    if (!HomeLan::requestAllowed(server)) return false;
+#endif
     const String token = browserCookieToken();
     if (token.length() != 32) return false;
     const IPAddress peer = server.client().remoteIP();
     const uint32_t now = millis();
     for (const BrowserSession& session : browserSessions) {
+#if SHINO_ENABLE_HOME_LAN
+        if (session.local != server.client().localIP()) continue;
+#endif
         if (session.token.length() != 32 || session.peer != peer ||
             static_cast<uint32_t>(now - session.issuedAtMs) >= BROWSER_SESSION_LIFETIME_MS) continue;
         // Compare all 32 hex bytes without an early mismatch return.
@@ -151,12 +170,21 @@ void issueBrowserReadSession() {
     }
     browserSessions[slot].token = token;
     browserSessions[slot].peer = server.client().remoteIP();
+#if SHINO_ENABLE_HOME_LAN
+    browserSessions[slot].local = server.client().localIP();
+#endif
     browserSessions[slot].issuedAtMs = now;
     server.sendHeader(F("Set-Cookie"), String(F("SHINO_READ_SESSION=")) + token +
         F("; Path=/; Max-Age=7200; HttpOnly; SameSite=Strict"));
 }
 
 bool requireAuth() {
+#if SHINO_ENABLE_HOME_LAN
+    if (!HomeLan::requestAllowed(server)) { server.send(403,"application/json","{\"error\":\"NETWORK_POLICY\"}"); return false; }
+    if (!server.header("Authorization").startsWith("Digest ")) {
+        server.requestAuthentication(DIGEST_AUTH,"SHINO-FirstBoot"); return false;
+    }
+#endif
     if (server.authenticate(SHINO_RESCUE_HTTP_USER, SHINO_RESCUE_HTTP_PASSWORD)) return true;
     server.requestAuthentication(DIGEST_AUTH, "SHINO-FirstBoot");
     return false;
@@ -208,6 +236,16 @@ void sendStatus() {
     doc["application_eeprom_begin_called"] = false;
     doc["application_eeprom_commit_called"] = false;
     doc["sdk_wifi_persistence_enabled"] = false;
+#if SHINO_ENABLE_HOME_LAN
+    doc["sdk_wifi_explicit_change_persistence"] = true;
+    doc["wifi_storage_layout_safe"] = HomeLan::storageSafe();
+    doc["wifi_saved"] = HomeLan::configured();
+    doc["wifi_state"] = HomeLan::stateName();
+    doc["sta_address"] = WiFi.localIP().toString();
+    doc["sta_mac"] = WiFi.macAddress();
+    doc["wifi_storage"] = "SDK_SYSTEM_PARAMETERS_3FD000_400000";
+    doc["wifi_secret_read_route"] = false;
+#endif
     doc["filesystem_provisioning_route"] = false;
     doc["filesystem_impact_report_route"] = "/api/v1/bridge/fs-plan";
     doc["pinned_littlefs_image_available_off_device"] = SHINO_FS_IMAGE_PRESENT == 1;
@@ -379,9 +417,14 @@ bool isActive() { return active; }
 void run() {
     active = true;
     WiFi.persistent(false); // Must precede every mode/softAP operation.
+#if SHINO_ENABLE_HOME_LAN
+    ssid = String(F("SHINO-FirstBoot-")) + String(ESP.getChipId(), HEX);
+    networkReady = HomeLan::begin(ssid.c_str(), SHINO_SETUP_AP_PSK);
+#else
     WiFi.mode(WIFI_AP);
     ssid = String(F("SHINO-FirstBoot-")) + String(ESP.getChipId(), HEX);
     networkReady = WiFi.softAP(ssid.c_str(), SHINO_SETUP_AP_PSK, 6, false, 2);
+#endif
     if (!networkReady) {
         // Never silently start an open AP or enter a storage-writing fallback.
         WiFi.mode(WIFI_OFF);
@@ -396,6 +439,20 @@ void run() {
     // Authorization is always required to obtain a cookie. Only GET of the
     // dashboard assets and metrics may subsequently use it; POST stays Digest.
     server.collectHeaders("Cookie");
+#if SHINO_ENABLE_HOME_LAN
+    server.collectHeaders("Cookie","Origin","Content-Type","Content-Length","Transfer-Encoding","X-Shino-Wifi-Intent");
+    server.setHomeLanPrebody([]() {
+        return HomeLan::beforeBody(server,SHINO_RESCUE_HTTP_USER,SHINO_RESCUE_HTTP_PASSWORD,
+            homeLanMediaBusy() || Update.isRunning());
+    });
+    server.addHook([](const String&,const String& url,WiFiClient* client,ESP8266WebServer::ContentTypeFunction) {
+        const bool ap=client->localIP()==WiFi.softAPIP();
+        // Reject privileged LAN endpoints at the request line, before body.
+        if(!HomeLan::endpoint(ap,url.c_str())) return ESP8266WebServer::CLIENT_MUST_STOP;
+        return ESP8266WebServer::CLIENT_REQUEST_CAN_CONTINUE;
+    });
+    HomeLan::registerRoutes(server,SHINO_RESCUE_HTTP_USER,SHINO_RESCUE_HTTP_PASSWORD);
+#endif
     server.on("/", HTTP_GET, []() {
         if (!browserSessionValid()) {
             if (!requireAuth()) return;
@@ -466,6 +523,15 @@ void run() {
 }
 
 void loop() {
+#if SHINO_ENABLE_HOME_LAN
+    networkReady = HomeLan::poll(homeLanMediaBusy() || Update.isRunning());
+    static IPAddress priorSta,priorAp;
+    const IPAddress sta=WiFi.localIP(),ap=WiFi.softAPIP();
+    if(sta!=priorSta || ap!=priorAp || HomeLan::changePending()) {
+        for(auto& session:browserSessions) session.token=String();
+        priorSta=sta; priorAp=ap;
+    }
+#endif
     if (networkReady) server.handleClient();
     if (networkReady &&
         (telemetryNeedsRedraw || FslessMetrics::stale() != stalePreviously) &&

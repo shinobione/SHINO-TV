@@ -1,6 +1,125 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+**Latest offline review, 2 October — PREPARED / NOT EXECUTED:** owner review
+#5949087791 authorizes offline investigation only. Retained approved BIN/ELF,
+P1 shadow, HomeLan loop, pinned parser/first Digest challenge and original
+private GET client inspected without rebuild or device contact. Original
+TimeoutError phase cannot be recovered: client used one socket timeout and
+recorded neither successful connect nor send. Corrected phase-instrumented
+single-transaction client and private default-deny wrapper pass 10 public + 2
+private simulated-socket tests; **no proposed live diagnostic executed**.
+[Finding, hashes, evidence limits and exact next test](home-lan/P1_STATUS_DIAGNOSTIC_REVIEW.md).
+LINK remains owner-stopped/autostart owner-disabled; no changes made. P1 and
+Freebox gate HOLD. STOP for fresh explicit authorization before any device I/O.
+
+**Latest bounded diagnostic, 2 October 11:13 CEST — STOP / HOLD:** owner comment
+#5948806085 authorizes one status GET only, with at most one 401/authenticated-GET
+pair. Local checks confirm LINK is absent and Windows already on the protected
+WPA2/CCMP SHINO AP with its subnet route. Initial unauthenticated GET attempt
+times out in 3015 ms before any HTTP status/challenge; no authenticated GET,
+retry, other endpoint or write. Boot/reset/heap/block/continuation/Wi-Fi/failure
+counters remain unavailable. Exact transport timeout phase and reset cause are
+unresolved. Owner manually terminated LINK and disabled autostart before this
+diagnostic; neither was modified/restarted. The LINK-paused state below is dated
+provenance. Receipt retained locally at
+`research-local/p1-one-status-comment-5948806085.json`. Further device action
+needs fresh owner authorization; three-minute functional baseline remains HOLD.
+
+**LATEST physical state, 2 October — P1 UPLOAD ACK / POST-BOOT HOLD:**
+one separately owner-authorized genuine OEM `/update` installation of the exact
+464544-byte P1 SHA `31e3f225744bd806df3302dbf3355770a313f8b71f65b33fd6e2f431449b0be5`
+from starting PR #41 `e9cca6b` returned HTTP 200 / complete
+`Update Success! Rebooting` in 7969 ms. No rebuild/substitution/retry.
+Protected AP association/TCP access observed; first authenticated GET reset before
+new application identity/resources. Owner reports SHINO cards visible but stale
+and repeated ~10-second reboots. Mandatory hard STOP applied; no baseline,
+additional device reads after that report, firmware retry/rollback or provisioning.
+Existing LINK is **PAUSED** to halt automatic telemetry POSTs; same process and
+configuration/credentials/autostart retained. After ~30 seconds owner reports
+stable display with stale cards. Cause remains undetermined; network-load
+association is a clue, not proven watchdog/heap/parser attribution. No new boot
+token, runtime size/geometry or memory/stack/recovery response recovered.
+**PRE-PROVISIONING HOLD; no Freebox-Shino credential-write approval requested.**
+Further device action requires a new bounded owner decision. R3 PARTIAL / R10
+BLOCKED. [Actual P1 installation and hard-stop evidence](home-lan/P1_INSTALLATION_2026-10-02.md).
+The OEM/M8-running paragraphs below are dated prior-state provenance, superseded
+by this latest P1 operation and hard stop.
+
+**Latest physical state, 2 October 09:23 CEST — OEM BOOT IDENTITY PASS / STOP:**
+one separately authorized corrected M8→exact OEM upload at PR #41 `0bae281`
+returned HTTP 200 / complete `staged` acknowledgement in 10765 ms. LINK was
+temporarily suspended across the final fresh Digest challenge/upload and resumed
+as the same single process; configuration, credentials and autostart are unchanged.
+Read-only MAC rediscovery and live `/v.json` verify SmallTV-Ultra / Ultra-V9.0.44
+on the home LAN. Owner confirms OEM display normal and correctly oriented,
+without corruption. Current firmware is **OEM**;
+M8 observations below are dated prior-state provenance, not the current boot.
+P1 NOT INSTALLED / DEVICE NOT RUN; no Hop 2, retry or household credential write.
+The newest single-hop stop supersedes older two-hop consent. No further actual
+upload without fresh explicit owner authorization. R3 PARTIAL / R10 BLOCKED.
+[Actual receipt, fresh preflight and LINK preservation](home-lan/OEM_SINGLE_HOP_2026-10-02.md).
+
+The earlier installation/correction/preparation paragraphs below retain their
+original scope and historical results; their M8-running/authorization-pending
+statements are superseded by the latest physical state above.
+
+**2 October bounded upload-client correction — OFFLINE READY / physical HOLD:**
+review #5942560005 addressed using the actual retained private uploader and
+installed-M8/Core source. Original HTTPError code/body are unrecoverable; exact
+multipart and private Digest calculation match the installed contract offline.
+Original client preserved; corrected private method delegates to tested bounded
+one-attempt transport with error status/safe headers/body/timing and exclusive
+receipt. Ten loopback tests pass for shared transport and the same ten through
+the actual private method; no device contact or P1 rebuild. Shared nonce rotation
+is a supported mechanism, not a proven cause. [Precise evidence, client and new
+single-Hop-1 review plan](home-lan/OEM_UPLOAD_CLIENT_INVESTIGATION.md).
+Await new owner authorization before any POST; M8 remains running.
+
+**2 October controlled installation attempt — HOLD:** owner explicitly authorized
+the exact M8→OEM and OEM→P1 hashes from starting PR #41 HEAD `d63b58b`.
+Immediate hashes/pairing/current-M8/LINK/resource/recovery/LCD preflight passed.
+One OEM-return POST raised an HTTP error without a staged acknowledgement; the
+client did not preserve the code/body. No retry or Hop 2 was performed. Subsequent
+GETs show responsive M8 446944 B, unchanged boot 2962927510, fresh telemetry,
+heap/block/continuation 18584/16672/1728 B, zero failure counters and enabled exact
+OEM capability. Owner confirms normal LCD after the attempt. OTA staging writes
+are unknown; no installation reboot observed. P1 remains NOT INSTALLED / DEVICE
+NOT RUN; no persistent Wi-Fi write or credential confirmation yet. Preserve the
+responsive application and single-attempt stop; do not automatically retry or
+rollback. [Actual device attempt and evidence limits](home-lan/DEVICE_INSTALLATION_2026-10-02.md).
+R3 PARTIAL / R10 BLOCKED. The preparation paragraphs below are prior-state evidence.
+
+**2 October owner preparation gate:** existing PR #41 continues from accepted
+`ce718f0`. Actual private active P0+P1 candidate is 464544 B, SHA-256
+`31e3f225744bd806df3302dbf3355770a313f8b71f65b33fd6e2f431449b0be5`;
+matching retained credentials/media identity and OEM/V2.1/M8 rollback are locally
+verified outside Git. New owner profile adds read-only numeric runtime/LCD counters
+to existing authenticated status, without exposing qualification write controls
+on LAN. [Exact image, lifetime review, abort limits and physical sequence](home-lan/OWNER_INSTALL_GATE.md).
+Fresh GET-only current-M8 preflight: 446944 B, boot 2962927510, actual 4 MiB,
+exact OEM capability enabled, native OTA absent. No upload/reboot/network switch or
+persistent credential write. **STOP at new exact-image/chain owner approval.**
+Installation consent must name both M8→OEM and OEM→exact P1 hops; first credential
+write needs a later separate confirmation after boot/display/AP/telemetry checks.
+P1 physical qualification remains NOT RUN, R3 PARTIAL/R10 BLOCKED unchanged.
+
+**P1 offline implementation update:** owner requires persistent Wi-Fi, configured
+once locally and retained across normal failures/boots. Follow-on branch
+`codex/shino-tv-p1-home-lan` starts from verified PR #40 `a3d9fdb`; older Home
+Wi-Fi "unimplemented" rows below are prior-state provenance. Opt-in active
+FirstBoot P1 now loads reviewed SDK parameters (`0x3FD000–0x400000`), writes only
+on Digest/AP/one-use-intent protected Change/Forget with readback, reconnects and
+retains secure AP fallback. LINK supports live local IP retargeting. Three native
+guarded graphs compile; P1 versus P0 adds 11,136 BIN / 1,180 static DRAM bytes.
+183 shared assertions, 34 target-handler loopback checks and 33 real signed
+receiver/scene cases at each AP/LAN authority pass locally. See
+[P1 contract, exact local password procedure, resource evidence and HOLD gates](home-lan/README.md).
+**P1 device/release remains HOLD:** persistence under real power loss, native
+heap/block/stack, radio/DHCP and OEM return after saved-config writes NOT RUN.
+No owner-device contact/install/provision/migration; current M8 remains installed.
+Recheck final branch SHA and exact-head CI; host SDK/radio models are not DEVICE PASS.
+
 **V2.2 implementation update (offline only):** PR #40 now has exclusive scenes,
 160px integer artwork (128px alternative also built/tested), clipped title/artist
 marquees, explicit provider leases and a disabled-by-default paused timeout seam.

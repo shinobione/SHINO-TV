@@ -1,0 +1,10 @@
+{
+  "tools/sdk/ld/eagle.flash.4m3m.ld": "7862e2f950f36915d60f77bdb2e996339006e838738b4c8096ca36ddf58f3707",
+  "cores/esp8266/core_esp8266_phy.cpp": "e70ff4664c0c2f970151230b3b1b955fc937a69ad8df1cd253af4ce9e80b8470",
+  "cores/esp8266/core_esp8266_main.cpp": "2343b606aa24c1ed2e4f6ef36aed84ce9385c8da367cb39e3f97b1892231d8a9",
+  "libraries/ESP8266WiFi/src/ESP8266WiFiSTA.cpp": "9623ef3cc1fc7b6151ae85e2fe90fbd3ceb60dcb30497857439a9fe42b344288",
+  "libraries/ESP8266WiFi/src/ESP8266WiFiGeneric.cpp": "c5e808fb804f423cddb507bd3ee0cef34f485a54e12f5588a3fa0238b720f8ba",
+  "tools/sdk/include/user_interface.h": "c0f7cd44a228df6edc83df6a2ed9d5393528f3b18ab62bafc43714de3a81754b",
+  "tools/platformio-build.py": "3b2fc7e9d704ae8775c8dc3ce87f752a9d31d2cad486c02113e3d71071dd17ed",
+  "tools/sdk/lib/NONOSDK22x_190703/libmain.a": "c568a76e32b044c86dfb50ae9cae10b0ceb4aeef66e2dcd435c794525773f2b3"
+}
