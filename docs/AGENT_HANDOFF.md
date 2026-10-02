@@ -1,6 +1,31 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+**Latest offline review, 2 October — PREPARED / NOT EXECUTED:** owner review
+#5949087791 authorizes offline investigation only. Retained approved BIN/ELF,
+P1 shadow, HomeLan loop, pinned parser/first Digest challenge and original
+private GET client inspected without rebuild or device contact. Original
+TimeoutError phase cannot be recovered: client used one socket timeout and
+recorded neither successful connect nor send. Corrected phase-instrumented
+single-transaction client and private default-deny wrapper pass 10 public + 2
+private simulated-socket tests; **no proposed live diagnostic executed**.
+[Finding, hashes, evidence limits and exact next test](home-lan/P1_STATUS_DIAGNOSTIC_REVIEW.md).
+LINK remains owner-stopped/autostart owner-disabled; no changes made. P1 and
+Freebox gate HOLD. STOP for fresh explicit authorization before any device I/O.
+
+**Latest bounded diagnostic, 2 October 11:13 CEST — STOP / HOLD:** owner comment
+#5948806085 authorizes one status GET only, with at most one 401/authenticated-GET
+pair. Local checks confirm LINK is absent and Windows already on the protected
+WPA2/CCMP SHINO AP with its subnet route. Initial unauthenticated GET attempt
+times out in 3015 ms before any HTTP status/challenge; no authenticated GET,
+retry, other endpoint or write. Boot/reset/heap/block/continuation/Wi-Fi/failure
+counters remain unavailable. Exact transport timeout phase and reset cause are
+unresolved. Owner manually terminated LINK and disabled autostart before this
+diagnostic; neither was modified/restarted. The LINK-paused state below is dated
+provenance. Receipt retained locally at
+`research-local/p1-one-status-comment-5948806085.json`. Further device action
+needs fresh owner authorization; three-minute functional baseline remains HOLD.
+
 **LATEST physical state, 2 October — P1 UPLOAD ACK / POST-BOOT HOLD:**
 one separately owner-authorized genuine OEM `/update` installation of the exact
 464544-byte P1 SHA `31e3f225744bd806df3302dbf3355770a313f8b71f65b33fd6e2f431449b0be5`
