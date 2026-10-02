@@ -1,6 +1,18 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+**2 October bounded upload-client correction — OFFLINE READY / physical HOLD:**
+review #5942560005 addressed using the actual retained private uploader and
+installed-M8/Core source. Original HTTPError code/body are unrecoverable; exact
+multipart and private Digest calculation match the installed contract offline.
+Original client preserved; corrected private method delegates to tested bounded
+one-attempt transport with error status/safe headers/body/timing and exclusive
+receipt. Ten loopback tests pass for shared transport and the same ten through
+the actual private method; no device contact or P1 rebuild. Shared nonce rotation
+is a supported mechanism, not a proven cause. [Precise evidence, client and new
+single-Hop-1 review plan](home-lan/OEM_UPLOAD_CLIENT_INVESTIGATION.md).
+Await new owner authorization before any POST; M8 remains running.
+
 **2 October controlled installation attempt — HOLD:** owner explicitly authorized
 the exact M8→OEM and OEM→P1 hashes from starting PR #41 HEAD `d63b58b`.
 Immediate hashes/pairing/current-M8/LINK/resource/recovery/LCD preflight passed.

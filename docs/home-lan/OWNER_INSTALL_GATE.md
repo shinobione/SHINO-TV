@@ -1,5 +1,12 @@
 # P1 private owner candidate — controlled installation HOLD
 
+**Bounded client correction completed, still no upload authority:** the actual
+private uploader now uses tested one-attempt HTTP diagnostics; original error
+code/body remain unrecoverable. Exact installed-M8 Digest/multipart checks pass
+offline; no P1 rebuild or device contact. [Evidence and corrected owner-review
+plan](OEM_UPLOAD_CLIENT_INVESTIGATION.md). Another actual Hop 1 needs new explicit
+owner authorization; earlier single-attempt consent must not be reused.
+
 **Current 2 October state:** the owner authorized both exact installation hops
 below, including expected installation reboots, and confirmed current normal LCD.
 Immediate preflight passed. One M8→OEM upload attempt raised an HTTP error without
