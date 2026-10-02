@@ -1,6 +1,26 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+**LATEST physical state, 2 October — P1 UPLOAD ACK / POST-BOOT HOLD:**
+one separately owner-authorized genuine OEM `/update` installation of the exact
+464544-byte P1 SHA `31e3f225744bd806df3302dbf3355770a313f8b71f65b33fd6e2f431449b0be5`
+from starting PR #41 `e9cca6b` returned HTTP 200 / complete
+`Update Success! Rebooting` in 7969 ms. No rebuild/substitution/retry.
+Protected AP association/TCP access observed; first authenticated GET reset before
+new application identity/resources. Owner reports SHINO cards visible but stale
+and repeated ~10-second reboots. Mandatory hard STOP applied; no baseline,
+additional device reads after that report, firmware retry/rollback or provisioning.
+Existing LINK is **PAUSED** to halt automatic telemetry POSTs; same process and
+configuration/credentials/autostart retained. After ~30 seconds owner reports
+stable display with stale cards. Cause remains undetermined; network-load
+association is a clue, not proven watchdog/heap/parser attribution. No new boot
+token, runtime size/geometry or memory/stack/recovery response recovered.
+**PRE-PROVISIONING HOLD; no Freebox-Shino credential-write approval requested.**
+Further device action requires a new bounded owner decision. R3 PARTIAL / R10
+BLOCKED. [Actual P1 installation and hard-stop evidence](home-lan/P1_INSTALLATION_2026-10-02.md).
+The OEM/M8-running paragraphs below are dated prior-state provenance, superseded
+by this latest P1 operation and hard stop.
+
 **Latest physical state, 2 October 09:23 CEST — OEM BOOT IDENTITY PASS / STOP:**
 one separately authorized corrected M8→exact OEM upload at PR #41 `0bae281`
 returned HTTP 200 / complete `staged` acknowledgement in 10765 ms. LINK was

@@ -1,5 +1,20 @@
 # P1 private owner candidate — controlled installation HOLD
 
+**LATEST physical result, 2 October — PRE-PROVISIONING HOLD:** separately
+authorized ONE exact OEM→P1 installation from `e9cca6b` returned HTTP 200 /
+complete acknowledgement in 7969 ms; approved 464544-byte / `31e3f225744bd806df3302dbf3355770a313f8b71f65b33fd6e2f431449b0be5`
+image not rebuilt or changed. First authenticated AP GET reset before identity/
+resource response. Owner reports stale SHINO cards and repeated ~10-second reboots;
+the mandatory unexpected-reset stop was applied. LINK is **paused**, same process
+and config/credentials/autostart preserved. After ~30 seconds with LINK paused and
+no observer device requests, owner reports stable display, stale cards. Root cause
+undetermined; new boot token/runtime size/heap/block/stack/live recovery unavailable.
+No three-minute baseline, additional device read after reset report, upload retry,
+rollback, extra reboot or household credential write. First Freebox-Shino write
+authorization gate is not reached. Further device action needs a new bounded owner
+decision. [Exact receipt, actual observations and stop](P1_INSTALLATION_2026-10-02.md).
+Older OEM/M8 states and preparation instructions below are dated provenance.
+
 **Latest physical state, 2 October 09:23 CEST:** ONE newly and separately
 authorized corrected M8→exact OEM upload at PR #41 `0bae281` is acknowledged
 HTTP 200 / `staged`, 10765 ms. OEM SmallTV-Ultra / Ultra-V9.0.44 boot identity
