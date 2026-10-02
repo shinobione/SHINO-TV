@@ -1,5 +1,10 @@
 # OEM upload client correction — OFFLINE PASS / physical HOLD
 
+Subsequent separately authorized single-hop evidence is recorded in
+[the corrected actual upload report](OEM_SINGLE_HOP_2026-10-02.md).
+The no-contact/M8-running statements below describe this earlier offline
+investigation, not the subsequent physical operation.
+
 2 October 2026. Continuation of PR #41 from `d7565ca`, addressing
 [owner review #5942560005](https://github.com/shinobione/SHINO-TV/pull/41#issuecomment-5942560005).
 No device contact, firmware POST, reboot, credential write or firmware build was

@@ -1,6 +1,23 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+**Latest physical state, 2 October 09:23 CEST — OEM BOOT IDENTITY PASS / STOP:**
+one separately authorized corrected M8→exact OEM upload at PR #41 `0bae281`
+returned HTTP 200 / complete `staged` acknowledgement in 10765 ms. LINK was
+temporarily suspended across the final fresh Digest challenge/upload and resumed
+as the same single process; configuration, credentials and autostart are unchanged.
+Read-only MAC rediscovery and live `/v.json` verify SmallTV-Ultra / Ultra-V9.0.44
+on the home LAN. OEM LCD confirmation is pending. Current firmware is **OEM**;
+M8 observations below are dated prior-state provenance, not the current boot.
+P1 NOT INSTALLED / DEVICE NOT RUN; no Hop 2, retry or household credential write.
+The newest single-hop stop supersedes older two-hop consent. No further actual
+upload without fresh explicit owner authorization. R3 PARTIAL / R10 BLOCKED.
+[Actual receipt, fresh preflight and LINK preservation](home-lan/OEM_SINGLE_HOP_2026-10-02.md).
+
+The earlier installation/correction/preparation paragraphs below retain their
+original scope and historical results; their M8-running/authorization-pending
+statements are superseded by the latest physical state above.
+
 **2 October bounded upload-client correction — OFFLINE READY / physical HOLD:**
 review #5942560005 addressed using the actual retained private uploader and
 installed-M8/Core source. Original HTTPError code/body are unrecoverable; exact

@@ -1,5 +1,18 @@
 # P1 private owner candidate — controlled installation HOLD
 
+**Latest physical state, 2 October 09:23 CEST:** ONE newly and separately
+authorized corrected M8→exact OEM upload at PR #41 `0bae281` is acknowledged
+HTTP 200 / `staged`, 10765 ms. OEM SmallTV-Ultra / Ultra-V9.0.44 boot identity
+is verified by read-only owner-unit rediscovery and live `/v.json`; OEM LCD
+confirmation is pending. LINK paused only across the final challenge/upload,
+then resumed as the same single process with config/credentials/autostart unchanged.
+**STOP at OEM. No retry, Hop 2 or household credential write.** P1 NOT INSTALLED
+/ DEVICE NOT RUN. This consumes the new single-hop authorization and supersedes
+older two-hop consent. R3 PARTIAL / R10 BLOCKED unchanged.
+[Actual corrected single-hop evidence](OEM_SINGLE_HOP_2026-10-02.md).
+All M8-running and authorization-pending statements below describe historical
+preparation/investigation states, superseded by this latest physical outcome.
+
 **Bounded client correction completed, still no upload authority:** the actual
 private uploader now uses tested one-attempt HTTP diagnostics; original error
 code/body remain unrecoverable. Exact installed-M8 Digest/multipart checks pass
