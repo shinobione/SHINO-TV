@@ -14,6 +14,20 @@
 
 ## Product contract — owner clarification, 1 October 2026
 
+**Mission 9 Phase D owner decision, 5 October 2026:** continue existing Draft
+PR #42 from clean `a702c90c285189eff7ee19ea8f1da8bbc0274fa0`. Authorize
+offline pinned-source RTC/eboot invalidation and RTC-retaining boot-transition
+audit, deterministic local models/tests, print-only commands, documentation and
+exact-head CI. Preserve the frozen Phase B candidate; no rebuild/replacement
+or firmware runtime change. No device/serial/memory/flash/FS operation, reset
+or reboot. Owner correction: existing header is **RST — GPIO0 — 3V3/VCC — RX — TX — GND**.
+RST/GPIO0/RX/TX/GND availability and prior same-unit UART ROM download/full
+4 MiB reads with reversible micro-hooks are established owner evidence. No
+soldering, new PCB access or photos are required. EN/CH_PD is not known/exposed.
+Qualify the existing RST pad's RTC-retaining EXT_RST transition from source;
+physical retention/runtime remain NOT_RUN and physical write HOLD.
+See [RTC neutralization](M09_RTC_EBOOT_NEUTRALIZATION.md).
+
 **Mission 9 Phase C owner decision, 5 October 2026:** continue existing Draft
 PR #42 from clean `02b4be4cd4c2e0651d376001c030f1505123adb6`; qualify the
 physical executor entirely offline. Audit pinned Core 3.1.2 / esptool 5.4.0,

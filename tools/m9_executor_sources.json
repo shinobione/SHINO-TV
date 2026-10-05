@@ -74,6 +74,18 @@
   "hash_scheme": "SHA256 of bytes with CRLF normalized to LF; sorted name/digest aggregate",
   "physical_authorization": false,
   "pyserial_version": "3.5",
+  "rtc_neutralization_sources": {
+    "esp_pylib_serial_reset_sha256": "52d636ed8eff0855cf9e8c44deb1c5392ea642be153f9dee2931ad334d474b88",
+    "library_files": {
+      "include/esp-stub-lib/soc_utils.h": "141d393b205387923dfdfe9f3034f76e92291cf4ad8b07276822af29984e5578",
+      "src/target/esp8266/include/soc/soc.h": "8fcbb6f4753f1037ad0921a54b0bf0d32288f67d45dab135007eea9b35381e30"
+    },
+    "reset_retention_reference": "ESP8266 Non-OS SDK API Guide v1.5.4 system_get_rtc_time note, printed page 31",
+    "stub_files": {
+      "src/command_handler.c": "2fe55962bd77a46c70b712e0d52ed9046b025828a1c567b6b4a1f85fc675ca4c",
+      "src/main.c": "6b60897732eb81ecece659c82c3fc09630858772acce1723099757feb5356c43"
+    }
+  },
   "schema": 1,
   "serial_io_performed": false,
   "stub_library_revision": "d61983fa4d1f66b9c088608c1f702ad877121279",

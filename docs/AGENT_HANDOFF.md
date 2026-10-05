@@ -1,6 +1,26 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+**Mission 9 Phase D, 5 October — OFFLINE RTC/eboot neutralization PASS:**
+continue existing Draft PR #42 from verified clean
+`a702c90c285189eff7ee19ea8f1da8bbc0274fa0`.
+[Exact source, deterministic model, PRINT ONLY four-word-operation packet,
+powered existing-RST transition and sequence](M09_RTC_EBOOT_NEUTRALIZATION.md).
+RTC_MEMORY_ACCESS_GATE / RTC_NEUTRAL_STATE_GATE /
+RTC_TO_NORMAL_BOOT_TRANSITION_GATE PASS for pinned source/synthetic models.
+Magic `0x60001200` and CRC `0x6000127C` must both read zero before releasing
+GPIO0 while powered and using existing RST as EXT_RST. No power-cycle/EN pulse;
+Phase C EBOOT_COLD_START_GATE remains HOLD. Owner correction: known header
+**RST — GPIO0 — 3V3/VCC — RX — TX — GND**, established reversible micro-hook
+ROM download/full 4 MiB reads on this unit. No new photos, soldering or new PCB
+access needed. EN/CH_PD not known/exposed; access not required. The existing
+RST's physical retained transition remains NOT_RUN, separately approved later.
+Frozen candidate 399168 B / SHA `cd99139121fa47fedd6286a185fb16e8fb9e120280ecd75f1c6b41b905e31011`
+unchanged, no firmware edit/rebuild. Physical runtime NOT_RUN; physical write
+HOLD; DEVICE CONTACTS / SERIAL I/O / RTC WRITES / FLASH WRITES / REBOOTS /
+device FILESYSTEM WRITES **0**. **STOP after Phase D.** Prior Phase C/B sections
+below are dated history, not authority to follow their cold-power packet.
+
 **Mission 9 Phase C, 5 October — OFFLINE executor qualification HOLD:**
 continue existing Draft PR #42 from verified clean
 `02b4be4cd4c2e0651d376001c030f1505123adb6`.

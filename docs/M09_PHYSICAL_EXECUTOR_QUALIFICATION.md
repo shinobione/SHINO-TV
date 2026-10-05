@@ -1,5 +1,16 @@
 # Mission 9 Phase C — physical executor qualification (OFFLINE ONLY)
 
+**Phase D continuation, 5 October:** [deterministic RTC clear/readback and powered
+existing-RST transition](M09_RTC_EBOOT_NEUTRALIZATION.md) adds source/model PASS
+gates and supersedes only packet I / S8–S10 cold-power boot recommendation.
+Power-on EBOOT_COLD_START_GATE remains HOLD; Phase C results below are historical.
+Owner correction establishes exposed RST/GPIO0/RX/TX/GND and prior same-unit
+micro-hook UART ROM/full 4 MiB reads; no new photos/PCB access/soldering needed.
+EN/CH_PD is not known/exposed. Selected transition retains power, verifies RTC
+magic/CRC zero, releases GPIO0 while powered, then uses existing RST as EXT_RST.
+Source mechanism qualified; physical RTC retention/runtime NOT_RUN and all
+physical writes HOLD. Frozen LOCAL candidate and firmware remain unchanged.
+
 5 October 2026. Continue clean
 `feature/shino-tv-m9-flash-layout-liberation` at
 `02b4be4cd4c2e0651d376001c030f1505123adb6`; PR #42 verified Draft, OPEN,

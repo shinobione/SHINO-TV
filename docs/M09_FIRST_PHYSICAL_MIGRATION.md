@@ -1,5 +1,14 @@
 # Mission 9 Phase B — first physical migration protocol (OFFLINE ONLY)
 
+**Phase D continuation, 5 October:** [RTC neutralization](M09_RTC_EBOOT_NEUTRALIZATION.md)
+qualifies a deterministic source/model overlay after verified full POST: clear
+magic+CRC, read both zero, release GPIO0 while continuously powered, existing RST
+as EXT_RST, eboot rejects COPY and loads app at zero. First normal boot replaces
+the blocked cold-power recommendation, whose historical gate stays HOLD.
+RST/GPIO0/RX/TX/GND and prior micro-hook ROM/full-read access are known owner
+evidence; EN is not exposed/assumed. Physical transition/runtime NOT_RUN;
+no Stage 1 authority, new hardware access or photos; frozen candidate unchanged.
+
 **Phase C continuation, 5 October:** [exact executor qualification, A–K
 print-only packet and PRE/POST preservation gate](M09_PHYSICAL_EXECUTOR_QUALIFICATION.md)
 supersede the provisional executor/sequence recommendations below. Phase B
