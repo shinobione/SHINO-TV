@@ -87,13 +87,19 @@ jobs:
           grep -q '^#define SHINO_ENABLE_FACTORY_RESTORE 0$' firmware/include/shino_private_policy.h
           grep -q '^#define SHINO_ENABLE_FS_MIGRATION 0$' firmware/include/shino_private_policy.h
 
-      - name: Compile unchanged 4m3m baseline and opt-in 4m2m candidate
+      - name: Compile unchanged 4m3m baseline and escrow image
         run: |
+          # PlatformIO removes the previous environment build directory when
+          # switching environments in this project, so escrow each BIN
+          # immediately after its own successful compile.
           pio run -d firmware -e esp12e
-          pio run -d firmware -e esp12e_m9_4m2m
           cp firmware/.pio/build/esp12e/firmware.bin "${{ runner.temp }}/m9-baseline-4m3m.bin"
-          cp firmware/.pio/build/esp12e_m9_4m2m/firmware.bin "${{ runner.temp }}/m9-candidate-4m2m.bin"
           test -s "${{ runner.temp }}/m9-baseline-4m3m.bin"
+
+      - name: Compile opt-in 4m2m candidate and escrow image
+        run: |
+          pio run -d firmware -e esp12e_m9_4m2m
+          cp firmware/.pio/build/esp12e_m9_4m2m/firmware.bin "${{ runner.temp }}/m9-candidate-4m2m.bin"
           test -s "${{ runner.temp }}/m9-candidate-4m2m.bin"
 
       - name: Build and verify fresh SHINO 4m2m LittleFS image offline
