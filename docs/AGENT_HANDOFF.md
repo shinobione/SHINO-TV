@@ -1,6 +1,18 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+**Phase F continuation, 5 October - OFFLINE DESIGN / PACKAGE QUALIFICATION ONLY:**
+[Stage-2 LittleFS package/executor qualification](M09_STAGE2_LITTLEFS_QUALIFICATION.md)
+passes pinned source/range models, exact local image freeze and synthetic
+PRE/POST comparisons. Stage 2 physical write **HOLD**, runtime **NOT_RUN**,
+not performed. Stage-1 owner physical PASS and frozen 399168-byte FS-less app
+remain unchanged; no firmware change/rebuild or new device operation. Direct
+raw image target `0x200000..0x3F9FFF`, protected lower **2097152 B** and tail
+**24576 B** require fresh full PRE/POST before normal boot. Current app still
+does not mount FS. All Phase F device-operation counters **0**. STOP after F;
+no SmallTV contact, physical Stage 2, normal-profile activation or merge.
+Historical dated paragraphs below remain their original evidence.
+
 **Latest owner-provided physical state — Mission 9 Phase E, 5 October:**
 [Stage-1 physical evidence](M09_STAGE1_PHYSICAL_EVIDENCE.md) records owner actions
 completed before this documentation pass. Frozen **399168 B** Mission 9 FS-less

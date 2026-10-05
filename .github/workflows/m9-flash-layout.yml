@@ -18,6 +18,12 @@ on:
       - 'tools/test_m9_phase_c.py'
       - 'tools/m9_rtc_neutralization.py'
       - 'tools/test_m9_rtc_neutralization.py'
+      - 'tools/m9_stage2_fs_candidate.py'
+      - 'tools/m9_stage2_readback_verify.py'
+      - 'tools/m9_stage2_executor.py'
+      - 'tools/m9_stage2_sources.json'
+      - 'tools/test_m9_stage2.py'
+      - 'docs/M09_STAGE2_LITTLEFS_QUALIFICATION.md'
       - 'docs/M09_RTC_EBOOT_NEUTRALIZATION.md'
       - 'docs/M09_PHYSICAL_EXECUTOR_QUALIFICATION.md'
       - 'tools/verify_fs_provisioning.py'
@@ -44,6 +50,12 @@ on:
       - 'tools/test_m9_phase_c.py'
       - 'tools/m9_rtc_neutralization.py'
       - 'tools/test_m9_rtc_neutralization.py'
+      - 'tools/m9_stage2_fs_candidate.py'
+      - 'tools/m9_stage2_readback_verify.py'
+      - 'tools/m9_stage2_executor.py'
+      - 'tools/m9_stage2_sources.json'
+      - 'tools/test_m9_stage2.py'
+      - 'docs/M09_STAGE2_LITTLEFS_QUALIFICATION.md'
       - 'docs/M09_RTC_EBOOT_NEUTRALIZATION.md'
       - 'docs/M09_PHYSICAL_EXECUTOR_QUALIFICATION.md'
       - 'tools/verify_fs_provisioning.py'
@@ -104,10 +116,21 @@ jobs:
           persist-credentials: false
           sparse-checkout: |
             include
-            src/target/esp8266/include
+            src
+
+      - name: Fetch pinned public mklittlefs source for metadata audit
+        uses: actions/checkout@v4
+        with:
+          repository: earlephilhower/mklittlefs
+          ref: 943d2f76736eef6630edd4933e42c3016194770b
+          path: reference-m9-mklittlefs
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            main.cpp
 
       - name: Install pinned offline build tools
-        run: python -m pip install 'platformio==6.1.18' 'esptool==5.4.0' 'esp-pylib==1.1.5' 'pyserial==3.5'
+        run: python -m pip install 'platformio==6.1.18' 'esptool==5.4.0' 'esp-pylib==1.1.5' 'pyserial==3.5' 'littlefs-python==0.15.0'
 
       - name: Verify exact target geometry and unit tests
         run: |
@@ -115,6 +138,7 @@ jobs:
           python -m unittest discover -s tools -p 'test_m9_first_migration.py' -v
           python -m unittest discover -s tools -p 'test_m9_phase_c.py' -v
           python -m unittest discover -s tools -p 'test_m9_rtc_neutralization.py' -v
+          python -m unittest discover -s tools -p 'test_m9_stage2.py' -v
           python -m unittest discover -s tools -p 'test_first_boot_bridge_source.py' -v
           python -m unittest discover -s tools -p 'test_fsless_dashboard_source.py' -v
           python -m unittest discover -s tools -p 'test_verify_fs_provisioning.py' -v
@@ -192,6 +216,52 @@ jobs:
           assert report["first_boot_migration_writer_compiled"] is False
           assert report["device_read_or_upload_performed"] is False
           assert report["owner_FS_migration_permission"] is False
+          PY
+
+      - name: Phase F pinned raw-FS source audit and independent disposable package check
+        run: |
+          # Public source copies only. No owner image/readback or serial executor.
+          python - <<'PY'
+          import os, shutil
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"]) / "m9-stage2-stub-audit"
+          root.mkdir()
+          for origin, name in (
+              ("reference-m9-stub/src/command_handler.c", "src-command_handler.c"),
+              ("reference-m9-stub/src/commands.h", "src-commands.h"),
+              ("reference-m9-stub/src/main.c", "src-main.c"),
+              ("reference-m9-stub-lib/src/flash.c", "lib-src-flash.c"),
+              ("reference-m9-stub-lib/src/target/common/src/flash.c", "lib-src-target-common-src-flash.c"),
+              ("reference-m9-stub-lib/src/target/esp8266/src/flash.c", "lib-src-target-esp8266-src-flash.c"),
+              ("reference-m9-stub-lib/src/target/esp8266/src/rom-patched.c", "lib-src-target-esp8266-src-rom-patched.c"),
+          ):
+              shutil.copyfile(origin, root / name)
+          PY
+          python tools/m9_stage2_executor.py \
+            --core-root "$HOME/.platformio/packages/framework-arduinoespressif8266" \
+            --platformio-builder "$HOME/.platformio/platforms/espressif8266/builder/main.py" \
+            --stub-audit-root "${{ runner.temp }}/m9-stage2-stub-audit" \
+            --mklittlefs-source reference-m9-mklittlefs/main.cpp > "${{ runner.temp }}/m9-stage2-source.json"
+          python tools/m9_stage2_fs_candidate.py --prepare-source "${{ runner.temp }}/m9-stage2-data"
+          pio pkg install -g -t 'platformio/tool-mklittlefs@1.203.210628'
+          "$HOME/.platformio/packages/tool-mklittlefs/mklittlefs" --version
+          "$HOME/.platformio/packages/tool-mklittlefs/mklittlefs" -c "${{ runner.temp }}/m9-stage2-data" \
+            -p 256 -b 8192 -s 2072576 "${{ runner.temp }}/m9-stage2-ephemeral.bin"
+          FS_SHA=$(python -c 'import hashlib,os; from pathlib import Path; print(hashlib.sha256((Path(os.environ["RUNNER_TEMP"])/"m9-stage2-ephemeral.bin").read_bytes()).hexdigest())')
+          python tools/m9_stage2_fs_candidate.py --image "${{ runner.temp }}/m9-stage2-ephemeral.bin" \
+            --expected-sha256 "$FS_SHA" > "${{ runner.temp }}/m9-stage2-package.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"])
+          audit = json.loads((root / "m9-stage2-source.json").read_text())
+          package = json.loads((root / "m9-stage2-package.json").read_text())
+          assert audit["STAGE2_EXECUTOR_MODEL_GATE"] == audit["STAGE2_RAW_WRITE_BOUNDS_GATE"] == "PASS"
+          assert package["geometry"]["image_bytes"] == 2072576 and package["image_file_count"] == 24
+          assert package["image_inventory_exact"] and package["parser_writes"] == 0
+          assert not audit["physical_authorization"] and not package["physical_authorization"]
+          assert audit["stage2_physical_write"] == package["stage2_physical_write"] == "HOLD"
+          assert package["stage2_runtime"] == "NOT_RUN"
           PY
 
       - name: Inspect both ESP8266 images and calculate exact OTA geometry
@@ -273,6 +343,8 @@ jobs:
             ${{ runner.temp }}/m9-build.json
             ${{ runner.temp }}/m9-fsless.json
             ${{ runner.temp }}/m9-first-migration.json
+            ${{ runner.temp }}/m9-stage2-source.json
+            ${{ runner.temp }}/m9-stage2-package.json
           if-no-files-found: error
 
       - name: Delete disposable credentials, binaries, filesystem and OEM reference
@@ -280,5 +352,8 @@ jobs:
         run: |
           rm -f firmware/include/shino_private_policy.h
           rm -f "${{ runner.temp }}/m9-baseline-4m3m.bin" "${{ runner.temp }}/m9-candidate-4m2m.bin"
+          rm -f "${{ runner.temp }}/m9-stage2-ephemeral.bin"
+          rm -rf "${{ runner.temp }}/m9-stage2-data" "${{ runner.temp }}/m9-stage2-stub-audit"
           rm -rf firmware/private firmware/.pio reference-geekmagic
           rm -rf reference-m9-stub reference-m9-stub-lib
+          rm -rf reference-m9-mklittlefs

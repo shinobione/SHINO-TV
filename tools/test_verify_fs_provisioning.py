@@ -1,8 +1,10 @@
 import hashlib
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from verify_fs_provisioning import (
     FsInspectionError, EXPECTED_BLANK_CONFIG, SHINO_FS_BYTES,
@@ -68,9 +70,22 @@ class LittleFsOfflineSafetyTests(unittest.TestCase):
     def test_source_symlink_refused(self):
         target = self.root / "elsewhere"
         target.write_text("unsafe")
-        (self.data / "web" / "linked.html").symlink_to(target)
-        with self.assertRaisesRegex(FsInspectionError, "Symlinks"):
-            validate_source(self.data)
+        link = self.data / "web" / "linked.html"
+        try:
+            link.symlink_to(target)
+        except OSError as exc:
+            if os.name != "nt" or exc.winerror != 1314:
+                raise
+            # Linux CI exercises a real link; restricted Windows exercises
+            # the same rejection using link metadata, without changing the OS.
+            link.write_text("unsafe")
+            original = Path.is_symlink
+            with patch.object(Path, "is_symlink", lambda p: p == link or original(p)):
+                with self.assertRaisesRegex(FsInspectionError, "Symlinks"):
+                    validate_source(self.data)
+        else:
+            with self.assertRaisesRegex(FsInspectionError, "Symlinks"):
+                validate_source(self.data)
 
     def test_layout_change_rejected(self):
         self.ini.write_text(self.ini.read_text().replace("4m2m", "4m1m"))

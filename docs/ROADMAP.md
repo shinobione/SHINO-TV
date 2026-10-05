@@ -14,6 +14,32 @@
 
 ## Product contract — owner clarification, 1 October 2026
 
+**Mission 9 Phase F owner decision, 5 October 2026:** continue existing Draft
+PR #42 from verified clean `4fde7ba1c948e065accb5ac5540bb848abacf12a` on the
+existing Mission 9 branch. Authorize OFFLINE Stage-2 LittleFS package/executor
+qualification: pinned-source audit, reviewed non-secret source inventory,
+local-only exact 4m2m FS image freeze and independent verification, synthetic
+PRE/POST tools/tests, PRINT ONLY future command/rollback packet, documentation,
+commit/push and exact-head CI. Preserve the physically installed 399168-byte
+Stage-1 candidate without rebuild/replacement. No serial/device/network/RTC,
+flash/erase/FS upload, reset/reboot or physical Stage-2 operation is authorized.
+Stage 2 intentionally targets only `0x200000..0x3F9FFF`; lower arena and reserved
+tail must remain exact PRE/POST. Keep the current FS-less application and
+normal-profile hold; Stage-2 runtime remains NOT_RUN, physical write HOLD.
+Private full-chip snapshots and the local FS binary remain outside Git/CI.
+STOP after Phase F; no SmallTV contact, Stage 2 execution or merge.
+
+**Mission 9 Phase F offline result, 5 October:** executor/source bounds, exact
+2072576-byte local image freeze/inventory and synthetic readback gates **PASS**.
+[Exact geometry, digests, reviewed assets, root-clock nondeterminism, PRINT ONLY
+A-J packet and separate rollback authorities](M09_STAGE2_LITTLEFS_QUALIFICATION.md).
+Direct UART raw FS model selected; full-size atomic U_FS staging overlaps app.
+Root wall-clock variation isolated; universal reproducibility not established.
+Stage 2 remains **PHYSICAL WRITE HOLD / RUNTIME NOT_RUN / NOT PERFORMED**.
+Protected lower 2097152 B and tail 24576 B require fresh Stage-2 full PRE/POST.
+No firmware change, installed Stage-1 rebuild/replacement or SmallTV operation;
+all five Phase F physical counters **0**. Draft PR #42 unmerged; STOP after F.
+
 **Mission 9 Phase E owner decision and physical evidence, 5 October 2026:**
 continue existing Draft PR #42 from verified clean
 `e7163f8012be34d8a57ab55ca4b7d0f8632637a1`; authorize sanitized documentation,

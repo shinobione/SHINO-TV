@@ -218,10 +218,15 @@ class SourcePacketTests(unittest.TestCase):
             self.assertNotIn("candidate-4m2m.bin", workflow.split("name: Fetch pinned public", 1)[0])
             self.assertNotIn("research-local", workflow)
 
-    def test_ci_retains_five_json_only_no_private_inputs(self):
+    def test_ci_retains_reviewed_json_only_no_private_inputs(self):
         workflow = (ROOT / ".github/workflows/m9-flash-layout.yml").read_text(encoding="utf-8")
         artifact = workflow.split("name: Upload safe numeric evidence only", 1)[1].split("if-no-files-found", 1)[0]
-        self.assertEqual(artifact.count("${{ runner.temp }}/m9-"), 5)
+        retained = {line.strip() for line in artifact.splitlines()
+                    if line.strip().startswith("${{ runner.temp }}/m9-")}
+        self.assertEqual(retained, {
+            "${{ runner.temp }}/m9-" + name + ".json" for name in
+            ("layout", "fs", "build", "fsless", "first-migration",
+             "stage2-source", "stage2-package")})
         self.assertNotIn("research-local", workflow)
         self.assertNotIn("PRIVATE_MASTER_BIN", workflow)
         self.assertIn("python tools/m9_rtc_neutralization.py", workflow)

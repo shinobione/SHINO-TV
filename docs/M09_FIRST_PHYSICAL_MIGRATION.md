@@ -1,5 +1,17 @@
 # Mission 9 Phase B — first physical migration protocol (OFFLINE ONLY)
 
+**Phase F continuation, 5 October - OFFLINE DESIGN / PACKAGE QUALIFICATION ONLY:**
+[Stage-2 LittleFS package/executor qualification](M09_STAGE2_LITTLEFS_QUALIFICATION.md)
+passes pinned source/range models, exact local image freeze and synthetic
+PRE/POST comparisons. Stage 2 physical write **HOLD**, runtime **NOT_RUN**,
+not performed. Stage-1 owner physical PASS and frozen 399168-byte FS-less app
+remain unchanged; no firmware change/rebuild or new device operation. Direct
+raw image target `0x200000..0x3F9FFF`, protected lower **2097152 B** and tail
+**24576 B** require fresh full PRE/POST before normal boot. Current app still
+does not mount FS. All Phase F device-operation counters **0**. STOP after F;
+no SmallTV contact, physical Stage 2, normal-profile activation or merge.
+Historical dated paragraphs below remain their original evidence.
+
 **Phase E physical evidence, 5 October — owner-performed before documentation:**
 [Sanitized Stage-1 receipt](M09_STAGE1_PHYSICAL_EVIDENCE.md) records completed
 application-only write at zero, independent full PRE/POST preservation of
