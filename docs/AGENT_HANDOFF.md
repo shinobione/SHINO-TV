@@ -1,6 +1,22 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+**Mission 9 Phase C, 5 October — OFFLINE executor qualification HOLD:**
+continue existing Draft PR #42 from verified clean
+`02b4be4cd4c2e0651d376001c030f1505123adb6`.
+[Pinned source audit, local verifier, A–K print-only packet and state machine](M09_PHYSICAL_EXECUTOR_QUALIFICATION.md).
+Official esptool 5.4.0 / version-2 stub bounded-range source model PASS;
+initial no-reset / one-connect flags do not constrain its internal default-reset
+reconnect. EBOOT_COLD_START_GATE HOLD: RTC contents after full power-on are
+random, not guaranteed invalid; eboot checks magic/CRC without reset reason.
+STAGE1_READBACK_MODEL PASS (synthetic only); PHYSICAL_RUNTIME_GATE NOT_RUN.
+Select independent full 4 MiB fresh PRE/POST before any normal boot; protected
+`0x062000..0x3FFFFF` must match exactly. Frozen Phase B LOCAL candidate remains
+399168 bytes / `cd99139121fa47fedd6286a185fb16e8fb9e120280ecd75f1c6b41b905e31011`.
+No `firmware/**` edits or local candidate rebuild; default/opt-in gates retained.
+**Physical write HOLD; all device/serial/write/reboot/FS operation counts 0.**
+No transition below is authority to touch the SmallTV; STOP after Phase C.
+
 **Mission 9 Phase B, 5 October — OFFLINE first-migration design:** existing
 Draft PR #42 continues from verified clean `1c39e2ac791145be9ef79dc6d98fd70526614d7f`.
 [Protocol, FS-less source audit, command packet, power-loss and MASTER gates](M09_FIRST_PHYSICAL_MIGRATION.md).

@@ -14,6 +14,16 @@
 
 ## Product contract — owner clarification, 1 October 2026
 
+**Mission 9 Phase C owner decision, 5 October 2026:** continue existing Draft
+PR #42 from clean `02b4be4cd4c2e0651d376001c030f1505123adb6`; qualify the
+physical executor entirely offline. Audit pinned Core 3.1.2 / esptool 5.4.0,
+add local synthetic readback/identity/source gates, print-only commands,
+documentation and exact-head CI. Preserve the frozen Phase B LOCAL candidate
+without rebuilding it; no `firmware/**` change. No serial subprocess, device
+contact, discovery, reset/reboot, flash or filesystem operation. All modeled
+physical steps need later exact-operation owner approval; **physical write HOLD**.
+See [executor qualification](M09_PHYSICAL_EXECUTOR_QUALIFICATION.md).
+
 **Mission 9 Phase B owner decision, 5 October 2026:** continue existing Draft
 PR #42 on `feature/shino-tv-m9-flash-layout-liberation` from exact clean
 `1c39e2ac791145be9ef79dc6d98fd70526614d7f`. Authorize offline source audit,

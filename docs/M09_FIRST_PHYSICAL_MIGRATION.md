@@ -1,5 +1,16 @@
 # Mission 9 Phase B — first physical migration protocol (OFFLINE ONLY)
 
+**Phase C continuation, 5 October:** [exact executor qualification, A–K
+print-only packet and PRE/POST preservation gate](M09_PHYSICAL_EXECUTOR_QUALIFICATION.md)
+supersede the provisional executor/sequence recommendations below. Phase B
+evidence remains historical. Official esptool 5.4.0's modeled bounded retry
+passes with explicitly pinned version-2 RAM stub; its internal reconnect can
+reset despite initial `--before no-reset`. Cold first-boot RTC invalidation
+remains **HOLD**, so no physical migration is authorized. Fresh independent
+4 MiB PRE/POST files, captured before any application boot, are selected for
+preservation; the older private MASTER remains separate rollback authority.
+Frozen LOCAL payload unchanged; no firmware edit or local rebuild in Phase C.
+
 5 October 2026. Existing Draft PR #42; starting clean branch
 `feature/shino-tv-m9-flash-layout-liberation` at
 `1c39e2ac791145be9ef79dc6d98fd70526614d7f`.

@@ -12,6 +12,11 @@ on:
       - 'tools/m9_fsless_gate.py'
       - 'tools/m9_master_restore_preflight.py'
       - 'tools/test_m9_first_migration.py'
+      - 'tools/m9_stage1_readback_verify.py'
+      - 'tools/m9_executor_preflight.py'
+      - 'tools/m9_executor_sources.json'
+      - 'tools/test_m9_phase_c.py'
+      - 'docs/M09_PHYSICAL_EXECUTOR_QUALIFICATION.md'
       - 'tools/verify_fs_provisioning.py'
       - 'tools/test_verify_fs_provisioning.py'
       - 'tools/verify_factory_ota.py'
@@ -29,6 +34,11 @@ on:
       - 'tools/m9_fsless_gate.py'
       - 'tools/m9_master_restore_preflight.py'
       - 'tools/test_m9_first_migration.py'
+      - 'tools/m9_stage1_readback_verify.py'
+      - 'tools/m9_executor_preflight.py'
+      - 'tools/m9_executor_sources.json'
+      - 'tools/test_m9_phase_c.py'
+      - 'docs/M09_PHYSICAL_EXECUTOR_QUALIFICATION.md'
       - 'tools/verify_fs_provisioning.py'
       - 'tools/test_verify_fs_provisioning.py'
       - 'tools/verify_factory_ota.py'
@@ -68,12 +78,13 @@ jobs:
             Ultra-V9.0.44
 
       - name: Install pinned offline build tools
-        run: python -m pip install 'platformio==6.1.18' 'esptool==5.4.0'
+        run: python -m pip install 'platformio==6.1.18' 'esptool==5.4.0' 'esp-pylib==1.1.5' 'pyserial==3.5'
 
       - name: Verify exact target geometry and unit tests
         run: |
           python -m unittest discover -s tools -p 'test_m9_flash_layout.py' -v
           python -m unittest discover -s tools -p 'test_m9_first_migration.py' -v
+          python -m unittest discover -s tools -p 'test_m9_phase_c.py' -v
           python -m unittest discover -s tools -p 'test_first_boot_bridge_source.py' -v
           python -m unittest discover -s tools -p 'test_fsless_dashboard_source.py' -v
           python -m unittest discover -s tools -p 'test_verify_fs_provisioning.py' -v
@@ -112,6 +123,8 @@ jobs:
       - name: Compile opt-in 4m2m candidate and escrow image
         run: |
           pio run -d firmware -e esp12e_m9_4m2m
+          # Static package/Core audit only: never import/run a serial executor.
+          python tools/m9_executor_preflight.py --source-only --core-root "$HOME/.platformio/packages/framework-arduinoespressif8266"
           cp firmware/.pio/build/esp12e_m9_4m2m/firmware.bin "${{ runner.temp }}/m9-candidate-4m2m.bin"
           test -s "${{ runner.temp }}/m9-candidate-4m2m.bin"
 
