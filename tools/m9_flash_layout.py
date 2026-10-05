@@ -187,7 +187,7 @@ def main() -> int:
     args = parser.parse_args()
 
     report = build_report(args.platformio)
-    if (args.current_bytes is not None or args.target_bytes is not None:
+    if args.current_bytes is not None or args.target_bytes is not None:
         if args.current_bytes is None or args.target_bytes is None:
             parser.error("--current-bytes and --target-bytes must be supplied together")
         report["custom_ota_case"] = ota_geometry(args.current_bytes, args.target_bytes)
