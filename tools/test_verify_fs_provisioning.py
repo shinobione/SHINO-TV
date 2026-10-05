@@ -77,6 +77,41 @@ class LittleFsOfflineSafetyTests(unittest.TestCase):
         with self.assertRaisesRegex(FsInspectionError, "geometry"):
             check_platformio(self.ini)
 
+    def test_m9_extended_environment_is_accepted(self):
+        self.ini.write_text(
+            "[env:esp12e]\n"
+            "board=esp12e\n"
+            "board_build.flash_size=4MB\n"
+            "board_build.flash_mode=dio\n"
+            "board_build.filesystem=littlefs\n"
+            "board_build.ldscript=eagle.flash.4m3m.ld\n\n"
+            "[env:esp12e_m9_4m2m]\n"
+            "extends=env:esp12e\n"
+            "board_build.ldscript=eagle.flash.4m2m.ld\n"
+        )
+        check_platformio(self.ini, "env:esp12e_m9_4m2m")
+        report = inspect(
+            self.image,
+            self.data,
+            self.ini,
+            environment="env:esp12e_m9_4m2m",
+        )
+        self.assertEqual(report["platformio_environment"], "env:esp12e_m9_4m2m")
+
+    def test_m9_environment_does_not_accept_inherited_4m3m(self):
+        self.ini.write_text(
+            "[env:esp12e]\n"
+            "board=esp12e\n"
+            "board_build.flash_size=4MB\n"
+            "board_build.flash_mode=dio\n"
+            "board_build.filesystem=littlefs\n"
+            "board_build.ldscript=eagle.flash.4m3m.ld\n\n"
+            "[env:esp12e_m9_4m2m]\n"
+            "extends=env:esp12e\n"
+        )
+        with self.assertRaisesRegex(FsInspectionError, "geometry"):
+            check_platformio(self.ini, "env:esp12e_m9_4m2m")
+
     def test_no_inferred_stock_fs_backup_from_valid_image(self):
         report = inspect(self.image, self.data, self.ini)
         self.assertTrue(report["OEM_application_OTA_zip_cannot_restore_stock_filesystem"])
