@@ -1,0 +1,165 @@
+name: Mission 9 flash layout — OFFLINE only
+
+on:
+  push:
+    branches: ['feature/shino-tv-m9-flash-layout-liberation']
+    paths:
+      - 'firmware/**'
+      - 'recovery/**'
+      - 'tools/m9_flash_layout.py'
+      - 'tools/test_m9_flash_layout.py'
+      - 'tools/verify_factory_ota.py'
+      - 'tools/generate_shino_device_policy.py'
+      - 'docs/M09_FLASH_LAYOUT_LIBERATION.md'
+      - '.github/workflows/m9-flash-layout.yml'
+  pull_request:
+    paths:
+      - 'firmware/**'
+      - 'recovery/**'
+      - 'tools/m9_flash_layout.py'
+      - 'tools/test_m9_flash_layout.py'
+      - 'tools/verify_factory_ota.py'
+      - 'tools/generate_shino_device_policy.py'
+      - 'docs/M09_FLASH_LAYOUT_LIBERATION.md'
+      - '.github/workflows/m9-flash-layout.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  m9-offline-4m2m:
+    name: 4m3m baseline vs opt-in 4m2m (no device)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact PR/head source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Fetch immutable OEM app reference for disposable build policy
+        uses: actions/checkout@v4
+        with:
+          repository: GeekMagicClock/smalltv-ultra
+          ref: 55d7877fcba8b1cb7a66a0830d35d5b374bc8540
+          path: reference-geekmagic
+          persist-credentials: false
+          sparse-checkout: |
+            Ultra-V9.0.44
+
+      - name: Install pinned offline build tools
+        run: python -m pip install 'platformio==6.1.18' 'esptool==5.4.0'
+
+      - name: Verify exact target geometry and unit tests
+        run: |
+          python -m unittest discover -s tools -p 'test_m9_flash_layout.py' -v
+          python tools/m9_flash_layout.py > "${{ runner.temp }}/m9-layout.json"
+          python - <<'PY'
+          import json, os
+          report = json.load(open(os.path.join(os.environ["RUNNER_TEMP"], "m9-layout.json")))
+          assert report["gate"] == "PASS_OFFLINE_GEOMETRY"
+          assert report["device_contacts"] == report["device_writes"] == 0
+          assert report["layout"]["filesystem_start"] == 0x200000
+          assert report["layout"]["filesystem_bytes"] == 2072576
+          assert report["layout"]["post_filesystem_reserved_bytes"] == 24576
+          assert report["layout"]["symmetric_max_to_max_gap_bytes"] == 8192
+          assert report["platformio"]["default_env"] == "esp12e"
+          assert report["platformio"]["mission9_ldscript"] == "eagle.flash.4m2m.ld"
+          PY
+
+      - name: Verify immutable OEM package and generate disposable FS-less policy
+        run: |
+          test "$(git -C reference-geekmagic rev-parse HEAD)" = "55d7877fcba8b1cb7a66a0830d35d5b374bc8540"
+          python tools/verify_factory_ota.py --manifest recovery/factory_ota_v9_0_44.json reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip
+          python tools/generate_shino_device_policy.py --oem-zip reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip >/dev/null
+          grep -q '^#define SHINO_BOOT_PROFILE 0$' firmware/include/shino_private_policy.h
+          grep -q '^#define SHINO_ENABLE_FACTORY_RESTORE 0$' firmware/include/shino_private_policy.h
+          grep -q '^#define SHINO_ENABLE_FS_MIGRATION 0$' firmware/include/shino_private_policy.h
+
+      - name: Compile unchanged 4m3m baseline and opt-in 4m2m candidate
+        run: |
+          pio run -d firmware -e esp12e
+          pio run -d firmware -e esp12e_m9_4m2m
+
+      - name: Inspect both ESP8266 images and calculate exact OTA geometry
+        run: |
+          python -m esptool image-info firmware/.pio/build/esp12e/firmware.bin
+          python -m esptool image-info firmware/.pio/build/esp12e_m9_4m2m/firmware.bin
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          sys.path.insert(0, "tools")
+          from m9_flash_layout import LINKER_MAX_APP_BYTES, ota_geometry
+
+          baseline = Path("firmware/.pio/build/esp12e/firmware.bin")
+          candidate = Path("firmware/.pio/build/esp12e_m9_4m2m/firmware.bin")
+          assert baseline.is_file() and candidate.is_file()
+          assert not (baseline.parent / "littlefs.bin").exists()
+          assert not (candidate.parent / "littlefs.bin").exists()
+
+          bsize = baseline.stat().st_size
+          csize = candidate.stat().st_size
+          assert 0 < bsize <= LINKER_MAX_APP_BYTES
+          assert 0 < csize <= LINKER_MAX_APP_BYTES
+
+          # Candidate must be stageable from the retained-size P1 class and,
+          # most importantly, from itself under the new 4m2m geometry.
+          self_update = ota_geometry(csize, csize)
+          baseline_to_candidate = ota_geometry(bsize, csize)
+          assert self_update["candidate_passes"]
+          assert baseline_to_candidate["candidate_passes"]
+
+          safe = {
+              "head": os.environ["GITHUB_SHA"],
+              "device_contacts": 0,
+              "device_writes": 0,
+              "baseline_4m3m": {
+                  "bytes": bsize,
+                  "sha256": hashlib.sha256(baseline.read_bytes()).hexdigest(),
+              },
+              "candidate_4m2m": {
+                  "bytes": csize,
+                  "sha256": hashlib.sha256(candidate.read_bytes()).hexdigest(),
+              },
+              "baseline_to_candidate": baseline_to_candidate,
+              "candidate_self_update": self_update,
+              "linker_max_application_bytes": LINKER_MAX_APP_BYTES,
+              "physical_write_authorized": False,
+          }
+          out = Path(os.environ["RUNNER_TEMP"]) / "m9-build.json"
+          out.write_text(json.dumps(safe, indent=2, sort_keys=True), encoding="utf-8")
+          print(out.read_text(encoding="utf-8"))
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write(
+                  "### Mission 9 — offline 4m2m qualification\n\n"
+                  f"4m3m baseline: **{bsize:,} B**  \n"
+                  f"4m2m candidate: **{csize:,} B**  \n"
+                  f"4m2m self-update geometric gap: **{self_update['gap_between_current_and_staging_bytes']:,} B**  \n"
+                  "Device contacts: **0** · device writes: **0** · physical migration: **HOLD**\n"
+              )
+          PY
+
+      - name: Upload safe numeric evidence only
+        uses: actions/upload-artifact@v4
+        with:
+          name: m9-offline-layout-evidence-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            ${{ runner.temp }}/m9-layout.json
+            ${{ runner.temp }}/m9-build.json
+          if-no-files-found: error
+
+      - name: Delete disposable credentials, binaries and OEM reference
+        if: always()
+        run: |
+          rm -f firmware/include/shino_private_policy.h
+          rm -rf firmware/private firmware/.pio reference-geekmagic
