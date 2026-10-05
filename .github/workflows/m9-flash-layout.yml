@@ -24,6 +24,7 @@ on:
       - 'docs/M09_FLASH_LAYOUT_LIBERATION.md'
       - 'docs/M09_FIRST_PHYSICAL_MIGRATION.md'
       - '.github/workflows/m9-flash-layout.yml'
+      - '.github/workflows/ci.yml'
   pull_request:
     paths:
       - 'firmware/**'
@@ -46,6 +47,7 @@ on:
       - 'docs/M09_FLASH_LAYOUT_LIBERATION.md'
       - 'docs/M09_FIRST_PHYSICAL_MIGRATION.md'
       - '.github/workflows/m9-flash-layout.yml'
+      - '.github/workflows/ci.yml'
 
 permissions:
   contents: read
