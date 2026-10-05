@@ -91,9 +91,15 @@ jobs:
         run: |
           pio run -d firmware -e esp12e
           pio run -d firmware -e esp12e_m9_4m2m
+          cp firmware/.pio/build/esp12e/firmware.bin "${{ runner.temp }}/m9-baseline-4m3m.bin"
+          cp firmware/.pio/build/esp12e_m9_4m2m/firmware.bin "${{ runner.temp }}/m9-candidate-4m2m.bin"
+          test -s "${{ runner.temp }}/m9-baseline-4m3m.bin"
+          test -s "${{ runner.temp }}/m9-candidate-4m2m.bin"
 
       - name: Build and verify fresh SHINO 4m2m LittleFS image offline
         run: |
+          # PlatformIO's buildfs target may replace normal build products, so
+          # application BINs were escrowed in runner.temp in the previous step.
           pio run -d firmware -e esp12e_m9_4m2m -t buildfs
           python tools/verify_fs_provisioning.py             --image firmware/.pio/build/esp12e_m9_4m2m/littlefs.bin             --source-root firmware/data             --platformio firmware/platformio.ini             --environment env:esp12e_m9_4m2m             --out "${{ runner.temp }}/m9-fs.json"
           python - <<'PY'
@@ -108,8 +114,8 @@ jobs:
 
       - name: Inspect both ESP8266 images and calculate exact OTA geometry
         run: |
-          python -m esptool image-info firmware/.pio/build/esp12e/firmware.bin
-          python -m esptool image-info firmware/.pio/build/esp12e_m9_4m2m/firmware.bin
+          python -m esptool image-info "${{ runner.temp }}/m9-baseline-4m3m.bin"
+          python -m esptool image-info "${{ runner.temp }}/m9-candidate-4m2m.bin"
           python - <<'PY'
           import hashlib
           import json
@@ -120,11 +126,11 @@ jobs:
           sys.path.insert(0, "tools")
           from m9_flash_layout import LINKER_MAX_APP_BYTES, ota_geometry
 
-          baseline = Path("firmware/.pio/build/esp12e/firmware.bin")
-          candidate = Path("firmware/.pio/build/esp12e_m9_4m2m/firmware.bin")
+          root = Path(os.environ["RUNNER_TEMP"])
+          baseline = root / "m9-baseline-4m3m.bin"
+          candidate = root / "m9-candidate-4m2m.bin"
           fs_image = Path("firmware/.pio/build/esp12e_m9_4m2m/littlefs.bin")
           assert baseline.is_file() and candidate.is_file() and fs_image.is_file()
-          assert not (baseline.parent / "littlefs.bin").exists()
 
           bsize = baseline.stat().st_size
           csize = candidate.stat().st_size
@@ -159,7 +165,7 @@ jobs:
               "linker_max_application_bytes": LINKER_MAX_APP_BYTES,
               "physical_write_authorized": False,
           }
-          out = Path(os.environ["RUNNER_TEMP"]) / "m9-build.json"
+          out = root / "m9-build.json"
           out.write_text(json.dumps(safe, indent=2, sort_keys=True), encoding="utf-8")
           print(out.read_text(encoding="utf-8"))
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
@@ -187,4 +193,5 @@ jobs:
         if: always()
         run: |
           rm -f firmware/include/shino_private_policy.h
+          rm -f "${{ runner.temp }}/m9-baseline-4m3m.bin" "${{ runner.temp }}/m9-candidate-4m2m.bin"
           rm -rf firmware/private firmware/.pio reference-geekmagic
