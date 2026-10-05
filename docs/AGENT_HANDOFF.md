@@ -1,6 +1,31 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+**Latest owner-provided physical state — Mission 9 Phase E, 5 October:**
+[Stage-1 physical evidence](M09_STAGE1_PHYSICAL_EVIDENCE.md) records owner actions
+completed before this documentation pass. Frozen **399168 B** Mission 9 FS-less
+bridge installed at zero; Stage-1 write, protected PRE/POST preservation,
+RTC/existing-RST powered transition, first boot, bounded runtime and FS-less
+gates **PASS**. This is the latest reported installed state, superseding older
+dated installed-state statements below; no unrelated P1/M8/media/Home-LAN
+qualification is promoted. CH340 3.3 V logic, normal USB-C power, reversible
+micro-hooks/no solder; known RST/GPIO0/RX/TX/GND, no adapter VCC power.
+RTC sentinel retained through existing RST; zero/zero then GPIO0 release while
+powered and RST gave `(3,7)` / `v00061740` / `~ld`, no observed COPY path.
+Independent full PRE/POST protected equality **0x062000..0x3FFFFF / 3792896 B**
+applies before first Stage-1 boot; slack equality and later system-tail
+immutability are not claimed. Correct LCD/four real values, protected AP/auth,
+180 seconds without observed reboot/corruption and stale/recovery PASS.
+Authenticated status: FIRST_BOOT_BRIDGE, 4 MiB, 399168 B app, heap **33072 B**,
+PROGRAM_FLASH_ONLY UI / RAM_ONLY metrics, migration/native OTA writers false.
+Largest free block/stack high-water unrecorded; ~2 s after Ctrl+C is not TTL:
+TTL remains 6 s from last accepted sample. **Stage 2 LittleFS HOLD / NOT
+PERFORMED; EBOOT_COLD_START_GATE HOLD.** No private dumps/digests/credentials
+published. Phase E started clean `e7163f8012be34d8a57ab55ca4b7d0f8632637a1`,
+existing Draft PR #42; documentation only, all device action counts **0**.
+**STOP after Phase E; no SmallTV contact, Stage 2 or merge authorized.**
+Earlier Phase A–D and physical paragraphs remain dated historical evidence.
+
 **Mission 9 Phase D, 5 October — OFFLINE RTC/eboot neutralization PASS:**
 continue existing Draft PR #42 from verified clean
 `a702c90c285189eff7ee19ea8f1da8bbc0274fa0`.

@@ -1,5 +1,16 @@
 # Mission 9 Phase C — physical executor qualification (OFFLINE ONLY)
 
+**Phase E physical evidence, 5 October — owner-performed before documentation:**
+[Stage-1 receipt](M09_STAGE1_PHYSICAL_EVIDENCE.md) records the reviewed 399168-byte
+esptool 5.4.0 write at zero, hash verification, flasher-stub retention, and exact
+independent full PRE/POST protected comparison (**3792896 B**,
+`0x062000..0x3FFFFF`) before first Stage-1 boot. Existing-RST RTC retention,
+powered zero/zero normal boot and bounded runtime are owner-provided physical
+PASS. Historical Phase C executor/cold-power HOLD remains dated evidence;
+EBOOT_COLD_START_GATE stays HOLD. **Stage 2 LittleFS HOLD / NOT PERFORMED**.
+No slack-preservation or post-runtime tail-immutability claim. Phase E device
+actions 0; no code/candidate change, fresh contact or generic write authority.
+
 **Phase D continuation, 5 October:** [deterministic RTC clear/readback and powered
 existing-RST transition](M09_RTC_EBOOT_NEUTRALIZATION.md) adds source/model PASS
 gates and supersedes only packet I / S8–S10 cold-power boot recommendation.

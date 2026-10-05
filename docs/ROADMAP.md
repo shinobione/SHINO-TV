@@ -14,6 +14,25 @@
 
 ## Product contract — owner clarification, 1 October 2026
 
+**Mission 9 Phase E owner decision and physical evidence, 5 October 2026:**
+continue existing Draft PR #42 from verified clean
+`e7163f8012be34d8a57ab55ca4b7d0f8632637a1`; authorize sanitized documentation,
+consistency checks, commit/push and exact-head CI only. No device/network/serial,
+RTC/flash/FS/reset operation, firmware/tool/workflow change or candidate rebuild.
+The owner reports completed Stage-1 application-only installation of the frozen
+399168-byte Mission 9 FS-less bridge at zero, full pre-first-boot PRE/POST
+preservation PASS, powered RTC-neutralization/existing-RST transition PASS and
+180-second LCD/AP/Digest/four-metric runtime with stale/recovery PASS. These are
+**OWNER-PROVIDED PHYSICAL EVIDENCE**, performed before this documentation pass;
+they supersede earlier installed-state claims for this unit, without promoting
+P1/M8/media/Home-LAN qualifications. Heap snapshot **33072 B**; largest free
+block and stack high-water unrecorded. Protected `0x062000..0x3FFFFF`
+(**3792896 B**) matched PRE exactly before first Stage-1 boot; later SDK/system
+tail changes are outside that proof. Historical cold-power gate stays HOLD.
+**Stage 2 LittleFS HOLD / NOT PERFORMED; no LittleFS provisioning.** Private
+dumps/digests/credentials stay outside Git. Phase E physical action counts **0**.
+See [Stage-1 physical evidence](M09_STAGE1_PHYSICAL_EVIDENCE.md). STOP after Phase E.
+
 **Mission 9 Phase D owner decision, 5 October 2026:** continue existing Draft
 PR #42 from clean `a702c90c285189eff7ee19ea8f1da8bbc0274fa0`. Authorize
 offline pinned-source RTC/eboot invalidation and RTC-retaining boot-transition

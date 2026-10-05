@@ -1,5 +1,17 @@
 # Mission 9 Phase D — deterministic RTC / eboot neutralization (OFFLINE ONLY)
 
+**Phase E physical evidence, 5 October — owner-performed before documentation:**
+[Stage-1 receipt](M09_STAGE1_PHYSICAL_EVIDENCE.md) closes the board-specific
+RTC/existing-RST question left NOT_RUN below: magic zero and CRC sentinel
+`0xA5A5A5A5` survived a powered RST pulse with GPIO0 LOW; sentinel was removed,
+zero/zero read back, GPIO0 released while powered, RST produced `(3,7)` / `~ld`
+without observed `cp:`. After verified Stage-1 POST, the zero/zero transition
+was repeated for first boot, with `v00061740` and 180-second runtime PASS.
+These are owner-provided physical observations, distinct from Phase D source/
+model PASS. Cold-power gate remains HOLD; no EN availability/path is inferred.
+Phase E documentation device actions **0**; **Stage 2 LittleFS HOLD / NOT
+PERFORMED**, no new hardware authorization. Historical text below is preserved.
+
 5 October 2026. Started from verified clean
 `a702c90c285189eff7ee19ea8f1da8bbc0274fa0`, existing branch
 `feature/shino-tv-m9-flash-layout-liberation`, PR #42 Draft/OPEN/unmerged.

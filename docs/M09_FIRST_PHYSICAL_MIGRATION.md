@@ -1,5 +1,16 @@
 # Mission 9 Phase B — first physical migration protocol (OFFLINE ONLY)
 
+**Phase E physical evidence, 5 October — owner-performed before documentation:**
+[Sanitized Stage-1 receipt](M09_STAGE1_PHYSICAL_EVIDENCE.md) records completed
+application-only write at zero, independent full PRE/POST preservation of
+`0x062000..0x3FFFFF` (**3792896 B**) before first Stage-1 boot, RTC/existing-RST
+transition and bounded 180-second LCD/AP/auth/four-value runtime PASS.
+This supersedes historical Stage-1 NOT_RUN/HOLD status below without rewriting
+the dated design. Final-sector slack equality is not claimed; later SDK/system
+tail changes are outside the pre-first-boot proof. **Stage 2 LittleFS HOLD /
+NOT PERFORMED; no provisioning.** Phase E is documentation only, device actions
+0, no candidate rebuild or new physical authority; cold-power gate stays HOLD.
+
 **Phase D continuation, 5 October:** [RTC neutralization](M09_RTC_EBOOT_NEUTRALIZATION.md)
 qualifies a deterministic source/model overlay after verified full POST: clear
 magic+CRC, read both zero, release GPIO0 while continuously powered, existing RST
