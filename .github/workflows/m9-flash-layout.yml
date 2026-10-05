@@ -8,6 +8,8 @@ on:
       - 'recovery/**'
       - 'tools/m9_flash_layout.py'
       - 'tools/test_m9_flash_layout.py'
+      - 'tools/verify_fs_provisioning.py'
+      - 'tools/test_verify_fs_provisioning.py'
       - 'tools/verify_factory_ota.py'
       - 'tools/generate_shino_device_policy.py'
       - 'docs/M09_FLASH_LAYOUT_LIBERATION.md'
@@ -18,6 +20,8 @@ on:
       - 'recovery/**'
       - 'tools/m9_flash_layout.py'
       - 'tools/test_m9_flash_layout.py'
+      - 'tools/verify_fs_provisioning.py'
+      - 'tools/test_verify_fs_provisioning.py'
       - 'tools/verify_factory_ota.py'
       - 'tools/generate_shino_device_policy.py'
       - 'docs/M09_FLASH_LAYOUT_LIBERATION.md'
@@ -59,6 +63,7 @@ jobs:
       - name: Verify exact target geometry and unit tests
         run: |
           python -m unittest discover -s tools -p 'test_m9_flash_layout.py' -v
+          python -m unittest discover -s tools -p 'test_verify_fs_provisioning.py' -v
           python tools/m9_flash_layout.py > "${{ runner.temp }}/m9-layout.json"
           python - <<'PY'
           import json, os
@@ -87,6 +92,20 @@ jobs:
           pio run -d firmware -e esp12e
           pio run -d firmware -e esp12e_m9_4m2m
 
+      - name: Build and verify fresh SHINO 4m2m LittleFS image offline
+        run: |
+          pio run -d firmware -e esp12e_m9_4m2m -t buildfs
+          python tools/verify_fs_provisioning.py             --image firmware/.pio/build/esp12e_m9_4m2m/littlefs.bin             --source-root firmware/data             --platformio firmware/platformio.ini             --environment env:esp12e_m9_4m2m             --out "${{ runner.temp }}/m9-fs.json"
+          python - <<'PY'
+          import json, os
+          report=json.load(open(os.path.join(os.environ["RUNNER_TEMP"],"m9-fs.json")))
+          assert report["image_bytes"] == 2072576
+          assert report["platformio_environment"] == "env:esp12e_m9_4m2m"
+          assert report["first_boot_migration_writer_compiled"] is False
+          assert report["device_read_or_upload_performed"] is False
+          assert report["owner_FS_migration_permission"] is False
+          PY
+
       - name: Inspect both ESP8266 images and calculate exact OTA geometry
         run: |
           python -m esptool image-info firmware/.pio/build/esp12e/firmware.bin
@@ -103,17 +122,16 @@ jobs:
 
           baseline = Path("firmware/.pio/build/esp12e/firmware.bin")
           candidate = Path("firmware/.pio/build/esp12e_m9_4m2m/firmware.bin")
-          assert baseline.is_file() and candidate.is_file()
+          fs_image = Path("firmware/.pio/build/esp12e_m9_4m2m/littlefs.bin")
+          assert baseline.is_file() and candidate.is_file() and fs_image.is_file()
           assert not (baseline.parent / "littlefs.bin").exists()
-          assert not (candidate.parent / "littlefs.bin").exists()
 
           bsize = baseline.stat().st_size
           csize = candidate.stat().st_size
+          assert fs_image.stat().st_size == 2_072_576
           assert 0 < bsize <= LINKER_MAX_APP_BYTES
           assert 0 < csize <= LINKER_MAX_APP_BYTES
 
-          # Candidate must be stageable from the retained-size P1 class and,
-          # most importantly, from itself under the new 4m2m geometry.
           self_update = ota_geometry(csize, csize)
           baseline_to_candidate = ota_geometry(bsize, csize)
           assert self_update["candidate_passes"]
@@ -131,6 +149,11 @@ jobs:
                   "bytes": csize,
                   "sha256": hashlib.sha256(candidate.read_bytes()).hexdigest(),
               },
+              "littlefs_4m2m": {
+                  "bytes": fs_image.stat().st_size,
+                  "sha256": hashlib.sha256(fs_image.read_bytes()).hexdigest(),
+                  "published_as_artifact": False,
+              },
               "baseline_to_candidate": baseline_to_candidate,
               "candidate_self_update": self_update,
               "linker_max_application_bytes": LINKER_MAX_APP_BYTES,
@@ -144,6 +167,7 @@ jobs:
                   "### Mission 9 — offline 4m2m qualification\n\n"
                   f"4m3m baseline: **{bsize:,} B**  \n"
                   f"4m2m candidate: **{csize:,} B**  \n"
+                  f"4m2m LittleFS: **{fs_image.stat().st_size:,} B**  \n"
                   f"4m2m self-update geometric gap: **{self_update['gap_between_current_and_staging_bytes']:,} B**  \n"
                   "Device contacts: **0** · device writes: **0** · physical migration: **HOLD**\n"
               )
@@ -155,10 +179,11 @@ jobs:
           name: m9-offline-layout-evidence-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             ${{ runner.temp }}/m9-layout.json
+            ${{ runner.temp }}/m9-fs.json
             ${{ runner.temp }}/m9-build.json
           if-no-files-found: error
 
-      - name: Delete disposable credentials, binaries and OEM reference
+      - name: Delete disposable credentials, binaries, filesystem and OEM reference
         if: always()
         run: |
           rm -f firmware/include/shino_private_policy.h
