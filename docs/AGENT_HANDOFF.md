@@ -1,6 +1,19 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+**Mission 9 Phase B, 5 October — OFFLINE first-migration design:** existing
+Draft PR #42 continues from verified clean `1c39e2ac791145be9ef79dc6d98fd70526614d7f`.
+[Protocol, FS-less source audit, command packet, power-loss and MASTER gates](M09_FIRST_PHYSICAL_MIGRATION.md).
+Application-only at zero is selected before separately gated future FS
+provisioning. Stage 1 changes the linker without physically reclaiming
+`0x100000..0x1FFFFF`; no filesystem is needed or mounted by audited profile 0.
+Default 4m3m, disabled native/FS writers and private MASTER custody preserved.
+Fresh clean-head candidate and exact-head CI are recorded in PR #42; public
+foundation build is distinct from the private P1/M8/P0 graphs. Firmware source
+unchanged. **Physical write HOLD; device contacts/writes 0.** Esptool's internal
+whole-write retry behavior needs a separate executor gate before future approval.
+Prior physical paragraphs below remain dated provenance, not new device reads.
+
 **Latest offline review, 2 October — PREPARED / NOT EXECUTED:** owner review
 #5949087791 authorizes offline investigation only. Retained approved BIN/ELF,
 P1 shadow, HomeLan loop, pinned parser/first Digest challenge and original

@@ -14,6 +14,18 @@
 
 ## Product contract — owner clarification, 1 October 2026
 
+**Mission 9 Phase B owner decision, 5 October 2026:** continue existing Draft
+PR #42 on `feature/shino-tv-m9-flash-layout-liberation` from exact clean
+`1c39e2ac791145be9ef79dc6d98fd70526614d7f`. Authorize offline source audit,
+first-migration design, print-only esptool command rendering, synthetic tests,
+fresh opt-in `esp12e_m9_4m2m` build and exact-head CI. Evaluate application-only
+activation at offset zero before separately gated future LittleFS provisioning.
+No device contact, serial access, write/erase/upload/reboot, filesystem
+mount/format or physical action. Keep default 4m3m and disabled FS/native OTA
+writers. Keep private MASTER and owner digest outside Git/CI. Physical write
+HOLD; Stage 2 requires separate exact-operation owner approval.
+See [first physical migration design](M09_FIRST_PHYSICAL_MIGRATION.md).
+
 **One 240×240 (1:1) scene at a time. No mixed music + four-metric screen as the final product.** The PR #40 combined-artwork/four-card mock-up is a working *offline renderer/receiver integration pilot*, not accepted final interaction design. All future reference previews must be actual independently rendered 240×240-pixel PNGs (album covers square and not stretched), not wide illustration panels merely labelled 240×240.
 
 | Scene / trigger | Display policy | Status |

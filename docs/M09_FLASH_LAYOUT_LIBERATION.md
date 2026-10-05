@@ -1,5 +1,10 @@
 # Mission 9 — SHINO Flash Layout Liberation
 
+**Phase B continuation, 5 October:** [first physical migration design](M09_FIRST_PHYSICAL_MIGRATION.md)
+selects application-only FS-less activation before separately gated future FS
+provisioning. The Phase A architecture and historical evidence below remain
+unchanged. Physical write HOLD; no device contacts/writes in Phase B.
+
 **Date:** 2026-10-05  
 **Status:** Phase A / OFFLINE ARCHITECTURE QUALIFICATION  
 **Physical device writes:** **0 — NOT AUTHORIZED by this mission state**  

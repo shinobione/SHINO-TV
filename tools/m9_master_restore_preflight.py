@@ -62,7 +62,9 @@ def inspect_master(path: Path, expected_sha256: str) -> dict:
                     all_same = False
                     break
 
-    if len(header) != 8 or header[0] != 0xE9 or not 1 <= header[1] <= 16:
+    if (len(header) != 8 or header[0] != 0xE9 or not 1 <= header[1] <= 16 or
+            header[2] not in range(4) or header[3] >> 4 != 4 or
+            (header[3] & 15) not in (0, 1, 2, 15)):
         raise MasterPreflightError(
             "No plausible ESP8266 boot image header at flash offset 0"
         )
@@ -92,6 +94,56 @@ def inspect_master(path: Path, expected_sha256: str) -> dict:
     }
 
 
+def restore_gate(path: Path, expected_sha256: str, *, confirmed_chip: str | None,
+                 confirmed_flash_bytes: int | None, owner_authorized: bool) -> dict:
+    """Offline validation of externally supplied evidence, never an executor.
+
+    An assertion here is not live target verification or new owner permission.
+    Physical restore stays HOLD until the separate exact-operation review.
+    """
+    report = inspect_master(path, expected_sha256)
+    if confirmed_chip != "esp8266":
+        raise MasterPreflightError("Confirmed same owner-unit ESP8266 target required")
+    if confirmed_flash_bytes != EXPECTED_BYTES:
+        raise MasterPreflightError("Confirmed 4 MiB physical flash required")
+    if owner_authorized is not True:
+        raise MasterPreflightError("Separate explicit exact-MASTER owner authorization required")
+    report.update({
+        "status": "OFFLINE_RESTORE_PREREQUISITES_PASS",
+        "confirmed_chip_externally_supplied": confirmed_chip,
+        "confirmed_flash_bytes_externally_supplied": confirmed_flash_bytes,
+        "owner_authorization_externally_asserted": True,
+        "authorization_to_restore": False,
+        "post_restore_full_readback_bytes_required": EXPECTED_BYTES,
+        "factory_recovery_successful": False,
+        "next_gate": "Exact-operation review, then full MASTER restore and byte/hash readback verification.",
+    })
+    return report
+
+
+def verify_readback(master: Path, readback: Path, expected_sha256: str) -> dict:
+    """Compare existing local files after a future separately authorized read."""
+    master_report = inspect_master(master, expected_sha256)
+    if master.resolve() == readback.resolve() or master.samefile(readback):
+        raise MasterPreflightError("Readback must be an independent file")
+    readback_report = inspect_master(readback, expected_sha256)
+    with master.open("rb") as original, readback.open("rb") as observed:
+        while True:
+            left, right = original.read(CHUNK), observed.read(CHUNK)
+            if left != right:
+                raise MasterPreflightError("Readback differs byte-for-byte from MASTER")
+            if not left:
+                break
+    return {
+        "status": "LOCAL_FULL_READBACK_VERIFICATION_PASS",
+        "bytes": EXPECTED_BYTES, "master_sha256": master_report["sha256"],
+        "readback_sha256": readback_report["sha256"], "byte_exact": True,
+        "serial_io_performed": False, "flash_write_performed": False,
+        "factory_runtime_recovery_proven": False,
+        "next_gate": "Owner verifies OEM boot identity/display after separate reboot authorization.",
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("master", type=Path, help="Private owner-unit 4 MiB MASTER")
@@ -100,9 +152,28 @@ def main() -> int:
         required=True,
         help="Digest copied from the owner's private custody record",
     )
+    parser.add_argument("--check-restore-gate", action="store_true")
+    parser.add_argument("--confirmed-chip", choices=["esp8266"])
+    parser.add_argument("--confirmed-flash-bytes", type=int)
+    parser.add_argument("--owner-authorized", action="store_true",
+                        help="External exact-operation consent assertion; does not grant permission")
+    parser.add_argument("--readback", type=Path,
+                        help="Independent existing full readback for local byte/hash verification")
     args = parser.parse_args()
     try:
-        report = inspect_master(args.master, args.expected_sha256)
+        if args.check_restore_gate and args.readback:
+            parser.error("Restore preflight and post-restore verification are separate gates")
+        if args.check_restore_gate:
+            report = restore_gate(args.master, args.expected_sha256,
+                                  confirmed_chip=args.confirmed_chip,
+                                  confirmed_flash_bytes=args.confirmed_flash_bytes,
+                                  owner_authorized=args.owner_authorized)
+        elif args.readback:
+            report = verify_readback(args.master, args.readback, args.expected_sha256)
+        else:
+            if args.confirmed_chip or args.confirmed_flash_bytes or args.owner_authorized:
+                parser.error("Target/consent assertions require --check-restore-gate")
+            report = inspect_master(args.master, args.expected_sha256)
     except (MasterPreflightError, OSError) as exc:
         parser.exit(1, f"MASTER RESTORE GATE CLOSED: {exc}\n")
     print(json.dumps(report, indent=2))

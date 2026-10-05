@@ -8,11 +8,16 @@ on:
       - 'recovery/**'
       - 'tools/m9_flash_layout.py'
       - 'tools/test_m9_flash_layout.py'
+      - 'tools/m9_first_migration.py'
+      - 'tools/m9_fsless_gate.py'
+      - 'tools/m9_master_restore_preflight.py'
+      - 'tools/test_m9_first_migration.py'
       - 'tools/verify_fs_provisioning.py'
       - 'tools/test_verify_fs_provisioning.py'
       - 'tools/verify_factory_ota.py'
       - 'tools/generate_shino_device_policy.py'
       - 'docs/M09_FLASH_LAYOUT_LIBERATION.md'
+      - 'docs/M09_FIRST_PHYSICAL_MIGRATION.md'
       - '.github/workflows/m9-flash-layout.yml'
   pull_request:
     paths:
@@ -20,11 +25,16 @@ on:
       - 'recovery/**'
       - 'tools/m9_flash_layout.py'
       - 'tools/test_m9_flash_layout.py'
+      - 'tools/m9_first_migration.py'
+      - 'tools/m9_fsless_gate.py'
+      - 'tools/m9_master_restore_preflight.py'
+      - 'tools/test_m9_first_migration.py'
       - 'tools/verify_fs_provisioning.py'
       - 'tools/test_verify_fs_provisioning.py'
       - 'tools/verify_factory_ota.py'
       - 'tools/generate_shino_device_policy.py'
       - 'docs/M09_FLASH_LAYOUT_LIBERATION.md'
+      - 'docs/M09_FIRST_PHYSICAL_MIGRATION.md'
       - '.github/workflows/m9-flash-layout.yml'
 
 permissions:
@@ -63,6 +73,9 @@ jobs:
       - name: Verify exact target geometry and unit tests
         run: |
           python -m unittest discover -s tools -p 'test_m9_flash_layout.py' -v
+          python -m unittest discover -s tools -p 'test_m9_first_migration.py' -v
+          python -m unittest discover -s tools -p 'test_first_boot_bridge_source.py' -v
+          python -m unittest discover -s tools -p 'test_fsless_dashboard_source.py' -v
           python -m unittest discover -s tools -p 'test_verify_fs_provisioning.py' -v
           python tools/m9_flash_layout.py > "${{ runner.temp }}/m9-layout.json"
           python - <<'PY'
@@ -101,6 +114,25 @@ jobs:
           pio run -d firmware -e esp12e_m9_4m2m
           cp firmware/.pio/build/esp12e_m9_4m2m/firmware.bin "${{ runner.temp }}/m9-candidate-4m2m.bin"
           test -s "${{ runner.temp }}/m9-candidate-4m2m.bin"
+
+      - name: Phase B FS-less source and linked candidate gate (no MASTER or device)
+        run: |
+          "$HOME/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-nm" -C firmware/.pio/build/esp12e_m9_4m2m/firmware.elf > "${{ runner.temp }}/m9-symbols.txt"
+          python tools/m9_fsless_gate.py --policy firmware/include/shino_private_policy.h --symbols "${{ runner.temp }}/m9-symbols.txt" > "${{ runner.temp }}/m9-fsless.json"
+          python tools/m9_first_migration.py "${{ runner.temp }}/m9-candidate-4m2m.bin" --render-commands > "${{ runner.temp }}/m9-first-migration.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"])
+          report = json.loads((root / "m9-first-migration.json").read_text())
+          assert report["sector_rounded_write_extent"] < 0x100000
+          assert report["physical_authorization"] is False
+          assert report["filesystem_write_performed"] is False
+          assert report["serial_io_performed"] is False
+          assert report["image_evidence"]["arduino_crc_valid"] is True
+          source = json.loads((root / "m9-fsless.json").read_text())
+          assert source["build"]["status"] == "PASS_FSLESS_POLICY_AND_LINKED_SYMBOLS"
+          PY
 
       - name: Build and verify fresh SHINO 4m2m LittleFS image offline
         run: |
@@ -150,7 +182,7 @@ jobs:
           assert baseline_to_candidate["candidate_passes"]
 
           safe = {
-              "head": os.environ["GITHUB_SHA"],
+              "head": os.environ["SOURCE_HEAD"],
               "device_contacts": 0,
               "device_writes": 0,
               "baseline_4m3m": {
@@ -184,6 +216,8 @@ jobs:
                   "Device contacts: **0** · device writes: **0** · physical migration: **HOLD**\n"
               )
           PY
+        env:
+          SOURCE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Upload safe numeric evidence only
         uses: actions/upload-artifact@v4
@@ -193,6 +227,8 @@ jobs:
             ${{ runner.temp }}/m9-layout.json
             ${{ runner.temp }}/m9-fs.json
             ${{ runner.temp }}/m9-build.json
+            ${{ runner.temp }}/m9-fsless.json
+            ${{ runner.temp }}/m9-first-migration.json
           if-no-files-found: error
 
       - name: Delete disposable credentials, binaries, filesystem and OEM reference
