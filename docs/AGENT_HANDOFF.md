@@ -1,6 +1,37 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+**Latest OFFLINE work — Mission 9 Phase H, 6 October 2026:**
+[Dedicated read-only LittleFS mount-probe qualification](M09_LITTLEFS_MOUNT_PROBE_QUALIFICATION.md)
+**PASS offline**; new explicit `esp12e_m9_4m2m_mount_probe` / profile **2**,
+4m2m, Core 3.1.2 / platform 4.2.1. Profile 0 startup/loop unchanged, default
+esp12e still 4m3m; profile 1 and unknown profiles compile-blocked. ConfigManager
+load/save duplicate mounts and credential migration/writes make the held normal
+path unsafe for this probe; profile 2 bypasses ConfigManager/SecureStorage/
+EEPROM/STA/OTA/FS writers. Single mount only after autoformat-disable success;
+read-only adapter denies mutation and physical prog/erase callbacks. All 24
+reviewed files / 181402 payload bytes streamed with 256 B buffer, exact lengths/
+SHA-256 and 85-byte canonical blank config. Per-file hashes are not raw FS hash.
+Private AP/Digest GET `/api/v1/m9/fs-probe/status`, serial 115200 and existing
+RAM telemetry reused; failure does not format/repair/retry/reboot-loop.
+
+Clean source freeze `5f3db19e29398ef6498b08b02de29cae48f9b59a`: LOCAL probe
+**407440 B**, SHA-256
+`ca92cc2f4a8a67f70bd305875bd37be90d0cdff74bf7b338339856407dceef8b`,
+linked flash **403283 B**, static RAM **40652 B +56 B .noinit** (+312 RAM vs
+paired baseline), future touched **0x000000..0x063FFF / 409600 B**. Candidate
+retained ignored, not installed/published; Stage-1/Stage-2 frozen files unchanged.
+**152 local tests PASS**, default/probe application builds and source/link/Core/
+image/resource gates PASS; exact-head CI recorded in Draft PR #42.
+**MOUNT_PROBE_PHYSICAL_GATE HOLD / NOT_RUN;
+NORMAL_PROFILE_LITTLEFS_MOUNT_GATE NOT_RUN;
+NORMAL_PROFILE_RUNTIME_GATE NOT_RUN.** Current physical state remains Phase G
+below: 399168 B FS-less app plus installed, unmounted LittleFS. Next gate is
+separately authorized physical mount-probe qualification, not full normal path.
+All six Phase H device-operation counters **0**. **STOP after H; do not touch
+SmallTV, flash probe, activate normal profile or merge.** Historical evidence
+below remains unchanged; no P1/M8/full-product promotion.
+
 **Latest owner-provided physical state — Mission 9 Phase G, 6 October 2026:**
 [Stage-2 physical evidence](M09_STAGE2_PHYSICAL_EVIDENCE.md) records the owner's
 completed operation after Phase F and before this documentation-only pass.

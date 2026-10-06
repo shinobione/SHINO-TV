@@ -33,6 +33,28 @@ NORMAL_PROFILE_LITTLEFS_MOUNT_GATE NOT_RUN;
 NORMAL_PROFILE_RUNTIME_GATE NOT_RUN.** STOP after Phase H; no physical probe
 installation, full normal-profile activation or merge.
 
+**Mission 9 Phase H offline result, 6 October 2026:**
+[Dedicated mount-probe qualification](M09_LITTLEFS_MOUNT_PROBE_QUALIFICATION.md)
+**PASS offline**, 152 local tests, ordinary default/probe application builds,
+source/manifest/Core/link/image/resource gates. Clean implementation freeze
+`5f3db19e29398ef6498b08b02de29cae48f9b59a`: LOCAL application **407440 B**, SHA-256
+`ca92cc2f4a8a67f70bd305875bd37be90d0cdff74bf7b338339856407dceef8b`,
+linked **403283 B**, static RAM **40652 B +56 B .noinit**, +312 static RAM vs
+paired baseline. Future app extent **0x000000..0x063FFF / 409600 B**; preserve
+**0x064000..0x1FFFFF**, all installed FS **0x200000..0x3F9FFF** and reserved
+tail **0x3FA000..0x3FFFFF** against fresh PRE before first boot. Profile 2
+streams all 24 reviewed payloads / 181402 B with 256 B buffer and exact blank
+config, after one autoformat-disabled mount; denied physical prog/erase callbacks
+back the read-only contract. ConfigManager/SecureStorage/STA/writers bypassed;
+profile 0 unchanged, profile 1 compile-blocked. AP/Digest status and RAM telemetry
+reused. Candidate retained locally, not flashed; frozen Stage-1/Stage-2 unchanged.
+**MOUNT_PROBE_PHYSICAL_GATE HOLD / NOT_RUN;
+NORMAL_PROFILE_LITTLEFS_MOUNT_GATE NOT_RUN;
+NORMAL_PROFILE_RUNTIME_GATE NOT_RUN.** Physical state remains Phase G below;
+next work is a separately authorized physical probe, not full-normal activation.
+All six Phase H device-operation counters **0**; exact-head CI recorded in
+Draft/open/unmerged PR #42. **STOP after H; no SmallTV contact, flash or merge.**
+
 **Mission 9 Phase G owner decision and physical evidence, 6 October 2026:**
 continue existing Draft/open/unmerged PR #42 from verified clean
 `f92b42deaa87e3df7b6204f1010886a8ed343043` on

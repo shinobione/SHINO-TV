@@ -1,5 +1,23 @@
 # Mission 9 Phase G — Stage-2 physical evidence record
 
+**Phase H OFFLINE continuation, 6 October 2026:**
+[Dedicated mount-probe qualification](M09_LITTLEFS_MOUNT_PROBE_QUALIFICATION.md)
+PASS for profile **2** opt-in source/build/host/link/resource evidence only.
+Profile 0 unchanged, profile 1 remains prohibited; no full-normal activation.
+LOCAL probe **407440 B**, SHA-256
+`ca92cc2f4a8a67f70bd305875bd37be90d0cdff74bf7b338339856407dceef8b`,
+future application touched extent **0x000000..0x063FFF / 409600 B**, protecting
+all bytes from **0x064000** onward. Single mount with autoformat disabled,
+read-only callbacks, all 24 file payloads streamed/validated, ConfigManager/
+SecureStorage/STA/writers bypassed. **MOUNT_PROBE_PHYSICAL_GATE HOLD / NOT_RUN;
+NORMAL_PROFILE_LITTLEFS_MOUNT_GATE NOT_RUN;
+NORMAL_PROFILE_RUNTIME_GATE NOT_RUN.** Current app remains **399168 B FS-less**;
+the physically installed FS range/hash and owner-provided Phase G evidence below
+are unchanged. No probe was installed or device contacted. All Phase H action
+counters **0**, PR #42 Draft/open/unmerged. **STOP after H; no probe flash or
+normal-profile activation.** This supersedes the next-work plan only; it does
+not rewrite or add physical evidence to this historical Stage-2 receipt.
+
 **6 October 2026 — OWNER-PROVIDED PHYSICAL EVIDENCE.** The owner performed the
 physical Stage-2 operation after Phase F and **before this documentation-only
 pass**. This document records the supplied sanitized observations; the agent

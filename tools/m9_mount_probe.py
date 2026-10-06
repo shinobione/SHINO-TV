@@ -117,12 +117,13 @@ def future_packet() -> dict:
             "application_target":0, "steps":[
                 "Fresh same-unit full 4 MiB PRE-PROBE; private rollback authority verified",
                 "Exact application hash/link/policy; retained FS frozen raw-image slice verified",
-                '# NOT AUTHORIZED BY PHASE H: <PINNED_PYTHON> -m esptool --chip esp8266 --port "<PORT>" --baud 115200 --before no-reset --after no-reset-stub --connect-attempts 1 write-flash --flash-mode keep --flash-freq keep --flash-size keep --no-compress 0x000000 "<EXACT_PROBE_BIN>"',
+                '# NOT AUTHORIZED BY PHASE H: <PINNED_PYTHON> -m esptool --chip esp8266 --port "<PORT>" --baud 115200 --stub-version 2 --before no-reset --after no-reset-stub --connect-attempts 1 write-flash --flash-mode keep --flash-freq keep --flash-size keep --no-compress 0x000000 "<EXACT_PROBE_BIN>"',
                 "Full POST-PROBE before boot: payload exact; rounded extent..0x1FFFFF equals PRE",
                 "POST[0x200000:0x3FA000] == PRE[0x200000:0x3FA000] == retained frozen FS",
                 "POST[0x3FA000:0x400000] == PRE[0x3FA000:0x400000]",
                 "Powered RTC 0/0 physically verified; GPIO0 release then existing RST",
                 "Future mount/inventory/config/no-write/status/heap/180s/stale-recovery gates"],
+            "esptool_version_required":"5.4.0", "stub_version_required":2,
             "internal_executor_retry_gate_required":True, "automatic_rollback":False,
             "normal_profile_mount_gate":"NOT_RUN", "normal_profile_runtime_gate":"NOT_RUN"}
 

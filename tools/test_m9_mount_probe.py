@@ -2,11 +2,14 @@
 import ast
 import hashlib
 import json
+import runpy
 from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+import types
 import unittest
+from unittest.mock import patch
 from m9_mount_probe import ROOT, manifest_header, source_gate, future_packet, build_gate
 from m9_first_migration import application_extent
 
@@ -81,12 +84,24 @@ class SourceTests(unittest.TestCase):
         self.assertFalse(packet['automatic_rollback'])
         self.assertIn('NOT AUTHORIZED BY PHASE H',text)
         self.assertIn('<PORT>',text);self.assertNotIn('erase-all',text)
+        self.assertIn('--stub-version 2',text)
         self.assertIn('POST[0x200000:0x3FA000]',text)
         tree=ast.parse((ROOT/'tools/m9_mount_probe.py').read_text())
         for node in ast.walk(tree):
             if isinstance(node,ast.Import):
                 self.assertFalse({'subprocess','serial','esptool','socket','requests'} &
                                  {x.name for x in node.names})
+
+    def test_probe_build_target_gate_executes_before_any_fs_or_device_target(self):
+        script=ROOT/'firmware/scripts/m9_mount_probe_gate.py'
+        env=type('Env',(),{'subst':lambda self,_:'esp12e_m9_4m2m_mount_probe'})()
+        for target in ('upload','uploadfs','buildfs','erase','program','upload-custom','buildprog'):
+            module=types.ModuleType('SCons.Script')
+            module.COMMAND_LINE_TARGETS=[target];module.Import=lambda _:None
+            with self.subTest(target=target),patch.dict('sys.modules',{'SCons':types.ModuleType('SCons'),'SCons.Script':module}):
+                if target=='buildprog':runpy.run_path(str(script),init_globals={'env':env})
+                else:
+                    with self.assertRaises(RuntimeError):runpy.run_path(str(script),init_globals={'env':env})
 
     def test_application_extents_cannot_overlap_fs(self):
         self.assertEqual(application_extent(1044464),0xFF000)
