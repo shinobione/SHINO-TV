@@ -14,6 +14,28 @@
 
 ## Product contract — owner clarification, 1 October 2026
 
+**Mission 9 Phase J owner decision, 6 October 2026:** continue existing
+Draft/open/unmerged PR #42 from clean
+`9029df6cb40b0f3714fead05247c1411226dfde6` on the existing Mission 9 branch.
+Authorize one OFFLINE instrumented profile-2 successor, deterministic tests,
+default/uninstrumented/instrumented application builds, pinned Core/source/link/
+image/resource qualification, documentation, commit/push and exact-head CI.
+Use a separate explicit resource environment/flag; preserve the existing probe's
+mount/inventory/blank-config/read-only adapter, telemetry/authentication and all
+ConfigManager/SecureStorage/EEPROM/STA/OTA/FS-writer exclusions. Keep profile 0
+and defaults unchanged; profile 1 prohibited. Two explicit continuation-stack
+watermark windows (mount, runtime); no runtime reset, timer/ISR or HTTP-handler
+resource sampling. Keep scalar observation and response buffers bounded.
+Audit applicable existing physical thresholds; do not invent a passing floor.
+**MOUNT_PROBE_PHYSICAL_GATE PARTIAL / HOLD;
+MOUNT_PROBE_RESOURCE_PHYSICAL_GATE HOLD / NOT_RUN;
+NORMAL_PROFILE_LITTLEFS_MOUNT_GATE NOT_RUN;
+NORMAL_PROFILE_RUNTIME_GATE NOT_RUN.** No SmallTV contact, serial, flash/RTC/FS
+operation, reboot, installation, full normal-profile activation or merge.
+Future physical packet is PRINT ONLY, separately authorized; stop after J.
+Phase I physical evidence below remains exact dated history and current installed
+candidate identity; no reconstruction/replacement of that frozen candidate.
+
 **Mission 9 Phase I owner decision, 6 October 2026:** continue existing
 Draft/open/unmerged PR #42 from clean
 `5ea433b2e72455a93c0a8fca80903c8c8acffbd4` on the existing Mission 9 branch.

@@ -39,6 +39,7 @@
 #include "boot/ShinoBootProfile.h"
 #if SHINO_BOOT_PROFILE == 2
 #include "boot/M9LittleFsMountProbe.h"
+#include "boot/M9MountProbeResources.h"
 #endif
 #include <array>
 
@@ -132,7 +133,13 @@ void setup() {
     return;
 #elif SHINO_BOOT_PROFILE == 2
     FirstBootBridge::run(); // Protected AP/LCD remains available on probe failure.
+#if SHINO_M9_MOUNT_PROBE_RESOURCE_DIAGNOSTICS == 1
+    M9MountProbeResources::beforeMount();
+#endif
     M9LittleFsMountProbe::begin();
+#if SHINO_M9_MOUNT_PROBE_RESOURCE_DIAGNOSTICS == 1
+    M9MountProbeResources::afterMount();
+#endif
     EspClass::wdtEnable(WDTO_2S);
     return;
 #else
@@ -246,6 +253,9 @@ void loop() {
 #elif SHINO_BOOT_PROFILE == 2
     FirstBootBridge::loop();
     M9LittleFsMountProbe::poll();
+#if SHINO_M9_MOUNT_PROBE_RESOURCE_DIAGNOSTICS == 1
+    M9MountProbeResources::poll(); // Only at the end of the normal profile-2 loop.
+#endif
     return;
 #else
     if (RescueMode::isActive()) {

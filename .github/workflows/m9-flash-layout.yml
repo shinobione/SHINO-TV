@@ -26,6 +26,11 @@ on:
       - 'tools/m9_mount_probe.py'
       - 'tools/m9_mount_probe_sources.json'
       - 'tools/test_m9_mount_probe.py'
+      - 'tools/m9_mount_probe_resources.py'
+      - 'tools/test_m9_mount_probe_resources.py'
+      - 'tools/m9_resource_baseline_sources.json'
+      - 'tools/m9_resource_core_sources.json'
+      - 'docs/M09_MOUNT_PROBE_RESOURCE_INSTRUMENTATION.md'
       - 'docs/M09_LITTLEFS_MOUNT_PROBE_QUALIFICATION.md'
       - 'docs/M09_STAGE2_LITTLEFS_QUALIFICATION.md'
       - 'docs/M09_RTC_EBOOT_NEUTRALIZATION.md'
@@ -148,6 +153,7 @@ jobs:
           python -m unittest discover -s tools -p 'test_m9_rtc_neutralization.py' -v
           python -m unittest discover -s tools -p 'test_m9_stage2.py' -v
           python -m unittest discover -s tools -p 'test_m9_mount_probe.py' -v
+          python -m unittest discover -s tools -p 'test_m9_mount_probe_resources.py' -v
           python -m unittest discover -s tools -p 'test_first_boot_bridge_source.py' -v
           python -m unittest discover -s tools -p 'test_fsless_dashboard_source.py' -v
           python -m unittest discover -s tools -p 'test_verify_fs_provisioning.py' -v
@@ -365,6 +371,33 @@ jobs:
           assert not report["physical_authorization"] and report["device_contacts"] == 0
           assert report["physical_gate"] == "HOLD / NOT_RUN"
           PY
+          cp firmware/.pio/build/esp12e_m9_4m2m_mount_probe/firmware.bin "${{ runner.temp }}/m9-uninstrumented-probe.bin"
+          cp -R firmware/.pio/build/esp12e_m9_4m2m_mount_probe/src "${{ runner.temp }}/m9-uninstrumented-stack"
+
+      - name: Phase J separate instrumented probe and paired resource gate (no device)
+        run: |
+          pio run -d firmware -e esp12e_m9_4m2m_mount_probe_resources
+          "$HOME/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-nm" -C firmware/.pio/build/esp12e_m9_4m2m_mount_probe_resources/firmware.elf > "${{ runner.temp }}/m9-resource-symbols.txt"
+          "$HOME/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-size" -A firmware/.pio/build/esp12e_m9_4m2m_mount_probe_resources/firmware.elf > "${{ runner.temp }}/m9-resource-sections.txt"
+          python tools/m9_mount_probe_resources.py \
+            --core-root "$HOME/.platformio/packages/framework-arduinoespressif8266" \
+            --symbols "${{ runner.temp }}/m9-resource-symbols.txt" \
+            --candidate firmware/.pio/build/esp12e_m9_4m2m_mount_probe_resources/firmware.bin \
+            --baseline-sections "${{ runner.temp }}/m9-probe-sections.txt" \
+            --instrumented-sections "${{ runner.temp }}/m9-resource-sections.txt" \
+            --baseline-stack "${{ runner.temp }}/m9-uninstrumented-stack" \
+            --instrumented-stack firmware/.pio/build/esp12e_m9_4m2m_mount_probe_resources/src > "${{ runner.temp }}/m9-mount-probe-resources.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          r=json.loads((Path(os.environ["RUNNER_TEMP"])/"m9-mount-probe-resources.json").read_text())
+          assert r["PHASE_J_RESOURCE_INSTRUMENTATION_SOURCE_GATE"] == r["paired_build"]["PHASE_J_RESOURCE_INSTRUMENTATION_BUILD_GATE"] == "PASS/OFFLINE"
+          assert r["MOUNT_PROBE_PHYSICAL_GATE"] == "PARTIAL / HOLD"
+          assert r["MOUNT_PROBE_RESOURCE_PHYSICAL_GATE"] == "HOLD / NOT_RUN"
+          assert r["PHYSICAL_RESOURCE_THRESHOLD"] == "REVIEW_REQUIRED"
+          assert not r["physical_authorization"] and r["device_contacts"] == r["device_writes"] == 0
+          assert r["image"]["sector_rounded_write_extent"] < 0x100000
+          PY
 
       - name: Upload safe numeric evidence only
         uses: actions/upload-artifact@v4
@@ -379,6 +412,7 @@ jobs:
             ${{ runner.temp }}/m9-stage2-source.json
             ${{ runner.temp }}/m9-stage2-package.json
             ${{ runner.temp }}/m9-mount-probe.json
+            ${{ runner.temp }}/m9-mount-probe-resources.json
           if-no-files-found: error
 
       - name: Delete disposable credentials, binaries, filesystem and OEM reference
@@ -387,6 +421,8 @@ jobs:
           rm -f firmware/include/shino_private_policy.h
           rm -f "${{ runner.temp }}/m9-baseline-4m3m.bin" "${{ runner.temp }}/m9-candidate-4m2m.bin"
           rm -f "${{ runner.temp }}/m9-stage2-ephemeral.bin"
+          rm -f "${{ runner.temp }}/m9-uninstrumented-probe.bin"
+          rm -rf "${{ runner.temp }}/m9-uninstrumented-stack"
           rm -rf "${{ runner.temp }}/m9-stage2-data" "${{ runner.temp }}/m9-stage2-stub-audit"
           rm -rf firmware/private firmware/.pio reference-geekmagic
           rm -rf reference-m9-stub reference-m9-stub-lib

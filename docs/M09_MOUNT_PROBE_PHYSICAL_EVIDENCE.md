@@ -1,5 +1,17 @@
 # Mission 9 Phase I — physical LittleFS mount-probe evidence
 
+**Phase J OFFLINE continuation, 6 October 2026:**
+[Separate resource-instrumented successor](M09_MOUNT_PROBE_RESOURCE_INSTRUMENTATION.md)
+adds observability only in a new opt-in profile-2 environment. No FS/inventory/
+telemetry/authentication behavior change or new physical evidence. The original
+installed **407440 B** candidate and all supplied Phase I evidence below remain
+unchanged. **MOUNT_PROBE_PHYSICAL_GATE PARTIAL / HOLD;
+MOUNT_PROBE_RESOURCE_PHYSICAL_GATE HOLD / NOT_RUN; both normal-profile gates
+NOT_RUN; PHYSICAL_RESOURCE_THRESHOLD REVIEW_REQUIRED.** Clean successor build
+freeze pending at the J implementation checkpoint. Six J device counters **0**.
+No permission to flash/reboot/modify the current unit, activate normal profile
+or merge; this banner changes next-work status only, preserving the dated receipt.
+
 **6 October 2026 — OWNER-PROVIDED PHYSICAL EVIDENCE; DOCUMENTATION ONLY.**
 The owner performed the supplied physical run after Phase H and before this
 documentation pass. The agent records the sanitized results without contacting

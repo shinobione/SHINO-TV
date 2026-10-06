@@ -19,7 +19,7 @@ NATIVE_PUMP=ROOT/"firmware/src/boot/NativeOtaDevicePumpCompileProbe.cpp"
 def probe_route_block(source):
     """Fail closed on the sole audited opt-in route; never widen legacy parity."""
     blocks=re.findall(r'^#if SHINO_BOOT_PROFILE == 2\n'
-                      r'(    server\.on\("/api/v1/m9/fs-probe/status",.*?\n)'
+                      r'(    server\.on\("/api/v1/m9/fs-probe/status",.*?^    \}\);\n)'
                       r'#endif\n',source,re.M|re.S)
     assert len(blocks)==1,"Probe route must have its own exact profile-2 guard"
     body=blocks[0]

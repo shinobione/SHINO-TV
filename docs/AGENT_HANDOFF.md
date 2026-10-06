@@ -1,6 +1,26 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+**Latest OFFLINE work — Mission 9 Phase J, 6 October 2026:**
+[Separate instrumented profile-2 observer](M09_MOUNT_PROBE_RESOURCE_INSTRUMENTATION.md)
+adds read-only heap/largest-block/fragmentation/continuation-watermark evidence
+under explicit `esp12e_m9_4m2m_mount_probe_resources` /
+`SHINO_M9_MOUNT_PROBE_RESOURCE_DIAGNOSTICS=1`. Original profile 0/default and
+uninstrumented probe semantics pinned unchanged; profile 1 remains blocked.
+Two mount/runtime watermark windows; at most one loop-end sample per second,
+no runtime reset or HTTP/FS-callback sampler. Cached scalar JSON retains Digest
+and uses two prevalidated 768-byte chunks, exact maximum body 1157 B.
+Source/Core/regression checks PASS offline; clean paired candidate freeze/build
+receipt pending at this implementation checkpoint. Threshold audit:
+**PHYSICAL_RESOURCE_THRESHOLD REVIEW_REQUIRED**; M8 observations/media budgets
+are not M9 physical floors. **MOUNT_PROBE_PHYSICAL_GATE PARTIAL / HOLD;
+MOUNT_PROBE_RESOURCE_PHYSICAL_GATE HOLD / NOT_RUN; both normal-profile gates
+NOT_RUN.** Current installed unit remains the owner-reported Phase I H candidate
+below. No successor installation, device operation or physical promotion.
+All six J device counters **0**; PR #42 Draft/open/unmerged. STOP after J;
+no flash/reboot/current-unit modification, normal-profile activation or merge.
+Original Phase I receipt and older dated evidence below remain unchanged.
+
 **Latest owner-provided physical state — Mission 9 Phase I, 6 October 2026:**
 [Mount-probe physical receipt](M09_MOUNT_PROBE_PHYSICAL_EVIDENCE.md) records the
 owner-performed run after H, before this documentation-only pass. Exact H

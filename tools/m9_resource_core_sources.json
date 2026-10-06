@@ -1,0 +1,10 @@
+{
+  "cores/esp8266/Esp-frag.cpp": "9516a828a8ce32b773d70f5e93d8672caeb8f925cd71530a6526bf038a76c3b1",
+  "cores/esp8266/Esp.cpp": "2b6dc6631fd9e0bdfb7c4bf39aa6e4fa90c3b3482af26130b564c9a8bf4075ac",
+  "cores/esp8266/Esp.h": "3db5193be6b6a2b1c3256cbc6ef4b228f8525491ca1781e3f43c36b08abdd41f",
+  "cores/esp8266/cont.h": "30fbb1720956b3f2bb4a91312f1d4322f7825a007cfc8c5bde6d123b9181676e",
+  "cores/esp8266/cont_util.cpp": "8d49c9f5dbffa2755bc5abb1d62c3719f77e9a6e863066237cf16f840f68eba8",
+  "cores/esp8266/umm_malloc/umm_malloc_cfg.h": "af2622c05d57a4bf301a6006537c8dfbe0c6419367087cd6f8d860c2f666b0a3",
+  "libraries/ESP8266WebServer/src/ESP8266WebServer-impl.h": "19934c7352eea30acb6d30ab6314d1b794fa5311d88fd3cdc7edaa6cdb7bb150",
+  "libraries/ESP8266WebServer/src/ESP8266WebServer.h": "167b098fa4f964fc92ae9b89d531a69e3984561d4ca0729ab857f8f36d52dd67"
+}

@@ -18,3 +18,12 @@
 #if defined(SHINO_M9_MOUNT_PROBE) && SHINO_BOOT_PROFILE != 2
 #error "Mission-9 mount-probe environment requires profile 2."
 #endif
+#ifndef SHINO_M9_MOUNT_PROBE_RESOURCE_DIAGNOSTICS
+#define SHINO_M9_MOUNT_PROBE_RESOURCE_DIAGNOSTICS 0
+#endif
+#if SHINO_M9_MOUNT_PROBE_RESOURCE_DIAGNOSTICS != 0 && SHINO_M9_MOUNT_PROBE_RESOURCE_DIAGNOSTICS != 1
+#error "Unknown Mission-9 resource diagnostics policy."
+#endif
+#if SHINO_M9_MOUNT_PROBE_RESOURCE_DIAGNOSTICS == 1 && SHINO_BOOT_PROFILE != 2
+#error "Resource diagnostics require the explicit profile-2 mount-probe environment."
+#endif

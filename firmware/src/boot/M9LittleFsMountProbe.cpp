@@ -169,7 +169,9 @@ void begin() {
 void poll() { observeHeap(); }
 const LittleFsMountProbeStatus& status() { return result; }
 bool json(char* output, size_t capacity) {
+#if SHINO_M9_MOUNT_PROBE_RESOURCE_DIAGNOSTICS == 0
     observeHeap();
+#endif
     const int length = snprintf(output, capacity,
         "{\"attempted\":%s,\"autoformat_disabled\":%s,\"mounted\":%s,"
         "\"inventory_checked\":%s,\"inventory_exact\":%s,\"checked_file_count\":%u,"

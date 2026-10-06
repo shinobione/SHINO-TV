@@ -94,7 +94,8 @@ class SourceTests(unittest.TestCase):
 
     def test_probe_build_target_gate_executes_before_any_fs_or_device_target(self):
         script=ROOT/'firmware/scripts/m9_mount_probe_gate.py'
-        env=type('Env',(),{'subst':lambda self,_:'esp12e_m9_4m2m_mount_probe'})()
+        env=type('Env',(),{'subst':lambda self,_:'esp12e_m9_4m2m_mount_probe',
+                          'GetProjectOption':lambda self,_:[]})()
         for target in ('upload','uploadfs','buildfs','erase','program','upload-custom','buildprog'):
             module=types.ModuleType('SCons.Script')
             module.COMMAND_LINE_TARGETS=[target];module.Import=lambda _:None

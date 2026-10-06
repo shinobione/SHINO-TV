@@ -44,6 +44,7 @@ static_assert(SHINO_ENABLE_HEAP_DIAGNOSTICS == 0 ||
 #include "boot/ShinoBootProfile.h"
 #if SHINO_BOOT_PROFILE == 2
 #include "boot/M9LittleFsMountProbe.h"
+#include "boot/M9MountProbeResources.h"
 static_assert(SHINO_ENABLE_HOME_LAN == 0 && SHINO_ENABLE_FACTORY_RESTORE == 0,
               "Mount probe forbids STA and every OTA writer.");
 #endif
@@ -491,12 +492,17 @@ void run() {
 #if SHINO_BOOT_PROFILE == 2
     server.on("/api/v1/m9/fs-probe/status", HTTP_GET, []() {
         if (!requireAuth()) return; // Cookie-only access is not sufficient.
+#if SHINO_M9_MOUNT_PROBE_RESOURCE_DIAGNOSTICS == 1
+        if (!M9MountProbeResources::sendStatus(server))
+            respond(500, F("{\"error\":\"PROBE_STATUS_OVERFLOW\"}"));
+#else
         char body[M9LittleFsMountProbe::STATUS_JSON_BYTES];
         if (!M9LittleFsMountProbe::json(body, sizeof(body))) {
             respond(500, F("{\"error\":\"PROBE_STATUS_OVERFLOW\"}"));
             return;
         }
         respond(200, body);
+#endif
     });
 #endif
     server.on("/api/v1/bridge/fs-plan", HTTP_GET, sendFsPlan);
