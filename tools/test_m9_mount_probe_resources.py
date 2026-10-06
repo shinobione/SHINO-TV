@@ -49,7 +49,8 @@ class SourceTests(unittest.TestCase):
         self.assertEqual(report['MOUNT_PROBE_PHYSICAL_GATE'],'PARTIAL / HOLD')
 
     def test_boundary_cadence_and_writer_mutations_fail_gate(self):
-        pins=json.loads((ROOT/'tools/m9_resource_baseline_sources.json').read_text())
+        from m9_mount_stack import baseline_sources
+        pins=baseline_sources()
         paths=set(pins['sha256_lf'])|{
             'firmware/platformio.ini','firmware/include/boot/ShinoBootProfile.h',
             'firmware/include/boot/HomeLan.h','firmware/src/config/ConfigManager.cpp',
@@ -75,7 +76,8 @@ class SourceTests(unittest.TestCase):
 
     def test_original_read_only_begin_inventory_and_telemetry_pinned(self):
         from m9_mount_probe_resources import uninstrumented_source
-        pins=json.loads((ROOT/'tools/m9_resource_baseline_sources.json').read_text())
+        from m9_mount_stack import baseline_sources
+        pins=baseline_sources()
         import hashlib
         for path,expected in pins['sha256_lf'].items():
             restored=uninstrumented_source(path,(ROOT/path).read_text(encoding='utf-8'))

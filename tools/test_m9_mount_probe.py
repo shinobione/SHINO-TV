@@ -188,24 +188,24 @@ int main(){
     Hash reference;reference.begin();reference.update(payload.data(),payload.size());uint8_t expected[32];reference.end(expected);
     auto seed=[](uint32_t,const uint8_t*,size_t){return true;};
     for(size_t quantum : {size_t(1),size_t(7),size_t(256)}) {
-        Reader reader{payload,0,quantum,0};Hash hash;uint32_t checked=0;size_t samples=0;
+        Reader reader{payload,0,quantum,0};M9ProbeStream::Workspace<Hash> hash;uint32_t checked=0;size_t samples=0;
         assert(M9ProbeStream::validate(reader,8193,expected,hash,seed,[&](){++samples;},checked));
         assert(checked==8193 && samples>0);
     }
     for(int fault=0;fault<7;++fault){
-        Reader reader{payload,0,256,0};Hash hash;uint32_t checked=0;
+        Reader reader{payload,0,256,0};M9ProbeStream::Workspace<Hash> hash;uint32_t checked=0;
         if(fault<3)reader.fault=fault+1;
         if(fault==3)reader.bytes.pop_back();
         if(fault==4)reader.bytes.push_back(0);
         if(fault==5)reader.bytes[0]^=1;
         auto seedCheck=[fault](uint32_t,const uint8_t*,size_t){return fault!=6;};
-        assert(!M9ProbeStream::validate(reader,8193,expected,hash,seedCheck,[](){},checked));assert(checked==0);
+        assert(!M9ProbeStream::validate(reader,8193,expected,hash,seedCheck,[](){},checked));assert(checked==0 && !hash.active);
     }
     const uint8_t canonical[]={0,1,2,3};Hash h;h.begin();h.update(canonical,4);h.end(expected);
     for(bool corrupt : {false,true}){
         Reader reader{{0,1,2,3},0,1,0};if(corrupt)reader.bytes[2]=9;
         auto exactSeed=[&](uint32_t off,const uint8_t* p,size_t n){return std::memcmp(p,canonical+off,n)==0;};
-        uint32_t checked=0;Hash hash;
+        uint32_t checked=0;M9ProbeStream::Workspace<Hash> hash;
         assert(M9ProbeStream::validate(reader,4,expected,hash,exactSeed,[](){},checked)==!corrupt);
     }
 }

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Phase K source/version qualification only; no candidate build or device operation."""
 import argparse
-import hashlib
 import json
 from pathlib import Path
 from m9_mount_probe_resources import ROOT, source_gate
@@ -12,14 +11,14 @@ from m9_single_attempt_app_write import load_pinned_esptool, candidate
 def qualify(stub_audit_root: Path, image: Path | None = None, expected: str | None = None) -> dict:
     source_gate()  # Original probe/J scope and instrumentation are still intact.
     manifest=json.loads((ROOT/'tools/m9_phase_k_sources.json').read_text(encoding='utf-8'))
-    for name,digest in manifest['firmware_sha256_lf'].items():
-        actual=hashlib.sha256((ROOT/name).read_bytes().replace(b'\r\n',b'\n')).hexdigest()
-        if actual!=digest:raise ValueError('Phase K forbids firmware change: '+name)
+    from m9_mount_stack import source_audit
+    firmware=source_audit()  # Only two separately pinned workspace successors;
+    # historical K firmware/candidate manifest remains unchanged on disk.
     _,sources=load_pinned_esptool(stub_audit_root)
     report={'PHASE_K_RESOURCE_POLICY_GATE':'PASS/OFFLINE',
             'PHASE_K_SINGLE_ATTEMPT_EXECUTOR_GATE':'PASS/OFFLINE',
             'policy':policy(), 'source_audit':sources,
-            'firmware_files_unchanged':len(manifest['firmware_sha256_lf']),
+            **firmware,
             'candidate':manifest['candidate'],
             'PHASE_K_FROZEN_CANDIDATE_IDENTITY_GATE':'NOT_READ_BY_THIS_RUN',
             'MOUNT_PROBE_RESOURCE_PHYSICAL_GATE':'HOLD / NOT_RUN',

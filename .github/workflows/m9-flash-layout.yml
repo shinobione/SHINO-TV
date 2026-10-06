@@ -24,6 +24,10 @@ on:
       - 'tools/m9_stage2_sources.json'
       - 'tools/test_m9_stage2.py'
       - 'tools/m9_mount_probe.py'
+      - 'tools/m9_mount_stack.py'
+      - 'tools/m9_mount_stack_sources.json'
+      - 'tools/test_m9_mount_stack.py'
+      - 'docs/M09_MOUNT_STACK_REMEDIATION.md'
       - 'tools/m9_mount_probe_sources.json'
       - 'tools/test_m9_mount_probe.py'
       - 'tools/m9_mount_probe_resources.py'
@@ -65,6 +69,10 @@ on:
       - 'tools/m9_stage2_sources.json'
       - 'tools/test_m9_stage2.py'
       - 'tools/m9_mount_probe.py'
+      - 'tools/m9_mount_stack.py'
+      - 'tools/m9_mount_stack_sources.json'
+      - 'tools/test_m9_mount_stack.py'
+      - 'docs/M09_MOUNT_STACK_REMEDIATION.md'
       - 'tools/m9_mount_probe_sources.json'
       - 'tools/test_m9_mount_probe.py'
       - 'docs/M09_LITTLEFS_MOUNT_PROBE_QUALIFICATION.md'
@@ -154,6 +162,7 @@ jobs:
           python -m unittest discover -s tools -p 'test_m9_stage2.py' -v
           python -m unittest discover -s tools -p 'test_m9_mount_probe.py' -v
           python -m unittest discover -s tools -p 'test_m9_mount_probe_resources.py' -v
+          python -m unittest discover -s tools -p 'test_m9_mount_stack.py' -v
           python -m unittest discover -s tools -p 'test_first_boot_bridge_source.py' -v
           python -m unittest discover -s tools -p 'test_fsless_dashboard_source.py' -v
           python -m unittest discover -s tools -p 'test_verify_fs_provisioning.py' -v
@@ -398,12 +407,17 @@ jobs:
           assert not r["physical_authorization"] and r["device_contacts"] == r["device_writes"] == 0
           assert r["image"]["sector_rounded_write_extent"] < 0x100000
           PY
+          "$HOME/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-nm" -C -S firmware/.pio/build/esp12e_m9_4m2m_mount_probe_resources/firmware.elf > "${{ runner.temp }}/m9-mount-stack-symbols.txt"
+          python tools/m9_mount_stack.py \
+            --stack firmware/.pio/build/esp12e_m9_4m2m_mount_probe_resources/src \
+            --symbols "${{ runner.temp }}/m9-mount-stack-symbols.txt" > "${{ runner.temp }}/m9-mount-stack.json"
 
       - name: Upload safe numeric evidence only
         uses: actions/upload-artifact@v4
         with:
           name: m9-offline-layout-evidence-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
+            ${{ runner.temp }}/m9-mount-stack.json
             ${{ runner.temp }}/m9-layout.json
             ${{ runner.temp }}/m9-fs.json
             ${{ runner.temp }}/m9-build.json

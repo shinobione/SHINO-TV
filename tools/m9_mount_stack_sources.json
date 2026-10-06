@@ -1,0 +1,20 @@
+{
+  "predecessor_frames_bytes": {
+    "begin": 272,
+    "checkPayloads": 576
+  },
+  "predecessor_source_head": "96c5804f5435a71fc1e3cd7b04004af438a650ac",
+  "successor_sha256_lf": {
+    "firmware/include/boot/M9ProbeStream.h": "2146268bd3a2d20d8d1a1886c1361a67e351988535e393d90daf2f4fda63d658",
+    "firmware/src/boot/M9LittleFsMountProbe.cpp": "23e9d0248ed9e306c58750d286b681f6aca4b58ad6128be0865fea59bed1487e"
+  },
+  "unchanged_tool_sha256_lf": {
+    "tools/m9_resource_policy.py": "b7d0c5a72afa5c856e3f013eab3499068ae8b07759fad36305c07258fd1c2c03",
+    "tools/m9_single_attempt_app_write.py": "637ead423abc2b509bda6fd198922f08011dc0f48ebd5a1830be1d3922df6ea6",
+    "tools/m9_single_attempt_physical_runner.py": "861733eddbbac3ffa2a89b9a5fbdc53e06408ad8ab751d159866996c1c0e43be"
+  },
+  "uninstrumented_successor_sha256_lf": {
+    "firmware/include/boot/M9ProbeStream.h": "2146268bd3a2d20d8d1a1886c1361a67e351988535e393d90daf2f4fda63d658",
+    "firmware/src/boot/M9LittleFsMountProbe.cpp": "5a0ae17d2327000ff4f926cb74a7b5c72c194a0f2a97a4811f4b4e9dac20b98c"
+  }
+}

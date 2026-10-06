@@ -1,7 +1,27 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
-**Latest OFFLINE work — small Phase M compatibility addendum, 7 October 2026:**
+**Active owner physical update and OFFLINE mount-stack remediation, 7 October 2026:**
+[Focused mount-stack receipt](M09_MOUNT_STACK_REMEDIATION.md). Owner reports
+exact411136-byte J candidate2ce2fa8d...e5a835 installed/booted, no-autoformat
+mount/inventory/config exact,24 files/181402 bytes, zero blocked writes/rejected
+samples. Resource samples valid; mount continuation1776 B **FAILS** unchanged
+2048 B floor by272 B; runtime3296 B passes. Physical resource gate **HOLD**;
+do not retain prior NOT_RUN as today's owner-reported installation status or
+reinterpret1776 as PASS. Normal-profile gates remain NOT_RUN.
+Offline remediation moves256-byte buffer/SHA context/32-byte digest into one
+408-byte profile2 BSS workspace with synchronous reentry rejection. Only two
+firmware sources change,101 remain pinned unchanged; J/K historical source
+manifests and retained installed BIN stay intact. M physical runner/transaction,
+resource observer/windows/thresholds unchanged. Initial paired gates pass:
+compiled mount frames848->272 (checkPayloads/validate inline into begin),
+static RAM+408, linked flash+16, noinit0 delta. Compiler frames are not physical
+margin. Host222 checks PASS (219+3), no failures/errors/skips; source/Core/package
+pins and installed J rehash PASS. Clean successor freeze pending; packet PRINT ONLY.
+No successor physical acceptance or writer rebind. All six agent counters ZERO.
+STOP after offline receipt/CI; no flash/reboot/threshold lowering/merge.
+
+**Previous OFFLINE work — small Phase M compatibility addendum, 7 October 2026:**
 [Exact targeted capacity fix and owner diagnostic](M09_PHASE_L_SYNC_HOTFIX.md#small-physical-compatibility-addendum--7-october-2026).
 Starting clean d4052a842b0faa5f11184c03375ca0557621d8cd, same branch/PR #42.
 Owner no-flash evidence: bounded SYNC/magic/v2 RAM stub/geometry PASS,

@@ -14,6 +14,26 @@
 
 ## Product contract — owner clarification, 1 October 2026
 
+**Targeted Resource Probe mount-stack remediation — owner decision, 7 October 2026:**
+continue clean `96c5804f5435a71fc1e3cd7b04004af438a650ac`, same branch and
+Draft/open/unmerged PR #42. Owner reports exact 411136-byte J candidate
+`2ce2fa8da00de5c60109d0675c7bcf58ab41df2138d913b607fde25994e5a835`
+installed and booted: mount/inventory/config exact, 24 files/181402 bytes,
+zero blocked writes/rejected samples. Mount continuation minimum **1776 B**
+fails unchanged **2048 B** floor by272 B; runtime minimum3296 B passes.
+Physical resource gate **HOLD**, never reinterpret1776 as PASS.
+Authorize OFFLINE profile-2 bounded validation scratch remediation, host fault
+tests, paired uninstrumented/instrumented builds and exact frame/RAM/flash audit,
+one new local successor freeze only after offline gates pass, focused receipt,
+same-branch commit/push and exact-head CI. Prefer one fixed workspace, no scratch
+heap allocation; target linked mount-path frame reduction>=384 B, static RAM
+delta<=512 B, linked flash delta<=4096 B, no new frame>1024 B. Preserve single
+no-autoformat read-only mount/inventory/hash/seed/256-byte stream semantics,
+instrumentation windows/thresholds and Phase M physical runner. Installed J
+candidate remains separate historical evidence, never rebuilt/substituted.
+Future replacement packet PRINT ONLY; no device contact, serial I/O, flash/RTC/
+FS writes, reboot, normal activation or merge. Both normal gates remain NOT_RUN.
+
 **Phase M targeted physical-compatibility addendum — owner decision, 7 October 2026:**
 continue clean `d4052a842b0faa5f11184c03375ca0557621d8cd`, same branch and
 Draft/open/unmerged PR #42. Owner no-flash diagnostic passed bounded fresh SYNC,

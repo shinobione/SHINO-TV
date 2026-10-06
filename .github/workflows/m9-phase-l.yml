@@ -82,7 +82,9 @@ jobs:
           assert r['approved_local_interpreter_identity']=='NOT_READ_BY_THIS_SOURCE_ONLY_RUN'
           assert r['PHASE_K_FROZEN_CANDIDATE_IDENTITY_GATE']=='NOT_READ_BY_THIS_RUN'
           assert r['candidate']['bytes']==411136 and r['candidate']['sha256']=='2ce2fa8da00de5c60109d0675c7bcf58ab41df2138d913b607fde25994e5a835'
-          assert r['firmware_files_unchanged']==103 and not r['physical_authorization']
+          assert r['firmware_files_checked']==103 and r['firmware_files_unchanged']==101
+          assert len(r['firmware_mount_stack_changes'])==2 and r['installed_candidate_role']=='HISTORICAL_J_PREDECESSOR_ONLY'
+          assert not r['physical_authorization']
           assert all(r[k]==0 for k in ('device_contacts','serial_io','flash_writes','rtc_writes','reboots','device_filesystem_writes'))
           PY
       - uses: actions/upload-artifact@v4

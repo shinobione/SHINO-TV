@@ -62,6 +62,9 @@ struct Sha256 {
     void end(uint8_t output[32]) { br_sha256_out(&context, output); }
 };
 static_assert(sizeof(Sha256) <= 128, "Unreviewed hash context growth");
+// One fixed instance exists only in profile 2. No payload scratch on cont stack.
+M9ProbeStream::Workspace<Sha256> payloadWorkspace;
+static_assert(sizeof(payloadWorkspace) <= 512, "Unreviewed persistent payload scratch growth");
 
 M9ProbeManifest::Entry entry(size_t index) {
     M9ProbeManifest::Entry value;
@@ -116,13 +119,12 @@ bool checkPayloads() {
         File file = LittleFS.open(pin.path, "r");
         if (!file || !file.isFile() || file.size() != pin.bytes) return false;
         const bool config = std::strcmp(pin.path, "/config.json") == 0;
-        Sha256 hash;
         const auto seed = [config](uint32_t offset, const uint8_t* bytes, size_t size) {
             if (!config) return true;
             return offset + size <= M9ProbeManifest::CONFIG_BYTES &&
                 memcmp_P(bytes, M9ProbeManifest::CONFIG_SEED + offset, size) == 0;
         };
-        const bool exact = M9ProbeStream::validate(file, pin.bytes, pin.sha256, hash, seed,
+        const bool exact = M9ProbeStream::validate(file, pin.bytes, pin.sha256, payloadWorkspace, seed,
             []() { observeHeap(); yield(); }, result.checked_payload_bytes);
         file.close();
         if (!exact || result.blocked_write_attempts) return false;

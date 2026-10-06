@@ -31,7 +31,8 @@ def uninstrumented_source(path: str, text: str) -> str:
 
 def source_gate(root: Path = ROOT) -> dict:
     probe_source_gate(root)
-    pins = json.loads((ROOT/'tools/m9_resource_baseline_sources.json').read_text())
+    from m9_mount_stack import baseline_sources
+    pins = baseline_sources()
     for path, digest in pins['sha256_lf'].items():
         source = (root/path).read_text(encoding='utf-8')
         restored = uninstrumented_source(path, source)
