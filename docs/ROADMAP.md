@@ -52,6 +52,15 @@ replacement packet, current writer remains pinned to historical J and cannot
 accept new bytes without separate reviewed binding/authority. STOP; no flash,
 reboot, merge or normal activation.
 
+**Mount-stack CI reporting followup:** at e24df9e both layout builds succeeded,
+but the historical H parser rejected the now-inlined checkPayloads SU entry.
+Accept that form only with linked absence/one bounded workspace/>=384 B frame
+reduction proof; capture symbol sizes. No safety bound, firmware or frozen
+candidate changed. Final223 local checks PASS (220+3), zero failures/errors/skips;
+exact H CLI passes. Failed runs and correction retained in the focused receipt;
+new exact-head CI required in existing PR #42. Source freeze9f86a73 and candidate
+e1852e56...9bc27e remain exact; physical HOLD, six agent counters0, STOP.
+
 **Phase M targeted physical-compatibility addendum — owner decision, 7 October 2026:**
 continue clean `d4052a842b0faa5f11184c03375ca0557621d8cd`, same branch and
 Draft/open/unmerged PR #42. Owner no-flash diagnostic passed bounded fresh SYNC,

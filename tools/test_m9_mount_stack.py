@@ -7,6 +7,18 @@ import test_m9_mount_probe as probe_tests
 
 
 class SourceTests(unittest.TestCase):
+    def test_h_resource_gate_requires_proof_for_inlined_payload(self):
+        from m9_mount_probe import resources
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);su=root/'M9LittleFsMountProbe.cpp.su'
+            su.write_text('probe.cpp:1:1:void M9LittleFsMountProbe::begin()\t272\tstatic\nprobe.cpp:2:1:bool M9LittleFsMountProbe::json(char*, size_t)\t80\tstatic\n')
+            sections=root/'sections.txt';sections.write_text('.data 0 0\n.rodata 0 0\n.bss 41060 0\n.noinit 56 0\n.text 0 0\n.text1 0 0\n.irom0.text 403299 0\n')
+            symbols=root/'symbols.txt';symbols.write_text('40200000 000005ea T M9LittleFsMountProbe::begin()\n3fff0000 00000198 b M9LittleFsMountProbe::(anonymous namespace)::payloadWorkspace\n')
+            with self.assertRaises(AssertionError):resources(sections,su)
+            self.assertEqual(resources(sections,su,symbols)['probe_stack_frames_bytes']['checkPayloads()'],'INLINED_IN_BEGIN')
+            symbols.write_text(symbols.read_text()+'40201000 00000010 T X::checkPayloads()\n')
+            with self.assertRaises(AssertionError):resources(sections,su,symbols)
+
     def test_only_two_authorized_firmware_sources_changed(self):
         audit=source_audit()
         self.assertEqual(audit['firmware_files_checked'],103)

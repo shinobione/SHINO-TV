@@ -103,7 +103,7 @@ unchanged; new lease/hash/validation helpers are inlined. One new startup
 initializer has compiler label `cpp)`, frame **0 B**, linked symbol
 `_GLOBAL__sub_I__ZN20M9LittleFsMountProbe5beginEv` (13 code bytes): disassembly
 sets the busy flag to zero without a call or allocation. No new individual
-frame>1024 B. Existing JSON64 B and observer16/32/32/800/944 B are unchanged.
+frame>1024 B. Existing JSON80/64 B (un/instrumented) and observer16/32/32/800/944 B are unchanged.
 BearSSL/Core/library child frames are unchanged; this sum is not a total
 worst-case continuation bound. **Do not infer physical stack PASS.**
 
@@ -166,6 +166,29 @@ identity, passed tests and six zero operation counters. The documentation-only
 receipt commit does not rebuild or replace these bytes. BIN/ELF remain ignored;
 the installed J BIN rehash is still exact. Exact-head CI is separately recorded
 in existing Draft/open/unmerged PR #42, with no private input or BIN/ELF upload.
+
+## CI reporting correction — same frozen firmware
+
+At receipt HEAD `e24df9efa2c4d474378c73fdeb4e6e357234781f`, both layout CI runs
+([PR](https://github.com/shinobione/SHINO-TV/actions/runs/37543922741),
+[push](https://github.com/shinobione/SHINO-TV/actions/runs/37543916915)) built the
+uninstrumented probe successfully, then the older H resource parser rejected
+its missing separate checkPayloads SU entry. The old parser required three
+separate frames even though the successor now correctly inlines validation.
+
+The parser now accepts the missing frame only with linked symbols proving
+checkPayloads/validate absence, one bounded BSS workspace and the separate
+>=384 B frame reduction gate. CI's existing symbol capture adds `-S` for the
+actual workspace size. Existing H static RAM limit and768 B individual-frame
+review bound remain unchanged, as does the physical2048 B floor. A new test
+rejects absent linked proof and inconsistent linked checkPayloads symbols.
+The full H CLI path passes locally against retained clean compiler artifacts.
+No firmware source, runner, frozen successor or installed J byte changes;
+no build/freeze repetition. **Final223 local checks PASS**, zero failures/errors/
+skips (220 full suite+3 unchanged scoped port80 source checks), plus the exact H
+resource CLI passed against clean retained artifacts. Exact-head CI receipt is
+recorded in PR #42 after this reporting-only correction; the earlier222-check
+freeze receipt remains history.
 
 ## Future replacement packet — PRINT ONLY / DO NOT EXECUTE
 

@@ -128,7 +128,7 @@ def future_packet() -> dict:
             "normal_profile_mount_gate":"NOT_RUN", "normal_profile_runtime_gate":"NOT_RUN"}
 
 
-def resources(sections: Path, stack: Path) -> dict:
+def resources(sections: Path, stack: Path, symbols: Path | None = None) -> dict:
     sizes={}
     for line in sections.read_text(encoding="utf-8-sig").splitlines():
         parts=line.split()
@@ -143,7 +143,17 @@ def resources(sections: Path, stack: Path) -> dict:
         if len(fields)!=3: continue
         for name in ('checkPayloads()', 'M9LittleFsMountProbe::begin()', 'M9LittleFsMountProbe::json('):
             if name in fields[0]:frames[name]=int(fields[1])
-    assert len(frames)==3 and max(frames.values())<=768, 'Unreviewed probe stack-frame growth'
+    assert {'M9LittleFsMountProbe::begin()', 'M9LittleFsMountProbe::json('} <= frames.keys()
+    assert max(frames.values())<=768, 'Unreviewed probe stack-frame growth'
+    if 'checkPayloads()' not in frames:
+        # The workspace successor inlines validation into begin. A missing
+        # SU entry alone is not proof of inlining: require linked absence,
+        # the bounded BSS object, and the separate >=384 B reduction gate.
+        assert symbols is not None, 'Linked symbols required for inlined payload frame'
+        from m9_mount_stack import frame_gate
+        audited=frame_gate(stack.parent,symbols)
+        assert audited['checkPayloads']=='INLINED_IN_BEGIN'
+        frames['checkPayloads()']='INLINED_IN_BEGIN'
     return {'static_ram_bytes':ram,'noinit_bytes':sizes['.noinit'],'linked_flash_bytes':flash,
             'static_ram_delta_vs_historical_stage1':ram-40340, 'probe_stack_frames_bytes':frames,
             'stack_call_chain_or_physical_high_water_proven':False,'stream_buffer_bytes':256,
@@ -165,7 +175,7 @@ def main() -> int:
     report = source_gate()
     if args.core_root: report["core"] = core_gate(args.core_root)
     if args.symbols: report["build"] = build_gate(args.symbols,args.candidate)
-    if args.sections: report["resources"] = resources(args.sections,args.stack_usage)
+    if args.sections: report["resources"] = resources(args.sections,args.stack_usage,args.symbols)
     report["future_packet"] = future_packet()
     print(json.dumps(report,indent=2,sort_keys=True))
     return 0

@@ -362,7 +362,7 @@ jobs:
           # Existing profile-0 reports are escrowed already. No probe buildfs,
           # upload, owner image or private readback is used in this step.
           pio run -d firmware -e esp12e_m9_4m2m_mount_probe
-          "$HOME/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-nm" -C firmware/.pio/build/esp12e_m9_4m2m_mount_probe/firmware.elf > "${{ runner.temp }}/m9-probe-symbols.txt"
+          "$HOME/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-nm" -C -S firmware/.pio/build/esp12e_m9_4m2m_mount_probe/firmware.elf > "${{ runner.temp }}/m9-probe-symbols.txt"
           "$HOME/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-size" -A firmware/.pio/build/esp12e_m9_4m2m_mount_probe/firmware.elf > "${{ runner.temp }}/m9-probe-sections.txt"
           python tools/m9_mount_probe.py \
             --core-root "$HOME/.platformio/packages/framework-arduinoespressif8266" \

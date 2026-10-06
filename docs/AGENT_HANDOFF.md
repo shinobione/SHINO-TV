@@ -16,7 +16,10 @@ manifests and retained installed BIN stay intact. M physical runner/transaction,
 resource observer/windows/thresholds unchanged. Initial paired gates pass:
 compiled mount frames848->272 (checkPayloads/validate inline into begin),
 static RAM+408, linked flash+16, noinit0 delta. Compiler frames are not physical
-margin. Host222 checks PASS (219+3), no failures/errors/skips; source/Core/package
+margin. Host validation includes a reporting-only H parser correction for
+linked/proven checkPayloads inlining; no safety bound or firmware byte changes.
+Final223 checks PASS (220+3), no failures/errors/skips; exact H resource CLI and
+source/Core/package
 pins and installed J rehash PASS. Clean source freeze9f86a73d999168d052e2037a4fcb999cfe9a2e2c:
 one new instrumented BIN411152 B, SHA256
 e1852e56d99801b694f37d235b08a201188cf36d5a25f3f6f59d059a129bc27e,
