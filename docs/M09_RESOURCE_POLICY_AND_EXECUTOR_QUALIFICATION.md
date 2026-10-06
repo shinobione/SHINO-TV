@@ -1,5 +1,13 @@
 # Mission 9 Phase K — resource policy and single-attempt executor qualification
 
+> **Phase L continuation, 6 October 2026:** the separate
+> [physical session runner](M09_SINGLE_ATTEMPT_PHYSICAL_RUNNER.md) supplies
+> explicit-port/fresh-ROM acquisition under offline source/fake-serial
+> qualification. The K executor, all firmware and frozen candidate are unchanged.
+> K's "not implemented" acquisition statements below are preserved dated history.
+> L grants no physical authority; resource physical remains HOLD/NOT_RUN,
+> overall PARTIAL/HOLD, both normal gates NOT_RUN. No device operations occurred.
+
 6 October 2026. **OFFLINE ONLY — NO DEVICE CONTACT.** Continuity verified:
 clean `feature/shino-tv-m9-flash-layout-liberation` at
 `063553fd70772527edc13168e59c83088453dd1a`, existing

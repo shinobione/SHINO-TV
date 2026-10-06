@@ -14,6 +14,31 @@
 
 ## Product contract — owner clarification, 1 October 2026
 
+**Mission 9 Phase L owner decision, 6 October 2026:** continue existing
+Draft/open/unmerged PR #42 from clean `c7ddb45c3ddc0702c7d7a191268f7634a3c5550d`
+on the existing Mission 9 branch. Authorize OFFLINE implementation/qualification
+of one explicit-port, manually established fresh-ROM session runner using the
+unchanged Phase K executor, with fake serial tests, documentation, commit/push
+and exact-head CI. Require approved Python 3.12.x, existing exact package/source
+pins, disabled DTR/RTS before open, one bounded reset-free sync, every execution
+latch and no flash retry/reconnect/reset/recovery. Preserve all firmware bytes
+and the exact frozen J candidate; no rebuild/substitution. A qualified future
+command is PRINT ONLY, requiring separate physical authority. ZERO device
+contact, serial I/O, flash/RTC/FS writes or reboots; normal gates remain NOT_RUN.
+STOP after Phase L; no normal-profile activation or merge. Preserve K history.
+
+**Mission 9 Phase L offline result, 6 October 2026:**
+[Physical runner receipt](M09_SINGLE_ATTEMPT_PHYSICAL_RUNNER.md) supplies the
+separate one-port/manual fresh-ROM acquisition layer for unchanged K execution.
+Source, supported-API port control and single-transaction integration gates
+PASS/OFFLINE; tests use fake serial. DTR/RTS false before open, bounded one SYNC,
+exact local interpreter/package/source/candidate latches, pinned v2 handoff,
+no flash retry/reconnect/reset/recovery. OS/adapter electrical isolation is
+unproved and still a separate physical prerequisite. All103 firmware files and
+411136-byte frozen J candidate/hash unchanged. Resource physical HOLD/NOT_RUN,
+overall PARTIAL/HOLD; both normal gates NOT_RUN. All six operation counters zero.
+Future command PRINT ONLY; existing Draft PR #42 remains unmerged. STOP after L.
+
 **Mission 9 Phase K owner decision, 6 October 2026:** continue existing
 Draft/open/unmerged PR #42 from clean
 `063553fd70772527edc13168e59c83088453dd1a` on the existing Mission 9 branch.

@@ -1,7 +1,27 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
-**Latest OFFLINE work — Mission 9 Phase K, 6 October 2026:**
+**Latest OFFLINE work — Mission 9 Phase L, 6 October 2026:**
+[Single-attempt physical session runner](M09_SINGLE_ATTEMPT_PHYSICAL_RUNNER.md)
+adds explicit strict COM literal, approved local Python 3.12.x identity and
+exact package/source checks before open. Default audits only. Future execution
+requires every latch and separate exact-operation GO. Serial is created closed,
+DTR/RTS stored false before open and never assigned after open; Windows DCB
+disables both. API/source/spy evidence is not electrical glitch/isolation proof:
+isolated controls and owner manual GPIO0/RST remain physical prerequisites.
+One bounded reset-free SYNC accepts fresh ROM only; unchanged K transport checks
+exact magic/4 MiB and uploads pinned v2 only, then owns one Begin/101 packets/
+no-reboot Finish/MD5. No flash retry/reconnect/reset/rollback/PRE/POST automation.
+Any post-open uncertainty stops with safe status and no cleanup Finish.
+All 103 firmware files and exact frozen 411136-byte J BIN/hash unchanged.
+L source/port-control/integration gates PASS/OFFLINE (fake serial only).
+Resource physical HOLD/NOT_RUN, overall PARTIAL/HOLD; both normal gates NOT_RUN.
+All six physical-operation counters ZERO. No device contact or installation;
+future command PRINT ONLY. STOP after L; existing Draft PR #42 unmerged.
+The Phase K statement below about missing acquisition is dated K history;
+the separate L runner supplies it without changing the K executor.
+
+**Previous OFFLINE work — Mission 9 Phase K, 6 October 2026:**
 [Scoped acceptance policy and single-attempt executor qualification](M09_RESOURCE_POLICY_AND_EXECUTOR_QUALIFICATION.md)
 preserves all103 tracked firmware files and exact frozen J **411136 B** BIN,
 SHA-256 `2ce2fa8da00de5c60109d0675c7bcf58ab41df2138d913b607fde25994e5a835`;
