@@ -21,7 +21,7 @@ Clean source freeze `5f3db19e29398ef6498b08b02de29cae48f9b59a`: LOCAL probe
 linked flash **403283 B**, static RAM **40652 B +56 B .noinit** (+312 RAM vs
 paired baseline), future touched **0x000000..0x063FFF / 409600 B**. Candidate
 retained ignored, not installed/published; Stage-1/Stage-2 frozen files unchanged.
-**152 local tests PASS**, default/probe application builds and source/link/Core/
+**155 local tests PASS**, default/probe application builds and source/link/Core/
 image/resource gates PASS; exact-head CI recorded in Draft PR #42.
 **MOUNT_PROBE_PHYSICAL_GATE HOLD / NOT_RUN;
 NORMAL_PROFILE_LITTLEFS_MOUNT_GATE NOT_RUN;

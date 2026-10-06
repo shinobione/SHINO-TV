@@ -35,7 +35,7 @@ installation, full normal-profile activation or merge.
 
 **Mission 9 Phase H offline result, 6 October 2026:**
 [Dedicated mount-probe qualification](M09_LITTLEFS_MOUNT_PROBE_QUALIFICATION.md)
-**PASS offline**, 152 local tests, ordinary default/probe application builds,
+**PASS offline**, 155 local tests, ordinary default/probe application builds,
 source/manifest/Core/link/image/resource gates. Clean implementation freeze
 `5f3db19e29398ef6498b08b02de29cae48f9b59a`: LOCAL application **407440 B**, SHA-256
 `ca92cc2f4a8a67f70bd305875bd37be90d0cdff74bf7b338339856407dceef8b`,

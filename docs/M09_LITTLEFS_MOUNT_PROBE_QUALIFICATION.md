@@ -140,6 +140,14 @@ write_paths_compiled, blocked_write_attempts, heap after mount/inventory, sample
 minimum heap and actual FS start/end/bytes. Unreached heap phases retain zero
 as a not-sampled sentinel, not a physical zero-heap observation.
 
+The port-80 source audit preserves all nine legacy method/path pairs for
+profile 0, separately auditing the sole profile-2-only GET above, Digest before
+status construction, bounded JSON and the same single server/loop owner.
+Guard/method/authentication/buffer-bound mutations fail the audit. Initial
+exact-head CI at `abcfe983e9994cd3910494779c4400687be76977` counted the guarded
+probe route as legacy and failed that parity assertion; the focused test-only
+correction keeps the legacy route plan frozen and does not alter firmware.
+
 No arbitrary FS serving, `/config.json`, legacy web UI routes, STA, NTP,
 SecureStorage or writer route is enabled. Existing program-flash UI and four
 RAM telemetry cards remain reused. Shared bridge status has profile-2-specific
@@ -226,10 +234,12 @@ Home-LAN, native OTA or the complete product.
 
 ## Local validation, CI and privacy
 
-**152 local tests PASS, no failures/errors/skips**: 12 Phase H tests (including
+**155 local tests PASS, no failures/errors/skips**: 12 Phase H tests (including
 actual MSVC-compiled stream/profile cases, fault/mutation fixtures, target-gate
 execution and synthetic protected arena/FS/tail failures), plus 140 existing
-Mission 9 / first-boot / policy / factory regressions. Windows sandbox initially
+Mission 9 / first-boot / policy / factory regressions, plus three profile-scoped
+port-80 source/negative-mutation tests. The existing compiled port-80 fixture
+remains unchanged and runs in Linux CI. Windows sandbox initially
 blocked two hard-link fixtures; the same unmodified regressions passed with
 permitted access. No test was weakened. Python/YAML, source/manifest, seven Core
 pins, linked geometry/exclusions, BIN CRC/ranges and resource checks PASS.
