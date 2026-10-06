@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Phase L: audit by default. Physical execution requires separate exact owner GO.
+"""Phase L runner with Phase M bounded acquisition hotfix; audit by default.
 
 No device operation is authorized by Phase L qualification. The transaction is
 owned exclusively by the unchanged Phase K SingleAttempt/PinnedStubTransport.
@@ -31,6 +31,8 @@ ROOT = TOOLS.parent
 PINS = TOOLS / 'm9_phase_l_sources.json'
 STUB_AUDIT_ROOT = ROOT / 'research-local/m9-phase-c'
 UNKNOWN = 'STOP — PHYSICAL FLASH STATE MAY BE UNKNOWN'
+MAX_SYNC_ATTEMPTS = 5
+SYNC_RETRY_DELAY = 0.05
 
 
 class BoundedSyncReads:
@@ -41,12 +43,17 @@ class BoundedSyncReads:
         self.remaining = 16384
         self.calls = 0
 
+    def check(self, delay=0):
+        left = self.deadline - time.monotonic()
+        app.require(left > delay and self.remaining > 0 and self.calls < 256,
+                    'Global ROM sync budget exhausted')
+        return left
+
     def inWaiting(self):
         return min(self.port.inWaiting(), self.remaining)
 
     def read(self, size):
-        left = self.deadline - time.monotonic()
-        app.require(left > 0 and self.remaining > 0 and self.calls < 256, 'ROM sync budget exhausted')
+        left = self.check()
         self.port.timeout = min(0.1, left)
         self.calls += 1
         data = self.port.read(min(size, self.remaining))
@@ -56,23 +63,53 @@ class BoundedSyncReads:
 
 def fresh_sync(rom, port) -> None:
     from esptool.loader import slip_reader
-    packets = slip_reader(BoundedSyncReads(port), rom.trace)
-    def fresh_replies():
-        for packet in packets:
-            app.require(len(packet) in (10, 12), 'Exact ROM sync reply required')
-            response, op, size, value = struct.unpack('<BBHI', packet[:8])
-            # ESP8266 status is two bytes; Espressif's ROM SYNC trace includes
-            # four zero status/padding bytes. Accept only these consistent forms.
-            app.require(response == 1 and op == rom.ESP_CMDS['SYNC'] and size in (2, 4)
-                        and len(packet) == 8 + size and packet[8:] == bytes(size),
-                        'Unexpected ROM sync reply')
-            # Reject even mixed ROM/stub replies (upstream uses all-zero).
-            app.require(value != 0, 'Unknown pre-existing stub refused')
-            yield packet
-    rom._slip_reader = fresh_replies()
-    rom.sync()  # Pinned API: one SYNC write + seven response-only commands.
-    port.timeout = 1
-    rom._slip_reader = slip_reader(port, rom.trace)
+    from esptool.util import FatalError
+    # One budget shared by ALL attempts, including incomplete frames and delays.
+    budget = BoundedSyncReads(port)
+    normal_write_timeout = port.write_timeout
+    for attempt in range(MAX_SYNC_ATTEMPTS):
+        budget.check()
+        # Win32 PurgeComm buffer operations, not GPIO/reset/control-line changes.
+        port.reset_input_buffer()
+        port.reset_output_buffer()
+        port.write_timeout = min(0.1, budget.check())
+        packets = slip_reader(budget, rom.trace)
+        replies = []
+        def fresh_replies():
+            for packet in packets:
+                app.require(len(packet) in (10, 12), 'Exact ROM sync reply required')
+                response, op, size, value = struct.unpack('<BBHI', packet[:8])
+                app.require(response == 1 and op == rom.ESP_CMDS['SYNC'] and size in (2, 4)
+                            and len(packet) == 8 + size and packet[8:] == bytes(size),
+                            'Unexpected ROM sync reply')
+                # Collect the COMPLETE sequence. Pinned sync() applies all-zero
+                # AND semantics; never reject an individual zero value here.
+                replies.append(packet)
+                yield packet
+        rom._slip_reader = fresh_replies()
+        try:
+            rom.sync()  # Exactly one request + seven response-only commands.
+        except FatalError:
+            # Reviewed pre-stub sync retry only. SerialException, interruption,
+            # malformed envelope, classification or exhausted budget is terminal.
+            if attempt + 1 == MAX_SYNC_ATTEMPTS:
+                raise
+            budget.check(SYNC_RETRY_DELAY)
+            time.sleep(SYNC_RETRY_DELAY)
+            continue
+        app.require(time.monotonic() < budget.deadline and len(replies) == 8,
+                    'Complete SYNC sequence within global deadline required')
+        values = [struct.unpack('<I', packet[4:8])[0] for packet in replies]
+        app.require(rom.sync_stub_detected == all(value == 0 for value in values),
+                    'Pinned stub classification disagrees with complete sequence')
+        app.require(not rom.sync_stub_detected, 'Known pre-existing stub refused')
+        # ROM/stub responses are documented as eight identical replies. Pinned
+        # any-nonzero semantics alone is insufficient for a mixed sequence.
+        app.require(all(packet == replies[0] for packet in replies), 'Mixed inconsistent SYNC replies')
+        port.timeout = 1
+        port.write_timeout = normal_write_timeout
+        rom._slip_reader = slip_reader(port, rom.trace)
+        return
 
 
 def port_literal(value: str) -> str:
@@ -147,7 +184,7 @@ class Session:
                     'Disabled control states required before traffic')
         rom = ESP8266ROM(self.port, baud=115200, trace_enabled=False)
         # Never connect()/detect_chip(): those paths include reset strategies.
-        # One SYNC request, then eight bounded replies; never repeat the request.
+        # At most five SYNC requests, one global budget, before any stub upload.
         fresh_sync(rom, self.port)
         app.require(type(rom) is ESP8266ROM and not rom.IS_STUB and not rom.sync_stub_detected,
                     'Fresh manually established ESP8266 ROM required')

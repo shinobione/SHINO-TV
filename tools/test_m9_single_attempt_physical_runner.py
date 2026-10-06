@@ -61,6 +61,8 @@ class SpySerial:
         self.closes += 1; self.is_open = False
         if self.fail == 'close': raise self.error('PRIVATE SERIAL DETAIL')
     def inWaiting(self): return len(self.buffer)
+    def reset_input_buffer(self): self.buffer.clear()
+    def reset_output_buffer(self): pass
     def read(self, size):
         if self.calls and self.calls[-1] == self.fail:
             raise self.error('PRIVATE SERIAL DETAIL')
@@ -99,10 +101,10 @@ class RunnerTests(unittest.TestCase):
         values.update(changes); return types.SimpleNamespace(**values)
 
     def exercise(self, args=None, fail=None, error=TimeoutError, chip=True, capacity=True, stub_value=None,
-                 stub_fail=False, bad_md5=False, preflight_fault=None):
+                 stub_fail=False, bad_md5=False, preflight_fault=None, serial_class=SpySerial):
         ports=[]; uploads=[]
         def serial_factory(**kwargs):
-            p=SpySerial(**kwargs); p.fail=fail; p.error=error; p.stub_value=stub_value; p.bad_md5=bad_md5
+            p=serial_class(**kwargs); p.fail=fail; p.error=error; p.stub_value=stub_value; p.bad_md5=bad_md5
             ports.append(p); return p
         def upload(rom, specification):
             uploads.append(specification)
@@ -139,8 +141,9 @@ class RunnerTests(unittest.TestCase):
             self.assertLessEqual(p.opens, 1)
             self.assertEqual(p.closes, 1)
             self.assertEqual(p.controls, [('dtr', False, False), ('rts', False, False)])
-            self.assertEqual(len(p.calls), len(set(p.calls)))
-            self.assertLessEqual(p.calls.count('sync'), 1)
+            flash_calls=[event for event in p.calls if event != 'sync']
+            self.assertEqual(len(flash_calls), len(set(flash_calls)))
+            self.assertLessEqual(p.calls.count('sync'), runner.MAX_SYNC_ATTEMPTS)
             self.assertLessEqual(p.calls.count('begin'), 1)
         return code, report, ports, uploads
 

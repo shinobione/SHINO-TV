@@ -1,7 +1,26 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
-**Latest OFFLINE work — Mission 9 Phase L, 6 October 2026:**
+**Latest OFFLINE work — Mission 9 Phase M, 6 October 2026:**
+[Bounded no-reset ROM SYNC hotfix](M09_PHASE_L_SYNC_HOTFIX.md) supersedes L's
+single-SYNC assumption, REJECTED_BY_PHYSICAL_EVIDENCE. Owner's later L attempt
+stopped before Begin with conservative UNKNOWN; immediate independent 4 MiB
+readback proved PRE==POST, zero changed bytes, protected/FS/tail preserved,
+candidate absent and no app boot before readback. RX purge alone did not fix
+acquisition. Stock no-reset connect(attempts=1) passed with no stub/flash;
+pinned 5.4.0 source allows five inner SYNC exchanges per outer attempt.
+Current runner changes acquisition only: maximum five requests on one handle,
+one global 5 s/16384-byte/256-read budget, 50 ms delay between retryable failures,
+fresh buffered state per attempt, complete eight-reply stub classification plus
+consistency check. No stock connect, reset, post-open DTR/RTS, reopen/reconnect.
+After Begin zero retry; K executor and all103 firmware files/candidate unchanged.
+M gates PASS/OFFLINE (fake serial/clock and local artifact checks); resource
+physical HOLD/NOT_RUN, overall PARTIAL/HOLD, both normal gates NOT_RUN.
+All six M device counters ZERO; no new physical operation/installation proof.
+Owner diagnostic facts are attributed, no private dumps/digests published.
+STOP after M; existing PR #42 Draft/open/unmerged. L receipt below is history.
+
+**Previous OFFLINE work — Mission 9 Phase L, 6 October 2026:**
 [Single-attempt physical session runner](M09_SINGLE_ATTEMPT_PHYSICAL_RUNNER.md)
 adds explicit strict COM literal, approved local Python 3.12.x identity and
 exact package/source checks before open. Default audits only. Future execution

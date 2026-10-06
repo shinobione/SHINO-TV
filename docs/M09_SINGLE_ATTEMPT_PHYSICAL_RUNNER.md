@@ -1,5 +1,14 @@
 # Mission 9 Phase L — physical single-attempt session runner
 
+> **Phase M continuation:** [Bounded SYNC hotfix and owner failure receipt](M09_PHASE_L_SYNC_HOTFIX.md)
+> supersede the single-request/per-reply assumptions below. The owner's later
+> failed physical attempt stopped at fresh SYNC; independent full readback
+> proved unchanged flash/FS/tail and no candidate installation. The single-SYNC
+> assumption is REJECTED_BY_PHYSICAL_EVIDENCE. Current acquisition uses at most
+> five pre-stub requests on one handle with one global budget. L's original
+> offline receipt, test counts, zero agent-operation counters and PRINT-ONLY
+> template below remain dated history; none authorize another physical attempt.
+
 6 October 2026. **OFFLINE ONLY — NO DEVICE CONTACT.** Continued clean
 `feature/shino-tv-m9-flash-layout-liberation` at
 `c7ddb45c3ddc0702c7d7a191268f7634a3c5550d`, existing

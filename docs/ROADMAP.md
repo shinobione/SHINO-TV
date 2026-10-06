@@ -14,6 +14,34 @@
 
 ## Product contract — owner clarification, 1 October 2026
 
+**Mission 9 Phase M owner decision, 6 October 2026:** continue existing
+Draft/open/unmerged PR #42 from clean `2ea22809028f1b1e11ffecd3dbc471079d04b547`
+on the same branch. Authorize OFFLINE acquisition-only hotfix, fake tests,
+source/version/candidate checks, documentation, commit/push and exact-head CI.
+Owner reports a physical L attempt stopped at fresh SYNC with conservative
+UNKNOWN; immediate independent full 4 MiB readback proved PRE==POST, zero changed
+bytes, FS/tail/protected preservation and no app boot before readback. Candidate
+was not installed. RX purge did not fix single-shot SYNC; stock no-reset
+connect(attempts=1, detecting=True, warnings=False) passed without stub/flash.
+Reject PHASE_L_SINGLE_SYNC_ASSUMPTION by physical evidence. Implement at most
+five pre-stub SYNC requests on one open handle with global 5 s/16384 B/256-read
+budgets and 50 ms retry delay; no reset/DTR/RTS/reopen/reconnect. Preserve all
+firmware, exact frozen 411136-byte candidate and K transaction. No device contact
+or physical operations in M; resource physical HOLD/NOT_RUN, overall PARTIAL/HOLD,
+normal gates NOT_RUN. Preserve L history. STOP after M; no flash/reboot/merge.
+
+**Mission 9 Phase M offline result, 6 October 2026:**
+[SYNC hotfix receipt](M09_PHASE_L_SYNC_HOTFIX.md) records the owner failed-attempt
+readback and exact pinned source review. Acquisition-only hotfix allows at most
+five pre-stub SYNC requests on the same port under one global 5 s/16384 B/256-read
+budget, 50 ms retry delay, fresh SLIP state and whole-sequence classification.
+No physical operations, firmware/candidate rebuild, K transaction change,
+post-Begin retries, resets, reopen/reconnect or rollback. M root-cause/source/
+regression/frozen-identity gates PASS/OFFLINE; resource physical HOLD/NOT_RUN,
+overall PARTIAL/HOLD, both normal gates NOT_RUN. All six M counters zero.
+Owner physical evidence does not claim successful installation/resource PASS.
+L historical lines below remain retained. STOP after M, Draft PR #42 unmerged.
+
 **Mission 9 Phase L owner decision, 6 October 2026:** continue existing
 Draft/open/unmerged PR #42 from clean `c7ddb45c3ddc0702c7d7a191268f7634a3c5550d`
 on the existing Mission 9 branch. Authorize OFFLINE implementation/qualification
