@@ -1,6 +1,42 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+**Latest owner-provided physical state — Mission 9 Phase G, 6 October 2026:**
+[Stage-2 physical evidence](M09_STAGE2_PHYSICAL_EVIDENCE.md) records the owner's
+completed operation after Phase F and before this documentation-only pass.
+Exact frozen LittleFS **2072576 B**, SHA-256
+`d7ce9133b34fb5937d5640db81ff863a8f22a3717255c4b23057aea9ed2ef045`,
+physically installed at **0x200000..0x3F9FFF**, end exclusive **0x3FA000**.
+Full independent physical PRE/POST before first post-Stage2 boot prove lower
+**0x000000..0x1FFFFF / 2097152 B** and tail
+**0x3FA000..0x3FFFFF / 24576 B** byte-exact to fresh PRE, FS byte-exact to
+frozen image. Stage-2 physical write/preservation/RTC transition/boot/runtime/
+FS-image and **MISSION9_4M2M_PHYSICAL_LAYOUT_GATE PASS**. Geometry/current
+contents proven; all 1 MiB + 1 MiB OTA behavior and continuing tail immutability
+are not physically qualified.
+
+Powered RTC 0/0 readbacks, GPIO0 release and existing RST produced
+`rst cause:2` / `(3,7)` / `v00061740` / `~ld`, no observed `cp:`. Current
+**399168 B FIRST_BOOT_BRIDGE remains FS-less**, PROGRAM_FLASH_ONLY UI /
+RAM_ONLY metrics; it has **not mounted, parsed or used the installed LittleFS**.
+Normal 240×240 LCD/four dynamic cards, no orientation regression; initial LINK
+RETRYING was Windows AP non-association, resolved by manual host reassociation
+then CONNECTED without SmallTV reboot/firmware change. **180-second** runtime
+and stale/recovery PASS; no observed reboot/loop/corruption. No new Stage-2
+heap/block/stack measurement; Phase E heap is historical. TTL remains 6 s.
+
+**NORMAL_PROFILE_LITTLEFS_MOUNT_GATE = NOT_RUN;
+NORMAL_PROFILE_RUNTIME_GATE = NOT_RUN.** Next unresolved work is normal-profile
+LittleFS mount/use qualification under a separate bounded owner decision.
+P1/M8/full-product qualification unchanged; R3 PARTIAL / R10 BLOCKED and native
+OTA disabled. Phase G started clean `f92b42deaa87e3df7b6204f1010886a8ed343043`;
+PR #42 stays Draft/open/unmerged. Six Markdown files only, no local rebuild or
+new device operation; all six Phase G action counters **0**. Private dumps,
+digests, backup paths, credentials and identifiers remain unpublished.
+**STOP after Phase G; do not touch SmallTV, activate normal profile or merge.**
+The Phase F/E and earlier HOLD/NOT_RUN paragraphs below remain correct dated
+history; their Stage-2 pending state is superseded by this Phase G record.
+
 **Phase F continuation, 5 October - OFFLINE DESIGN / PACKAGE QUALIFICATION ONLY:**
 [Stage-2 LittleFS package/executor qualification](M09_STAGE2_LITTLEFS_QUALIFICATION.md)
 passes pinned source/range models, exact local image freeze and synthetic

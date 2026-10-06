@@ -1,5 +1,29 @@
 # Mission 9 Phase E — Stage-1 physical evidence record
 
+**Phase G superseding Stage-2 evidence, 6 October 2026:**
+[Stage-2 physical receipt](M09_STAGE2_PHYSICAL_EVIDENCE.md) records owner actions
+completed after Phase F and before the documentation-only pass. Frozen
+**2072576 B** LittleFS physically installed at **0x200000..0x3F9FFF**;
+fresh full physical PRE/POST before first post-Stage2 boot prove lower
+**0x000000..0x1FFFFF / 2097152 B** and tail
+**0x3FA000..0x3FFFFF / 24576 B** preserved exactly, FS exact to frozen image.
+Stage-2 physical write/preservation/RTC transition/boot/runtime/FS-image and
+**MISSION9_4M2M_PHYSICAL_LAYOUT_GATE PASS**. Powered RTC 0/0 and existing RST
+gave `(3,7)` / `v00061740` / `~ld`, no observed COPY; normal LCD/four dynamic
+cards, 180-second runtime and stale/recovery without observed reboot. Initial
+LINK RETRYING was host AP non-association, resolved by manual Windows
+reassociation then CONNECTED without SmallTV reboot or firmware change.
+The **399168 B Stage-1 bridge remains FS-less**, PROGRAM_FLASH_ONLY UI /
+RAM_ONLY metrics; it did not mount, parse or use the installed LittleFS.
+**NORMAL_PROFILE_LITTLEFS_MOUNT_GATE = NOT_RUN;
+NORMAL_PROFILE_RUNTIME_GATE = NOT_RUN**. Next work is separately authorized
+normal-profile mount/use qualification; P1/M8/full-product gates unchanged.
+The original Stage-1 write-event preservation proof below remains historical;
+it does not assert equality across the later intentional Stage-2 write.
+Earlier Stage-2 HOLD/NOT_PERFORMED statements below remain correct dated history.
+Phase G device actions **0**, PR #42 Draft/open/unmerged. **STOP after Phase G;
+do not touch SmallTV or activate normal profile.**
+
 **Phase F continuation, 5 October - OFFLINE DESIGN / PACKAGE QUALIFICATION ONLY:**
 [Stage-2 LittleFS package/executor qualification](M09_STAGE2_LITTLEFS_QUALIFICATION.md)
 passes pinned source/range models, exact local image freeze and synthetic

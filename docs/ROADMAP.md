@@ -14,6 +14,42 @@
 
 ## Product contract — owner clarification, 1 October 2026
 
+**Mission 9 Phase G owner decision and physical evidence, 6 October 2026:**
+continue existing Draft/open/unmerged PR #42 from verified clean
+`f92b42deaa87e3df7b6204f1010886a8ed343043` on
+`feature/shino-tv-m9-flash-layout-liberation`. Authorize documentation/evidence,
+documentation consistency checks, commit/push and exact-head CI only. The owner
+performed Stage 2 after Phase F and before this documentation pass: the exact
+frozen 2072576-byte LittleFS image was written at `0x200000`, independently
+verified against full physical PRE/POST before boot, followed by powered RTC
+0/0, existing-RST normal boot and 180-second four-metric runtime/stale/recovery
+without observed reboot. These are **OWNER-PROVIDED PHYSICAL EVIDENCE**, not
+agent-performed operations. [Stage-2 physical receipt](M09_STAGE2_PHYSICAL_EVIDENCE.md).
+
+**Stage-2 physical write, postwrite preservation, RTC/boot transition, first
+boot, runtime, FS-image installation and MISSION9_4M2M_PHYSICAL_LAYOUT_GATE:
+PASS.** Installed FS `0x200000..0x3F9FFF` equals the frozen image; lower
+`0x000000..0x1FFFFF` (**2097152 B**) and tail `0x3FA000..0x3FFFFF`
+(**24576 B**) equal fresh PRE across the write event before first post-Stage2
+boot. This establishes geometry/current contents, not physical qualification
+of all 1 MiB + 1 MiB OTA behavior or continuing tail immutability. Current
+399168-byte FIRST_BOOT_BRIDGE remains **FS-less**, PROGRAM_FLASH_ONLY UI /
+RAM_ONLY metrics; it did not mount, parse or use the installed LittleFS.
+Initial LINK RETRYING was Windows AP non-association; manual host reassociation
+gave CONNECTED without SmallTV reboot or firmware change.
+
+**NORMAL_PROFILE_LITTLEFS_MOUNT_GATE = NOT_RUN;
+NORMAL_PROFILE_RUNTIME_GATE = NOT_RUN.** Next unresolved work is normal-profile
+LittleFS mount/use qualification, requiring a separate bounded owner decision;
+no Stage-3/normal-profile activation is authorized here. P1/M8/full-product
+qualification, R3 PARTIAL / R10 BLOCKED, 6-second telemetry TTL and 8-second
+native-media deadline are unchanged. Phase F HOLD/NOT_RUN statements below
+remain correct dated history, superseded only for the named Stage-2 gates.
+No firmware/companion/tool/script/platform/workflow change or local app/FS
+rebuild; no private dumps/digests/paths/credentials/identifiers/binaries
+published. All six Phase G device-action counters **0**. **STOP after Phase G;
+do not touch the SmallTV, activate normal profile or merge PR #42.**
+
 **Mission 9 Phase F owner decision, 5 October 2026:** continue existing Draft
 PR #42 from verified clean `4fde7ba1c948e065accb5ac5540bb848abacf12a` on the
 existing Mission 9 branch. Authorize OFFLINE Stage-2 LittleFS package/executor

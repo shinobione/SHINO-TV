@@ -1,5 +1,27 @@
 # Mission 9 Phase F - Stage-2 LittleFS qualification (OFFLINE ONLY)
 
+**Phase G superseding physical evidence, 6 October 2026:**
+[Owner-performed Stage-2 receipt](M09_STAGE2_PHYSICAL_EVIDENCE.md) records the
+operation completed after Phase F and before the documentation-only pass.
+Exact frozen **2072576 B** LittleFS is physically installed at
+**0x200000..0x3F9FFF**, end exclusive **0x3FA000**; full physical PRE/POST
+before first post-Stage2 boot prove lower **0x000000..0x1FFFFF / 2097152 B**
+and tail **0x3FA000..0x3FFFFF / 24576 B** preserved exactly, FS exact to
+frozen image. Stage-2 physical write, preservation, RTC/boot transition, boot,
+bounded runtime, FS-image and **MISSION9_4M2M_PHYSICAL_LAYOUT_GATE PASS**.
+Powered RTC 0/0, GPIO0 release/existing RST gave `(3,7)` / `v00061740` / `~ld`,
+no observed COPY; LCD/four dynamic metrics, 180-second runtime and stale/recovery
+PASS without observed reboot. Initial LINK RETRYING was host Wi-Fi association;
+manual Windows AP reassociation gave CONNECTED without device reboot/change.
+Current **399168 B Stage-1 FIRST_BOOT_BRIDGE remains FS-less**; installed
+LittleFS was not mounted, parsed or used by it. **NORMAL_PROFILE_LITTLEFS_MOUNT_GATE
+= NOT_RUN; NORMAL_PROFILE_RUNTIME_GATE = NOT_RUN**; next work is separately
+authorized normal-profile mount/use qualification. P1/M8/full-product gates
+unchanged; OTA behavior beyond geometry is unqualified. Phase F statements below
+remain unchanged dated offline evidence, correctly HOLD at that time.
+Phase G device actions **0**; PR #42 remains Draft/open/unmerged. **STOP after
+Phase G; no SmallTV contact or normal-profile activation.**
+
 5 October 2026. Existing branch `feature/shino-tv-m9-flash-layout-liberation`,
 starting clean HEAD `4fde7ba1c948e065accb5ac5540bb848abacf12a`, existing
 [Draft PR #42](https://github.com/shinobione/SHINO-TV/pull/42), open/unmerged.

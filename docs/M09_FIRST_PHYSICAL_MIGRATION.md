@@ -1,5 +1,27 @@
 # Mission 9 Phase B — first physical migration protocol (OFFLINE ONLY)
 
+**Phase G superseding physical state, 6 October 2026:**
+[Stage-2 physical receipt](M09_STAGE2_PHYSICAL_EVIDENCE.md) records the owner run
+after Phase F and before the documentation-only pass. Exact frozen
+**2072576 B** LittleFS installed at **0x200000..0x3F9FFF**, end exclusive
+**0x3FA000**; full physical PRE/POST before first post-Stage2 boot prove
+lower **0x000000..0x1FFFFF / 2097152 B** and tail
+**0x3FA000..0x3FFFFF / 24576 B** preserved exactly and FS exact to frozen image.
+Stage-2 physical write/preservation/RTC transition/boot/runtime/FS-image and
+**MISSION9_4M2M_PHYSICAL_LAYOUT_GATE PASS**. Powered RTC 0/0, GPIO0 release and
+existing RST gave `(3,7)` / `v00061740` / `~ld`, no observed COPY; normal LCD,
+180-second four-value runtime and stale/recovery without observed reboot.
+Manual Windows AP reassociation resolved initial LINK RETRYING to CONNECTED;
+no SmallTV reboot/change was required. Current **399168 B Stage-1 bridge remains
+FS-less**, PROGRAM_FLASH_ONLY UI / RAM_ONLY metrics; no mount/parse/use of the
+installed LittleFS. **NORMAL_PROFILE_LITTLEFS_MOUNT_GATE = NOT_RUN;
+NORMAL_PROFILE_RUNTIME_GATE = NOT_RUN**; next work is separately authorized
+normal-profile mount/use qualification. Geometry/current contents are proven,
+all 1 MiB + 1 MiB OTA behavior is not. P1/M8/full-product gates unchanged.
+Historical maps and HOLD/NOT_RUN text below remain dated design evidence.
+Phase G device actions **0**; PR #42 Draft/open/unmerged. **STOP after Phase G;
+no SmallTV contact, normal-profile activation or merge.**
+
 **Phase F continuation, 5 October - OFFLINE DESIGN / PACKAGE QUALIFICATION ONLY:**
 [Stage-2 LittleFS package/executor qualification](M09_STAGE2_LITTLEFS_QUALIFICATION.md)
 passes pinned source/range models, exact local image freeze and synthetic
