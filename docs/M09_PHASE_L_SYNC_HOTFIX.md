@@ -1,5 +1,58 @@
 # Mission 9 Phase M — bounded no-reset ROM SYNC hotfix
 
+## Small physical-compatibility addendum — 7 October 2026
+
+Continued clean `d4052a842b0faa5f11184c03375ca0557621d8cd` on the same
+branch and Draft/open/unmerged PR #42. The owner supplied a no-flash diagnostic:
+preflight, port open, bounded fresh SYNC, ESP8266 magic, pinned-v2 descriptor,
+RAM-only stub upload and RAM geometry all PASS; ROM capacity byte **0x00**,
+post-stub capacity byte **0x16**, FLASH_BEGIN/DATA sent **0/0**, prewrite chain
+PASS. Earlier owner independent readback reported PRE_UNCHANGED=true, zero
+total/app/protected changed bytes and FS_EXACT=true. These are owner-supplied
+physical observations; this addendum performs no device operation and publishes
+no private dump digest, MAC or credential.
+
+**RAW_ROM_FLASH_CAPACITY_GATE = REJECTED_BY_PHYSICAL_EVIDENCE**
+
+**POST_STUB_4MIB_CAPACITY_GATE = REQUIRED**
+
+The only production semantic change removes the raw-ROM `flash_id` capacity
+assertion from `PinnedStubTransport.__init__`. Fresh exact ROM/type/SYNC and
+chip magic guards still precede pinned-v2 RAM acquisition; no plugin or v1
+fallback is allowed. Exact fresh stub type and RAM geometry remain required.
+The existing uncached post-stub capacity measurement must return byte0x16
+before identity is granted and before FLASH_BEGIN. Wrong capacity or a flash-ID
+exception stops before Begin; there is no inferred replacement size assertion.
+The helper's LF source hash is refreshed; all other dependency pins are intact.
+
+The Phase M runner is byte-for-byte unchanged from the starting HEAD, including
+all five bounded SYNC cases. SingleAttempt and Begin/101 DATA/Finish/MD5 code
+are unchanged, with zero flash retry/reconnect/repeated DATA/second Begin or
+automatic recovery. All103 tracked firmware sources and the retained 411136-byte
+J BIN are unchanged; SHA-256
+`2ce2fa8da00de5c60109d0675c7bcf58ab41df2138d913b607fde25994e5a835`.
+No rebuild or substitution. Prior L/M receipts below remain dated history.
+
+Offline validation: **218 checks PASS**, zero failures/errors/skips (215 in the
+Mission9/L/M/K and related source suite plus three scoped port80 source checks).
+Seven focused adapter/guard tests passed before the complete suite. New cases
+prove raw-ROM ID is never queried, fresh ROM/magic permits one pinned-v2 upload,
+post-stub0x16 permits the transaction, bad capacity0x00/0x15 and ID exceptions
+stop before Begin, and exactly one measured capacity gate remains after stub
+acquisition. Existing unknown-stub/wrong-magic guards, all five bounded SYNC
+success positions, and full416 flash fault matrix pass. Package/source pins,
+all103 firmware LF hashes, the sole changed helper pin and candidate SHA pass.
+Default CLI audit reports AUDIT_PRINT_ONLY_NO_PORT_OPEN. Exact one-line removal
+and unchanged M runner were independently compared with starting HEAD.
+Ignored local receipts: `research-local/m9-phase-m-capacity/`; exact-head CI
+receipt is recorded in existing [PR #42](https://github.com/shinobione/SHINO-TV/pull/42)
+after push, separately from host results and owner observations. Physical resource
+gate remains HOLD/NOT_RUN; overall PARTIAL/HOLD; both normal gates NOT_RUN.
+Agent DEVICE CONTACTS / SERIAL I/O / FLASH WRITES / RTC WRITES / REBOOTS /
+DEVICE FILESYSTEM WRITES are all **0**. STOP; no flash, reboot or PR #42 merge.
+
+## Original Phase M receipt — 6 October 2026
+
 6 October 2026. **OFFLINE ONLY — NO DEVICE CONTACT.** Continued clean
 `feature/shino-tv-m9-flash-layout-liberation` at
 `2ea22809028f1b1e11ffecd3dbc471079d04b547`, existing

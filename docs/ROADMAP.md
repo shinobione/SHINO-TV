@@ -14,6 +14,30 @@
 
 ## Product contract — owner clarification, 1 October 2026
 
+**Phase M targeted physical-compatibility addendum — owner decision, 7 October 2026:**
+continue clean `d4052a842b0faa5f11184c03375ca0557621d8cd`, same branch and
+Draft/open/unmerged PR #42. Owner no-flash diagnostic passed bounded fresh SYNC,
+chip magic and pinned-v2 RAM upload/geometry: raw ROM capacity byte0x00,
+post-stub capacity byte0x16, Begin/DATA sent0. Earlier independent readback
+proved unchanged PRE, zero app/protected/total changed bytes and exact FS.
+Authorize OFFLINE removal ONLY of the pre-stub ROM capacity assertion, with
+targeted/regression tests, necessary source-pin/docs updates, commit/push and
+exact-head CI. Keep fresh ROM/magic/v2/no-plugin/exact stub checks and the measured
+post-stub0x16 gate BEFORE Begin; no inferred capacity assertion. Keep M SYNC,
+firmware/frozen candidate and one Begin/101 DATA/Finish/MD5 unchanged.
+No device contact, physical writes, reboot, rollback, merge or normal activation.
+RAW_ROM_FLASH_CAPACITY_GATE=REJECTED_BY_PHYSICAL_EVIDENCE;
+POST_STUB_4MIB_CAPACITY_GATE=REQUIRED. STOP after this small addendum.
+
+**7 October offline result:** exact one-line raw-ROM assertion removal,
+sole helper pin refreshed, M runner/transaction/103 firmware sources unchanged.
+Retained411136-byte J candidate rehash PASS, no rebuild/substitution. All218
+checks PASS (215 suite +3 scoped source), no failure/error/skip; includes new
+capacity cases, all five SYNC positions and full416 fault matrix. Package/source
+pins PASS; default audit opens no port. [Small addendum](M09_PHASE_L_SYNC_HOTFIX.md#small-physical-compatibility-addendum--7-october-2026)
+and PR #42 carry validation/CI receipts. All six agent device counters0;
+resource physical HOLD/NOT_RUN, overall PARTIAL/HOLD, both normal gates NOT_RUN.
+
 **Mission 9 Phase M owner decision, 6 October 2026:** continue existing
 Draft/open/unmerged PR #42 from clean `2ea22809028f1b1e11ffecd3dbc471079d04b547`
 on the same branch. Authorize OFFLINE acquisition-only hotfix, fake tests,

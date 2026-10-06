@@ -127,13 +127,15 @@ class RunnerTests(unittest.TestCase):
             if preflight_fault:
                 stack.enter_context(patch.object(runner, preflight_fault, side_effect=ValueError('PRIVATE PREFLIGHT DETAIL')))
             stack.enter_context(patch.object(ESP8266ROM, 'read_reg', return_value=ESP8266ROM.MAGIC_VALUE if chip else 0))
-            stack.enter_context(patch.object(ESP8266ROM, 'flash_id', return_value=0x1640ef if capacity else 0x1540ef))
+            raw_id=stack.enter_context(patch.object(ESP8266ROM, 'flash_id', side_effect=AssertionError('Raw ROM ID must not be queried')))
+            stack.enter_context(patch.object(ESP8266StubLoader, 'flash_id', return_value=0x1640ef if capacity else 0x1540ef))
             stack.enter_context(patch.object(ESP8266ROM, 'run_stub', upload))
             stack.enter_context(patch.object(ESP8266StubLoader, 'flash_set_parameters'))
             original=runner.app.SingleAttempt
             once=stack.enter_context(patch.object(runner.app, 'SingleAttempt', wraps=original))
             s=runner.Session(); code, report=s.run(args or self.args())
             self.assertLessEqual(once.call_count, 1)
+            raw_id.assert_not_called()
             self.assertEqual(s.run(args or self.args()), (1, {'status':'STOP_SESSION_ALREADY_CONSUMED'}))
             self.assertLessEqual(once.call_count, 1)
         self.assertLessEqual(len(ports), 1)
@@ -181,7 +183,8 @@ class RunnerTests(unittest.TestCase):
             with self.subTest(changes=changes):
                 code, report, ports, uploads=self.exercise(**changes)
                 self.assertEqual((code,report),(1,{'status':runner.UNKNOWN}))
-                self.assertNotIn('begin',ports[0].calls); self.assertEqual(uploads,[])
+                self.assertNotIn('begin',ports[0].calls)
+                self.assertEqual(len(uploads),1 if changes=={'capacity':False} else 0)
 
     def test_md5_mismatch_has_one_finish_no_recovery(self):
         code, report, ports, _=self.exercise(bad_md5=True)

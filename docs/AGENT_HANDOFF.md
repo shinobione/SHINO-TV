@@ -1,7 +1,24 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
-**Latest OFFLINE work — Mission 9 Phase M, 6 October 2026:**
+**Latest OFFLINE work — small Phase M compatibility addendum, 7 October 2026:**
+[Exact targeted capacity fix and owner diagnostic](M09_PHASE_L_SYNC_HOTFIX.md#small-physical-compatibility-addendum--7-october-2026).
+Starting clean d4052a842b0faa5f11184c03375ca0557621d8cd, same branch/PR #42.
+Owner no-flash evidence: bounded SYNC/magic/v2 RAM stub/geometry PASS,
+raw ROM capacity0x00, post-stub0x16, Begin/DATA0/0; earlier owner readback
+unchanged PRE/FS and zero changed bytes. RAW_ROM_FLASH_CAPACITY_GATE =
+REJECTED_BY_PHYSICAL_EVIDENCE; POST_STUB_4MIB_CAPACITY_GATE = REQUIRED.
+Remove only raw-ROM capacity assertion and refresh its helper hash; keep all
+fresh-ROM/magic/pinned-v2/exact stub guards and post-stub0x16 BEFORE Begin.
+M runner/SYNC, SingleAttempt transaction, all103 firmware sources and frozen J
+bytes unchanged. Host tests/source pins are offline evidence only; physical
+resource gate HOLD/NOT_RUN, overall PARTIAL/HOLD, both normal gates NOT_RUN.
+Offline218 checks PASS, zero failures/errors/skips; five bounded SYNC cases and
+full416 fault matrix PASS. Package/source/candidate pins PASS, default audit
+opens no port. Exact-head CI receipt stays in existing PR #42 after push.
+All six agent device counters ZERO. STOP; no flash/reboot/merge; PR #42 Draft.
+
+**Previous OFFLINE work — Mission 9 Phase M, 6 October 2026:**
 [Bounded no-reset ROM SYNC hotfix](M09_PHASE_L_SYNC_HOTFIX.md) supersedes L's
 single-SYNC assumption, REJECTED_BY_PHYSICAL_EVIDENCE. Owner's later L attempt
 stopped before Begin with conservative UNKNOWN; immediate independent 4 MiB

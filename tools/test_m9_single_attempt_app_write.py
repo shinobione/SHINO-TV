@@ -6,7 +6,7 @@ from pathlib import Path
 import struct
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 import m9_single_attempt_app_write as app
 
 FIXTURE = bytes((i % 251 for i in range(app.FROZEN_BYTES)))  # Not an ESP image or physical candidate.
@@ -195,7 +195,7 @@ class PinnedCommandTests(unittest.TestCase):
         import esptool
         rom=ESP8266ROM.__new__(ESP8266ROM);rom.sync_stub_detected=False
         rom.read_reg=lambda address:rom.MAGIC_VALUE
-        rom.flash_id=lambda cache=False:0x1640ef
+        rom.flash_id=Mock(side_effect=AssertionError('Raw ROM capacity must not be queried'))
         stub=ESP8266StubLoader.__new__(ESP8266StubLoader)
         stub.flash_id=lambda cache=False:0x1640ef
         configured=[];stub.flash_set_parameters=lambda size:configured.append(size)
@@ -210,12 +210,62 @@ class PinnedCommandTests(unittest.TestCase):
             t=app.PinnedStubTransport(rom,Path('synthetic pins mocked separately'))
             self.assertEqual(t.identity,('ESP8266',2,0x400000));self.assertEqual(configured,[0x400000])
             self.assertEqual(len(uploads),1)
-            for change in ('unknown_stub','wrong_magic','wrong_capacity'):
+            rom.flash_id.assert_not_called()
+            for change in ('unknown_stub','wrong_magic'):
                 rom.sync_stub_detected=change=='unknown_stub'
                 rom.read_reg=lambda address:0 if change=='wrong_magic' else rom.MAGIC_VALUE
-                rom.flash_id=lambda cache=False:0x1540ef if change=='wrong_capacity' else 0x1640ef
                 with self.subTest(change=change),self.assertRaises(app.WriteError):app.PinnedStubTransport(rom,Path('synthetic'))
                 self.assertEqual(len(uploads),1)
+
+    def test_post_stub_capacity_is_measured_once_before_begin(self):
+        from esptool.targets.esp8266 import ESP8266ROM,ESP8266StubLoader
+        from serial import SerialException
+        import esptool
+        for outcome in (0x1640ef,0x0040ef,0x1540ef,SerialException('synthetic ID failure'),TimeoutError('synthetic timeout')):
+            with self.subTest(outcome=type(outcome).__name__):
+                events=[]
+                rom=ESP8266ROM.__new__(ESP8266ROM);rom.sync_stub_detected=False
+                rom.read_reg=lambda address:events.append('magic') or rom.MAGIC_VALUE
+                rom.flash_id=Mock(side_effect=AssertionError('Raw ROM capacity must not be queried'))
+                stub=ESP8266StubLoader.__new__(ESP8266StubLoader)
+                stub.flash_set_parameters=lambda size:events.append(('geometry',size))
+                def measure(cache=False):
+                    self.assertIs(cache,False);events.append('stub_id')
+                    if isinstance(outcome,Exception):raise outcome
+                    return outcome
+                stub.flash_id=Mock(side_effect=measure)
+                def upload(spec):
+                    self.assertEqual(spec.STUB_SUBDIRS,['2'])
+                    self.assertTrue(spec.STUB_VERSION_EXPLICIT)
+                    self.assertEqual(spec.plugin_segments,[])
+                    events.append('upload');return stub
+                rom.run_stub=Mock(side_effect=upload)
+                stub.check_command=Mock(side_effect=lambda label,op,*args:events.append(op))
+                stub.flash_md5sum=Mock(return_value=hashlib.md5(FIXTURE).hexdigest())
+                session=app.SingleAttempt()
+                with patch.object(app,'load_pinned_esptool',return_value=(esptool,{})),patch.object(app,'candidate',return_value=(FIXTURE,{'sha256':app.FROZEN_SHA256})):
+                    factory=lambda:app.PinnedStubTransport(rom,Path('synthetic'))
+                    if outcome==0x1640ef:
+                        result=session.write(Path('synthetic'),app.FROZEN_SHA256,factory,app.GO_TEXT)
+                        self.assertEqual(result['begin_count'],1)
+                        self.assertEqual(events[4:],[2]+[3]*101+[4])
+                        stub.flash_md5sum.assert_called_once_with(0,app.FROZEN_BYTES)
+                    else:
+                        error=type(outcome) if isinstance(outcome,Exception) else app.WriteError
+                        with self.assertRaises(error):session.write(Path('synthetic'),app.FROZEN_SHA256,factory,app.GO_TEXT)
+                        stub.check_command.assert_not_called();stub.flash_md5sum.assert_not_called()
+                    with self.assertRaises(app.WriteError):session.write(Path('synthetic'),app.FROZEN_SHA256,factory,app.GO_TEXT)
+                self.assertEqual(events[:4],['magic','upload',('geometry',0x400000),'stub_id'])
+                rom.flash_id.assert_not_called();rom.run_stub.assert_called_once()
+                stub.flash_id.assert_called_once_with(cache=False)
+
+    def test_only_capacity_query_in_adapter_is_post_stub(self):
+        tree=ast.parse(Path(app.__file__).read_text(encoding='utf-8'))
+        adapter=next(node for node in tree.body if isinstance(node,ast.ClassDef) and node.name=='PinnedStubTransport')
+        constructor=next(node for node in adapter.body if isinstance(node,ast.FunctionDef) and node.name=='__init__')
+        queries=[node for node in ast.walk(constructor) if isinstance(node,ast.Call) and isinstance(node.func,ast.Attribute) and node.func.attr=='flash_id']
+        self.assertEqual(len(queries),1)
+        self.assertEqual(ast.unparse(queries[0].func.value),'self.loader')
 
 
 if __name__=='__main__':unittest.main()

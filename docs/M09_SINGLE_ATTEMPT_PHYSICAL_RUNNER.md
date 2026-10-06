@@ -1,5 +1,15 @@
 # Mission 9 Phase L — physical single-attempt session runner
 
+> **7 October Phase M compatibility addendum:**
+> [Owner evidence and targeted capacity fix](M09_PHASE_L_SYNC_HOTFIX.md#small-physical-compatibility-addendum--7-october-2026).
+> Owner no-flash diagnostic measured ROM byte0x00, pinned-v2 stub byte0x16,
+> Begin/DATA0/0. RAW_ROM_FLASH_CAPACITY_GATE = REJECTED_BY_PHYSICAL_EVIDENCE;
+> POST_STUB_4MIB_CAPACITY_GATE = REQUIRED. Only the adapter's raw-ROM capacity
+> assertion is removed; the measured post-stub gate still precedes Begin.
+> The Phase M runner, firmware and frozen BIN are unchanged. Statements below
+> about the original K executor being unchanged describe the dated L receipt.
+> All six agent device counters are zero; no new physical authorization. STOP.
+
 > **Phase M continuation:** [Bounded SYNC hotfix and owner failure receipt](M09_PHASE_L_SYNC_HOTFIX.md)
 > supersede the single-request/per-reply assumptions below. The owner's later
 > failed physical attempt stopped at fresh SYNC; independent full readback

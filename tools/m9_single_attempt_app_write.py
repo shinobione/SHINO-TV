@@ -85,7 +85,6 @@ class PinnedStubTransport:
                 and not rom.sync_stub_detected, 'Fresh ESP8266 ROM session required; unknown stub refused')
         require(rom.read_reg(rom.CHIP_DETECT_MAGIC_REG_ADDR) == rom.MAGIC_VALUE,
                 'Physical chip magic does not identify ESP8266')
-        require((rom.flash_id(cache=False) >> 16) == 0x16, 'Exact 4 MiB JEDEC capacity required')
         # A private subclass prevents the package's [2,1] automatic fallback.
         class OnlyV2(StubFlasher):
             STUB_SUBDIRS = ['2']
