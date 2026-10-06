@@ -1,5 +1,20 @@
 # Mission 9 Phase G — Stage-2 physical evidence record
 
+**Phase I owner-provided physical continuation, 6 October 2026:**
+[Mount-probe physical receipt](M09_MOUNT_PROBE_PHYSICAL_EVIDENCE.md) supersedes
+the dated H installed-state/next-work claims below only as expressly recorded.
+Exact **407440 B profile-2 probe** now installed; fresh full PRE/POST before
+boot prove candidate exact at zero and **0x064000..0x3FFFFF** PRE-equal,
+including the same frozen Stage-2 FS and reserved tail. Mounted exact 24-file
+payload inventory/blank config and 180 s telemetry/stale/recovery PASS;
+zero blocked writes, no observed reboot/corruption/FS mutation.
+Functional FS/runtime and application/FS preservation/no-FS-write gates PASS,
+but **MOUNT_PROBE_PHYSICAL_GATE PARTIAL / HOLD** for missing physical largest
+free block and continuation-stack margin. Both normal-profile gates **NOT_RUN**.
+Phase I is documentation only with six zero device-operation counters; no
+current-unit modification/reboot or successor physical authorization. All
+original H/G evidence below is preserved, including H's then-correct HOLD.
+
 **Phase H OFFLINE continuation, 6 October 2026:**
 [Dedicated mount-probe qualification](M09_LITTLEFS_MOUNT_PROBE_QUALIFICATION.md)
 PASS for profile **2** opt-in source/build/host/link/resource evidence only.

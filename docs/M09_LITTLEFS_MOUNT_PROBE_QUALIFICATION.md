@@ -1,5 +1,22 @@
 # Mission 9 Phase H — LittleFS mount probe qualification (OFFLINE ONLY)
 
+**Phase I owner-provided physical evidence, 6 October 2026 — documentation only:**
+[Mount-probe physical receipt](M09_MOUNT_PROBE_PHYSICAL_EVIDENCE.md) records
+the exact **407440 B** H candidate installed and physically mounted after this
+offline qualification. Functional FS/runtime and application/FS preservation /
+no-FS-write gates **PASS** within the supplied run; all 24 payloads/blank seed
+PASS, zero blocked writes, 180 s stable/stale/recovery, no observed reboot or
+corruption. Heap after mount/inventory **36144 B**, sampled minimum **29744 B**
+initially / **27808 B** finally. **MOUNT_PROBE_PHYSICAL_GATE PARTIAL / HOLD**:
+largest-free-block and continuation-stack physical margin remain unmeasured.
+This explicitly preserves the block/stack requirement in step 6 below.
+**NORMAL_PROFILE_LITTLEFS_MOUNT_GATE NOT_RUN; NORMAL_PROFILE_RUNTIME_GATE NOT_RUN.**
+Profile 2 is not full normal profile; no code change/rebuild or unit action in
+Phase I. The entire original Phase H report below, including its HOLD/NOT_RUN,
+not-installed and future-packet statements, remains dated historical evidence.
+Its device-operation counters concern H only. Phase I has six separate zero
+documentation-pass counters; no permission to modify/reboot the current unit.
+
 6 October 2026. Started clean on `feature/shino-tv-m9-flash-layout-liberation`
 at `40b2d4c3c758b87150876d4e1878a5682568a347`; existing
 [PR #42](https://github.com/shinobione/SHINO-TV/pull/42) Draft/open/unmerged.

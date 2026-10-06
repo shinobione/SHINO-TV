@@ -1,6 +1,44 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+**Latest owner-provided physical state — Mission 9 Phase I, 6 October 2026:**
+[Mount-probe physical receipt](M09_MOUNT_PROBE_PHYSICAL_EVIDENCE.md) records the
+owner-performed run after H, before this documentation-only pass. Exact H
+profile **2** / `esp12e_m9_4m2m_mount_probe` installed: **407440 B**, SHA-256
+`ca92cc2f4a8a67f70bd305875bd37be90d0cdff74bf7b338339856407dceef8b`.
+Fresh full 4 MiB PRE/POST before boot prove candidate exact at zero and
+**0x064000..0x3FFFFF / 3784704 B** PRE-equal, including frozen FS and tail.
+RTC already 0/0, no RTC write; powered GPIO0 release/existing RST yielded
+`rst cause:2` / `(3,7)` / `v00063790` / `~ld`, no observed COPY path. Four
+telemetry cards returned. Authenticated status: autoformat disabled, mounted,
+exact **24 files / 181402 payload B**, canonical blank seed, zero blocked writes.
+Heap after mount/inventory **36144 B**; sampled minimum initially **29744 B**,
+after **180 s** stable/stale/recovery **27808 B**. No observed reboot,
+display corruption or FS mutation. Mounted payload hashes do not prove raw FS
+image SHA; full raw FS preservation is the separate preboot PRE/POST result.
+
+**MOUNT_PROBE_FS_FUNCTIONAL_GATE, MOUNT_PROBE_RUNTIME_FUNCTIONAL_GATE,
+MOUNT_PROBE_APPLICATION_PRESERVATION_GATE,
+MOUNT_PROBE_FILESYSTEM_PRESERVATION_GATE and MOUNT_PROBE_NO_FS_WRITE_GATE PASS**
+within the supplied run's evidence scope. **MOUNT_PROBE_PHYSICAL_GATE
+PARTIAL / HOLD**: physical largest-free-block and continuation-stack margin
+not exposed/measured. Do not substitute free heap/compiler frames or remove
+Phase H's requirement. **NORMAL_PROFILE_LITTLEFS_MOUNT_GATE NOT_RUN;
+NORMAL_PROFILE_RUNTIME_GATE NOT_RUN.** Full normal profile 1 remains blocked;
+no P1/M8/Home-LAN/native OTA/full-product promotion.
+
+Next bounded work: separately reviewed offline profile-2 instrumentation only,
+preserving FS behavior and all bypasses/writer exclusions; expose free heap,
+largest block, fragmentation and continuation-stack free/high-water using
+pinned Core `ESP.getHeapStats(...)`, `ESP.getFreeContStack()` and
+`ESP.resetFreeContStack()`. Not implemented or physically authorized by I.
+Phase I modifies documentation only; firmware/tools/companion/scripts/platform/
+workflows unchanged, no local rebuild or unit operation. Six documentation-pass
+device counters **0**; PR #42 remains Draft/open/unmerged. **STOP after I;
+do not modify/reboot SmallTV, activate normal profile or merge.** Dated H/G/F/E
+paragraphs below are preserved history; their then-current installed/NOT_RUN
+claims are superseded only by this owner-provided receipt, not rewritten.
+
 **Latest OFFLINE work — Mission 9 Phase H, 6 October 2026:**
 [Dedicated read-only LittleFS mount-probe qualification](M09_LITTLEFS_MOUNT_PROBE_QUALIFICATION.md)
 **PASS offline**; new explicit `esp12e_m9_4m2m_mount_probe` / profile **2**,

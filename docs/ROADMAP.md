@@ -14,6 +14,48 @@
 
 ## Product contract — owner clarification, 1 October 2026
 
+**Mission 9 Phase I owner decision, 6 October 2026:** continue existing
+Draft/open/unmerged PR #42 from clean
+`5ea433b2e72455a93c0a8fca80903c8c8acffbd4` on the existing Mission 9 branch.
+Authorize documentation of the supplied owner-performed mount-probe run,
+documentation consistency checks, commit/push and exact-head CI only.
+No executable changes, local rebuild, SmallTV contact, serial I/O, flash/RTC/FS
+operation or reboot in this pass. Preserve all dated Phase H HOLD/NOT_RUN
+statements; do not retroactively remove its physical block/stack requirements.
+STOP after Phase I documentation; no current-unit modification/reboot,
+full normal-profile activation or merge. Future instrumentation is planning
+only and has no physical authorization from Phase I.
+
+**Mission 9 Phase I owner-provided physical evidence, 6 October 2026:**
+[Mount-probe physical receipt](M09_MOUNT_PROBE_PHYSICAL_EVIDENCE.md) records
+installed profile **2** / `esp12e_m9_4m2m_mount_probe`, exact **407440 B**,
+SHA-256 `ca92cc2f4a8a67f70bd305875bd37be90d0cdff74bf7b338339856407dceef8b`.
+Fresh full 4 MiB PRE/POST before first boot verified exact candidate at zero
+and continuous protected equality **0x064000..0x3FFFFF / 3784704 B**, including
+lower unused arena, frozen LittleFS and reserved tail. RTC was already 0/0;
+no RTC write required. Powered GPIO0 release/existing RST gave `(3,7)` /
+`v00063790` / `~ld`, no observed COPY path. Authenticated status proves
+autoformat disabled, mounted, exact **24 files / 181402 payload B**, canonical
+blank config and zero blocked writes. Heap after mount/inventory **36144 B**;
+sampled minimum **29744 B** initially, **27808 B** after 180-second stable
+telemetry/stale/recovery; no observed reboot, display corruption or FS mutation.
+
+**MOUNT_PROBE_FS_FUNCTIONAL_GATE, MOUNT_PROBE_RUNTIME_FUNCTIONAL_GATE,
+MOUNT_PROBE_APPLICATION_PRESERVATION_GATE,
+MOUNT_PROBE_FILESYSTEM_PRESERVATION_GATE and MOUNT_PROBE_NO_FS_WRITE_GATE:
+PASS within the supplied owner-evidence scope. MOUNT_PROBE_PHYSICAL_GATE:
+PARTIAL / HOLD** because physical largest-free-block and continuation-stack
+margin were not exposed/measured. **NORMAL_PROFILE_LITTLEFS_MOUNT_GATE NOT_RUN;
+NORMAL_PROFILE_RUNTIME_GATE NOT_RUN.** Profile 2 is not full normal profile;
+no P1/M8/Home-LAN/native-OTA/full-product promotion. Next bounded work is a
+separately reviewed offline instrumented profile-2 candidate preserving FS
+behavior, bypasses and writers policy, using pinned Core `ESP.getHeapStats(...)`,
+`ESP.getFreeContStack()` / `ESP.resetFreeContStack()` for read-only heap/block/
+fragmentation/continuation-stack evidence. Not implemented or physically
+authorized here. All six Phase I documentation-pass device counters **0**.
+Older statements below remain dated history, superseded only as expressly
+recorded by this receipt; Phase H's full physical gate remains unclosed.
+
 **Mission 9 Phase H owner decision, 6 October 2026:** continue existing
 Draft/open/unmerged PR #42 from clean
 `40b2d4c3c758b87150876d4e1878a5682568a347` on the existing Mission 9 branch.
