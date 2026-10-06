@@ -9,10 +9,10 @@ authority. Candidate BIN/ELF remain ignored/local; no private dumps are inputs.
 
 ## Current gates and unchanged installed baseline
 
-| Gate | Result at implementation checkpoint |
+| Gate | Result after clean local qualification |
 | --- | --- |
 | PHASE_J_RESOURCE_INSTRUMENTATION_SOURCE_GATE | **PASS/OFFLINE** |
-| PHASE_J_RESOURCE_INSTRUMENTATION_BUILD_GATE | **HOLD — clean paired freeze pending** |
+| PHASE_J_RESOURCE_INSTRUMENTATION_BUILD_GATE | **PASS/OFFLINE** |
 | PHASE_J_RESOURCE_INSTRUMENTATION_REGRESSION_GATE | **PASS/OFFLINE** |
 | MOUNT_PROBE_PHYSICAL_GATE | **PARTIAL / HOLD** |
 | MOUNT_PROBE_RESOURCE_PHYSICAL_GATE | **HOLD / NOT_RUN** |
@@ -178,12 +178,54 @@ still required. No gate closes because an arbitrary new number looks adequate.
 
 ## Clean candidate and paired build receipt
 
-**Clean source freeze / exact candidate identity: PENDING at implementation
-checkpoint.** Default and initial instrumented compile checks pass. A clean
-uninstrumented/instrumented paired application build, ELF/image inspection and
-exact retained candidate receipt will be recorded after this source checkpoint.
-Only one successor will be frozen; initial compile-check outputs are not an
-authorized physical candidate. Installed H bytes and frozen FS remain unchanged.
+**Clean firmware source freeze: `7779248082975472ce5f62edf1613d8288b75b6e`.**
+Both probe applications were built from that clean checkpoint, using the same
+retained local policy and pinned toolchain. The following documentation-only
+qualification commit does not rebuild or replace the frozen bytes. Default
+esp12e compile also passes. All outputs below remain ignored under
+`research-local/m9-phase-j/`; no BIN/ELF is published.
+
+| Quantity | Paired uninstrumented | Frozen instrumented | Delta |
+| --- | ---: | ---: | ---: |
+| BIN bytes | 407440 | **411136** | +3696 |
+| Linked flash bytes | 403283 | **406991** | **+3708** |
+| Static RAM bytes | 40652 | **40732** | **+80** |
+| .noinit bytes (separate) | 56 | **56** | **0** |
+
+Frozen successor SHA-256:
+**`2ce2fa8da00de5c60109d0675c7bcf58ab41df2138d913b607fde25994e5a835`**.
+Payload occupies **0x000000..0x0645FF**, exclusive end **0x064600**.
+Sector-rounded extent is **413696 B / 0x065000**, touched range
+**0x000000..0x064FFF**. Rounded margins: **634880 B** below 0x100000 and
+**1683456 B** below FS start 0x200000. Future protected interval is the whole
+**0x065000..0x3FFFFF / 3780608 B**, including unused lower arena, FS and tail.
+4 MiB/DIO image header, both image checksums, Arduino CRC, linked 4m2m FS
+symbols and excluded-writer checks pass. Baseline has no resource-observer
+symbols; successor links beforeMount/afterMount/poll/sendStatus and all three
+pinned ESP resource APIs.
+
+| Compiler frame | Uninstrumented | Instrumented | Delta |
+| --- | ---: | ---: | ---: |
+| setup / loop | 48 / 16 | 48 / 16 | 0 / 0 |
+| Existing begin / checkPayloads | 272 / 576 | 272 / 576 | 0 / 0 |
+| Existing base JSON formatter | 80 | 64 | -16 |
+| New beforeMount / afterMount / poll | absent | 16 / 32 / 32 | new |
+| New sendStatus / emit | absent | 800 / 944 | new |
+
+**All three review budgets PASS:** +80 <=512 static RAM, +3708 <=8192 linked
+flash, largest new individual frame 944 <=1024. The 800/944 frames are nested;
+these are individual compiler frames, not a combined call-chain bound or
+physical continuation margin. Actual physical watermark remains NOT_RUN.
+Other common parsed frame deltas are zero; duplicated compiler-generated
+lambda names are compared by maximum per normalized function key.
+
+Paired uninstrumented SHA-256 is
+`1b249f2da69c1c4d139754286865027b0e20a36d0a7a67e7ef7eb4a3ee5c83e5`.
+Its behavior is pinned unchanged; a new build's source/build-version provenance
+does not promise identical BIN bytes to installed H. The retained original H
+407440-byte image was rehashed and still matches `ca92cc2f...dceef8b`; it was
+not recreated or overwritten. Frozen FS is unchanged. Initial compile-check
+outputs are not the frozen successor and convey no physical authority.
 
 ## Validation and future physical packet
 

@@ -36,6 +36,21 @@ Future physical packet is PRINT ONLY, separately authorized; stop after J.
 Phase I physical evidence below remains exact dated history and current installed
 candidate identity; no reconstruction/replacement of that frozen candidate.
 
+**Mission 9 Phase J offline result, 6 October 2026:**
+[Resource-instrumentation receipt](M09_MOUNT_PROBE_RESOURCE_INSTRUMENTATION.md)
+records clean firmware freeze `7779248082975472ce5f62edf1613d8288b75b6e`,
+**411136 B**, SHA-256
+`2ce2fa8da00de5c60109d0675c7bcf58ab41df2138d913b607fde25994e5a835`.
+Separate opt-in environment adds +3708 B linked flash, +80 B static RAM,
+0 .noinit delta; largest new individual frame 944 B. All review budgets,
+source/Core/image gates, default and paired probe builds and 165 local tests
+PASS offline. Rounded extent **0x065000 / 413696 B**; no overlap with application
+ceiling or FS. Original probe semantics and retained installed H/frozen FS bytes
+unchanged. Mount/runtime watermark windows and cached Digest status add
+observability only. **PHYSICAL_RESOURCE_THRESHOLD REVIEW_REQUIRED**; physical
+and normal-profile gates remain as above. Six J device counters **0**.
+Future physical packet PRINT ONLY; no installation/reboot/activation/merge.
+
 **Mission 9 Phase I owner decision, 6 October 2026:** continue existing
 Draft/open/unmerged PR #42 from clean
 `5ea433b2e72455a93c0a8fca80903c8c8acffbd4` on the existing Mission 9 branch.

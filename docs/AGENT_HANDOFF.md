@@ -10,8 +10,14 @@ uninstrumented probe semantics pinned unchanged; profile 1 remains blocked.
 Two mount/runtime watermark windows; at most one loop-end sample per second,
 no runtime reset or HTTP/FS-callback sampler. Cached scalar JSON retains Digest
 and uses two prevalidated 768-byte chunks, exact maximum body 1157 B.
-Source/Core/regression checks PASS offline; clean paired candidate freeze/build
-receipt pending at this implementation checkpoint. Threshold audit:
+Source/Core/regression/paired-build checks PASS offline; clean firmware freeze
+`7779248082975472ce5f62edf1613d8288b75b6e`: **411136 B**, SHA-256
+`2ce2fa8da00de5c60109d0675c7bcf58ab41df2138d913b607fde25994e5a835`.
+Rounded extent **0x065000 / 413696 B**; paired linked flash **+3708 B**,
+static RAM **+80 B**, .noinit **0 delta**, largest new frame **944 B**.
+All three review budgets PASS; compiler frames are not physical margins.
+Candidate remains ignored/local and is not rebuilt by the docs receipt.
+Threshold audit:
 **PHYSICAL_RESOURCE_THRESHOLD REVIEW_REQUIRED**; M8 observations/media budgets
 are not M9 physical floors. **MOUNT_PROBE_PHYSICAL_GATE PARTIAL / HOLD;
 MOUNT_PROBE_RESOURCE_PHYSICAL_GATE HOLD / NOT_RUN; both normal-profile gates

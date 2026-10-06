@@ -7,8 +7,10 @@ telemetry/authentication behavior change or new physical evidence. The original
 installed **407440 B** candidate and all supplied Phase I evidence below remain
 unchanged. **MOUNT_PROBE_PHYSICAL_GATE PARTIAL / HOLD;
 MOUNT_PROBE_RESOURCE_PHYSICAL_GATE HOLD / NOT_RUN; both normal-profile gates
-NOT_RUN; PHYSICAL_RESOURCE_THRESHOLD REVIEW_REQUIRED.** Clean successor build
-freeze pending at the J implementation checkpoint. Six J device counters **0**.
+NOT_RUN; PHYSICAL_RESOURCE_THRESHOLD REVIEW_REQUIRED.** Clean J firmware freeze
+`7779248082975472ce5f62edf1613d8288b75b6e` qualifies **411136 B** successor
+SHA-256 `2ce2fa8da00de5c60109d0675c7bcf58ab41df2138d913b607fde25994e5a835`
+offline only; it is not installed. Six J device counters **0**.
 No permission to flash/reboot/modify the current unit, activate normal profile
 or merge; this banner changes next-work status only, preserving the dated receipt.
 
