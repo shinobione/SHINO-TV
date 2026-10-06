@@ -17,7 +17,12 @@ resource observer/windows/thresholds unchanged. Initial paired gates pass:
 compiled mount frames848->272 (checkPayloads/validate inline into begin),
 static RAM+408, linked flash+16, noinit0 delta. Compiler frames are not physical
 margin. Host222 checks PASS (219+3), no failures/errors/skips; source/Core/package
-pins and installed J rehash PASS. Clean successor freeze pending; packet PRINT ONLY.
+pins and installed J rehash PASS. Clean source freeze9f86a73d999168d052e2037a4fcb999cfe9a2e2c:
+one new instrumented BIN411152 B, SHA256
+e1852e56d99801b694f37d235b08a201188cf36d5a25f3f6f59d059a129bc27e,
+rounded0x065000, margins634880/1683456 B. Final clean resource RAM40732->41140,
+flash406991->407007, noinit56 unchanged. Ignored local BIN/ELF; receipt commit
+does not rebuild it. Successor physical NOT_RUN; future packet PRINT ONLY.
 No successor physical acceptance or writer rebind. All six agent counters ZERO.
 STOP after offline receipt/CI; no flash/reboot/threshold lowering/merge.
 

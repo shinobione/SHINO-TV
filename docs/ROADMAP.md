@@ -34,6 +34,24 @@ candidate remains separate historical evidence, never rebuilt/substituted.
 Future replacement packet PRINT ONLY; no device contact, serial I/O, flash/RTC/
 FS writes, reboot, normal activation or merge. Both normal gates remain NOT_RUN.
 
+**7 October mount-stack offline result:** [Focused receipt](M09_MOUNT_STACK_REMEDIATION.md).
+One408 B BSS profile2 workspace; guard rejects nested validation before scratch/
+reader/hash/counter mutation. No scratch heap allocation or semantics change.
+Final clean paired mount own frames848->272 B (**-576**); checkPayloads/validate
+inline into begin272 B, new startup initializer0 B. Both profiles static RAM
+**+408**, linked flash **+16**, noinit56 B /0 delta; no new frame>1024 B.
+All222 checks PASS, no failure/error/skip; source/Core/package/link/image gates
+PASS. Clean source9f86a73d999168d052e2037a4fcb999cfe9a2e2c, one frozen local
+instrumented successor **411152 B**, SHA256
+`e1852e56d99801b694f37d235b08a201188cf36d5a25f3f6f59d059a129bc27e`;
+rounded0x065000, margins634880/1683456 B. BIN/ELF ignored, historical installed
+J retained exact, M runner/transaction/observer/thresholds unchanged. Exact-head
+CI receipt in PR #42; agent six counters0. Owner's installed mount1776 remains
+FAIL/HOLD at unchanged2048 floor; successor physical NOT_RUN. PRINT ONLY future
+replacement packet, current writer remains pinned to historical J and cannot
+accept new bytes without separate reviewed binding/authority. STOP; no flash,
+reboot, merge or normal activation.
+
 **Phase M targeted physical-compatibility addendum — owner decision, 7 October 2026:**
 continue clean `d4052a842b0faa5f11184c03375ca0557621d8cd`, same branch and
 Draft/open/unmerged PR #42. Owner no-flash diagnostic passed bounded fresh SYNC,

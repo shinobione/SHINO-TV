@@ -124,14 +124,54 @@ manifest/hash/blank-seed checks, write-denial mutations, observer fault-injectio
 five bounded SYNC cases and416 flash fault matrix all pass. Exact Core/package/
 source pins and installed J rehash pass. The CI safe JSON allowlist explicitly
 adds only `m9-mount-stack.json`; no private inputs/BIN/ELF upload is added.
-Clean source checkpoint and one successor freeze follow this passing receipt.
-No successor physical operation is authorized by this document.
-BIN/ELF stay ignored/local. Exact-head CI is separately recorded in PR #42.
+**Clean firmware source freeze:** `9f86a73d999168d052e2037a4fcb999cfe9a2e2c`.
+After the passing host/source/initial build gates, both predecessor comparison
+and successor profiles were built again in isolated projects with identical
+clean version context, retained policy and pinned toolchain. Per-environment
+BIN/ELF/SU/symbol/section/disassembly artifacts were escrowed before switching
+profiles. The initial comparison receipt remains `initial-paired-audit.json`;
+its extra4 B version context is not a code/resource regression.
+
+| Final clean paired quantity | Before uninstrumented | Successor uninstrumented | Delta | Before instrumented | Successor instrumented | Delta |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Static RAM | 40652 | **41060** | **+408** | 40732 | **41140** | **+408** |
+| Linked flash | 403283 | **403299** | **+16** | 406991 | **407007** | **+16** |
+| .noinit | 56 | **56** | **0** | 56 | **56** | **0** |
+| BIN bytes | 407440 | **407456** | +16 | 411136 | **411152** | +16 |
+
+Both final profiles retain begin272 B, checkPayloads/validate inlined into begin,
+848->272 own-frame sum (**-576 B**), one408 B BSS workspace, zero-byte startup
+initializer and all other probe/observer frames unchanged. Exact Core/source,
+layout/link/writer exclusions, image checksums/Arduino CRC and all review budgets
+pass. Comparison predecessors use old source with current build-version context;
+they are not the installed retained J bytes and are never substituted for them.
+
+One clean **instrumented** successor is frozen locally, never uploaded:
+
+| Frozen successor identity | Value |
+| --- | --- |
+| BIN | `research-local/m9-mount-stack/frozen-successor-resource-probe.bin` |
+| ELF | `research-local/m9-mount-stack/frozen-successor-resource-probe.elf` |
+| Bytes | **411152** |
+| SHA256 | **`e1852e56d99801b694f37d235b08a201188cf36d5a25f3f6f59d059a129bc27e`** |
+| Target / payload extent | 0 / `0x000000..0x06460F`, exclusive end `0x064610` |
+| Sector-rounded extent | **413696 B / 0x065000**, touched `0x000000..0x064FFF` |
+| Rounded margin below0x100000 | **634880 B** |
+| Rounded margin below FS start0x200000 | **1683456 B** |
+| Protected after rounded end | `0x065000..0x3FFFFF` |
+| Physical successor acceptance | **NOT_RUN**; installed predecessor resource gate **HOLD** |
+
+Final receipt `freeze.json` records source checkpoint, paired audits, candidate
+identity, passed tests and six zero operation counters. The documentation-only
+receipt commit does not rebuild or replace these bytes. BIN/ELF remain ignored;
+the installed J BIN rehash is still exact. Exact-head CI is separately recorded
+in existing Draft/open/unmerged PR #42, with no private input or BIN/ELF upload.
 
 ## Future replacement packet — PRINT ONLY / DO NOT EXECUTE
 
-Only after all offline gates pass, freeze one exact instrumented successor and
-record its identity/extent here. A future operation requires separate owner GO
+All offline gates above pass; the single exact instrumented successor is
+411152 B / `e1852e56d99801b694f37d235b08a201188cf36d5a25f3f6f59d059a129bc27e`,
+rounded end0x065000. A future operation requires separate owner GO
 for those exact bytes and operation, fresh qualified ROM and existing pinned-v2
 RAM-only stub, current same-unit full4 MiB PRE/preservation proof and separate
 rollback authority. The current physical runner intentionally remains pinned
