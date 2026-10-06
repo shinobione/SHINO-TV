@@ -36,13 +36,19 @@
 #include "scenes/SceneManager.h"
 #include "recovery/FactoryRollback.h"
 #include "shino_private_policy.h"
+#include "boot/ShinoBootProfile.h"
+#if SHINO_BOOT_PROFILE == 2
+#include "boot/M9LittleFsMountProbe.h"
+#endif
 #include <array>
 
 #ifndef METRICS_URL
 #define METRICS_URL ""
 #endif
 
+#if SHINO_BOOT_PROFILE != 2
 ConfigManager configManager;
+#endif
 static String shinoApName;
 const char* AP_SSID = nullptr;
 const char* AP_PASSWORD = SHINO_SETUP_AP_PSK;
@@ -54,9 +60,8 @@ static_assert(sizeof(SHINO_RESCUE_HTTP_PASSWORD) >= 21, "Per-build rescue HTTP s
 #endif
 // Initial install only. A normal boot with a different flash/FS map needs a
 // separately reviewed migration and is NOT exposed by this source revision.
-#if SHINO_BOOT_PROFILE != 0
-#error "Normal SHINO boot is prohibited until a reviewed FS/data migration gate exists."
-#endif
+// The shared ShinoBootProfile.h keeps normal profile 1 prohibited and requires
+// explicit opt-in for profile 2. Profile-0 setup/loop bodies stay unchanged.
 
 WiFiManager* wifiManager = nullptr;
 static constexpr const char* KV_SALT_STR = "GeekMagicOpenFirmwareIsAwesome";
@@ -123,6 +128,11 @@ void setup() {
     // FIRST instruction path after serial startup: never mount/format LittleFS,
     // initialize EEPROM, migrate config, write boot counters, or use WiFi STA.
     FirstBootBridge::run();
+    EspClass::wdtEnable(WDTO_2S);
+    return;
+#elif SHINO_BOOT_PROFILE == 2
+    FirstBootBridge::run(); // Protected AP/LCD remains available on probe failure.
+    M9LittleFsMountProbe::begin();
     EspClass::wdtEnable(WDTO_2S);
     return;
 #else
@@ -232,6 +242,10 @@ void setup() {
 void loop() {
 #if SHINO_BOOT_PROFILE == 0
     FirstBootBridge::loop();
+    return;
+#elif SHINO_BOOT_PROFILE == 2
+    FirstBootBridge::loop();
+    M9LittleFsMountProbe::poll();
     return;
 #else
     if (RescueMode::isActive()) {

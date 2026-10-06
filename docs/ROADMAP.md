@@ -14,6 +14,25 @@
 
 ## Product contract — owner clarification, 1 October 2026
 
+**Mission 9 Phase H owner decision, 6 October 2026:** continue existing
+Draft/open/unmerged PR #42 from clean
+`40b2d4c3c758b87150876d4e1878a5682568a347` on the existing Mission 9 branch.
+Authorize OFFLINE design, deterministic tests, application-only mount-probe
+and ordinary baseline builds, source/link/resource qualification, documentation,
+commit/push and exact-head CI. Add dedicated opt-in **SHINO_BOOT_PROFILE=2**;
+profile 0 stays unchanged and full normal profile 1 remains prohibited.
+Probe must disable autoformat before its single mount attempt, stream/validate
+the reviewed 24-file payload inventory without writes, and bypass ConfigManager,
+SecureStorage, EEPROM/migration, STA and OTA/FS writers. Existing normal path's
+duplicated mounts and credential migration/save make it unsuitable for this
+read-only probe. Reuse protected first-boot AP/Digest and RAM telemetry only.
+No local FS image rebuild/replacement; retained Stage-1/Stage-2 bytes unchanged.
+No SmallTV contact, serial I/O, flash/RTC/FS operation or reboot authorized.
+**MOUNT_PROBE_PHYSICAL_GATE HOLD / NOT_RUN;
+NORMAL_PROFILE_LITTLEFS_MOUNT_GATE NOT_RUN;
+NORMAL_PROFILE_RUNTIME_GATE NOT_RUN.** STOP after Phase H; no physical probe
+installation, full normal-profile activation or merge.
+
 **Mission 9 Phase G owner decision and physical evidence, 6 October 2026:**
 continue existing Draft/open/unmerged PR #42 from verified clean
 `f92b42deaa87e3df7b6204f1010886a8ed343043` on

@@ -41,6 +41,12 @@ static_assert(SHINO_ENABLE_HEAP_DIAGNOSTICS == 0 ||
 #include <array>
 #include "recovery/FactoryRollback.h"
 #include "shino_private_policy.h"
+#include "boot/ShinoBootProfile.h"
+#if SHINO_BOOT_PROFILE == 2
+#include "boot/M9LittleFsMountProbe.h"
+static_assert(SHINO_ENABLE_HOME_LAN == 0 && SHINO_ENABLE_FACTORY_RESTORE == 0,
+              "Mount probe forbids STA and every OTA writer.");
+#endif
 
 #ifndef SHINO_ENABLE_NATIVE_SIGNED_OTA
 #error "Explicit native signed-OTA policy missing from private build."
@@ -51,8 +57,8 @@ static_assert(SHINO_ENABLE_NATIVE_SIGNED_OTA == 0,
 #ifndef SHINO_BOOT_PROFILE
 #error "A private, explicit first-boot profile is required."
 #endif
-static_assert(SHINO_BOOT_PROFILE == 0 || SHINO_BOOT_PROFILE == 1,
-              "Only conservative bridge (0) or separately reviewed normal profile (1) is supported.");
+static_assert(SHINO_BOOT_PROFILE == 0 || SHINO_BOOT_PROFILE == 2,
+              "Only bridge (0) or explicit read-only mount probe (2) is supported.");
 static_assert(sizeof(SHINO_SETUP_AP_PSK) >= 13, "Missing private per-build WPA2 key");
 static_assert(sizeof(SHINO_RESCUE_HTTP_PASSWORD) >= 21, "Missing private Digest secret");
 #ifndef SHINO_ENABLE_FS_MIGRATION
@@ -230,8 +236,13 @@ void sendFsPlan() {
 void sendStatus() {
     if (!requireAuth()) return;
     JsonDocument doc;
+#if SHINO_BOOT_PROFILE == 2
+    doc["mode"] = "M9_LITTLEFS_MOUNT_PROBE";
+    doc["application_littlefs_begin_called"] = M9LittleFsMountProbe::status().autoformat_disabled;
+#else
     doc["mode"] = "FIRST_BOOT_BRIDGE";
     doc["application_littlefs_begin_called"] = false;
+#endif
     doc["application_autoformat_enabled"] = false;
     doc["application_eeprom_begin_called"] = false;
     doc["application_eeprom_commit_called"] = false;
@@ -254,8 +265,13 @@ void sendStatus() {
     doc["pc_metrics_route"] = "/api/v1/bridge/metrics";
     doc["filesystem_migration_writes_compiled"] = false;
     doc["manufacturer_original_flash_backup_available"] = false;
+#if SHINO_BOOT_PROFILE == 2
+    doc["linked_shino_FS_start_offset"] = "0x200000";
+    doc["linked_boundary_for_U_FLASH_without_FS_mount"] = false;
+#else
     doc["linked_shino_FS_start_offset"] = "0x100000";
     doc["linked_boundary_for_U_FLASH_without_FS_mount"] = true;
+#endif
     doc["inferred_stock_FS_start_offset_UNVERIFIED"] = "0x100000";
     doc["physical_flash_bytes_observed_at_runtime"] = ESP.getFlashChipRealSize();
     doc["running_application_bytes"] = ESP.getSketchSize();
@@ -472,6 +488,17 @@ void run() {
     server.on("/api/v1/bridge/metrics", HTTP_GET, sendMetrics);
     server.on("/api/v1/bridge/metrics", HTTP_POST, acceptMetrics);
     server.on("/api/v1/bridge/status", HTTP_GET, sendStatus);
+#if SHINO_BOOT_PROFILE == 2
+    server.on("/api/v1/m9/fs-probe/status", HTTP_GET, []() {
+        if (!requireAuth()) return; // Cookie-only access is not sufficient.
+        char body[M9LittleFsMountProbe::STATUS_JSON_BYTES];
+        if (!M9LittleFsMountProbe::json(body, sizeof(body))) {
+            respond(500, F("{\"error\":\"PROBE_STATUS_OVERFLOW\"}"));
+            return;
+        }
+        respond(200, body);
+    });
+#endif
     server.on("/api/v1/bridge/fs-plan", HTTP_GET, sendFsPlan);
     // Native OTA phase A. This route is read-only. Browser cookie is for GET
     // viewing only; it does NOT authorize firmware uploads or OEM restore.
@@ -519,7 +546,11 @@ void run() {
     // validated numeric PC samples are stored in volatile RAM.
     DisplayManager::begin(0); // Runtime-only, no config or filesystem writes.
     paintNativeDashboard();
+#if SHINO_BOOT_PROFILE == 2
+    Logger::info("M9 probe protected AP running; read-only mount probe pending", "FirstBoot");
+#else
     Logger::info("FirstBoot protected AP running; no filesystem or EEPROM initialization", "FirstBoot");
+#endif
 }
 
 void loop() {

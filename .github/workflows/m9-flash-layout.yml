@@ -23,6 +23,10 @@ on:
       - 'tools/m9_stage2_executor.py'
       - 'tools/m9_stage2_sources.json'
       - 'tools/test_m9_stage2.py'
+      - 'tools/m9_mount_probe.py'
+      - 'tools/m9_mount_probe_sources.json'
+      - 'tools/test_m9_mount_probe.py'
+      - 'docs/M09_LITTLEFS_MOUNT_PROBE_QUALIFICATION.md'
       - 'docs/M09_STAGE2_LITTLEFS_QUALIFICATION.md'
       - 'docs/M09_RTC_EBOOT_NEUTRALIZATION.md'
       - 'docs/M09_PHYSICAL_EXECUTOR_QUALIFICATION.md'
@@ -55,6 +59,10 @@ on:
       - 'tools/m9_stage2_executor.py'
       - 'tools/m9_stage2_sources.json'
       - 'tools/test_m9_stage2.py'
+      - 'tools/m9_mount_probe.py'
+      - 'tools/m9_mount_probe_sources.json'
+      - 'tools/test_m9_mount_probe.py'
+      - 'docs/M09_LITTLEFS_MOUNT_PROBE_QUALIFICATION.md'
       - 'docs/M09_STAGE2_LITTLEFS_QUALIFICATION.md'
       - 'docs/M09_RTC_EBOOT_NEUTRALIZATION.md'
       - 'docs/M09_PHYSICAL_EXECUTOR_QUALIFICATION.md'
@@ -139,6 +147,7 @@ jobs:
           python -m unittest discover -s tools -p 'test_m9_phase_c.py' -v
           python -m unittest discover -s tools -p 'test_m9_rtc_neutralization.py' -v
           python -m unittest discover -s tools -p 'test_m9_stage2.py' -v
+          python -m unittest discover -s tools -p 'test_m9_mount_probe.py' -v
           python -m unittest discover -s tools -p 'test_first_boot_bridge_source.py' -v
           python -m unittest discover -s tools -p 'test_fsless_dashboard_source.py' -v
           python -m unittest discover -s tools -p 'test_verify_fs_provisioning.py' -v
@@ -333,6 +342,30 @@ jobs:
         env:
           SOURCE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
 
+      - name: Phase H application-only read-only mount probe (no device)
+        run: |
+          # Existing profile-0 reports are escrowed already. No probe buildfs,
+          # upload, owner image or private readback is used in this step.
+          pio run -d firmware -e esp12e_m9_4m2m_mount_probe
+          "$HOME/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-nm" -C firmware/.pio/build/esp12e_m9_4m2m_mount_probe/firmware.elf > "${{ runner.temp }}/m9-probe-symbols.txt"
+          "$HOME/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-size" -A firmware/.pio/build/esp12e_m9_4m2m_mount_probe/firmware.elf > "${{ runner.temp }}/m9-probe-sections.txt"
+          python tools/m9_mount_probe.py \
+            --core-root "$HOME/.platformio/packages/framework-arduinoespressif8266" \
+            --symbols "${{ runner.temp }}/m9-probe-symbols.txt" \
+            --sections "${{ runner.temp }}/m9-probe-sections.txt" \
+            --stack-usage firmware/.pio/build/esp12e_m9_4m2m_mount_probe/src/boot/M9LittleFsMountProbe.cpp.su \
+            --candidate firmware/.pio/build/esp12e_m9_4m2m_mount_probe/firmware.bin > "${{ runner.temp }}/m9-mount-probe.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = json.loads((Path(os.environ["RUNNER_TEMP"])/"m9-mount-probe.json").read_text())
+          assert report["status"] == "PASS_OFFLINE_MOUNT_PROBE_SOURCE"
+          assert report["build"]["status"] == "PASS_OFFLINE_MOUNT_PROBE_LINKED_IMAGE"
+          assert report["checked_file_count"] == 24 and report["profile"] == 2
+          assert not report["physical_authorization"] and report["device_contacts"] == 0
+          assert report["physical_gate"] == "HOLD / NOT_RUN"
+          PY
+
       - name: Upload safe numeric evidence only
         uses: actions/upload-artifact@v4
         with:
@@ -345,6 +378,7 @@ jobs:
             ${{ runner.temp }}/m9-first-migration.json
             ${{ runner.temp }}/m9-stage2-source.json
             ${{ runner.temp }}/m9-stage2-package.json
+            ${{ runner.temp }}/m9-mount-probe.json
           if-no-files-found: error
 
       - name: Delete disposable credentials, binaries, filesystem and OEM reference

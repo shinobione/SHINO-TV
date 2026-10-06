@@ -40,10 +40,10 @@ def inspect_source(root: Path = ROOT) -> dict:
              "firmware/src/boot/FslessMetrics.cpp", "firmware/src/boot/FslessWebUI.cpp",
              "firmware/src/config/ConfigManager.cpp", "firmware/src/config/SecureStorage.cpp",
              "firmware/include/boot/HomeLan.h", "firmware/src/display/DisplayManager.cpp",
-             "firmware/src/recovery/FactoryRollback.cpp"]
+             "firmware/src/recovery/FactoryRollback.cpp", "firmware/include/boot/ShinoBootProfile.h"]
     sources = {p: (root / p).read_text(encoding="utf-8") for p in paths}
     main = code_only(sources[paths[0]])
-    branches = re.findall(r"#if SHINO_BOOT_PROFILE == 0\s*(.*?)#else", main, re.S)
+    branches = re.findall(r"#if SHINO_BOOT_PROFILE == 0\s*(.*?)#(?:elif|else)", main, re.S)
     require(len(branches) == 2, "Expected separate profile-0 setup and loop branches")
     # Fail closed if startup gains an unreviewed function call.
     require(re.sub(r"\s+", "", branches[0]) ==
@@ -51,7 +51,9 @@ def inspect_source(root: Path = ROOT) -> dict:
             "Unreviewed profile-0 setup path")
     require(re.sub(r"\s+", "", branches[1]) == "FirstBootBridge::loop();return;",
             "Unreviewed profile-0 loop path")
-    require('#if SHINO_BOOT_PROFILE != 0' in main and '#error' in main,
+    profile_gate = code_only(sources[paths[-1]])
+    require('#if SHINO_BOOT_PROFILE != 0' in profile_gate and
+            '#if SHINO_BOOT_PROFILE == 1' in profile_gate and '#error' in profile_gate,
             "Normal boot compile-time prohibition missing")
     bridge = code_only(sources[paths[1]])
     for p in paths[1:4]:

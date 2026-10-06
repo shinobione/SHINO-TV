@@ -27,10 +27,13 @@
 #include "display/DisplayManager.h"
 #include "config/ConfigManager.h"
 #include "display/Gif.h"
+#include "boot/ShinoBootProfile.h"
 
 static Gif* g_gif = nullptr;
 
+#if SHINO_BOOT_PROFILE != 2
 extern ConfigManager configManager;
+#endif
 
 static Arduino_HWSPI g_lcdBus = Arduino_HWSPI(LCD_DC_GPIO, -1, &SPI, true);
 static Arduino_ST7789 g_lcd = Arduino_ST7789(&g_lcdBus, -1, 0, true, LCD_W, LCD_H);
@@ -376,7 +379,11 @@ static void lcdEnsureInit(uint8_t rotationOverride) {
 
     // Do not read persisted/legacy rotation for the FS-less owner first boot.
     // Arduino_ST7789 rotation 4 sets MADCTL_MX (horizontal mirror), 0 does not.
+#if SHINO_BOOT_PROFILE == 2
+    uint8_t rotation = rotationOverride <= 7 ? rotationOverride : 0;
+#else
     uint8_t rotation = rotationOverride <= 7 ? rotationOverride : configManager.getLCDRotationSafe();
+#endif
 
     // SPI mode 3 is required. This toggles the pin from LOW to HIGH after reset, which my guess
     // is after reset "initializes" the SPI interface of the display, as CS is tied to GND?

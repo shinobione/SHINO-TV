@@ -226,7 +226,7 @@ class SourcePacketTests(unittest.TestCase):
         self.assertEqual(retained, {
             "${{ runner.temp }}/m9-" + name + ".json" for name in
             ("layout", "fs", "build", "fsless", "first-migration",
-             "stage2-source", "stage2-package")})
+             "stage2-source", "stage2-package", "mount-probe")})
         self.assertNotIn("research-local", workflow)
         self.assertNotIn("PRIVATE_MASTER_BIN", workflow)
         self.assertIn("python tools/m9_rtc_neutralization.py", workflow)
