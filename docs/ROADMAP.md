@@ -14,6 +14,37 @@
 
 ## Product contract — owner clarification, 1 October 2026
 
+**Mission 9 Phase K owner decision, 6 October 2026:** continue existing
+Draft/open/unmerged PR #42 from clean
+`063553fd70772527edc13168e59c83088453dd1a` on the existing Mission 9 branch.
+Authorize OFFLINE resource-policy/source review and single-attempt application
+executor qualification with fake transport, tests, documentation, commit/push
+and exact-head CI. Preserve frozen J firmware source and exact 411136-byte BIN;
+no rebuild/substitution or firmware change. Scope any defensible acceptance
+policy to the instrumented profile-2 probe alone; unresolved numeric criteria
+must STOP without preparing physical authorization. Audit pinned esptool 5.4.0
+and stub v2 whole-write/block retries. Future physical packet is PRINT ONLY,
+conditional on both offline prerequisite gates and separate exact-operation GO.
+No SmallTV contact, serial I/O, flash/RTC/FS write, reboot, normal-profile
+activation, automatic retry/rollback or merge. STOP after Phase K.
+Phase J and older dated gates/evidence below remain unchanged.
+
+**Mission 9 Phase K offline result, 6 October 2026:**
+[Resource-policy/executor receipt](M09_RESOURCE_POLICY_AND_EXECUTOR_QUALIFICATION.md)
+defines explicit conservative criteria for **M9_PROFILE2_INSTRUMENTED_MOUNT_PROBE_ONLY**:
+heap >=20480 B, largest block >=16384 B, Core fragmentation <=25%, continuation
+free >=2048 B; exact reserves/evidence/rationale are recorded, not universal floors.
+Pinned esptool 5.4.0 whole-write and packet retries are bypassed by a one-shot
+direct-command core: 1 Begin/101 unique 4096-byte data packets/1 Finish, no automatic
+flash retry/reconnect/reset/rollback. CLI audits/prints only, requiring a future
+separately qualified fresh ROM session/owner GO for any physical execution.
+Resource-policy/executor/frozen-identity gates **PASS/OFFLINE**; retained 411136 B
+J BIN rehashed exact, all 103 firmware files unchanged, no local firmware rebuild.
+**189 local tests PASS**, exact-head CI tracked in existing Draft PR #42. Physical
+resource gate **HOLD / NOT_RUN**, overall physical **PARTIAL / HOLD**, both normal
+gates **NOT_RUN**. All six K device counters **0**. Future packet PRINT ONLY;
+STOP after K without current-unit modification, activation or merge.
+
 **Mission 9 Phase J owner decision, 6 October 2026:** continue existing
 Draft/open/unmerged PR #42 from clean
 `9029df6cb40b0f3714fead05247c1411226dfde6` on the existing Mission 9 branch.

@@ -1,6 +1,29 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+**Latest OFFLINE work — Mission 9 Phase K, 6 October 2026:**
+[Scoped acceptance policy and single-attempt executor qualification](M09_RESOURCE_POLICY_AND_EXECUTOR_QUALIFICATION.md)
+preserves all103 tracked firmware files and exact frozen J **411136 B** BIN,
+SHA-256 `2ce2fa8da00de5c60109d0675c7bcf58ab41df2138d913b607fde25994e5a835`;
+no local rebuild/substitution. Scope **M9_PROFILE2_INSTRUMENTED_MOUNT_PROBE_ONLY**:
+free heap>=20480 B, largest block>=16384 B, Core fragmentation<=25%,
+continuation free>=2048 B in both mount/runtime windows. Explicit rationale and
+additional reserves are in the new report; these are new engineering acceptance
+criteria, not universal floors or transferred M8/P1/product authority.
+Strict local JSON/owner-fact evaluator fails missing/invalid/rejected/nonadvancing
+measurements, failed mount/no-write/telemetry, reboot or display corruption.
+Pinned esptool5.4.0 whole-write SerialException retry and FatalError packet retries
+make stock write-flash unsuitable. One-shot adapter uses direct check_command:
+1 Begin/101 unique4096-byte packets/1 Finish, no flash retry/reconnect/reset.
+CLI audits/prints only; future adapter needs an already qualified fresh ROM
+session and separate exact-operation GO. No physical serial acquisition wrapper.
+Resource-policy/executor/frozen-identity gates **PASS/OFFLINE**; actual resource
+physical gate **HOLD / NOT_RUN**, overall physical **PARTIAL / HOLD**, both normal
+gates **NOT_RUN**. Physical thresholds defined only for this exact probe; actual
+measurements pending. Six K device counters **0**, PR42 Draft/open/unmerged.
+STOP after K; no current-unit flash/reboot/modification, activation or merge.
+Original J/I and older dated records below remain exact history.
+
 **Latest OFFLINE work — Mission 9 Phase J, 6 October 2026:**
 [Separate instrumented profile-2 observer](M09_MOUNT_PROBE_RESOURCE_INSTRUMENTATION.md)
 adds read-only heap/largest-block/fragmentation/continuation-watermark evidence

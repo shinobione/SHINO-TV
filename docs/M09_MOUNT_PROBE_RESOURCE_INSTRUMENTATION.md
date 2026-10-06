@@ -1,5 +1,14 @@
 # Mission 9 Phase J — instrumented mount-probe resources (OFFLINE ONLY)
 
+**Phase K continuation, 6 October 2026:**
+[Scoped policy and single-attempt executor qualification](M09_RESOURCE_POLICY_AND_EXECUTOR_QUALIFICATION.md)
+defines new probe-only acceptance criteria and qualifies an offline fake-transport
+executor core. Exact J BIN rehashed, no firmware change/rebuild/substitution.
+Resource/executor/identity prerequisites PASS/OFFLINE; actual physical resource
+gate HOLD/NOT_RUN and overall physical PARTIAL/HOLD remain. The dated J
+REVIEW_REQUIRED/HOLD statements and complete receipt below remain unchanged.
+No installation, unit contact/reboot, normal-profile activation or merge.
+
 6 October 2026. Started clean on `feature/shino-tv-m9-flash-layout-liberation`
 at `9029df6cb40b0f3714fead05247c1411226dfde6`, existing
 [PR #42](https://github.com/shinobione/SHINO-TV/pull/42) Draft/open/unmerged.
