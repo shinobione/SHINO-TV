@@ -1,5 +1,13 @@
 # Mission 9 Phase I — physical LittleFS mount-probe evidence
 
+> **Current owner evidence, 7 October 2026:** the exact411152 B mount-stack
+> successor is now owner-reported installed; dedicated profile2 physical/resource
+> gates **PASS**. Both normal-profile gates **NOT_RUN**. See the
+> [owner-supplied acceptance](M09_SUCCESSOR_PHYSICAL_ACCEPTANCE.md) and
+> [offline normal-readiness design](M09_NORMAL_PROFILE_READINESS.md).
+> The dated receipt below retains its original results as historical evidence;
+> recording this update performed no device operations and grants no authority.
+
 **Phase J OFFLINE continuation, 6 October 2026:**
 [Separate resource-instrumented successor](M09_MOUNT_PROBE_RESOURCE_INSTRUMENTATION.md)
 adds observability only in a new opt-in profile-2 environment. No FS/inventory/

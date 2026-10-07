@@ -1,5 +1,13 @@
 # Mission 9 — targeted frozen-successor physical-writer rebind
 
+> **Current owner evidence, 7 October 2026:** the exact411152 B mount-stack
+> successor is now owner-reported installed; dedicated profile2 physical/resource
+> gates **PASS**. Both normal-profile gates **NOT_RUN**. See the
+> [owner-supplied acceptance](M09_SUCCESSOR_PHYSICAL_ACCEPTANCE.md) and
+> [offline normal-readiness design](M09_NORMAL_PROFILE_READINESS.md).
+> The dated receipt below retains its original results as historical evidence;
+> recording this update performed no device operations and grants no authority.
+
 Owner decision, 7 October 2026: continue exact clean
 `849d430f6736f349a089cbac7acf2c9648e9b887` on
 `feature/shino-tv-m9-flash-layout-liberation`, existing Draft/open/unmerged

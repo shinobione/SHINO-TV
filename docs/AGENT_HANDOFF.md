@@ -1,6 +1,30 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+**Active owner successor physical acceptance / OFFLINE normal readiness, 7 October 2026:**
+[Owner-supplied physical receipt](M09_SUCCESSOR_PHYSICAL_ACCEPTANCE.md) supersedes
+the predecessor/current-installation claims in dated paragraphs below. Exact
+411152 B / `e1852e56d99801b694f37d235b08a201188cf36d5a25f3f6f59d059a129bc27e`
+successor now installed according to owner; full independent PRE/POST before
+boot preserved `0x065000..0x3FFFFF`, owner verified powered RTC 0/0 before reset.
+Mount/inventory/config exact,24 files/181402 B,zero blocked writes/rejected
+samples;180 s LINK/stale/recovery,no observed reboot/display corruption.
+Mount continuation2336 B; final runtime3304 B; minimum heap27640 B,
+lowest largest block27552 B,max fragmentation7%,583 advancing samples.
+**MOUNT_PROBE_RESOURCE_PHYSICAL_GATE PASS; MOUNT_PROBE_PHYSICAL_GATE PASS**
+within dedicated profile2 scope only. Both normal gates **NOT_RUN**; no OTA or
+normal-product promotion. Owner comment authorizes an offline normal4m2m
+readiness/design pass from clean1b696e5 on the existing branch/PR42, candidate
+only if defensible. [Readiness receipt](M09_NORMAL_PROFILE_READINESS.md).
+Readiness result: design-only GO; true normal candidate HOLD. Source inspection
+finds legacy Bearer/routes/60 s scenes/six-tile pull metrics plus accidental
+mount/migration/EEPROM/RTC paths; EEPROM commit targets reserved0x3FB000.
+No firmware edits or guard bypass. Proposed normal qualification environment
+not implemented. Public profile0 reference4m2m build399168 B,static RAM40344 B,
+linked flash395011 B,noinit56 B; expected profile1 compile rejection PASS.
+Reference resources do not qualify normal code; no normal BIN frozen.
+All six agent device counters ZERO; STOP before physical operations or merge.
+
 **Active OFFLINE physical-writer rebind, 7 October 2026:**
 [Focused receipt](M09_PHYSICAL_WRITER_REBIND.md). Owner authorizes only the
 successor binding from clean849d430f6736f349a089cbac7acf2c9648e9b887,

@@ -1,5 +1,13 @@
 # Mission 9 Phase K — resource policy and single-attempt executor qualification
 
+> **Current owner evidence, 7 October 2026:** the exact411152 B mount-stack
+> successor is now owner-reported installed; dedicated profile2 physical/resource
+> gates **PASS**. Both normal-profile gates **NOT_RUN**. See the
+> [owner-supplied acceptance](M09_SUCCESSOR_PHYSICAL_ACCEPTANCE.md) and
+> [offline normal-readiness design](M09_NORMAL_PROFILE_READINESS.md).
+> The dated receipt below retains its original results as historical evidence;
+> recording this update performed no device operations and grants no authority.
+
 > **Current writer binding, 7 October 2026:** [Targeted successor rebind](M09_PHYSICAL_WRITER_REBIND.md)
 > selects only411152 B / e1852e56...9bc27e. Phase M acquisition and physical
 > thresholds unchanged; historical J binding statements below are dated evidence.

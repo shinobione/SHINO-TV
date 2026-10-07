@@ -1,5 +1,13 @@
 # Mission 9 — SHINO Flash Layout Liberation
 
+> **Current owner evidence, 7 October 2026:** the exact411152 B mount-stack
+> successor is now owner-reported installed; dedicated profile2 physical/resource
+> gates **PASS**. Both normal-profile gates **NOT_RUN**. See the
+> [owner-supplied acceptance](M09_SUCCESSOR_PHYSICAL_ACCEPTANCE.md) and
+> [offline normal-readiness design](M09_NORMAL_PROFILE_READINESS.md).
+> The dated receipt below retains its original results as historical evidence;
+> recording this update performed no device operations and grants no authority.
+
 **Phase B continuation, 5 October:** [first physical migration design](M09_FIRST_PHYSICAL_MIGRATION.md)
 selects application-only FS-less activation before separately gated future FS
 provisioning. The Phase A architecture and historical evidence below remain

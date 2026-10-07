@@ -25,6 +25,10 @@ on:
       - 'tools/test_m9_stage2.py'
       - 'tools/m9_mount_probe.py'
       - 'tools/m9_mount_stack.py'
+      - 'tools/m9_normal_readiness.py'
+      - 'tools/test_m9_normal_readiness.py'
+      - 'docs/M09_NORMAL_PROFILE_READINESS.md'
+      - 'docs/M09_SUCCESSOR_PHYSICAL_ACCEPTANCE.md'
       - 'tools/m9_mount_stack_sources.json'
       - 'tools/test_m9_mount_stack.py'
       - 'docs/M09_MOUNT_STACK_REMEDIATION.md'
@@ -70,6 +74,10 @@ on:
       - 'tools/test_m9_stage2.py'
       - 'tools/m9_mount_probe.py'
       - 'tools/m9_mount_stack.py'
+      - 'tools/m9_normal_readiness.py'
+      - 'tools/test_m9_normal_readiness.py'
+      - 'docs/M09_NORMAL_PROFILE_READINESS.md'
+      - 'docs/M09_SUCCESSOR_PHYSICAL_ACCEPTANCE.md'
       - 'tools/m9_mount_stack_sources.json'
       - 'tools/test_m9_mount_stack.py'
       - 'docs/M09_MOUNT_STACK_REMEDIATION.md'
@@ -163,6 +171,8 @@ jobs:
           python -m unittest discover -s tools -p 'test_m9_mount_probe.py' -v
           python -m unittest discover -s tools -p 'test_m9_mount_probe_resources.py' -v
           python -m unittest discover -s tools -p 'test_m9_mount_stack.py' -v
+          python -m unittest discover -s tools -p 'test_m9_normal_readiness.py' -v
+          python tools/m9_normal_readiness.py > "${{ runner.temp }}/m9-normal-readiness.json"
           python -m unittest discover -s tools -p 'test_first_boot_bridge_source.py' -v
           python -m unittest discover -s tools -p 'test_fsless_dashboard_source.py' -v
           python -m unittest discover -s tools -p 'test_verify_fs_provisioning.py' -v
@@ -206,6 +216,21 @@ jobs:
           python tools/m9_rtc_neutralization.py --core-root "$HOME/.platformio/packages/framework-arduinoespressif8266" --stub-root reference-m9-stub --stub-lib-root reference-m9-stub-lib
           cp firmware/.pio/build/esp12e_m9_4m2m/firmware.bin "${{ runner.temp }}/m9-candidate-4m2m.bin"
           test -s "${{ runner.temp }}/m9-candidate-4m2m.bin"
+
+      - name: Normal profile remains compile prohibited (expected rejection, no candidate)
+        run: |
+          python - <<'PY'
+          import os, shutil, subprocess
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"]) / "m9-normal-profile-refusal"
+          root.mkdir()
+          shutil.copyfile("firmware/include/boot/ShinoBootProfile.h", root / "ShinoBootProfile.h")
+          (root / "shino_private_policy.h").write_text("#define SHINO_BOOT_PROFILE 1\n")
+          compiler = Path.home() / ".platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-g++"
+          result = subprocess.run([str(compiler), "-E", "-x", "c++", str(root / "ShinoBootProfile.h")], capture_output=True)
+          assert result.returncode != 0 and b"Normal SHINO boot is prohibited" in result.stderr
+          print("PROFILE1_EXPECTED_COMPILE_REJECTION_PASS; NO_NORMAL_CANDIDATE")
+          PY
 
       - name: Phase B FS-less source and linked candidate gate (no MASTER or device)
         run: |

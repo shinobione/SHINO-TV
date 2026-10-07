@@ -14,6 +14,35 @@
 
 ## Product contract — owner clarification, 1 October 2026
 
+**Normal-profile readiness pass — owner decision, 7 October 2026:**
+continue current PR #42 head `1b696e530d6d2b0d1bfa6503b5fe320214ac621f`,
+same branch/Draft/open/unmerged PR. [Latest owner comment](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6042956937)
+supplies physical acceptance of the exact 411152 B successor
+`e1852e56d99801b694f37d235b08a201188cf36d5a25f3f6f59d059a129bc27e`:
+**MOUNT_PROBE_RESOURCE_PHYSICAL_GATE PASS; MOUNT_PROBE_PHYSICAL_GATE PASS**,
+dedicated profile 2 only. Both normal-profile gates remain **NOT_RUN**.
+First record the [owner-supplied receipt](M09_SUCCESSOR_PHYSICAL_ACCEPTANCE.md),
+then audit/design normal 4m2m startup offline; implement/freeze a true normal
+candidate only if defensible and all offline gates pass. Separate intentional
+persistence from accidental mounts/migration/EEPROM/token/RTC/SDK mutation;
+reserve the 24 KiB tail, preserve frozen FS and OTA-disabled policy, retain
+probe resource floors and justify any distinct normal policy. Require exact
+source hazards/design/files/build geometry/resources/tests/exact-head CI and a
+PRINT ONLY future packet. All six agent device counters ZERO. STOP after
+offline qualification; DO NOT FLASH; DO NOT MERGE. Older dated receipts below
+retain their original HOLD/NOT_RUN results and are historical evidence.
+
+**7 October normal readiness result:** [Focused source/design receipt](M09_NORMAL_PROFILE_READINESS.md).
+Design-only GO; normal candidate HOLD.20 source hazard anchors,103 unchanged
+firmware files,staged real-normal read-only integration/persistence separation.
+EEPROM commit would touch reserved0x3FB000; legacy normal authentication/route/
+scene/metrics graph cannot preserve current product by removing one guard.
+Proposed normal environment/profile is not implemented; no normal candidate
+freeze. Public-fixture profile0 reference4m2m build399168 B,linked395011 B,
+static40344 B,noinit56 B; expected profile1 rejection PASS. Normal build/resource
+gates HOLD and physical normal gates NOT_RUN; physical probe PASS is owner scope
+only. All six agent counters0; exact-head CI required; STOP/no flash/no merge.
+
 **Targeted physical-writer rebind — owner decision, 7 October 2026:**
 continue exact HEAD `849d430f6736f349a089cbac7acf2c9648e9b887`, existing branch
 and Draft/open/unmerged PR #42. Authorize OFFLINE rebind of the qualified
