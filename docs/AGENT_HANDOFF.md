@@ -1,6 +1,21 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+**Active OFFLINE physical-writer rebind, 7 October 2026:**
+[Focused receipt](M09_PHYSICAL_WRITER_REBIND.md). Owner authorizes only the
+successor binding from clean849d430f6736f349a089cbac7acf2c9648e9b887,
+same branch/Draft PR42. Retained411152 B successor SHA256
+e1852e56d99801b694f37d235b08a201188cf36d5a25f3f6f59d059a129bc27e,
+target0, payload end0x064610, rounded0x065000, protected0x065000..0x3FFFFF.
+101 DATA blocks; final1552 B payload/2544 B0xFF padding. No firmware change,
+rebuild/substitution or device contact. Phase M runner/acquisition/post-stub
+capacity gate unchanged; one Begin/unique DATA/Finish/MD5, zero flash retry/
+reconnect/reset/reopen/recovery write. Full independent POST before boot required.
+Historical J identity stays separately recorded; current writer now selects only
+the frozen mount-stack successor. Numeric physical floors unchanged; installed
+J mount1776 remains FAIL/HOLD, successor physical NOT_RUN, normal gates NOT_RUN.
+Six agent counters ZERO. STOP. DO NOT FLASH; no merge or physical authority.
+
 **Active owner physical update and OFFLINE mount-stack remediation, 7 October 2026:**
 [Focused mount-stack receipt](M09_MOUNT_STACK_REMEDIATION.md). Owner reports
 exact411136-byte J candidate2ce2fa8d...e5a835 installed/booted, no-autoformat

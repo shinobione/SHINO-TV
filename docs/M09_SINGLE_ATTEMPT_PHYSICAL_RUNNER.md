@@ -1,5 +1,10 @@
 # Mission 9 Phase L — physical single-attempt session runner
 
+> **Current writer binding, 7 October 2026:** [Targeted successor rebind](M09_PHYSICAL_WRITER_REBIND.md)
+> selects only411152 B / e1852e56...9bc27e. Phase M acquisition and physical
+> thresholds unchanged; historical J binding statements below are dated evidence.
+> This offline rebind grants no physical authority. STOP. DO NOT FLASH.
+
 > **7 October Phase M compatibility addendum:**
 > [Owner evidence and targeted capacity fix](M09_PHASE_L_SYNC_HOTFIX.md#small-physical-compatibility-addendum--7-october-2026).
 > Owner no-flash diagnostic measured ROM byte0x00, pinned-v2 stub byte0x16,

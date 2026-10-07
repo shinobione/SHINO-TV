@@ -17,8 +17,8 @@ from pathlib import Path
 from m9_executor_preflight import check_configuration, check_hashes, inspect_sources, MANIFEST
 from m9_stage1_readback_verify import candidate_bytes
 
-FROZEN_BYTES = 411136
-FROZEN_SHA256 = '2ce2fa8da00de5c60109d0675c7bcf58ab41df2138d913b607fde25994e5a835'
+FROZEN_BYTES = 411152
+FROZEN_SHA256 = 'e1852e56d99801b694f37d235b08a201188cf36d5a25f3f6f59d059a129bc27e'
 FLASH_BYTES = 0x400000
 ROUNDED_END = 0x065000
 BLOCK_BYTES = 4096
@@ -36,7 +36,7 @@ def require(condition: bool, message: str) -> None:
 
 
 def candidate(path: Path, expected_sha256: str) -> tuple[bytes, dict]:
-    require(expected_sha256 == FROZEN_SHA256, 'External SHA must select the exact frozen J successor')
+    require(expected_sha256 == FROZEN_SHA256, 'External SHA must select the exact frozen mount-stack successor')
     data, report = candidate_bytes(path, expected_sha256)
     require(len(data) == FROZEN_BYTES and report['sector_rounded_write_extent'] == ROUNDED_END,
             'Exact frozen size/extent required')
@@ -151,7 +151,7 @@ def future_packet(resource_policy_gate: str, executor_gate: str) -> dict:
             'steps': [
                 'Fresh same-unit ESP8266 ROM/chip/4 MiB qualification; continuous power, GPIO0 LOW, isolated DTR/RTS',
                 'Fresh private full 4 MiB PRE; PRE FS slice equals retained frozen Stage-2 bytes',
-                'Rehash exact frozen J candidate; verify rollback captures/authority separately',
+                'Rehash exact frozen mount-stack successor; verify rollback captures/authority separately',
                 'Explicit owner GO for exact image/hash/operation; not supplied by this Phase K packet',
                 'SingleAttempt plus PinnedStubTransport only; same fresh ROM session, fresh pinned v2 stub; no stock write-flash CLI',
                 'One uncompressed target-zero Begin / 101 data packets / Finish; keep GPIO0 LOW; no retry/reset/rollback',

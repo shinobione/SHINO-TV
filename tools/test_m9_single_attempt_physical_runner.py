@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 import struct
 import sys
+import tempfile
 import types
 import unittest
 from unittest.mock import patch
@@ -87,7 +88,7 @@ class SpySerial:
                 value = 0 if self.stub_value == 'all' or self.stub_value == i else 0x20120707
                 self.buffer.extend(slip(struct.pack('<BBHI', 1, op, len(self.sync_body), value)+self.sync_body))
         else:
-            if event == 'begin': assert struct.unpack('<IIIII', data) == (411136, 101, 4096, 0, 0)
+            if event == 'begin': assert struct.unpack('<IIIII', data) == (411152, 101, 4096, 0, 0)
             if event == 'finish': assert struct.unpack('<I', data) == (1,)
             payload = (b'\0'*16 if self.bad_md5 else hashlib.md5(FIXTURE).digest()) if event == 'md5' else b''
             self.buffer.extend(slip(struct.pack('<BBHI', 1, op, len(payload)+2, 0)+payload+b'\0\0'))
@@ -220,6 +221,20 @@ class RunnerTests(unittest.TestCase):
                     stack.enter_context(patch.object(importlib.metadata,'version',side_effect=versions.get))
                 code, report=runner.Session().run(args)
                 self.assertEqual(code,1); runner.Session.acquire.assert_not_called()
+
+    def test_historical_and_altered_successor_identity_fail_before_acquisition(self):
+        old='2ce2fa8da00de5c60109d0675c7bcf58ab41df2138d913b607fde25994e5a835'
+        with tempfile.TemporaryDirectory() as tmp:
+            image=Path(tmp)/'synthetic.bin'; image.write_bytes(FIXTURE)
+            # Parser evidence mocked; the regular-file reads and SHA barrier are real.
+            with patch.object(runner,'interpreter_gate'),patch.object(runner.Session,'acquire') as acquire, \
+                 patch('m9_stage1_readback_verify.inspect_candidate',return_value={
+                     'sha256':hashlib.sha256(FIXTURE).hexdigest(),
+                     'sector_rounded_write_extent':runner.app.ROUNDED_END}):
+                for expected in (old,runner.app.FROZEN_SHA256):
+                    code,report=runner.Session().run(self.args(candidate=image,expected_sha256=expected))
+                    self.assertEqual((code,report),(1,{'status':'STOP_PREFLIGHT_NO_PORT_OPEN'}))
+                acquire.assert_not_called()
 
     def test_port_syntax_and_duplicate_no_abbreviations(self):
         for text in ('COM0','COM08','COM8 COM9','COM*','socket://host:1','rfc2217://host','C:\\COM8','\\\\.\\COM8','COM8\n','COM８'):

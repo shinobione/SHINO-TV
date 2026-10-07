@@ -1,5 +1,10 @@
 # Mission 9 Phase M — bounded no-reset ROM SYNC hotfix
 
+> **Current writer binding, 7 October 2026:** [Targeted successor rebind](M09_PHYSICAL_WRITER_REBIND.md)
+> selects only411152 B / e1852e56...9bc27e. Phase M acquisition and physical
+> thresholds unchanged; historical J binding statements below are dated evidence.
+> This offline rebind grants no physical authority. STOP. DO NOT FLASH.
+
 ## Small physical-compatibility addendum — 7 October 2026
 
 Continued clean `d4052a842b0faa5f11184c03375ca0557621d8cd` on the same

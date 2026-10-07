@@ -1,5 +1,10 @@
 # Mission 9 Phase K — resource policy and single-attempt executor qualification
 
+> **Current writer binding, 7 October 2026:** [Targeted successor rebind](M09_PHYSICAL_WRITER_REBIND.md)
+> selects only411152 B / e1852e56...9bc27e. Phase M acquisition and physical
+> thresholds unchanged; historical J binding statements below are dated evidence.
+> This offline rebind grants no physical authority. STOP. DO NOT FLASH.
+
 > **Phase L continuation, 6 October 2026:** the separate
 > [physical session runner](M09_SINGLE_ATTEMPT_PHYSICAL_RUNNER.md) supplies
 > explicit-port/fresh-ROM acquisition under offline source/fake-serial

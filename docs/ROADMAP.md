@@ -14,6 +14,33 @@
 
 ## Product contract — owner clarification, 1 October 2026
 
+**Targeted physical-writer rebind — owner decision, 7 October 2026:**
+continue exact HEAD `849d430f6736f349a089cbac7acf2c9648e9b887`, existing branch
+and Draft/open/unmerged PR #42. Authorize OFFLINE rebind of the qualified
+single-attempt writer to retained
+`research-local/m9-mount-stack/frozen-successor-resource-probe.bin`, exactly
+411152 B / SHA-256
+`e1852e56d99801b694f37d235b08a201188cf36d5a25f3f6f59d059a129bc27e`.
+Target0, payload end0x064610, rounded end0x065000; protect0x065000..0x3FFFFF.
+Rehash only, no rebuild/substitution or firmware changes. Update candidate
+constants/dependent pins/tests/docs; preserve Phase M bounded ROM acquisition,
+post-stub4 MiB gate, one Begin/101 unique DATA/one Finish/one MD5 barrier,
+zero flash retry/reconnect/reset/reopen after transaction start and zero recovery
+write. Full independent4 MiB POST before boot remains mandatory; heap>=20480,
+largest block>=16384, fragmentation<=25%, continuation stack>=2048 unchanged.
+Run affected tests/Mission9 regressions, commit/push and exact-head CI only.
+All six device-operation counters0; no physical authority. STOP. DO NOT FLASH.
+
+**7 October writer-rebind offline result:** [Focused receipt](M09_PHYSICAL_WRITER_REBIND.md).
+Retained successor rehash/image inspection PASS; active writer selects411152 B /
+e1852e56...9bc27e, historical J recorded separately.101 unique4096 B blocks,
+last1552 payload/2544 padding.223 local checks PASS (196 Mission9+27 related),
+zero failure/error/skip; approved interpreter/package/source gates PASS. Default
+runner audit `AUDIT_PRINT_ONLY_NO_PORT_OPEN`; no firmware build/change. Phase M
+runner, both transaction classes and resource policy unchanged. Full POST before
+boot mandatory; physical successor NOT_RUN, installed resource HOLD, normal
+gates NOT_RUN. Six agent counters0. Same-branch exact-head CI required; STOP.
+
 **Targeted Resource Probe mount-stack remediation — owner decision, 7 October 2026:**
 continue clean `96c5804f5435a71fc1e3cd7b04004af438a650ac`, same branch and
 Draft/open/unmerged PR #42. Owner reports exact 411136-byte J candidate

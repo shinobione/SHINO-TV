@@ -48,8 +48,35 @@ class ExecutorTests(unittest.TestCase):
         self.assertEqual(t.calls,['begin']+[('data',i) for i in range(101)]+['finish','md5'])
         self.assertEqual(r['automatic_retries'],0)
         self.assertFalse(r['full_post_verified'])
-        self.assertEqual(t.offset,411136);self.assertEqual(t.flash[:411136],FIXTURE)
-        self.assertEqual(t.flash[411136:],b'\xff'*(413696-411136))
+        self.assertEqual(t.offset,411152);self.assertEqual(t.flash[:411152],FIXTURE)
+        self.assertEqual(t.flash[411152:],b'\xff'*2544)
+
+    def test_successor_exact_sequence_last_payload_padding_and_post_barrier(self):
+        t=FakeTransport(); packets=[]; original=t.data
+        def capture(block, sequence):
+            packets.append((sequence,block)); original(block,sequence)
+        t.data=capture
+        r=self.run_fixture(t)
+        self.assertEqual(app.FROZEN_BYTES,0x064610)
+        self.assertEqual(app.FROZEN_SHA256,'e1852e56d99801b694f37d235b08a201188cf36d5a25f3f6f59d059a129bc27e')
+        self.assertEqual(app.BLOCK_COUNT,(app.FROZEN_BYTES+4095)//4096)
+        self.assertEqual(app.BLOCK_COUNT*4096,app.ROUNDED_END)
+        self.assertEqual([sequence for sequence,_ in packets],list(range(101)))
+        self.assertEqual(packets[-1],(100,FIXTURE[409600:]+b'\xff'*2544))
+        self.assertEqual(len(FIXTURE[409600:]),1552)
+        self.assertEqual(t.calls.count('md5'),1)
+        self.assertEqual(r['status'],'APPLICATION_TRANSACTION_ACKNOWLEDGED_FULL_POST_STILL_REQUIRED')
+        self.assertFalse(r['physical_gate_closed_by_this_receipt'])
+
+    def test_historical_j_identity_and_go_refused_before_file_or_transport(self):
+        old='2ce2fa8da00de5c60109d0675c7bcf58ab41df2138d913b607fde25994e5a835'
+        factory=Mock()
+        with patch.object(app,'candidate_bytes') as read:
+            with self.assertRaises(app.WriteError):
+                app.SingleAttempt().write(Path('historical'),old,factory,app.GO_TEXT)
+            with self.assertRaises(app.WriteError):
+                app.SingleAttempt().write(Path('historical'),app.FROZEN_SHA256,factory,'GO SINGLE ATTEMPT '+old)
+            read.assert_not_called(); factory.assert_not_called()
 
     def test_fail_before_begin_has_no_data_and_no_second_attempt(self):
         session=app.SingleAttempt();calls=[]
@@ -167,7 +194,7 @@ class PinnedCommandTests(unittest.TestCase):
         # Decode SLIP payload to assert no-compression Begin and no-reboot Finish.
         decode=lambda p:p[1:-1].replace(b'\xdb\xdc',b'\xc0').replace(b'\xdb\xdd',b'\xdb')
         begin=decode(self.port.writes[0]);finish=decode(self.port.writes[-1])
-        self.assertEqual(struct.unpack('<IIIII',begin[8:]),(411136,101,4096,0,0))
+        self.assertEqual(struct.unpack('<IIIII',begin[8:]),(411152,101,4096,0,0))
         self.assertEqual(struct.unpack('<I',finish[8:]),(1,))
 
     def test_actual_api_fatal_serial_timeout_never_resends(self):

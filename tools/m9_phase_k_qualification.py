@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from m9_mount_probe_resources import ROOT, source_gate
 from m9_resource_policy import policy
-from m9_single_attempt_app_write import load_pinned_esptool, candidate
+from m9_single_attempt_app_write import load_pinned_esptool, candidate, FROZEN_BYTES, FROZEN_SHA256, ROUNDED_END
 
 
 def qualify(stub_audit_root: Path, image: Path | None = None, expected: str | None = None) -> dict:
@@ -19,7 +19,9 @@ def qualify(stub_audit_root: Path, image: Path | None = None, expected: str | No
             'PHASE_K_SINGLE_ATTEMPT_EXECUTOR_GATE':'PASS/OFFLINE',
             'policy':policy(), 'source_audit':sources,
             **firmware,
-            'candidate':manifest['candidate'],
+            'candidate':{'bytes':FROZEN_BYTES, 'sha256':FROZEN_SHA256,
+                         'rounded_end':ROUNDED_END, 'physical_authorization':False},
+            'historical_j_candidate':manifest['candidate'],
             'PHASE_K_FROZEN_CANDIDATE_IDENTITY_GATE':'NOT_READ_BY_THIS_RUN',
             'MOUNT_PROBE_RESOURCE_PHYSICAL_GATE':'HOLD / NOT_RUN',
             'MOUNT_PROBE_PHYSICAL_GATE':'PARTIAL / HOLD',

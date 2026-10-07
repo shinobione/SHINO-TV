@@ -1,5 +1,10 @@
 # Mission 9 — targeted Resource Probe mount-stack remediation
 
+> **Current writer binding, 7 October 2026:** [Targeted successor rebind](M09_PHYSICAL_WRITER_REBIND.md)
+> selects only411152 B / e1852e56...9bc27e. Phase M acquisition and physical
+> thresholds unchanged; historical J binding statements below are dated evidence.
+> This offline rebind grants no physical authority. STOP. DO NOT FLASH.
+
 7 October 2026. **OFFLINE ONLY; no device contact.** Continued clean
 `96c5804f5435a71fc1e3cd7b04004af438a650ac` on
 `feature/shino-tv-m9-flash-layout-liberation`, existing
