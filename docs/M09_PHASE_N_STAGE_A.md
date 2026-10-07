@@ -7,8 +7,8 @@ The earlier readiness/design-only HOLD is preserved, not rewritten. This phase
 implements the explicitly authorized first normal StageA; media/full scenes,
 home-LAN, persistent configuration and native OTA remain later bounded stages.
 
-**OFFLINE SOURCE/LINK/RESOURCE GATES PASS. Candidate freeze pending clean source
-checkpoint. All238 offline regressions PASS,0 failures/errors/skips. NORMAL_PROFILE_LITTLEFS_MOUNT_GATE=NOT_RUN;
+**OFFLINE QUALIFICATION GO; ONE LOCAL NORMAL CANDIDATE FROZEN.
+All238 offline regressions PASS,0 failures/errors/skips. NORMAL_PROFILE_LITTLEFS_MOUNT_GATE=NOT_RUN;
 NORMAL_PROFILE_RUNTIME_GATE=NOT_RUN.** No host/compiler result is physical PASS.
 
 ## Exact build and ownership contract
@@ -145,11 +145,38 @@ and candidate/exact-head CI results are recorded after completion below.
 
 ## Freeze and final checkpoint
 
-Pending final clean source checkpoint, single private-identity application build
-and ignored local freeze. No FS image is built or rewritten. The installed
+Clean source checkpoint `f12a0fe0771222d1e6e2a9ac8387d66d7df8ae11`.
+Exactly one private-identity StageA application build/freeze succeeded after all
+offline gates. Its inputs use the unchanged already-generated private policy.
+BIN/ELF are frozen at ignored `research-local/m9-phase-n/frozen-normal-stage-a.bin`
+and `.elf`; neither is committed/uploaded. No FS image was built or rewritten.
+
+- BIN **399264B**, SHA-256
+  `78a8d2d50409974fc775dd3dc9f3dbec4ac8eda839f6d9b338cadf35aab2467c`.
+- Payload end exclusive **0x0617A0**, final byte0x06179F; rounded end
+  **0x062000 (401408B)**,2144B sector slack. Rounded end is strictly below
+  0x100000 by647168B; no overlap with frozen FS0x200000..0x3F9FFF or reserved
+  tail0x3FA000..0x3FFFFF. Header/application checksums and Core CRC PASS.
+- Private candidate linked flash **395107B**, static RAM **39736B**,
+  `.noinit` **56B**, persistent observer100B. Major frames match the public
+  table above; maximum880B. No physical high-water claim.
+- Source/link/ABI/image/resource gates **PASS/OFFLINE**; default/profile0/
+  profile2 paired equality PASS;238 regressions PASS;29 real-parser/Digest
+  host loopback checks PASS. Actual radio/LCD/physical resource gates NOT_RUN.
+- Writer rejection PASS before transport for both the new SHA selection and
+  the old bound SHA against the new file. Writer/runner/resource policy pins
+  unchanged; **physical writer NOT rebound**.
+
+Final receipt commit contains documentation metadata after the clean source
+checkpoint; **do not rebuild the freeze** when branch HEAD advances. Exact-head
+CI completion/final commit SHA are recorded in PR42's description and local
+ignored `research-local/m9-phase-n/exact-head-ci.json` after push. Draft/open/
+unmerged state is verified separately. Both normal physical gates remain NOT_RUN.
+
+The installed
 411152B profile2 successor/evidence remains unchanged. The existing physical
 writer still selects only `e1852e56d99801b694f37d235b08a201188cf36d5a25f3f6f59d059a129bc27e`;
-normal candidate rejection will be verified locally before any transport exists.
+normal candidate rejection was verified locally before any transport exists.
 
 Changed files are the focused firmware gate/main/API/FS guard plus ten new
 StageA firmware files, current source/link/host proof tooling, narrow historical

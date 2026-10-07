@@ -17,7 +17,14 @@ validator. Dedicated environment-local bounded Digest pre-body parser closes
 stock body allocation before auth; one ABI proven by compiler source records.
 Public default/profile0/profile2 paired BINs are byte-identical. Public StageA
 source/link/resource gates PASS (395115B linked/39736B RAM/56B noinit);
-candidate/final test and exact-head CI checkpoints are recorded in that receipt.
+One ignored normal candidate frozen at clean source
+`f12a0fe0771222d1e6e2a9ac8387d66d7df8ae11`:399264B /SHA-256
+`78a8d2d50409974fc775dd3dc9f3dbec4ac8eda839f6d9b338cadf35aab2467c`,
+payload end0x0617A0/rounded0x062000; private linked395107B/static39736B/noinit56B.
+238 regressions/29 real-parser Digest loopback checks PASS; source/link/ABI/
+resource/image gates GO/OFFLINE. Writer rejects normal before transport and
+stays bound to installed411152B profile2 successor. Final-head CI in PR42 receipt.
+Both normal physical gates NOT_RUN; do not rebuild this freeze as HEAD advances.
 Six device counters0. STOP before physical operation or merge. Older readiness
 design-only result below is the prior checkpoint, not a reason to skip Phase N.
 

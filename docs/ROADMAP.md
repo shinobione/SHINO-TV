@@ -40,7 +40,11 @@ ConfigManager load, private Digest pre-body parser and RAM four-card telemetry;
 no bridge delegation/persistence/legacy writers/media/OTA. Public default/profile0/
 profile2 paired BINs byte-identical; public StageA source/link/ABI/resource PASS,
 395115B linked/39736B static RAM/56B noinit. Final candidate/test/CI checkpoint is
-recorded in the receipt. Both normal physical gates NOT_RUN; writer stays bound
+recorded in the receipt: one ignored399264B normal freeze from cleanf12a0fe,
+SHA-256`78a8d2d50409974fc775dd3dc9f3dbec4ac8eda839f6d9b338cadf35aab2467c`,
+payload end0x0617A0/rounded0x062000,private linked395107B/static39736B/noinit56B;
+238 regressions/29 real-parser Digest loopback checks PASS. Offline GO; both
+normal physical gates NOT_RUN; writer stays bound
 to installed profile2 successor. Six counters0; no physical operation/rebind/merge.
 
 **Normal-profile readiness pass — owner decision, 7 October 2026:**
