@@ -49,6 +49,8 @@ def audit(root=ROOT):
         evidence[name] = {'file': path, 'lines': lines, 'anchor': anchor,
                           'sha256_lf': hashlib.sha256(body.replace('\r\n', '\n').encode()).hexdigest()}
     return {
+        'receipt_scope': 'HISTORICAL_READINESS_BASELINE_2bd225a_NOT_CURRENT_STAGE_A',
+        'current_stage_a_receipt': 'tools/m9_phase_n_qualification.py',
         'readiness_audit': 'PASS_OFFLINE_SOURCE_AND_DESIGN_RECEIPT',
         'implementation_decision': 'DESIGN_ONLY_NORMAL_CANDIDATE_HOLD',
         'firmware_files_checked': 103, 'firmware_files_changed_this_pass': 0,

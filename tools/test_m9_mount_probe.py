@@ -74,7 +74,11 @@ class SourceTests(unittest.TestCase):
     def test_frozen_fs_and_previous_profile_are_not_rebuilt_by_probe(self):
         gate=(ROOT/'firmware/scripts/m9_mount_probe_gate.py').read_text()
         for target in ('upload','uploadfs','buildfs','erase'): self.assertIn(f'"{target}"',gate)
-        self.assertNotIn('-DSHINO_BOOT_PROFILE=1',(ROOT/'firmware/platformio.ini').read_text())
+        # Phase N adds a separately gated profile1; neither probe acquires it.
+        from configparser import ConfigParser
+        ini=ConfigParser(interpolation=None);ini.read(ROOT/'firmware/platformio.ini')
+        for env in ('esp12e_m9_4m2m_mount_probe','esp12e_m9_4m2m_mount_probe_resources'):
+            self.assertNotIn('-DSHINO_BOOT_PROFILE=1',ini['env:'+env]['build_flags'])
         self.assertIn('#if SHINO_BOOT_PROFILE != 2\nConfigManager configManager;',
                       (ROOT/'firmware/src/main.cpp').read_text())
 

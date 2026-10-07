@@ -7,6 +7,9 @@ on:
       - 'firmware/**'
       - 'recovery/**'
       - 'tools/m9_flash_layout.py'
+      - 'tools/m9_phase_n*'
+      - 'tools/test_m9_phase_n*'
+      - 'docs/M09_PHASE_N_STAGE_A.md'
       - 'tools/test_m9_flash_layout.py'
       - 'tools/m9_first_migration.py'
       - 'tools/m9_fsless_gate.py'
@@ -56,6 +59,9 @@ on:
       - 'firmware/**'
       - 'recovery/**'
       - 'tools/m9_flash_layout.py'
+      - 'tools/m9_phase_n*'
+      - 'tools/test_m9_phase_n*'
+      - 'docs/M09_PHASE_N_STAGE_A.md'
       - 'tools/test_m9_flash_layout.py'
       - 'tools/m9_first_migration.py'
       - 'tools/m9_fsless_gate.py'
@@ -437,11 +443,26 @@ jobs:
             --stack firmware/.pio/build/esp12e_m9_4m2m_mount_probe_resources/src \
             --symbols "${{ runner.temp }}/m9-mount-stack-symbols.txt" > "${{ runner.temp }}/m9-mount-stack.json"
 
+      - name: Phase N true profile1 StageA application qualification (no device)
+        run: |
+          pio run -d firmware -e esp12e_m9_4m2m_normal_qualification
+          python -m unittest discover -s tools -p 'test_m9_phase_n*.py' -v
+          python tools/m9_phase_n_http_runner.py > "${{ runner.temp }}/m9-normal-http.json"
+          "$HOME/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-nm" -C -S firmware/.pio/build/esp12e_m9_4m2m_normal_qualification/firmware.elf > "${{ runner.temp }}/m9-normal-symbols.txt"
+          "$HOME/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-size" -A firmware/.pio/build/esp12e_m9_4m2m_normal_qualification/firmware.elf > "${{ runner.temp }}/m9-normal-sections.txt"
+          python tools/m9_phase_n_qualification.py \
+            --candidate firmware/.pio/build/esp12e_m9_4m2m_normal_qualification/firmware.bin \
+            --symbols "${{ runner.temp }}/m9-normal-symbols.txt" \
+            --sections "${{ runner.temp }}/m9-normal-sections.txt" \
+            --stack firmware/.pio/build/esp12e_m9_4m2m_normal_qualification/src > "${{ runner.temp }}/m9-normal-stage-a.json"
+
       - name: Upload safe numeric evidence only
         uses: actions/upload-artifact@v4
         with:
           name: m9-offline-layout-evidence-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
+            ${{ runner.temp }}/m9-normal-stage-a.json
+            ${{ runner.temp }}/m9-normal-http.json
             ${{ runner.temp }}/m9-mount-stack.json
             ${{ runner.temp }}/m9-layout.json
             ${{ runner.temp }}/m9-fs.json

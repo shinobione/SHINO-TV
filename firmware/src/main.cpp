@@ -37,6 +37,11 @@
 #include "recovery/FactoryRollback.h"
 #include "shino_private_policy.h"
 #include "boot/ShinoBootProfile.h"
+// M9_PHASE_N_BEGIN
+#if SHINO_M9_NORMAL_QUALIFICATION == 1
+#include "boot/M9NormalStageA.h"
+#endif
+// M9_PHASE_N_END
 #if SHINO_BOOT_PROFILE == 2
 #include "boot/M9LittleFsMountProbe.h"
 #include "boot/M9MountProbeResources.h"
@@ -120,6 +125,11 @@ static auto littleFsHasEntries() -> bool {
  *
  */
 void setup() {
+// M9_PHASE_N_BEGIN
+#if SHINO_M9_NORMAL_QUALIFICATION == 1
+    M9NormalStageA::beforeSetup(); // Before serial/delay/logging: whole normal setup.
+#endif
+// M9_PHASE_N_END
     Serial.begin(SERIAL_BAUD_RATE);
     delay(BOOT_DELAY_MS);
     Serial.println("");
@@ -131,6 +141,13 @@ void setup() {
     FirstBootBridge::run();
     EspClass::wdtEnable(WDTO_2S);
     return;
+// M9_PHASE_N_BEGIN
+#elif SHINO_BOOT_PROFILE == 1
+    M9NormalStageA::begin(configManager);
+    EspClass::wdtEnable(WDTO_2S);
+    M9NormalStageA::afterSetup();
+    return;
+// M9_PHASE_N_END
 #elif SHINO_BOOT_PROFILE == 2
     FirstBootBridge::run(); // Protected AP/LCD remains available on probe failure.
 #if SHINO_M9_MOUNT_PROBE_RESOURCE_DIAGNOSTICS == 1
@@ -250,6 +267,11 @@ void loop() {
 #if SHINO_BOOT_PROFILE == 0
     FirstBootBridge::loop();
     return;
+// M9_PHASE_N_BEGIN
+#elif SHINO_BOOT_PROFILE == 1
+    M9NormalStageA::loop();
+    return;
+// M9_PHASE_N_END
 #elif SHINO_BOOT_PROFILE == 2
     FirstBootBridge::loop();
     M9LittleFsMountProbe::poll();

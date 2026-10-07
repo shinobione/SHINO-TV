@@ -1,5 +1,13 @@
 # Mission 9 — offline normal-profile 4m2m readiness and staged design
 
+> **Historical readiness checkpoint at2bd225a.** The following design-only
+> decision and deferred implementation are preserved as provenance. The later
+> [Phase N owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6043431763)
+> authorizes StageA implementation; [current implementation receipt](M09_PHASE_N_STAGE_A.md)
+> supersedes candidate/environment status and explicitly defers media/full scenes.
+> Both normal physical gates remain NOT_RUN. The readiness audit now labels its
+> historical scope; current StageA qualification uses a separate source/link gate.
+
 Owner scope: [latest PR #42 comment](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6042956937),
 7 October 2026; start clean `1b696e530d6d2b0d1bfa6503b5fe320214ac621f`,
 existing `feature/shino-tv-m9-flash-layout-liberation`, Draft/open/unmerged PR.

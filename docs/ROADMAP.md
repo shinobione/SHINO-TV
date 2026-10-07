@@ -14,6 +14,35 @@
 
 ## Product contract — owner clarification, 1 October 2026
 
+**Phase N StageA implementation — owner decision, 7 October 2026:**
+[Owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6043431763)
+authorizes OFFLINE implementation from exact clean
+`2bd225ad21e8e0839b7757c7092a227a1fb81de1`, same branch/Draft PR #42.
+Implement true profile1 `esp12e_m9_4m2m_normal_qualification`, exact opt-in,
+application-only target guard, normal main/services (no FirstBootBridge delegation),
+single proven read-only4m2m mount/inventory/hash/blank-seed owner, bounded mounted
+ConfigManager read-only API, private Digest and volatile AP, RAM-only four-value
+telemetry with6 s stale behavior, cached scalar setup/FS-config/runtime resources.
+No legacy API list, SecureStorage/EEPROM/RTC/token/SDK persistence, STA onboarding,
+FS mutation, generic/native OTA writer or signed media ingress in StageA. Media
+and full scenes are explicitly deferred by this owner decision; existing running
+profile0/profile2 media/product evidence is not rewritten. Defaults/profile0/2
+unchanged except narrowly reviewed shared refactors with regression/paired proof.
+Retain frozen FS/tail and installed successor; physical writer NOT rebound.
+All requested host/regression/profile0/profile2/profile1 build/link/resource gates,
+focused receipt, same-branch commit/push/exact-head CI; freeze one ignored local
+StageA candidate only after offline gates pass. Both normal physical gates stay
+NOT_RUN. Six agent device counters ZERO. STOP; DO NOT FLASH/REBIND/MERGE.
+
+**Phase N implementation checkpoint:** [focused StageA receipt](M09_PHASE_N_STAGE_A.md).
+Real profile1 normal services, one read-only mounted FS owner, bounded blank
+ConfigManager load, private Digest pre-body parser and RAM four-card telemetry;
+no bridge delegation/persistence/legacy writers/media/OTA. Public default/profile0/
+profile2 paired BINs byte-identical; public StageA source/link/ABI/resource PASS,
+395115B linked/39736B static RAM/56B noinit. Final candidate/test/CI checkpoint is
+recorded in the receipt. Both normal physical gates NOT_RUN; writer stays bound
+to installed profile2 successor. Six counters0; no physical operation/rebind/merge.
+
 **Normal-profile readiness pass — owner decision, 7 October 2026:**
 continue current PR #42 head `1b696e530d6d2b0d1bfa6503b5fe320214ac621f`,
 same branch/Draft/open/unmerged PR. [Latest owner comment](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6042956937)

@@ -1,5 +1,13 @@
 # Mission 9 — SHINO Flash Layout Liberation
 
+> **Phase N current offline implementation, 7 October:** real profile1 StageA
+> qualification, dedicated application-only4m2m environment; see
+> [implementation receipt](M09_PHASE_N_STAGE_A.md). Single read-only FS owner,
+> mounted ConfigManager API, normal DisplayManager/Webserver, bounded private
+> Digest pre-body ingress, RAM telemetry and three resource windows. Media/full
+> scenes deferred. Existing profile2 writer binding unchanged; both normal
+> physical gates NOT_RUN. All six physical counters0; no flash/rebind/merge.
+
 > **Current owner evidence, 7 October 2026:** the exact411152 B mount-stack
 > successor is now owner-reported installed; dedicated profile2 physical/resource
 > gates **PASS**. Both normal-profile gates **NOT_RUN**. See the

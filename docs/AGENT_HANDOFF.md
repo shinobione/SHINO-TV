@@ -1,7 +1,27 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
-**Active owner successor physical acceptance / OFFLINE normal readiness, 7 October 2026:**
+**Active Phase N — StageA normal qualification, 7 October 2026:**
+Owner [Phase N instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6043431763)
+authorizes offline real-profile1 implementation from clean2bd225a on existing
+branch/Draft PR42. Normal main/ConfigManager/DisplayManager/Webserver ownership,
+single read-only4m2m FS validator, bounded mounted blank-seed load, private Digest,
+volatile private AP, four RAM metric cards/6 s TTL and three resource windows.
+No FirstBootBridge startup/loop delegation, legacy API list, persistence/RTC/STA/
+FS mutation/OTA writers; signed media/full scenes deferred explicitly. Preserve
+default/profile0/profile2 and installed411152 B successor; no writer rebind.
+Candidate only after all offline gates; physical normal mount/runtime NOT_RUN.
+Implementation now uses the [focused StageA receipt](M09_PHASE_N_STAGE_A.md):
+separate mounted ConfigManager API, normal services and shared denied-write FS
+validator. Dedicated environment-local bounded Digest pre-body parser closes
+stock body allocation before auth; one ABI proven by compiler source records.
+Public default/profile0/profile2 paired BINs are byte-identical. Public StageA
+source/link/resource gates PASS (395115B linked/39736B RAM/56B noinit);
+candidate/final test and exact-head CI checkpoints are recorded in that receipt.
+Six device counters0. STOP before physical operation or merge. Older readiness
+design-only result below is the prior checkpoint, not a reason to skip Phase N.
+
+**Prior owner successor physical acceptance / OFFLINE normal readiness, 7 October 2026:**
 [Owner-supplied physical receipt](M09_SUCCESSOR_PHYSICAL_ACCEPTANCE.md) supersedes
 the predecessor/current-installation claims in dated paragraphs below. Exact
 411152 B / `e1852e56d99801b694f37d235b08a201188cf36d5a25f3f6f59d059a129bc27e`

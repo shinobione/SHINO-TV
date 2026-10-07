@@ -330,8 +330,10 @@ class Stage2Tests(unittest.TestCase):
     def test_stage1_freeze_and_normal_profile_hold_unchanged(self):
         self.assertEqual(FROZEN_BYTES,399168)
         self.assertEqual(FROZEN_SHA,"cd99139121fa47fedd6286a185fb16e8fb9e120280ecd75f1c6b41b905e31011")
-        source=(REPO/"firmware/platformio.ini").read_text()
-        self.assertNotIn("SHINO_BOOT_PROFILE=1",source)
+        source=(REPO/"firmware/platformio.ini").read_text(encoding='utf-8')
+        # Phase N leaves Stage2/default sections unchanged and adds one guarded environment.
+        from m9_phase_n_compat import predecessor
+        self.assertNotIn("SHINO_BOOT_PROFILE=1",predecessor('firmware/platformio.ini',source))
 
     def test_pinned_original_header_function_leaves_nonboot_raw_bytes_unchanged(self):
         root=Path(importlib.metadata.distribution("esptool").locate_file("esptool"))

@@ -31,13 +31,16 @@ def source_audit(root=ROOT):
     historical=json.loads((ROOT/'tools/m9_phase_k_sources.json').read_text(encoding='utf-8'))
     expected=historical['firmware_sha256_lf'].copy()
     expected.update(pins()['successor_sha256_lf'])
+    from m9_phase_n_compat import predecessor
     for name,digest in expected.items():
-        actual=hashlib.sha256((root/name).read_bytes().replace(b'\r\n',b'\n')).hexdigest()
+        source=predecessor(name,(root/name).read_text(encoding='utf-8'))
+        actual=hashlib.sha256(source.encode()).hexdigest()
         if actual != digest:raise ValueError('Mount-stack source pin changed: '+name)
     for name,digest in pins()['unchanged_tool_sha256_lf'].items():
         if hashlib.sha256((root/name).read_bytes().replace(b'\r\n',b'\n')).hexdigest()!=digest:
             raise ValueError('Physical runner/transaction/policy changed: '+name)
     return {'firmware_files_checked':len(expected),
+            'source_scope':'PINNED_PHASE_N_PREDECESSOR_PROJECTION; NOT_RAW_CURRENT_EQUALITY',
             'firmware_files_unchanged':len(expected)-len(CHANGED),
             'firmware_mount_stack_changes':sorted(CHANGED),
             'installed_candidate_role':'HISTORICAL_J_PREDECESSOR_ONLY',

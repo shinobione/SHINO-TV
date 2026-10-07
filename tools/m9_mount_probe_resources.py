@@ -14,6 +14,8 @@ ENV = "env:esp12e_m9_4m2m_mount_probe_resources"
 
 
 def uninstrumented_source(path: str, text: str) -> str:
+    from m9_phase_n_compat import predecessor
+    text = predecessor(path, text)
     text = text.replace('#include "boot/M9MountProbeResources.h"\n', '')
     if path.endswith('main.cpp'):
         for call in ('beforeMount()', 'afterMount()', 'poll()'):

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "boot/ShinoBootProfile.h"
-#if SHINO_BOOT_PROFILE == 2
+#if SHINO_BOOT_PROFILE == 2 || SHINO_M9_NORMAL_QUALIFICATION == 1
 #include "boot/M9LittleFsMountProbe.h"
 #include "boot/M9ProbeManifest.h"
 #include "boot/M9ProbeStream.h"
