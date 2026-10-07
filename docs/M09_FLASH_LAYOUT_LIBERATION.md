@@ -1,5 +1,13 @@
 # Mission 9 — SHINO Flash Layout Liberation
 
+> **Current Phase O writer binding, 7 October 2026:**
+> [Normal StageA rebind receipt](M09_PHASE_O_WRITER_REBIND.md) selects only399264 B /
+> SHA-256 `78a8d2d50409974fc775dd3dc9f3dbec4ac8eda839f6d9b338cadf35aab2467c`,
+> rounded0x062000,98 packets; last1952 payload/2144 FF. Future physical packet
+> PRINT ONLY/not authorized. Both normal physical gates NOT_RUN; no firmware/
+> freeze/FS change. Installed profile2 probe PASS is historical owner evidence.
+> Older transaction geometries below remain dated history. STOP/no flash/reboot/merge.
+
 > **Phase N current offline implementation, 7 October:** real profile1 StageA
 > qualification, dedicated application-only4m2m environment; see
 > [implementation receipt](M09_PHASE_N_STAGE_A.md). Single read-only FS owner,

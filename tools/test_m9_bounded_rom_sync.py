@@ -62,7 +62,7 @@ class BoundedSyncTests(unittest.TestCase):
                 (code,report,ports,uploads),budget,clock=self.exercise(position)
                 self.assertEqual(code,0); self.assertEqual(len(uploads),1)
                 p=ports[0]
-                self.assertEqual(p.calls,['sync']*position+['begin']+[('data',i) for i in range(101)]+['finish','md5'])
+                self.assertEqual(p.calls,['sync']*position+['begin']+[('data',i) for i in range(98)]+['finish','md5'])
                 self.assertEqual(p.purges,[(name,i) for i in range(position) for name in ('input','output')])
                 self.assertEqual(clock.delays,[0.05]*(position-1))
                 self.assertEqual(budget.calls,2*(position-1)+1)

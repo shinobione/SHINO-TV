@@ -81,7 +81,7 @@ jobs:
           assert r['serial_source_audit']['source_files_checked']==28 and not r['serial_source_audit']['electrical_glitch_proof']
           assert r['approved_local_interpreter_identity']=='NOT_READ_BY_THIS_SOURCE_ONLY_RUN'
           assert r['PHASE_K_FROZEN_CANDIDATE_IDENTITY_GATE']=='NOT_READ_BY_THIS_RUN'
-          assert r['candidate']['bytes']==411152 and r['candidate']['sha256']=='e1852e56d99801b694f37d235b08a201188cf36d5a25f3f6f59d059a129bc27e'
+          assert r['candidate']['bytes']==399264 and r['candidate']['sha256']=='78a8d2d50409974fc775dd3dc9f3dbec4ac8eda839f6d9b338cadf35aab2467c'
           assert r['historical_j_candidate']['bytes']==411136 and r['historical_j_candidate']['sha256']=='2ce2fa8da00de5c60109d0675c7bcf58ab41df2138d913b607fde25994e5a835'
           assert r['firmware_files_checked']==103 and r['firmware_files_unchanged']==101
           assert len(r['firmware_mount_stack_changes'])==2 and r['installed_candidate_role']=='HISTORICAL_J_PREDECESSOR_ONLY'

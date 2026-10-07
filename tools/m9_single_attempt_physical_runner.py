@@ -206,7 +206,7 @@ class Session:
                     result = app.SingleAttempt().write(
                         args.candidate, args.expected_sha256, lambda: self.acquire(args), args.owner_go)
                     result['reconnects_after_transaction_start'] = 0
-                    result.update(target=0, rounded_extent='0x000000..0x064FFF')
+                    result.update(target=0, rounded_extent='0x000000..0x061FFF')
         except (Exception, KeyboardInterrupt):
             failed = True
         finally:

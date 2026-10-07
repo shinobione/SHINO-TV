@@ -88,7 +88,7 @@ class SpySerial:
                 value = 0 if self.stub_value == 'all' or self.stub_value == i else 0x20120707
                 self.buffer.extend(slip(struct.pack('<BBHI', 1, op, len(self.sync_body), value)+self.sync_body))
         else:
-            if event == 'begin': assert struct.unpack('<IIIII', data) == (411152, 101, 4096, 0, 0)
+            if event == 'begin': assert struct.unpack('<IIIII', data) == (399264, 98, 4096, 0, 0)
             if event == 'finish': assert struct.unpack('<I', data) == (1,)
             payload = (b'\0'*16 if self.bad_md5 else hashlib.md5(FIXTURE).digest()) if event == 'md5' else b''
             self.buffer.extend(slip(struct.pack('<BBHI', 1, op, len(payload)+2, 0)+payload+b'\0\0'))
@@ -150,18 +150,18 @@ class RunnerTests(unittest.TestCase):
             self.assertLessEqual(p.calls.count('begin'), 1)
         return code, report, ports, uploads
 
-    def test_success_actual_sync_and_k_adapter_slip_101_packets(self):
+    def test_success_actual_sync_and_k_adapter_slip_98_packets(self):
         code, report, ports, uploads=self.exercise()
         self.assertEqual(code, 0)
-        self.assertEqual(ports[0].calls, ['sync','begin']+[('data', i) for i in range(101)]+['finish','md5'])
+        self.assertEqual(ports[0].calls, ['sync','begin']+[('data', i) for i in range(98)]+['finish','md5'])
         self.assertEqual(len(uploads), 1)
         self.assertEqual(report['status'], 'APPLICATION_TRANSACTION_ACKNOWLEDGED_FULL_POST_STILL_REQUIRED')
-        self.assertEqual(report['target'], 0); self.assertEqual(report['rounded_extent'], '0x000000..0x064FFF')
+        self.assertEqual(report['target'], 0); self.assertEqual(report['rounded_extent'], '0x000000..0x061FFF')
         self.assertFalse(report['full_post_verified']); self.assertFalse(report['physical_gate_closed_by_this_receipt'])
         self.assertEqual(report['automatic_retries'], 0); self.assertEqual(report['automatic_reboots'], 0)
 
-    def test_416_packet_faults_serial_timeout_interrupt_value_no_resend(self):
-        events=['begin']+[('data',i) for i in range(101)]+['finish','md5']
+    def test_404_packet_faults_serial_timeout_interrupt_value_no_resend(self):
+        events=['begin']+[('data',i) for i in range(98)]+['finish','md5']
         for error in (SerialException, TimeoutError, KeyboardInterrupt, ValueError):
             for event in events:
                 with self.subTest(error=error.__name__, event=event):

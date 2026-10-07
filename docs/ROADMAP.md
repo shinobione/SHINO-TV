@@ -14,6 +14,29 @@
 
 ## Product contract — owner clarification, 1 October 2026
 
+**Phase O writer rebind — owner decision, 7 October 2026:**
+[Exact owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6044586614)
+accepts Phase N offline qualification and authorizes a targeted OFFLINE binding
+review/rebind from clean `f53de10e2aea6825b53c164eb3cc9b2e7156f654`, same branch
+and Draft/open/unmerged PR42. Select only retained normal StageA399264 B,
+SHA-256 `78a8d2d50409974fc775dd3dc9f3dbec4ac8eda839f6d9b338cadf35aab2467c`,
+target0, payload end0x0617A0/rounded0x062000;98 unique4096 B packets0..97,
+last1952 B payload/2144 B FF padding. No firmware/private policy/linker/FS change,
+candidate rebuild or substitution. Preserve Phase M acquisition and the exact
+single-attempt transaction classes; only binding/receipt metadata may change.
+Old successor/J hashes and GO, altered normal bytes must fail before acquisition.
+Fresh private full4MiB PRE and independent POST before first normal boot remain
+mandatory; exact candidate at zero and POST[0x062000:0x400000]==PRE continuously.
+RTC-neutralization/boot transition remain separate later physical gates. Installed
+profile2 probe PASS remains historical owner evidence; both normal physical gates
+NOT_RUN. Future packet PRINT ONLY/not authorized. Six device counters0. STOP;
+DO NOT FLASH/REBOOT/MERGE. [Focused Phase O receipt](M09_PHASE_O_WRITER_REBIND.md).
+**Offline result:** retained image/size/SHA/CRC and all113 unchanged firmware
+pins PASS; exact transaction-class source preserved, runner changed only numeric
+success receipt.248 regressions PASS/0 failures/errors/skips, both404-position/
+exception fault matrices PASS; default runner audit opens no port. Normal gates
+NOT_RUN, six counters0; exact-head CI/final commit in existing PR42 after push.
+
 **Phase N StageA implementation — owner decision, 7 October 2026:**
 [Owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6043431763)
 authorizes OFFLINE implementation from exact clean

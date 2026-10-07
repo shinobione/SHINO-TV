@@ -10,8 +10,8 @@
   },
   "unchanged_tool_sha256_lf": {
     "tools/m9_resource_policy.py": "b7d0c5a72afa5c856e3f013eab3499068ae8b07759fad36305c07258fd1c2c03",
-    "tools/m9_single_attempt_app_write.py": "8ef4591ee6e4c4a3ae8a1b0600917511a9a5e40da3af3c89fe2979e1e872deef",
-    "tools/m9_single_attempt_physical_runner.py": "861733eddbbac3ffa2a89b9a5fbdc53e06408ad8ab751d159866996c1c0e43be"
+    "tools/m9_single_attempt_app_write.py": "627e0de1a760e28f92b7b3e8a7cfa51039cadba24b9d97b8b211d63501e982f3",
+    "tools/m9_single_attempt_physical_runner.py": "8a2de19f819e97512ea8436cedbdcc17e489a3d7b4d64189b3074ef446c5ee50"
   },
   "uninstrumented_successor_sha256_lf": {
     "firmware/include/boot/M9ProbeStream.h": "2146268bd3a2d20d8d1a1886c1361a67e351988535e393d90daf2f4fda63d658",

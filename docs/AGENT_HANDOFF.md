@@ -1,7 +1,29 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
-**Active Phase N — StageA normal qualification, 7 October 2026:**
+**Active Phase O — OFFLINE normal StageA writer binding, 7 October 2026:**
+[Owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6044586614)
+accepts Phase N offline qualification and selects the retained399264 B normal
+StageA SHA-256 `78a8d2d50409974fc775dd3dc9f3dbec4ac8eda839f6d9b338cadf35aab2467c`.
+Start cleanf53de10 on existing branch/Draft PR42. Rehash only, no firmware/private
+policy/linker/FS change or build. Target0, payload end0x0617A0/rounded0x062000;
+98 packets0..97; last1952 B payload+2144 B FF. Old successor/J identity/GO and
+altered bytes rejected before transport. Phase M bounded acquisition and
+SingleAttempt/PinnedStubTransport semantics preserved; runner changes only its
+numeric success receipt. Fresh full private4MiB PRE and independent POST before
+first normal boot required: candidate exact at0 and0x062000..0x3FFFFF PRE-equal.
+RTC/boot remain separate later physical gates. Installed profile2 probe PASS is
+historical owner evidence; NORMAL_PROFILE_LITTLEFS_MOUNT_GATE=NOT_RUN and
+NORMAL_PROFILE_RUNTIME_GATE=NOT_RUN. Future packet PRINT ONLY/not authorized.
+[Focused receipt](M09_PHASE_O_WRITER_REBIND.md). Six counters0; STOP/no flash/
+reboot/merge. Phase N's no-rebind result below is its dated checkpoint.
+Rebind/source/retained-image gates GO/OFFLINE; all113 tracked firmware LF pins
+unchanged, both transaction classes exact source-equal, runner only numeric
+receipt changed.248 regressions PASS/0 failures/errors/skips; package/source/
+interpreter gates PASS, default runner AUDIT_PRINT_ONLY_NO_PORT_OPEN. Exact-head
+CI/final commit in PR42 receipt; candidate never rebuilt/uploaded.
+
+**Prior Phase N — StageA normal qualification, 7 October 2026:**
 Owner [Phase N instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6043431763)
 authorizes offline real-profile1 implementation from clean2bd225a on existing
 branch/Draft PR42. Normal main/ConfigManager/DisplayManager/Webserver ownership,

@@ -29,14 +29,16 @@ class SourceTests(unittest.TestCase):
         with patch.dict('sys.modules',{'SCons.Script':module}),patch.dict(good,{'board_build.ldscript':'eagle.flash.4m3m.ld'}),self.assertRaises(RuntimeError):
             runpy.run_path(str(script),init_globals={'env':env})
 
-    def test_installed_freeze_and_writer_are_unchanged_reject_normal_identity(self):
+    def test_installed_profile2_freeze_retained_after_phase_o_rebind(self):
         import m9_single_attempt_app_write as writer
-        self.assertEqual(writer.FROZEN_SHA256,'e1852e56d99801b694f37d235b08a201188cf36d5a25f3f6f59d059a129bc27e')
+        # Phase N's unchanged-writer result is historical; Phase O explicitly
+        # rebinds tooling only. The installed probe identity must still survive.
+        probe_sha='e1852e56d99801b694f37d235b08a201188cf36d5a25f3f6f59d059a129bc27e'
         with self.assertRaises(writer.WriteError):writer.candidate(Path('not-opened.bin'),'0'*64)
         local=ROOT/'research-local/m9-mount-stack/frozen-successor-resource-probe.bin'
         if local.exists():
-            self.assertEqual(local.stat().st_size,writer.FROZEN_BYTES)
-            self.assertEqual(hashlib.sha256(local.read_bytes()).hexdigest(),writer.FROZEN_SHA256)
+            self.assertEqual(local.stat().st_size,411152)
+            self.assertEqual(hashlib.sha256(local.read_bytes()).hexdigest(),probe_sha)
         pins=json.loads((ROOT/'tools/m9_mount_stack_sources.json').read_text())
         for name,digest in pins['unchanged_tool_sha256_lf'].items():
             self.assertEqual(hashlib.sha256((ROOT/name).read_bytes().replace(b'\r\n',b'\n')).hexdigest(),digest)

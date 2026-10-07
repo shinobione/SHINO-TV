@@ -43,27 +43,27 @@ class ExecutorTests(unittest.TestCase):
         with patch.object(app,'candidate',return_value=(FIXTURE,{'sha256':app.FROZEN_SHA256})):
             return session.write(Path('SYNTHETIC_ONLY'),app.FROZEN_SHA256,lambda:t,app.GO_TEXT)
 
-    def test_success_one_begin_101_unique_blocks_one_finish(self):
+    def test_success_one_begin_98_unique_blocks_one_finish(self):
         t=FakeTransport();r=self.run_fixture(t)
-        self.assertEqual(t.calls,['begin']+[('data',i) for i in range(101)]+['finish','md5'])
+        self.assertEqual(t.calls,['begin']+[('data',i) for i in range(98)]+['finish','md5'])
         self.assertEqual(r['automatic_retries'],0)
         self.assertFalse(r['full_post_verified'])
-        self.assertEqual(t.offset,411152);self.assertEqual(t.flash[:411152],FIXTURE)
-        self.assertEqual(t.flash[411152:],b'\xff'*2544)
+        self.assertEqual(t.offset,399264);self.assertEqual(t.flash[:399264],FIXTURE)
+        self.assertEqual(t.flash[399264:],b'\xff'*2144)
 
-    def test_successor_exact_sequence_last_payload_padding_and_post_barrier(self):
+    def test_normal_exact_sequence_last_payload_padding_and_post_barrier(self):
         t=FakeTransport(); packets=[]; original=t.data
         def capture(block, sequence):
             packets.append((sequence,block)); original(block,sequence)
         t.data=capture
         r=self.run_fixture(t)
-        self.assertEqual(app.FROZEN_BYTES,0x064610)
-        self.assertEqual(app.FROZEN_SHA256,'e1852e56d99801b694f37d235b08a201188cf36d5a25f3f6f59d059a129bc27e')
+        self.assertEqual(app.FROZEN_BYTES,0x0617A0)
+        self.assertEqual(app.FROZEN_SHA256,'78a8d2d50409974fc775dd3dc9f3dbec4ac8eda839f6d9b338cadf35aab2467c')
         self.assertEqual(app.BLOCK_COUNT,(app.FROZEN_BYTES+4095)//4096)
         self.assertEqual(app.BLOCK_COUNT*4096,app.ROUNDED_END)
-        self.assertEqual([sequence for sequence,_ in packets],list(range(101)))
-        self.assertEqual(packets[-1],(100,FIXTURE[409600:]+b'\xff'*2544))
-        self.assertEqual(len(FIXTURE[409600:]),1552)
+        self.assertEqual([sequence for sequence,_ in packets],list(range(98)))
+        self.assertEqual(packets[-1],(97,FIXTURE[397312:]+b'\xff'*2144))
+        self.assertEqual(len(FIXTURE[397312:]),1952)
         self.assertEqual(t.calls.count('md5'),1)
         self.assertEqual(r['status'],'APPLICATION_TRANSACTION_ACKNOWLEDGED_FULL_POST_STILL_REQUIRED')
         self.assertFalse(r['physical_gate_closed_by_this_receipt'])
@@ -89,7 +89,7 @@ class ExecutorTests(unittest.TestCase):
     def test_failure_matrix_no_repeated_begin_block_finish_or_reconnect(self):
         # Every block boundary plus Begin/Finish/MD5: exceptions include disconnect and timeout.
         for error in (TimeoutError,OSError,ValueError,KeyboardInterrupt):
-            for event in ['begin']+[('data',i) for i in range(101)]+['finish','md5']:
+            for event in ['begin']+[('data',i) for i in range(98)]+['finish','md5']:
                 t=FakeTransport(event,error);session=app.SingleAttempt()
                 with self.subTest(error=error.__name__,event=event),self.assertRaises(error):self.run_fixture(t,session)
                 self.assertEqual(t.calls.count('begin'),1)
@@ -161,7 +161,7 @@ class ExecutorTests(unittest.TestCase):
         for a,b in [('HOLD','PASS/OFFLINE'),('PASS/OFFLINE','HOLD')]:
             with self.assertRaises(app.WriteError):app.future_packet(a,b)
         r=app.future_packet('PASS/OFFLINE','PASS/OFFLINE')
-        self.assertFalse(r['physical_authorization']);self.assertEqual(r['rounded_end'],0x65000)
+        self.assertFalse(r['physical_authorization']);self.assertEqual(r['rounded_end'],0x62000)
 
 
 class PinnedCommandTests(unittest.TestCase):
@@ -194,7 +194,7 @@ class PinnedCommandTests(unittest.TestCase):
         # Decode SLIP payload to assert no-compression Begin and no-reboot Finish.
         decode=lambda p:p[1:-1].replace(b'\xdb\xdc',b'\xc0').replace(b'\xdb\xdd',b'\xdb')
         begin=decode(self.port.writes[0]);finish=decode(self.port.writes[-1])
-        self.assertEqual(struct.unpack('<IIIII',begin[8:]),(411152,101,4096,0,0))
+        self.assertEqual(struct.unpack('<IIIII',begin[8:]),(399264,98,4096,0,0))
         self.assertEqual(struct.unpack('<I',finish[8:]),(1,))
 
     def test_actual_api_fatal_serial_timeout_never_resends(self):
@@ -275,7 +275,7 @@ class PinnedCommandTests(unittest.TestCase):
                     if outcome==0x1640ef:
                         result=session.write(Path('synthetic'),app.FROZEN_SHA256,factory,app.GO_TEXT)
                         self.assertEqual(result['begin_count'],1)
-                        self.assertEqual(events[4:],[2]+[3]*101+[4])
+                        self.assertEqual(events[4:],[2]+[3]*98+[4])
                         stub.flash_md5sum.assert_called_once_with(0,app.FROZEN_BYTES)
                     else:
                         error=type(outcome) if isinstance(outcome,Exception) else app.WriteError

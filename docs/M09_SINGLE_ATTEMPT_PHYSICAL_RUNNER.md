@@ -1,6 +1,14 @@
 # Mission 9 Phase L — physical single-attempt session runner
 
-> **Current writer binding, 7 October 2026:** [Targeted successor rebind](M09_PHYSICAL_WRITER_REBIND.md)
+> **Current Phase O writer binding, 7 October 2026:**
+> [Normal StageA rebind receipt](M09_PHASE_O_WRITER_REBIND.md) selects only399264 B /
+> SHA-256 `78a8d2d50409974fc775dd3dc9f3dbec4ac8eda839f6d9b338cadf35aab2467c`,
+> rounded0x062000,98 packets; last1952 payload/2144 FF. Future physical packet
+> PRINT ONLY/not authorized. Both normal physical gates NOT_RUN; no firmware/
+> freeze/FS change. Installed profile2 probe PASS is historical owner evidence.
+> Older transaction geometries below remain dated history. STOP/no flash/reboot/merge.
+
+> **Prior profile2 writer binding (before Phase O), 7 October 2026:** [Targeted successor rebind](M09_PHYSICAL_WRITER_REBIND.md)
 > selects only411152 B / e1852e56...9bc27e. Phase M acquisition and physical
 > thresholds unchanged; historical J binding statements below are dated evidence.
 > This offline rebind grants no physical authority. STOP. DO NOT FLASH.

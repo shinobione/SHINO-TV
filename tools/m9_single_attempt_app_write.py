@@ -17,12 +17,12 @@ from pathlib import Path
 from m9_executor_preflight import check_configuration, check_hashes, inspect_sources, MANIFEST
 from m9_stage1_readback_verify import candidate_bytes
 
-FROZEN_BYTES = 411152
-FROZEN_SHA256 = 'e1852e56d99801b694f37d235b08a201188cf36d5a25f3f6f59d059a129bc27e'
+FROZEN_BYTES = 399264
+FROZEN_SHA256 = '78a8d2d50409974fc775dd3dc9f3dbec4ac8eda839f6d9b338cadf35aab2467c'
 FLASH_BYTES = 0x400000
-ROUNDED_END = 0x065000
+ROUNDED_END = 0x062000
 BLOCK_BYTES = 4096
-BLOCK_COUNT = 101
+BLOCK_COUNT = 98
 GO_TEXT = 'GO SINGLE ATTEMPT ' + FROZEN_SHA256
 
 
@@ -36,7 +36,7 @@ def require(condition: bool, message: str) -> None:
 
 
 def candidate(path: Path, expected_sha256: str) -> tuple[bytes, dict]:
-    require(expected_sha256 == FROZEN_SHA256, 'External SHA must select the exact frozen mount-stack successor')
+    require(expected_sha256 == FROZEN_SHA256, 'External SHA must select the exact frozen profile-1 StageA normal candidate')
     data, report = candidate_bytes(path, expected_sha256)
     require(len(data) == FROZEN_BYTES and report['sector_rounded_write_extent'] == ROUNDED_END,
             'Exact frozen size/extent required')
@@ -145,24 +145,24 @@ class SingleAttempt:
 
 def future_packet(resource_policy_gate: str, executor_gate: str) -> dict:
     require(resource_policy_gate == executor_gate == 'PASS/OFFLINE', 'Both offline prerequisites required')
-    return {'scope': 'PRINT ONLY / NOT AUTHORIZED BY PHASE K', 'candidate_bytes': FROZEN_BYTES,
+    return {'scope': 'PRINT ONLY / NOT AUTHORIZED BY PHASE O', 'candidate_bytes': FROZEN_BYTES,
             'candidate_sha256': FROZEN_SHA256, 'target': 0, 'rounded_end': ROUNDED_END,
-            'protected_interval': '0x065000..0x3FFFFF', 'physical_authorization': False,
+            'protected_interval': '0x062000..0x3FFFFF', 'physical_authorization': False,
             'steps': [
                 'Fresh same-unit ESP8266 ROM/chip/4 MiB qualification; continuous power, GPIO0 LOW, isolated DTR/RTS',
                 'Fresh private full 4 MiB PRE; PRE FS slice equals retained frozen Stage-2 bytes',
-                'Rehash exact frozen mount-stack successor; verify rollback captures/authority separately',
-                'Explicit owner GO for exact image/hash/operation; not supplied by this Phase K packet',
+                'Rehash exact frozen profile-1 StageA normal candidate; no rebuild/substitution; rollback authority separate',
+                'Explicit owner GO for exact image/hash/operation; not supplied by this Phase O packet',
                 'SingleAttempt plus PinnedStubTransport only; same fresh ROM session, fresh pinned v2 stub; no stock write-flash CLI',
-                'One uncompressed target-zero Begin / 101 data packets / Finish; keep GPIO0 LOW; no retry/reset/rollback',
-                'Full independent 4 MiB POST before first app boot; exact candidate at zero',
-                'POST[0x065000:0x400000] equals PRE continuously, including frozen FS and tail',
-                'RTC 0/0 verified under continuous power; GPIO0 release and existing RST; normal application boot',
-                'Digest status mount/inventory/config exact; zero blocked writes, enabled/valid advancing resource diagnostics',
-                'Apply scoped thresholds to mount/post-probe/runtime fields, including old denser heap minimum',
-                '180 s LINK, controlled stale/recovery, no reboot/display corruption; final status/monotone counters still pass',
-                'No automatic retry/rollback; any exception, missing fact or ambiguity = STOP; full normal profile remains NOT_RUN'],
-            'port_open_connect_reset_adapter': 'NOT IMPLEMENTED; any future integration separately reviewed/authorized'}
+                'One target-zero Begin / 98 unique DATA sequences 0..97 / no-reboot Finish / MD5 over exactly399264 B',
+                'Last DATA:1952 B payload +2144 B FF padding; keep GPIO0 LOW; no retry/reset/rollback',
+                'Fresh full independent 4 MiB POST before first normal boot; exact frozen candidate at zero',
+                'POST[0x062000:0x400000] equals PRE continuously:unused arena, frozen FS and reserved tail',
+                'STOP after POST; RTC neutralization and GPIO0/RST boot transition are separate later physical gates',
+                'Normal LittleFS mount and setup/FS-config/runtime physical resource/workload acceptance remain NOT_RUN',
+                'Phase N design floors are not physical acceptance; installed profile2 probe PASS does not transfer',
+                'No automatic retry/rollback; any exception, missing fact or ambiguity = STOP; no media/home-LAN/native OTA promotion'],
+            'port_open_connect_reset_adapter': 'Phase M bounded runner exists; physical execution separately reviewed/authorized'}
 
 
 def main() -> int:

@@ -16,11 +16,14 @@ def qualify(stub_audit_root: Path, image: Path | None = None, expected: str | No
     # historical K firmware/candidate manifest remains unchanged on disk.
     _,sources=load_pinned_esptool(stub_audit_root)
     report={'PHASE_K_RESOURCE_POLICY_GATE':'PASS/OFFLINE',
+            'qualification_report_scope':'HISTORICAL_K_PROBE_POLICY_PLUS_CURRENT_BINDING_METADATA; NOT_NORMAL_PHYSICAL_ACCEPTANCE',
             'PHASE_K_SINGLE_ATTEMPT_EXECUTOR_GATE':'PASS/OFFLINE',
             'policy':policy(), 'source_audit':sources,
             **firmware,
             'candidate':{'bytes':FROZEN_BYTES, 'sha256':FROZEN_SHA256,
                          'rounded_end':ROUNDED_END, 'physical_authorization':False},
+            'candidate_role':'FROZEN_PROFILE1_STAGE_A_NORMAL_OFFLINE_ONLY',
+            'historical_successor_candidate':json.loads((ROOT/'tools/m9_phase_o_sources.json').read_text(encoding='utf-8'))['historical_successor_candidate'],
             'historical_j_candidate':manifest['candidate'],
             'PHASE_K_FROZEN_CANDIDATE_IDENTITY_GATE':'NOT_READ_BY_THIS_RUN',
             'MOUNT_PROBE_RESOURCE_PHYSICAL_GATE':'HOLD / NOT_RUN',
