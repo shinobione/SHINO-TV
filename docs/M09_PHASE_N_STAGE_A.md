@@ -167,8 +167,11 @@ and `.elf`; neither is committed/uploaded. No FS image was built or rewritten.
   the old bound SHA against the new file. Writer/runner/resource policy pins
   unchanged; **physical writer NOT rebound**.
 
-Final receipt commit contains documentation metadata after the clean source
-checkpoint; **do not rebuild the freeze** when branch HEAD advances. Exact-head
+Later receipt/test-portability/CI dependency commits do not change any firmware
+input after the clean source checkpoint. GCC fixture indentation was corrected
+with warnings-as-errors retained; the general simulator job reuses its already
+pinned ArduinoJson source through an explicit absolute-resolved include path.
+**Do not rebuild the freeze** when branch HEAD advances. Exact-head
 CI completion/final commit SHA are recorded in PR42's description and local
 ignored `research-local/m9-phase-n/exact-head-ci.json` after push. Draft/open/
 unmerged state is verified separately. Both normal physical gates remain NOT_RUN.
@@ -189,6 +192,7 @@ DO NOT REBIND THE PHYSICAL WRITER. DO NOT MERGE PR42.**
 
 ## Exact Phase N changed files
 
+- `.github/workflows/ci.yml`
 - `.github/workflows/m9-flash-layout.yml`
 - `docs/AGENT_HANDOFF.md`
 - `docs/M09_FLASH_LAYOUT_LIBERATION.md`

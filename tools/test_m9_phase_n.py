@@ -65,7 +65,8 @@ struct Reader {
     std::string data=seed;size_t offset=0,quantum=32,advertised=85;int fault=0;size_t calls=0;
     size_t size(){return advertised;}
     size_t read(uint8_t* out,size_t wanted){assert(wanted<=32);++calls;
-        if(fault==1)return 0;if(fault==2)return wanted+1;
+        if(fault==1)return 0;
+        if(fault==2)return wanted+1;
         size_t n=std::min(wanted,std::min(quantum,data.size()-offset));
         std::memcpy(out,data.data()+offset,n);offset+=n;return n;}
     int read(){return offset==data.size()?-1:static_cast<uint8_t>(data[offset++]);}

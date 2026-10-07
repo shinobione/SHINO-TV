@@ -87,7 +87,8 @@ struct ESP8266WebServer{
     std::function<void()> fallback;
     String header(const char* key){if(std::strcmp(key,"Content-Length")==0)return verb==HTTP_POST?String(std::to_string(payload.size())):String();
         if(std::strcmp(key,"Content-Type")==0)return "application/json";
-        if(std::strcmp(key,"Transfer-Encoding")==0)return "";return authorization;}
+        if(std::strcmp(key,"Transfer-Encoding")==0)return "";
+        return authorization;}
     HTTPMethod method(){return verb;}String uri(){return path;}void keepAlive(bool){}
     void setStageAPrebody(std::function<bool()> f){prebody=f;}
     bool authenticate(const char*,const char*){return allowed;}
@@ -110,7 +111,7 @@ class StageARoutes(unittest.TestCase):
     def test_actual_controller_auth_closed_routes_stale_recovery_and_failure_modes(self):
         compiler=shutil.which('g++') or shutil.which('cl')
         self.assertIsNotNone(compiler,'Native C++ compiler required')
-        deps=Path(os.environ.get('SHINO_ARDUINOJSON_SRC',str(ROOT/'firmware/.pio/libdeps/esp12e/ArduinoJson/src')))
+        deps=Path(os.environ.get('SHINO_ARDUINOJSON_SRC',str(ROOT/'firmware/.pio/libdeps/esp12e/ArduinoJson/src'))).resolve()
         self.assertTrue((deps/'ArduinoJson.h').is_file(),'Build the pinned public firmware environment first')
         source=r'''
 #include "boot/M9LittleFsMountProbe.h"
