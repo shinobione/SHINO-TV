@@ -11,7 +11,7 @@ from shino_link import (
     LinkEngine, LinkError, autostart, exact_keys, load_config, save_config, diagnostics_writer,
 )
 from push_fsless_metrics import ENDPOINT, encode_sample, send_one, make_opener, SendStatus
-from test_push_fsless_metrics import DigestTransport
+from test_push_fsless_metrics import DigestTransport, OfflineNetworkTestCase
 
 SAMPLE = {
     "ok": True, "cpu_usage": 22.5, "gpu_usage": 60.0,
@@ -21,7 +21,7 @@ SAMPLE = {
 }
 
 
-class LinkConfigTests(unittest.TestCase):
+class LinkConfigTests(OfflineNetworkTestCase):
     def test_config_contains_private_file_path_only_not_secret_and_no_network(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
@@ -85,6 +85,15 @@ class LinkConfigTests(unittest.TestCase):
         self.assertNotIn(" --flash", launcher)
         self.assertNotIn(" /update", launcher)
 
+    def test_config_cannot_supply_a_digest_realm(self):
+        with tempfile.TemporaryDirectory() as folder:
+            cfg = Path(folder) / 'link.json'
+            cfg.write_text(json.dumps({'schema': 1, 'host': '192.168.4.1',
+                           'credentials_file': 'C:/fixture/credentials.txt',
+                           'realm': 'SHINO-Unlisted'}), encoding='utf-8')
+            with self.assertRaises(LinkError):
+                load_config(cfg)
+
     def test_no_registry_side_effect_on_non_windows(self):
         # Covers the default Linux CI path without monkeypatching OS globals.
         import os
@@ -95,7 +104,7 @@ class LinkConfigTests(unittest.TestCase):
                 autostart("status", Path("no-config"))
 
 
-class LinkEngineTests(unittest.TestCase):
+class LinkEngineTests(OfflineNetworkTestCase):
     def test_success_every_two_seconds_without_any_other_endpoint(self):
         calls = []
         def send(host, opener, sample, timeout):
@@ -169,9 +178,11 @@ class LinkEngineTests(unittest.TestCase):
         self.assertEqual(states, ["CONNECTED"])
 
 
-class LinkContinuityTests(unittest.TestCase):
+class LinkContinuityTests(OfflineNetworkTestCase):
+    realm = 'SHINO-FirstBoot'
+
     def engine(self):
-        transport = DigestTransport()
+        transport = DigestTransport(self.realm)
         created = []
         def factory():
             opener = make_opener('192.168.4.1', 'shino', 'fixture-password')
@@ -234,9 +245,16 @@ class LinkContinuityTests(unittest.TestCase):
 
     def test_success_keeps_opener_and_diagnostics_are_bounded(self):
         engine, transport, created = self.engine()
-        for now in range(0, 200, 2): engine.step(now)
+        for now in range(0, 200, 2):
+            self.assertEqual(engine.step(now), 'CONNECTED')
+            self.assertIs(engine.last_result, SendStatus.ACCEPTED)
+            self.assertEqual(engine.next_due, now + 2)
+            self.assertEqual(engine.step(now + 1), 'CONNECTED')
         self.assertEqual(len(created), 1)
         self.assertEqual(engine.accepted, 100)
+        self.assertEqual(transport.accepted, 100)
+        self.assertEqual(transport.requests, 101)
+        self.assertEqual(transport.challenges, 1)
         self.assertEqual(len(engine.diagnostics()['history']), 64)
 
     def test_diagnostics_never_include_exception_credentials_headers_or_paths(self):
@@ -257,6 +275,26 @@ class LinkContinuityTests(unittest.TestCase):
         self.assertNotIn('private', encoded)
         self.assertEqual(json.loads(encoded)['history'][0]['result'], 'client_error')
 
+    def test_real_digest_success_and_timeout_diagnostics_are_sanitized(self):
+        engine, transport, created = self.engine()
+        output = io.StringIO()
+        with patch('sys.stdout', output), patch('sys.stderr', output):
+            self.assertEqual(engine.step(0), 'CONNECTED')
+            transport.unavailable_after_challenge = True
+            self.assertEqual(engine.step(2), 'RETRYING')
+            transport.unavailable_after_challenge = False
+            self.assertEqual(engine.step(4), 'CONNECTED')
+            with tempfile.TemporaryDirectory() as folder:
+                path = Path(folder) / 'private-diagnostics.json'
+                diagnostics_writer(path)(engine.diagnostics())
+                encoded = path.read_text(encoding='utf-8')
+        for forbidden in ('fixture-password', 'Authorization', 'nonce', 'private',
+                          'credentials', 'fixture-1', '192.168.4.1', self.realm):
+            self.assertNotIn(forbidden, encoded + output.getvalue())
+        self.assertEqual([entry['result'] for entry in json.loads(encoded)['history']],
+                         ['accepted_sample', 'no_route_or_timeout', 'accepted_sample'])
+        self.assertEqual(len(created), 2)
+
     def test_invalid_samples_do_not_rebuild_and_factory_errors_remain_bounded(self):
         created = []
         def factory():
@@ -272,6 +310,10 @@ class LinkContinuityTests(unittest.TestCase):
         self.assertEqual(len(created), 1)
         self.assertEqual(engine.step(6), 'RETRYING')
         self.assertEqual(engine.next_due, 14)
+
+
+class StageALinkContinuityTests(LinkContinuityTests):
+    realm = 'SHINO-StageA'
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@ import tempfile
 import unittest
 import io
 import hashlib
+from unittest.mock import patch
 from email.message import Message
 from pathlib import Path
 from urllib.error import URLError, HTTPError
@@ -10,7 +11,7 @@ from urllib.request import BaseHandler, parse_http_list, parse_keqv_list, HTTPDi
 from urllib.response import addinfourl
 
 from push_fsless_metrics import (
-    ENDPOINT, FIELDS, SenderError, encode_sample, make_opener,
+    DIGEST_REALMS, ENDPOINT, FIELDS, SenderError, encode_sample, make_opener,
     read_credentials, send_one, send_sample, SendStatus, validate_host, NoRedirect,
 )
 
@@ -51,7 +52,16 @@ class FakeOpener:
         return self.response
 
 
-class SenderSafetyTests(unittest.TestCase):
+class OfflineNetworkTestCase(unittest.TestCase):
+    """Fail even if production sanitizes an accidental real connection attempt."""
+    def setUp(self):
+        for target in ('socket.create_connection', 'socket.getaddrinfo',
+                       'http.client.HTTPConnection.connect'):
+            guard = self.enterContext(patch(target, side_effect=AssertionError('network forbidden')))
+            self.addCleanup(guard.assert_not_called)
+
+
+class SenderSafetyTests(OfflineNetworkTestCase):
     def test_private_ipv4_only(self):
         self.assertEqual(validate_host("192.168.4.1"), "192.168.4.1")
         for bad in ("localhost", "127.0.0.1", "8.8.8.8",
@@ -116,11 +126,36 @@ class SenderSafetyTests(unittest.TestCase):
         names = {type(handler).__name__ for handler in opener.handlers}
         self.assertIn("TelemetryDigestAuthHandler", names)
         self.assertIn("NoRedirect", names)
+        self.assertNotIn("HTTPBasicAuthHandler", names)
         # urllib may omit a ProxyHandler({}) from opener.handlers entirely,
         # because an empty handler registers no protocol methods. In both
         # cases no inherited HTTP(S) proxy must be installed.
         proxies = [h for h in opener.handlers if type(h).__name__ == "ProxyHandler"]
         self.assertTrue(all(proxy.proxies == {} for proxy in proxies))
+
+    def test_digest_password_registration_is_closed_and_uses_same_credentials(self):
+        self.assertEqual(DIGEST_REALMS, ('SHINO-FirstBoot', 'SHINO-StageA'))
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'credentials.txt'
+            password = 'fixture-generated-private-digest-key'
+            path.write_text('Rescue HTTP Digest user: shino\n'
+                            'Rescue HTTP Digest password: ' + password + '\n', encoding='utf-8')
+            user, secret = read_credentials(path)
+            opener = make_opener('192.168.4.1', user, secret)
+            digest = next(h for h in opener.handlers
+                          if type(h).__name__ == 'TelemetryDigestAuthHandler')
+            url = 'http://192.168.4.1' + ENDPOINT
+            for realm in DIGEST_REALMS:
+                self.assertEqual(digest.passwd.find_user_password(realm, url), (user, secret))
+                transport = DigestTransport(realm, password=secret)
+                realm_opener = make_opener('192.168.4.1', user, secret)
+                realm_opener.add_handler(transport)
+                self.assertIs(send_sample('192.168.4.1', realm_opener, SAMPLE), SendStatus.ACCEPTED)
+                self.assertEqual(transport.accepted, 1)
+            for realm in (None, '', 'SHINO-Unlisted', 'shino-stagea'):
+                self.assertEqual(digest.passwd.find_user_password(realm, url), (None, None))
+            self.assertEqual(digest.passwd.find_user_password('SHINO-StageA',
+                            'http://192.168.5.1' + ENDPOINT), (None, None))
 
     def test_failure_classes_are_sanitized_and_response_shape_is_strict(self):
         class Broken:
@@ -147,29 +182,43 @@ class DigestTransport(BaseHandler):
     """Real urllib Digest handlers; deterministic in-memory HTTP transport only."""
     handler_order = 400
 
-    def __init__(self):
+    def __init__(self, realm='SHINO-FirstBoot', password='fixture-password', scheme='Digest'):
+        self.realm = realm
+        self.password = password
+        self.scheme = scheme
         self.unavailable_after_challenge = False
         self.unavailable_before_challenge = False
         self.generation = 1
         self.accepted = 0
         self.anonymous = 0
         self.challenges = 0
+        self.requests = 0
+        self.authorized = 0
 
     def http_open(self, request):
+        self.requests += 1
+        if request.full_url != 'http://192.168.4.1' + ENDPOINT or request.get_method() != 'POST':
+            raise AssertionError('unexpected endpoint or method')
         if self.unavailable_before_challenge:
             raise URLError(ConnectionRefusedError('fixture private path'))
         headers = Message()
         auth = request.get_header('Authorization')
         valid = False
         if auth:
+            self.authorized += 1
+            if not auth.startswith('Digest '):
+                raise AssertionError('only Digest permitted')
             if self.unavailable_after_challenge:
                 raise URLError(TimeoutError('private-password Authorization nonce private-path'))
             fields = parse_keqv_list(parse_http_list(auth.removeprefix('Digest ')))
             md5 = lambda value: hashlib.md5(value.encode()).hexdigest()
-            expected = md5(':'.join((md5('shino:SHINO-FirstBoot:fixture-password'),
+            expected = md5(':'.join((md5(f'shino:{self.realm}:{self.password}'),
                                     f'fixture-{self.generation}', fields['nc'], fields['cnonce'],
                                     'auth', md5('POST:' + request.selector))))
-            valid = fields['nonce'] == f'fixture-{self.generation}' and fields['response'] == expected
+            valid = (fields['realm'] == self.realm and fields['username'] == 'shino'
+                     and fields['uri'] == request.selector
+                     and fields['nonce'] == f'fixture-{self.generation}'
+                     and fields['response'] == expected)
         else:
             self.anonymous += 1
         if valid:
@@ -178,18 +227,19 @@ class DigestTransport(BaseHandler):
         else:
             self.challenges += 1
             code, body = 401, b''
-            headers['WWW-Authenticate'] = ('Digest realm="SHINO-FirstBoot", qop="auth", '
+            headers['WWW-Authenticate'] = (f'{self.scheme} realm="{self.realm}", qop="auth", '
                                          f'nonce="fixture-{self.generation}", opaque="fixture"')
         response = addinfourl(io.BytesIO(body), headers, request.full_url, code)
         response.msg = 'OK' if code == 200 else 'Unauthorized'
         return response
 
 
-class DigestContinuityTests(unittest.TestCase):
+class DigestContinuityTests(OfflineNetworkTestCase):
+    realm = 'SHINO-FirstBoot'
     def opener(self, transport, stock=False):
         if stock:
             store = HTTPPasswordMgrWithDefaultRealm()
-            store.add_password('SHINO-FirstBoot','http://192.168.4.1'+ENDPOINT,'shino','fixture-password')
+            store.add_password(transport.realm,'http://192.168.4.1'+ENDPOINT,'shino','fixture-password')
             opener = build_opener(ProxyHandler({}), NoRedirect(), HTTPDigestAuthHandler(store))
         else:
             opener = make_opener('192.168.4.1', 'shino', 'fixture-password')
@@ -197,7 +247,7 @@ class DigestContinuityTests(unittest.TestCase):
         return opener
 
     def test_interrupted_digest_handshakes_poison_retained_real_urllib_state(self):
-        transport = DigestTransport()
+        transport = DigestTransport(self.realm)
         opener = self.opener(transport, stock=True)
         self.assertTrue(send_one('192.168.4.1', opener, SAMPLE))
         transport.unavailable_after_challenge = True
@@ -212,7 +262,7 @@ class DigestContinuityTests(unittest.TestCase):
         self.assertTrue(send_one('192.168.4.1', self.opener(transport), SAMPLE))
 
     def test_fixed_handler_reuses_challenge_and_resets_after_interrupted_auth(self):
-        transport = DigestTransport()
+        transport = DigestTransport(self.realm)
         opener = self.opener(transport)
         for _ in range(5): self.assertTrue(send_one('192.168.4.1', opener, SAMPLE))
         self.assertEqual(transport.anonymous, 1)
@@ -223,13 +273,49 @@ class DigestContinuityTests(unittest.TestCase):
         transport.generation += 1
         self.assertTrue(send_one('192.168.4.1', opener, SAMPLE))
         self.assertEqual(transport.challenges, 2)
+        self.assertEqual(transport.requests, 16)
+        digest = next(h for h in opener.handlers if type(h).__name__ == 'TelemetryDigestAuthHandler')
+        self.assertEqual(digest.retried, 0)
 
     def test_fresh_device_digest_challenge_alone_recovers_without_new_opener(self):
-        transport = DigestTransport()
+        transport = DigestTransport(self.realm)
         opener = self.opener(transport)
         for _ in range(3):
             self.assertTrue(send_one('192.168.4.1', opener, SAMPLE))
             transport.generation += 1
+
+    def test_unlisted_realm_cannot_receive_credentials_or_bypass_digest(self):
+        for realm in ('SHINO-Unlisted', 'shino-stagea', ''):
+            with self.subTest(realm=realm):
+                transport = DigestTransport(realm)
+                opener = self.opener(transport)
+                for _ in range(3):
+                    self.assertIs(send_sample('192.168.4.1', opener, SAMPLE), SendStatus.HTTP_401)
+                self.assertEqual(transport.requests, 3)
+                self.assertEqual(transport.authorized, 0)
+                self.assertEqual(transport.accepted, 0)
+
+    def test_basic_challenge_has_no_fallback(self):
+        transport = DigestTransport(self.realm, scheme='Basic')
+        self.assertIsNot(send_sample('192.168.4.1', self.opener(transport), SAMPLE), SendStatus.ACCEPTED)
+        self.assertEqual(transport.requests, 1)
+        self.assertEqual(transport.authorized, 0)
+
+    def test_cached_challenge_replacement_cannot_enroll_an_unlisted_realm(self):
+        transport = DigestTransport(self.realm)
+        opener = self.opener(transport)
+        self.assertIs(send_sample('192.168.4.1', opener, SAMPLE), SendStatus.ACCEPTED)
+        transport.realm = 'SHINO-Unlisted'
+        self.assertIs(send_sample('192.168.4.1', opener, SAMPLE), SendStatus.HTTP_401)
+        authorized = transport.authorized
+        for _ in range(3):
+            self.assertIs(send_sample('192.168.4.1', opener, SAMPLE), SendStatus.HTTP_401)
+        self.assertEqual(transport.authorized, authorized)
+        self.assertEqual(transport.accepted, 1)
+
+
+class StageADigestContinuityTests(DigestContinuityTests):
+    realm = 'SHINO-StageA'
 
 
 if __name__ == "__main__":

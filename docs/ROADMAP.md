@@ -14,6 +14,20 @@
 
 ## Product contract — owner clarification, 1 October 2026
 
+**Phase P LINK Digest compatibility — owner decision, 7 October 2026:**
+[Exact owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6047604159)
+authorizes a host-only hotfix from clean
+`e0aeedbb928c0a8bb90ace341dc55a9f42891188`, same branch and Draft PR42.
+Owner-reported StageA status authentication and a one-shot controlled comparison
+isolate LINK's legacy-only realm registration. Register the same existing private
+Digest user/password for the closed pair `SHINO-FirstBoot` and `SHINO-StageA`.
+Preserve endpoint, credential format, Digest handler/cache, payload, cadence,
+backoff and opener recovery. No realm configuration, arbitrary realm, Basic,
+proxy, redirect or alternate endpoint. Verify real urllib Digest with in-memory
+host transport only; no network/device request during this pass. Firmware,
+writer binding, frozen BIN, physical receipts and normal gate verdicts remain
+unchanged. Six device counters0; STOP before device operation/reboot/flash/merge.
+
 **Phase O writer rebind — owner decision, 7 October 2026:**
 [Exact owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6044586614)
 accepts Phase N offline qualification and authorizes a targeted OFFLINE binding

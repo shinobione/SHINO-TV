@@ -1,7 +1,27 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
-**Active Phase O — OFFLINE normal StageA writer binding, 7 October 2026:**
+**Active Phase P — HOST ONLY LINK Digest compatibility, 8 October 2026:**
+[Owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6047604159)
+authorizes the focused hotfix from clean
+`e0aeedbb928c0a8bb90ace341dc55a9f42891188` on the existing branch/Draft PR42.
+`companion/push_fsless_metrics.py` registers the same private Digest credentials
+for the explicit closed pair `SHINO-FirstBoot` / `SHINO-StageA`; no realm is
+supplied by config/CLI or enrolled from a challenge. Endpoint, credential format,
+Digest handler/cache, payload, retry/backoff and LINK engine remain unchanged.
+19 sender +28 LINK host tests PASS with real urllib Digest over an in-memory
+transport, DNS/connection guards asserted unused. Both realms cover challenge
+reuse, interruption/recovery, 2 s accepted cadence and bounded opener recreation;
+unlisted/Basic challenges fail and diagnostics remain sanitized.
+Firmware, writer binding, frozen BIN, physical receipts and normal gate verdicts
+unchanged. This pass makes no device/telemetry network request and does not
+exercise an installed device. Exact changed files and validation commands are in
+[the focused companion receipt](../companion/SHINO_LINK.md#mission-9-phase-p-host-only-digest-compatibility).
+Final commit/exact-head CI recorded in PR42 after push. DEVICE CONTACTS=0;
+SERIAL I/O=0; FLASH WRITES=0; RTC WRITES=0; REBOOTS=0; DEVICE FILESYSTEM WRITES=0.
+STOP before device operation. DO NOT REBOOT/FLASH/MERGE.
+
+**Prior Phase O — OFFLINE normal StageA writer binding, 7 October 2026:**
 [Owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6044586614)
 accepts Phase N offline qualification and selects the retained399264 B normal
 StageA SHA-256 `78a8d2d50409974fc775dd3dc9f3dbec4ac8eda839f6d9b338cadf35aab2467c`.
