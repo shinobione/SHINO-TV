@@ -1,7 +1,33 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
-**Active Phase P — HOST ONLY LINK Digest compatibility, 8 October 2026:**
+**Active Phase Q — OFFLINE GET control-plane investigation, 8 October 2026:**
+[Owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6064567041)
+and current conversation clarification authorize reproduction/root cause first
+from clean `061b5a844c00776e71a5a7803a2559b7500a4ce7`, existing branch/Draft PR42.
+Owner reports exact399264 B StageA installed, full PRE/POST/padding/protected
+range preserved, RTC already0/0, exact read-only mount/config, sustained LINK
+with stale/recovery and no reboot/corruption. Subsequent fresh authenticated
+GETs to both status aliases returned404. NORMAL_PROFILE_LITTLEFS_MOUNT_GATE=PASS
+(owner-supplied evidence); NORMAL_PROFILE_RUNTIME_GATE=HOLD/PARTIAL.
+[Focused Phase Q receipt](M09_PHASE_Q_GET_CONTROL_PLANE.md) preserves all exact
+owner numbers and the absence of a raw exchange/404 body. Both actual owner
+Python GET clients/headers are represented offline: stock urllib Digest and
+Phase P cached Digest, public fixture credentials through read_credentials.
+233 raw parser checks; actual unchanged StageA controller/status/telemetry/
+dashboard with real pinned parser and ArduinoJson,202 accepted POSTs, virtual
+2 s cadence, actual stale/recovery,12 final fresh GETs all200. Unknown routes
+404, Basic401, oversize413 before body and invalid JSON422. Natural Core client
+cleanup, handler/policy/args/plain/auth-presence traces; no secret diagnostics.
+**Residual owner404 NOT REPRODUCED; ROOT CAUSE UNRESOLVED. No firmware or host
+client fix justified.** All113 firmware pins/writer binding retained; original
+StageA/LittleFS rehash PASS, no build/refreeze/rebind.244 relevant regressions
+PASS after scoped rerun of two sandbox-blocked synthetic hardlink cases;
+19 sender+28 LINK tests PASS. Exact-head CI/final commit recorded in PR42 after
+push. Six device counters0; STOP before any device operation; no reboot/flash/
+merge or physical promotion. Older NOT_RUN receipts remain dated history.
+
+**Prior Phase P — HOST ONLY LINK Digest compatibility, 8 October 2026:**
 [Owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6047604159)
 authorizes the focused hotfix from clean
 `e0aeedbb928c0a8bb90ace341dc55a9f42891188` on the existing branch/Draft PR42.

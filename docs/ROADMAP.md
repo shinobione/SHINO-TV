@@ -14,6 +14,39 @@
 
 ## Product contract — owner clarification, 1 October 2026
 
+**Phase Q GET control-plane repair — owner decision, 8 October 2026:**
+[Exact owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6064567041)
+authorizes offline reproduction/root cause first from clean
+`061b5a844c00776e71a5a7803a2559b7500a4ce7`, existing branch/Draft PR42.
+Extend the actual StageA-patched pinned Core parser/Digest lab: initial status
+GET, >=100 accepted telemetry POSTs, stale/recovery-equivalent state, fresh
+authenticated final status aliases/resources on one server lifetime. Attribute
+404 to policy/parser/route/auth/cleanup before the smallest correct fix; retain
+all authentication, pre-body, route, no-write and Phase P constraints. Owner
+reports exact399264 B StageA installed, full PRE/POST/padding/protected range
+preserved, RTC already0/0, mount/config exact24 files/181402 B, sustained LINK,
+stale/recovery and no reboot/corruption, but final GET404. Thus
+NORMAL_PROFILE_LITTLEFS_MOUNT_GATE=PASS (owner evidence),
+NORMAL_PROFILE_RUNTIME_GATE=HOLD/PARTIAL. Preserve historical receipts.
+If firmware changes, at most one replacement local freeze after offline gates;
+writer rebind is a separate owner step. Otherwise no rebuild/refreeze. Frozen
+LittleFS unchanged. Commit/push/exact-head CI; no merge. Six agent device
+counters0; STOP before any device operation.
+
+**Phase Q offline result:** [Focused receipt](M09_PHASE_Q_GET_CONTROL_PLANE.md).
+Actual patched pinned parser/Core Digest plus unchanged StageA controller,
+status serializer, telemetry and dashboard:202 accepted POSTs across stock and
+Phase P cached clients, virtual2 s cadence, stale/recovery and12 final fresh
+GETs across both clients/all three status-resource paths PASS/200. Owner's exact
+GET headers/credentials-loader represented with public synthetic credentials;
+natural peer close, policy/handler/args/plain/auth-presence tracing.233 raw parser
+checks and244 relevant regressions plus47 Phase P companion tests PASS.
+Owner404 remains **NOT REPRODUCED / ROOT CAUSE UNRESOLVED**; no unsupported
+firmware/client change. All113 firmware pins/writer binding and retained
+StageA/LittleFS hashes unchanged; no build/freeze/rebind. Normal mount PASS is
+owner evidence only; runtime HOLD/PARTIAL. Exact-head CI in PR42 after push.
+Six device counters0; STOP/no device operation/merge.
+
 **Phase P LINK Digest compatibility — owner decision, 7 October 2026:**
 [Exact owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6047604159)
 authorizes a host-only hotfix from clean

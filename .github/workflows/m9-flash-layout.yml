@@ -448,6 +448,22 @@ jobs:
           pio run -d firmware -e esp12e_m9_4m2m_normal_qualification
           python -m unittest discover -s tools -p 'test_m9_phase_n*.py' -v
           python tools/m9_phase_n_http_runner.py > "${{ runner.temp }}/m9-normal-http.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          r=json.loads((Path(os.environ["RUNNER_TEMP"])/"m9-normal-http.json").read_text())
+          assert r["checks"] >= 233 and r["device_contacts"] == 0
+          assert r["owner_residual_404"] == "NOT_REPRODUCED_ROOT_CAUSE_UNRESOLVED"
+          assert not r["firmware_changed"] and r["normal_runtime_gate"] == "HOLD/PARTIAL"
+          for key, count in (("urllib_workload", 200), ("actual_stage_a_workload", 202)):
+              w=r[key]
+              assert w["accepted_post_count"] == count and w["stock_and_phase_p_cached_digest"]
+              assert len(w["final_gets"]) == 12 and all(g["code"] == 200 for g in w["final_gets"])
+              assert w["handler_counts"]["not_found"] == 0
+          assert r["actual_stage_a_workload"]["handler_counts"] == dict(posts=203, gets=15, not_found=0, policy404=3)
+          PY
+          python -m unittest discover -s companion -p 'test_push_fsless_metrics.py' -v
+          python -m unittest discover -s companion -p 'test_shino_link.py' -v
           "$HOME/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-nm" -C -S firmware/.pio/build/esp12e_m9_4m2m_normal_qualification/firmware.elf > "${{ runner.temp }}/m9-normal-symbols.txt"
           "$HOME/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-size" -A firmware/.pio/build/esp12e_m9_4m2m_normal_qualification/firmware.elf > "${{ runner.temp }}/m9-normal-sections.txt"
           python tools/m9_phase_n_qualification.py \
