@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const raw = fs.readFileSync(process.argv[2]);
 if (raw.length !== 100000 || crypto.createHash('sha256').update(raw).digest('hex') !==
-    '67adaf4b86354b58beab6496dd5ed681ec77de93631297e6f1f65c8748947fb3') {
+    '5c6605d32ad0efd4b5a7f7ba9675a1111d765695afd3d41da5290ba3fc8defb6') {
   throw new Error('PUBLIC_INERT_FIXTURE_ONLY');
 }
 const folder = process.argv[3];

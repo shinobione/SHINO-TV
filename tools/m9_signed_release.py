@@ -39,15 +39,18 @@ def validate_image(raw):
     # mapped IROM must track its exact transport offset under this linker.
     for offset in (0, 0x1000):
         entry = struct.unpack_from("<I", raw, offset+4)[0]
-        if not 0x40100000 <= entry < 0x4010C000:
+        iram=(0x4010F000,0x40110000) if offset==0 else (0x40100000,0x4010C000)
+        if not iram[0] <= entry < iram[1]:
             raise ValueError("IRAM entry")
         cursor, ranges = offset+8, []
         for _ in range(raw[offset+1]):
             address, count = struct.unpack_from("<II", raw, cursor)
             cursor += 8
-            upper = next((hi for lo, hi in ((0x3FFE8000, 0x40000000),
-                          (0x40100000, 0x4010C000), (0x40201010, 0x402FFFF0)) if lo <= address < hi), None)
-            if upper is None or address+count > upper or address % 4 or count % 4:
+            memory=((0x3FFE8000,0x3FFFC000),iram) if offset==0 else ((0x3FFE8000,0x40000000),iram,(0x40201010,0x402FFFF0))
+            upper = next((hi for lo, hi in memory if lo <= address < hi), None)
+            # elf2bin emits byte-sized .text1 segments; lengths need not be
+            # divisible by four. Loaded start addresses remain aligned.
+            if upper is None or address+count > upper or address % 4:
                 raise ValueError("segment/linker bounds")
             if address >= 0x40200000 and address != 0x40200000+cursor:
                 raise ValueError("IROM mapped offset")

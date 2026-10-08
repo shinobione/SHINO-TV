@@ -7,8 +7,8 @@ def inert_image(size=100000):
     if size % 16 or size < 64000:
         raise ValueError("fixture size")
     raw = bytearray(size)
-    struct.pack_into("<BBBBI",raw,0,0xE9,1,2,0x40,0x40100000)
-    struct.pack_into("<II",raw,8,0x40100000,16)
+    struct.pack_into("<BBBBI",raw,0,0xE9,1,2,0x40,0x4010F000)
+    struct.pack_into("<II",raw,8,0x4010F000,16)
     raw[16:32] = b"INERT-NOT-CODE!!"
     checksum = 0xEF
     for byte in raw[16:32]: checksum ^= byte

@@ -1,5 +1,6 @@
 {
   "bootloaders/eboot/eboot.c": "c45578d32bd7d814b43685db1e9c1e7810b4784507236f68bd9ae6c168631be0",
+  "bootloaders/eboot/eboot.ld": "f3e7a737a3bc5b9394679064922094ccd2b390e5236a0f5cad4735501153409e",
   "bootloaders/eboot/eboot_command.c": "8d5f6a71351c4f865ca7cd1c3fa4d59a902c544bb2ae345a5ebcbd727727958a",
   "bootloaders/eboot/eboot_command.h": "83cf677cd0a9f1ed51f1ef2fabcc05947ec1a6ed1227e539d7d331642809790d",
   "cores/esp8266/StackThunk.cpp": "a72b2a4dafc2866a758f74d76703c894a7e9c2fb76cb2a865d93603784756255",
@@ -9,6 +10,7 @@
   "cores/esp8266/Updater_Signing.h": "8517749d1d28ab0cd76237b420aa69500d9f4beb33b324e82df37a981af59520",
   "libraries/ESP8266WiFi/src/BearSSLHelpers.cpp": "c323c4b9ff52f605ee870a3e7167492bb1ae7f369aede57fb0be451f75d5de9d",
   "libraries/ESP8266WiFi/src/BearSSLHelpers.h": "9f3281a1dbf427e7b318edc570db235830631729eedcafefa48a52364f78036e",
+  "tools/sdk/ld/eagle.app.v6.common.ld.h": "f8627f8a08da33f2c172c14b1b24bc03815189c64e28a3f19fbdd23fb1e9368f",
   "tools/sdk/ld/eagle.flash.4m2m.ld": "0109b8f5acd746ff051444f5d0c99e85e519dff07ffa24d4fba7523384bea4c4",
   "tools/sdk/ssl/bearssl/inc/bearssl.h": "8543ceb43850a5121782ebb0cff767a610ea7d215b1ad57ff9866deca214e92f",
   "tools/sdk/ssl/bearssl/inc/bearssl_aead.h": "9d90afbc65535335517c028817ac0704af6b58971f2c262a65eb26e0b4099201",

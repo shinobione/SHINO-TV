@@ -27,7 +27,7 @@ jobs:
         with:
           repository: bblanchon/ArduinoJson
           ref: 77771d3c07668e01d8f52acb03910c1110bb373f
-          path: reference-arduinojson
+          path: research-local/m9-signed-ci/arduinojson
           persist-credentials: false
       - name: Public pinned research dependencies
         run: |
@@ -39,7 +39,7 @@ jobs:
         run: python tools/m9_signed_ota_runner.py > "${{ runner.temp }}/m9-signed-core.json"
       - name: Real StageA parser and handlers under interleaved unwired upload model
         env:
-          SHINO_ARDUINOJSON_SRC: reference-arduinojson/src
+          SHINO_ARDUINOJSON_SRC: research-local/m9-signed-ci/arduinojson/src
         run: python tools/m9_signed_mixed_runner.py > "${{ runner.temp }}/m9-signed-mixed.json"
       - name: Separate disconnected Xtensa API/link proof; no private candidate build
         run: |
@@ -63,9 +63,12 @@ jobs:
           assert mixed['model']['listeners_added']==0 and mixed['production_concurrency']=='HOLD'
           resource=json.loads((root/'m9-signed-resources.json').read_text())
           assert resource['admission']['continuation']==4096 and resource['floors']['continuation']==2048
+          assert resource['candidate']['proof_root_internal'] and resource['candidate']['no_exported_proof_endpoint']
+          assert resource['baseline']['raw_image_checks']['crc_valid'] and resource['candidate']['raw_image_checks']['crc_valid']
           PY
           git rev-parse HEAD
           git diff --exit-code
+          git status --short
           test -z "$(git status --porcelain)"
       - uses: actions/upload-artifact@v4
         with:

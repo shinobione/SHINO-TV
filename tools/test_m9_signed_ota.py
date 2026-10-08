@@ -6,6 +6,7 @@ import struct
 import unittest
 from m9_signed_fixture_image import inert_image
 from m9_signed_release import verify,validate_image,geometry,LINKER_MAX_APP_BYTES
+from m9_first_migration import arduino_crc
 ROOT=Path(__file__).resolve().parent.parent
 FIXTURE=ROOT/'experiments/m9_signed_ota/fixtures'
 
@@ -29,9 +30,9 @@ class SignedReleaseTests(unittest.TestCase):
             data=(FIXTURE/name).read_bytes()
             self.assertEqual((len(data),hashlib.sha256(data).hexdigest()),(pin['bytes'],pin['sha256']))
         self.assertEqual(self.raw,inert_image())
-        self.assertEqual(self.pins['raw_sha256'],'67adaf4b86354b58beab6496dd5ed681ec77de93631297e6f1f65c8748947fb3')
-        self.assertEqual(self.pins['key_sha256'],'900453c460c3a19c17b6019595d4c2a4acc3d13b80ac18f67b01ade2b6be4c7f')
-        self.assertEqual(self.pins['package_sha256'],'b218d53ef13afa95206c4f02d3b307f8cb8257e3bbbbe356f37a928f8821380a')
+        self.assertEqual(self.pins['raw_sha256'],'5c6605d32ad0efd4b5a7f7ba9675a1111d765695afd3d41da5290ba3fc8defb6')
+        self.assertEqual(self.pins['key_sha256'],'aac999d99e0474a27a9124d8013c65ca51554699184edae9bfdedbce53a31ece')
+        self.assertEqual(self.pins['package_sha256'],'fba6f824ac53cdc12ac6cbbd55ca983802b1c65764c68180d6a6f0d81986738e')
 
     def test_independent_openssl_rsa_and_layout_positive(self):
         result=self.check();self.assertEqual(result['SIGNED_RELEASE_OFFLINE_GATE'],'PASS')
@@ -59,6 +60,16 @@ class SignedReleaseTests(unittest.TestCase):
         for offset in (0,1,2,3,4,8,12,47,0x1000,0x1002,0x1010,0x1014,0x1020,0x1024,5000,len(self.raw)-1):
             changed=bytearray(self.raw);changed[offset]^=1
             with self.subTest(offset=offset),self.assertRaises(ValueError):validate_image(bytes(changed))
+
+    def test_distinct_eboot_and_application_memory_envelopes(self):
+        # Recompute CRC to ensure memory policy, not just corruption detection,
+        # rejects an application address in the eboot segment.
+        changed=bytearray(self.raw);struct.pack_into('<I',changed,8,0x40100000)
+        struct.pack_into('<I',changed,0x1014,arduino_crc(changed))
+        with self.assertRaisesRegex(ValueError,'segment/linker'):validate_image(bytes(changed))
+        changed=bytearray(self.raw);struct.pack_into('<I',changed,0x1004,0x4010F000)
+        struct.pack_into('<I',changed,0x1014,arduino_crc(changed))
+        with self.assertRaisesRegex(ValueError,'IRAM entry'):validate_image(bytes(changed))
 
     def test_maximum_geometry_leaves_one_sector_and_excludes_filesystem(self):
         result=geometry(LINKER_MAX_APP_BYTES,LINKER_MAX_APP_BYTES)

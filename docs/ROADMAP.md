@@ -32,7 +32,7 @@ runtime HOLD/PARTIAL and intermittent404 unattributed remain unchanged.
 
 **Phase S offline result:** [Integration receipt](M09_PHASE_S_SIGNED_OTA_INTEGRATION.md).
 Separate4m2m verifier/consent/stream state and dedicated signed-only native
-Updater adapter are implemented and unwired.10 release regressions,250 actual
+Updater adapter are implemented and unwired.11 release regressions,250 actual
 Core/RSA transactions,197 interrupted stream and32 RTC boundaries PASS;
 zero post-failure boot dispatches.392 normal GETs/49 four-metric samples during
 196-chunk host upload model; pinned Xtensa baseline/proof both link. Static RAM

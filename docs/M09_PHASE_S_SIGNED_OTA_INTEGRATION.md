@@ -110,10 +110,11 @@ are future reviewed seams. Public fixtures reuse known tokens solely for tests.
 
 ## Executed evidence and meaningful limits
 
-*10 deterministic Python release regressions PASS*: positive independent
+*11 deterministic Python release regressions PASS*: positive independent
 OpenSSL signature; full fixture identities; unsigned/truncated/extra/trailer;
 wrong selected raw/package/trust hashes; matching-package bad signature;
-incorrect signer; headers/CRC/checksum/segments; max geometry and size/linker
+incorrect signer; headers/CRC/checksum/segments and distinct eboot/application
+memory envelopes; max geometry and size/linker
 negatives; no callable setup route or embedded fixture key.
 
 *Actual pinned Core lab*:250 transactions,2118287 assertions;197 interrupted
@@ -133,7 +134,7 @@ RTC address with RAM, key declaration/fixture parsing, Arduino APIs and thunk
 allocation. MSVC removes GNU alignment annotation for host compilation only;
 host Core private visibility permits simulated process-reset cleanup without
 end-to-reset. RSA execution is real; hardware, thunk high-water and power-loss
-behavior are modeled.65 LF-normalized public Core/crypto/linker pins prevent
+behavior are modeled.67 LF-normalized public Core/crypto/linker pins prevent
 silent changes. The real Xtensa graph uses the real framework declarations,
 allocation and APIs, not these host declarations.
 
@@ -148,7 +149,11 @@ parser negatives and stock/Phase P urllib workload also run; runtime/404 gate
 classification is unchanged.
 
 *Xtensa/API proof*: espressif8266@4.2.1/framework3.30102.0, DIO/4MiB/4m2m;
-`inert_baseline` and `signed_compile_only` link PASS. Signed proof is an internal
+`inert_baseline` and `signed_compile_only` link PASS. Both actual unsigned public
+compile outputs also pass raw verification: eboot IRAM[0x4010F000,0x40110000),
+application IRAM below0x4010C000, and native elf2bin byte-sized segments whose
+lengths need not be multiples of four. This prevents synthetic-only acceptance
+that rejects genuine Core3.1.2 output. Signed proof is an internal
 function retained by an internal volatile address. Setup only reads its address;
 setup/loop never invoke it. No linker-exported OTA endpoint, key, credential,
 selected release, AP or HTTP registration exists. Default and installed graphs
@@ -196,10 +201,10 @@ No fixture key or package is embedded in the target graph.
 
 | Public file | Bytes | Full SHA256 |
 | --- | ---: | --- |
-|raw.inert|100000|`67adaf4b86354b58beab6496dd5ed681ec77de93631297e6f1f65c8748947fb3`|
-|signed.inert|100260|`b218d53ef13afa95206c4f02d3b307f8cb8257e3bbbbe356f37a928f8821380a`|
-|public.der|294|`900453c460c3a19c17b6019595d4c2a4acc3d13b80ac18f67b01ade2b6be4c7f`|
-|modulus|256|`fecb4b5c1b6fd4fc71915e64003fcdf1d60c610fe8a3d129d01effefbdefc81f`|
+|raw.inert|100000|`5c6605d32ad0efd4b5a7f7ba9675a1111d765695afd3d41da5290ba3fc8defb6`|
+|signed.inert|100260|`fba6f824ac53cdc12ac6cbbd55ca983802b1c65764c68180d6a6f0d81986738e`|
+|public.der|294|`aac999d99e0474a27a9124d8013c65ca51554699184edae9bfdedbce53a31ece`|
+|modulus|256|`4369694d27a77d485df8b873af2bc3e5188eb91cc7a8c329828efe511f5c1acf`|
 |exponent|3|`85f90dfea1d8027e1463e5ca971a250110a20df0119d204a74220bc63516d15b`|
 
 ## Remaining integration blockers and next reviewed stages
