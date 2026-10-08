@@ -1,7 +1,22 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
-**Active Phase S — signed OTA substrate OFFLINE/UNWIRED, 8 October2026:**
+**Active Phase T — single-owner StageA/OTA OFFLINE, 8 October2026:**
+[Owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6067111422)
+and [qualification receipt](M09_PHASE_T_STAGE_A_OTA.md) record recovery of the
+interrupted work from `b59964af43b555b75d415e6d063580945e6d99f7`, same branch/Draft
+PR42. Real StageA handlers and strict bounded OTA stream share one host listener;
+native paired public StageA graph remains unreachable. HTTP/native link PASS_OFFLINE;
+memory HOLD_PHYSICAL / HOLD_PHYSICAL_MEASUREMENT_REQUIRED. Integrated static RAM
++4204 B, BIN+47232 B, noinit unchanged56; admission/floors not lowered. Production
+HOLD; physical NOT_RUN; Core's missing safe abort blocks physical integration.
+113 firmware pins/default profiles/companion/writer unchanged; no image refreeze.
+Mount PASS, runtime HOLD/PARTIAL and unattributed404 remain owner evidence.
+Receipt discloses one inherited local predecessor-BIN read deviation; subsequent
+tests/builds use public inputs. Six device-operation counters0. Final commit and
+exact-head CI in PR42; STOP without contact/flash/RTC/FS write/reboot/merge.
+
+**Prior Phase S — signed OTA substrate OFFLINE/UNWIRED, 8 October2026:**
 [Owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6065735151)
 authorizes implementation from clean `7455f6b353f1733a78f2a6d25503edb063f7befb`,
 same branch/Draft PR42. [Integration receipt](M09_PHASE_S_SIGNED_OTA_INTEGRATION.md)

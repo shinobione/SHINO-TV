@@ -14,6 +14,21 @@
 
 ## Product contract — owner clarification, 1 October 2026
 
+**Phase T single-owner integration — owner decision, 8 October 2026:**
+[Exact instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6067111422)
+authorizes one bounded offline engineering pass from `b59964af43b555b75d415e6d063580945e6d99f7`
+on the existing branch/Draft PR42. Execute real StageA handlers and bounded OTA
+ingress on one host loopback listener with inert credentials/RAM staging;
+pair actual public StageA Xtensa baseline/integrated graphs without activating
+an OTA route or supplying a deployable key. Preserve frozen StageA, firmware,
+physical writer and prior evidence. Owner reports heap30224/block30008/runtime
+continuation3248 minima, 1% fragmentation, 445 samples/0 rejects; these are
+not simultaneous OTA high-water measurements. S admission31544/22584/4096
+and physical floors20480/16384/2048 remain unchanged. Runtime gate HOLD/PARTIAL,
+mount PASS. Measure memory and document nonreusable poison/recovery limits;
+stop after exact-head CI with explicit HTTP/native/memory/production gates.
+No private input, device contact, flash, RTC/FS write, reboot or merge.
+
 **Phase S signed OTA substrate — owner decision, 8 October 2026:**
 [Exact owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6065735151)
 authorizes offline implementation/qualification from clean

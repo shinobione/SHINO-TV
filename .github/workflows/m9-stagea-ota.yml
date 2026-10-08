@@ -1,0 +1,83 @@
+name: Mission 9 Phase T StageA integration offline
+on:
+  push:
+    branches: [feature/shino-tv-m9-flash-layout-liberation]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  stagea-single-owner:
+    name: One-owner wire integration and actual StageA memory (offline only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/checkout@v4
+        with:
+          repository: bblanchon/ArduinoJson
+          ref: 77771d3c07668e01d8f52acb03910c1110bb373f
+          path: research-local/m9-t-ci/arduinojson
+          persist-credentials: false
+      - name: Pinned public Core and compiler
+        run: |
+          python -m pip install 'platformio==6.1.18'
+          pio pkg install -g -t 'platformio/framework-arduinoespressif8266@3.30102.0'
+          python tools/m9_stagea_source_gate.py > "${{ runner.temp }}/m9-t-source.json"
+      - name: Real StageA same-listener GET and LINK alongside RAM OTA
+        env:
+          SHINO_ARDUINOJSON_SRC: research-local/m9-t-ci/arduinojson/src
+        run: python tools/m9_stagea_http_runner.py > "${{ runner.temp }}/m9-t-http.json"
+      - name: Pinned eboot copy interruption and postcommit corruption in RAM
+        run: python tools/m9_stagea_eboot_runner.py > "${{ runner.temp }}/m9-t-eboot.json"
+      - name: Paired actual StageA public graphs, no activated hook or native execution
+        run: |
+          python tools/m9_stagea_build.py research-local/m9-t-ci/baseline
+          python tools/m9_stagea_build.py research-local/m9-t-ci/integrated --integrated
+          pio run -d research-local/m9-t-ci/baseline -e esp12e_m9_4m2m_normal_qualification
+          pio run -d research-local/m9-t-ci/integrated -e esp12e_m9_4m2m_normal_qualification
+          python tools/m9_stagea_resources.py research-local/m9-t-ci/baseline research-local/m9-t-ci/integrated > "${{ runner.temp }}/m9-t-resources.json"
+      - name: Independent Phase T verdicts, unchanged floors and source closure
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path(os.environ['RUNNER_TEMP'])
+          source=json.loads((p/'m9-t-source.json').read_text())
+          assert source['previous']['firmware_LF_pins']==113 and not source['default_stagea_ota']
+          http=json.loads((p/'m9-t-http.json').read_text())['actual_stage_a_workload']
+          assert http['PHASE_T_SINGLE_OWNER_HTTP']=='PASS_OFFLINE' and http['one_listener']
+          assert http['max_normal_response_ms']<http['response_bound_ms']==3000
+          assert len(http['wire_cases'])==38
+          for row in http['wire_cases']:
+              assert row['no_unexpected_404']
+              if row['name'] in ('good','wrap'):
+                  assert row['links']==53 and row['normal_gets']==400 and row['ota']['commits']==1
+              else:assert row['ota']['commits']==0
+          resource=json.loads((p/'m9-t-resources.json').read_text())
+          assert resource['PHASE_T_NATIVE_LINK']=='PASS_OFFLINE'
+          assert resource['PHASE_T_MEMORY']=='HOLD_PHYSICAL'
+          assert resource['RESOURCE_GATE']=='HOLD_PHYSICAL_MEASUREMENT_REQUIRED'
+          assert resource['admission_unchanged']['heap']==31544 and resource['admission_unchanged']['continuation']==4096
+          assert resource['physical_floors']['heap']==20480 and resource['physical_floors']['continuation']==2048
+          assert resource['safe_physical_integration']=='BLOCKED_CORE_HAS_NO_SAFE_ABORT'
+          eboot=json.loads((p/'m9-t-eboot.json').read_text())
+          assert eboot['actual_pinned_raw_copy'] and eboot['interrupted_sector_boundaries']==72
+          assert eboot['postcommit_corruption_copied'] and not eboot['rollback']
+          for evidence in (source,resource):
+              for key in ('device_contacts','serial_io','flash_writes','rtc_writes','reboots','device_filesystem_writes'):assert evidence[key]==0
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m9-t-offline-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/m9-t-*.json
+          if-no-files-found: error
