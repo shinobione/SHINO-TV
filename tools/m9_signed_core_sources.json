@@ -65,5 +65,6 @@
   "tools/sdk/ssl/bearssl/src/rsa/rsa_default_pkcs1_vrfy.c": "4b58a2b84ec9c201b54a086abb0a2714a7cc62de49e8044821145606c609537f",
   "tools/sdk/ssl/bearssl/src/rsa/rsa_i15_pkcs1_vrfy.c": "ea7de91cf4c3622a855784040b804f7c9f9626cbdde1850d9bc73b01ce71db9c",
   "tools/sdk/ssl/bearssl/src/rsa/rsa_i15_pub.c": "41c6bfe269444dcfa4030c692cad32fea57304262b159f11125b6fdfed0328af",
-  "tools/sdk/ssl/bearssl/src/rsa/rsa_pkcs1_sig_unpad.c": "405dbf4ddc2ee3d91d370634be0a860f25b8c468069a9770b0acfd1d80d6d0a3"
+  "tools/sdk/ssl/bearssl/src/rsa/rsa_pkcs1_sig_unpad.c": "405dbf4ddc2ee3d91d370634be0a860f25b8c468069a9770b0acfd1d80d6d0a3",
+  "tools/sdk/ssl/bearssl/src/x509/pkey_decoder.c": "d0915c1da8b4334dd9b6f939ca72c9c557efca1c7986ddc7a49b98c6ab69b776"
 }

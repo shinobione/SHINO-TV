@@ -15,6 +15,7 @@
 #include "eboot_command.h"
 HostESP ESP;
 extern "C" {volatile uint32_t m9_host_rtc[32]{};
+int memcmp_P(const void* a,const void* b,size_t bytes){return std::memcmp(a,b,bytes);}
 br_ec_impl const* br_ec_get_default(void){return nullptr;}
 br_ecdsa_vrfy br_ecdsa_vrfy_raw_get_default(void){return nullptr;}}
 unsigned checks=0,transactions=0,failedBootDispatches=0;
@@ -40,14 +41,14 @@ std::string header(bool arm,uint32_t length){
         "\"\r\n"+(arm?"":std::string("X-Shino-Intent: ")+token+"\r\n")+"\r\n";
 }
 struct Trial {
-    BearSSL::PublicKey key;M9Signed::Release selected;
+    M9Signed::Release selected;
     M9Signed::NativeAdapter adapter;
     M9Signed::Transfer<M9Signed::Sha256,M9Signed::DigestHash,M9Signed::NativeAdapter> transfer;
     ShinoNativeOta::StrictOtaDigestGate<M9Signed::DigestHash> armAuth,uploadAuth;
-    Trial(std::vector<uint8_t>& n,std::vector<uint8_t>& e,std::vector<uint8_t>& der,std::vector<uint8_t>& package)
+    Trial(std::vector<uint8_t>& der,std::vector<uint8_t>& package)
       :selected{uint32_t(package.size()-260),sha(package.data(),package.size()-260),sha(package.data(),package.size()),sha(der.data(),der.size())},
-       adapter(key,der.data(),der.size()),transfer(selected,399264,adapter){
-        key.rsa={n.data(),n.size(),e.data(),e.size()};ESP=HostESP{};eboot_command_clear();++transactions;
+       adapter(der.data(),der.size()),transfer(selected,399264,adapter){
+        ESP=HostESP{};eboot_command_clear();++transactions;
         CHECK(armAuth.challenge(peer,ShinoNativeOta::RawOtaRequestKind::Arm,nonce,opaque,0));
         CHECK(uploadAuth.challenge(peer,ShinoNativeOta::RawOtaRequestKind::SignedTransport,nonce,opaque,0));
     }
@@ -75,7 +76,8 @@ struct Trial {
 int main(int argc,char** argv){try{
     CHECK(argc==2);const std::string root=argv[1];auto n=read(root+"/modulus"),e=read(root+"/exponent"),der=read(root+"/public.der"),p=read(root+"/signed.inert");
     CHECK(p.size()>64000);const auto baseline=p;
-    {Trial t(n,e,der,p);CHECK(t.arm());CHECK(t.begin());CHECK(t.upload(p));CHECK(t.transfer.finish(4,ample));
+    {Trial t(der,p);CHECK(t.arm());CHECK(t.begin());CHECK(t.upload(p));CHECK(t.transfer.finish(4,ample));
+     CHECK(t.adapter.key_.getRSA()->nlen==n.size() && std::memcmp(t.adapter.key_.getRSA()->n,n.data(),n.size())==0);
      CHECK(!t.transfer.finish(5,ample));eboot_command cmd{};CHECK(eboot_command_read(&cmd)==0);
      CHECK(cmd.args[0]==0x200000-((p.size()+4095)&~4095u));CHECK(cmd.args[1]==0);CHECK(cmd.args[2]==p.size()-260);
      CHECK(t.adapter.core_._verify!=nullptr); // Core reset preserves verifier
@@ -83,7 +85,7 @@ int main(int argc,char** argv){try{
      m9_host_rtc[2]^=1;CHECK(eboot_command_read(&cmd)!=0); // actual command CRC blocks metadata bitflip
     }
     // Pre-body negatives cannot begin/write/schedule a copy.
-    for(unsigned which=0;which<20;++which){Trial t(n,e,der,p);auto h=header(false,uint32_t(p.size()));
+    for(unsigned which=0;which<20;++which){Trial t(der,p);auto h=header(false,uint32_t(p.size()));
         CHECK(t.arm());bool result=false;
         if(which==0)result=t.begin(h,60001);
         if(which==1)result=t.begin(h,2,peer+1);
@@ -107,14 +109,14 @@ int main(int argc,char** argv){try{
         if(which==19){h.replace(h.find("SHINO-OTA"),9,"SHINO-StageA");result=t.begin(h);}
         CHECK(!result);t.refused();CHECK(!t.begin());
     }
-    for(unsigned which=0;which<4;++which){Trial t(n,e,der,p);
+    for(unsigned which=0;which<4;++which){Trial t(der,p);
         CHECK(!t.arm(header(true,16),1,which!=0,ample,which==1?"CHANGED_ARM_BODY!":"{\"confirm\":true}" ) || which>1);
         if(which<2)t.refused();else{CHECK(t.begin());t.transfer.disconnect();t.noBoot();}
     }
-    {Trial t(n,e,der,p);CHECK(!t.arm(header(true,16),60000));t.refused();}
+    {Trial t(der,p);CHECK(!t.arm(header(true,16),60000));t.refused();}
     // Stream failures, changed source/transport, duplicate/empty/overflow,
     // deadline/disconnect, staged corruption/read and write/erase faults.
-    for(unsigned which=0;which<13;++which){p=baseline;Trial t(n,e,der,p);CHECK(t.arm());CHECK(t.begin());
+    for(unsigned which=0;which<13;++which){p=baseline;Trial t(der,p);CHECK(t.arm());CHECK(t.begin());
         if(which==0)CHECK(!t.transfer.add(p.data(),0,0,3,ample));
         if(which==1)CHECK(!t.transfer.add(p.data(),513,0,3,ample));
         if(which==2){CHECK(t.transfer.add(p.data(),512,0,3,ample));CHECK(!t.transfer.add(p.data(),512,0,4,ample));}
@@ -131,10 +133,10 @@ int main(int argc,char** argv){try{
         t.noBoot();CHECK(!t.adapter.commit());
     }
     // Bad native signer: full selected transfer matches, only RSA rejects.
-    {p=baseline;p[p.size()-260]^=1;Trial t(n,e,der,p);CHECK(t.arm());CHECK(t.begin());CHECK(t.upload(p));CHECK(!t.transfer.finish(4,ample));t.noBoot();}
-    {p=baseline;auto wrong=n;wrong[80]^=1;Trial t(wrong,e,der,p);CHECK(t.arm());CHECK(t.begin());CHECK(t.upload(p));CHECK(!t.transfer.finish(4,ample));t.noBoot();}
+    {p=baseline;p[p.size()-260]^=1;Trial t(der,p);CHECK(t.arm());CHECK(t.begin());CHECK(t.upload(p));CHECK(!t.transfer.finish(4,ample));t.noBoot();}
+    {p=baseline;auto wrong=der;auto at=std::search(wrong.begin(),wrong.end(),n.begin(),n.end());CHECK(at!=wrong.end());at[80]^=1;Trial t(wrong,p);CHECK(t.arm());CHECK(t.begin());CHECK(t.upload(p));CHECK(!t.transfer.finish(4,ample));t.noBoot();}
     // Replay, duplicate arm/begin, bad geometry/trust and runtime header gates.
-    for(unsigned which=0;which<10;++which){p=baseline;Trial t(n,e,der,p);
+    for(unsigned which=0;which<10;++which){p=baseline;Trial t(der,p);
         if(which==0){CHECK(t.arm());CHECK(!t.arm());t.noBoot();}
         if(which==1){CHECK(t.arm());CHECK(t.begin());CHECK(!t.begin());t.noBoot();}
         if(which==2){CHECK(t.arm());CHECK(t.begin());CHECK(t.upload(p));CHECK(t.transfer.finish(4,ample));
@@ -148,18 +150,18 @@ int main(int argc,char** argv){try{
     // no end call means no new RTC command. No real flash or power cut.
     p=baseline;
     for(uint32_t cut=0;cut<=p.size();cut=std::min(uint32_t(p.size()),cut+512)){
-        Trial t(n,e,der,p);CHECK(t.arm());CHECK(t.begin());
+        Trial t(der,p);CHECK(t.arm());CHECK(t.begin());
         for(uint32_t at=0;at<cut;at+=512){auto amount=std::min(size_t(512),size_t(cut-at));CHECK(t.transfer.add(p.data()+at,amount,at,3,ample));}
         t.transfer.disconnect();t.noBoot();CHECK(!t.transfer.finish(4,ample));
         if(cut==p.size())break;
     }
     // Demonstrate the documented Core signing/MD5 mutual exclusion.
-    {Trial t(n,e,der,p);CHECK(t.arm());CHECK(t.begin());CHECK(t.adapter.core_.setMD5("00000000000000000000000000000000"));
+    {Trial t(der,p);CHECK(t.arm());CHECK(t.begin());CHECK(t.adapter.core_.setMD5("00000000000000000000000000000000"));
      CHECK(t.upload(p));CHECK(t.transfer.finish(4,ample));}
     // Residual: a valid committed RTC command does NOT authenticate staging
     // again at boot. This is a demonstrated integration HOLD, not a fake fix.
     bool postcommitUnprotected=false;
-    {Trial t(n,e,der,p);CHECK(t.arm());CHECK(t.begin());CHECK(t.upload(p));CHECK(t.transfer.finish(4,ample));
+    {Trial t(der,p);CHECK(t.arm());CHECK(t.begin());CHECK(t.upload(p));CHECK(t.transfer.finish(4,ample));
      eboot_command cmd{};CHECK(eboot_command_read(&cmd)==0);ESP.flash[cmd.args[0]+5000]^=1;
      CHECK(eboot_command_read(&cmd)==0);postcommitUnprotected=true;
      // Interrupted RTC writes from a CLEARED command are rejected until all

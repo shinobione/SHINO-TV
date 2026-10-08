@@ -2,16 +2,27 @@
 #include <Updater.h>
 #include <bearssl.h>
 #include <cstring>
+#include <vector>
 #include <StackThunk.h>
 namespace BearSSL {
-// Public DER parsing is independently checked by OpenSSL. This seam binds
-// fixture modulus/exponent to the ACTUAL pinned BearSSL RSA verifier.
+// Host API seam: real pinned BearSSL DER decoder supplies this owned key.
+// Target compilation uses the actual Core PublicKey declaration/constructor.
 class PublicKey {
 public:
     br_rsa_public_key rsa{};
+    PublicKey(const uint8_t* der,size_t bytes){
+        br_pkey_decoder_context context;br_pkey_decoder_init(&context);
+        if(!der || !bytes)return;
+        br_pkey_decoder_push(&context,der,bytes);
+        const auto key=br_pkey_decoder_get_rsa(&context);
+        if(br_pkey_decoder_last_error(&context)!=0 || !key)return;
+        n.assign(key->n,key->n+key->nlen);e.assign(key->e,key->e+key->elen);
+        rsa={n.data(),n.size(),e.data(),e.size()};
+    }
     bool isRSA()const{return rsa.n!=nullptr;}bool isEC()const{return false;}
     const br_rsa_public_key* getRSA()const{return &rsa;}
     const br_ec_public_key* getEC()const{return nullptr;}
+private:std::vector<uint8_t> n,e;
 };
 class HashSHA256 : public UpdaterHashClass {
 public:

@@ -43,7 +43,7 @@ def one(environment):
     frames=[]
     for path in sorted(directory.rglob('*.su')):
         for line in path.read_text(errors='replace').splitlines():
-            if any(part in line for part in ('M9Signed','StrictOtaDigestGate','unwiredProof','UpdaterClass::end','UpdaterClass::_verifyEnd')):
+            if any(part in line for part in ('M9Signed','StrictOtaDigestGate','unwiredProof','UpdaterClass::end','UpdaterClass::_verifyEnd','PublicKey::','decode_public_key','read_public_key')):
                 function,size,kind=line.rsplit('\t',2);frames.append(dict(function=re.sub(r'^.*?:\d+:\d+:','',function),bytes=int(size),kind=kind))
     ram=sum(sections.get(name,0) for name in ('.data','.rodata','.bss','.noinit'))
     image=(directory/'firmware.bin').read_bytes()
@@ -56,7 +56,7 @@ def one(environment):
 def run():
     baseline,candidate=one('inert_baseline'),one('signed_compile_only')
     assert candidate['static_ram']<81920
-    assert max(row['bytes'] for row in candidate['compiler_frames_not_high_water'])<=1120
+    assert max(row['bytes'] for row in candidate['compiler_frames_not_high_water'])<=1136
     root=max(row['bytes'] for row in candidate['compiler_frames_not_high_water'] if 'unwiredProof(' in row['function'])
     return dict(scope='Xtensa compile/link only, no StageA install or runtime measurement',baseline=baseline,candidate=candidate,
                 delta=dict(static_ram=candidate['static_ram']-baseline['static_ram'],

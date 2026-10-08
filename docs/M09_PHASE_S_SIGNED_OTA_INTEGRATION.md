@@ -63,7 +63,8 @@ parser; `m9_flash_layout` contributes geometry constants/rounding.
 
 The adapter owns a **dedicated signed-only UpdaterClass**, never global Update.
 It independently checks current flash/mode/FS/geometry and public DER hash,
-installs native HashSHA256/SigningVerifier, stages full transport, checks reads
+owns the verification key parsed directly from that DER (no alternate parsed
+key input), installs native HashSHA256/SigningVerifier, stages full transport, checks reads
 and both staged hashes, and calls `end(false)` once after precommit. Native
 RSA success precedes `_verifyEnd()` and `eboot_command_write()`.
 There is no end(true), MD5 fallback, verifier disable, retry or reboot.
@@ -117,7 +118,7 @@ incorrect signer; headers/CRC/checksum/segments and distinct eboot/application
 memory envelopes; max geometry and size/linker
 negatives; no callable setup route or embedded fixture key.
 
-*Actual pinned Core lab*:250 transactions,2118287 assertions;197 interrupted
+*Actual pinned Core lab*:250 transactions,2118289 assertions;197 interrupted
 512B boundaries including fully staged data;32 partial RTC-command writes from
 cleared RAM state. Replays, duplicates, expiry, peer/interface, Host/Origin,
 Basic/bad Digest, consent/body, resource failures, changed source/signature,
@@ -129,12 +130,14 @@ Postcommit corruption is deliberately demonstrated as **unprotected/HOLD**.
 
 The host lab executes pinned Updater.cpp unchanged, the exact extracted
 HashSHA256/SigningVerifier function bodies, real pinned BearSSL RSA/SHA code,
-and eboot_command.c unchanged. Explicit host seams replace ESP flash with RAM,
-RTC address with RAM, key declaration/fixture parsing, Arduino APIs and thunk
+and eboot_command.c unchanged. The pinned BearSSL public DER decoder now also
+executes and its decoded modulus is checked against the retained public fixture.
+Explicit host seams replace ESP flash with RAM, RTC address with RAM, public-key
+API declaration/ownership, PROGMEM comparisons, Arduino APIs and thunk
 allocation. MSVC removes GNU alignment annotation for host compilation only;
 host Core private visibility permits simulated process-reset cleanup without
 end-to-reset. RSA execution is real; hardware, thunk high-water and power-loss
-behavior are modeled.67 LF-normalized public Core/crypto/linker pins prevent
+behavior are modeled.68 LF-normalized public Core/crypto/linker pins prevent
 silent changes. The real Xtensa graph uses the real framework declarations,
 allocation and APIs, not these host declarations.
 
@@ -165,10 +168,10 @@ fixture key, are not frozen candidates and are not uploaded by CI.
 | --- | ---: | ---: | ---: |
 |Static RAM including.noinit|28064|28984|+920|
 |.noinit|56|56|0|
-|Raw compile-only BIN|264560|308048|+43488|
+|Raw compile-only BIN|264560|314720|+50160|
 
 Final resource JSON is authoritative for compiler-dependent frame/section sizes.
-Maximum source frame is at most1120B (research root); strict Digest672B,
+Maximum source frame is1136B (research root); strict Digest672B,
 SHA provider192B, precommit464B and native Core end192B. Their partial call-path
 estimate excludes deeper SHA/SDK/network frames; this is not stack high-water.
 Keep original floors heap20480/block16384/frag25%/continuation2048. Admission
@@ -209,7 +212,7 @@ No fixture key or package is embedded in the target graph.
 
 ## Remaining integration blockers and next reviewed stages
 
-1. Independently provision owner **public** trust/key lifetime and selected
+1. Independently provision owner **public** DER trust/lifetime and selected
    release provenance; separately define owner-private signing outside Git/CI.
    No production key/signing occurred in Phase S.
 2. Connect streaming prebody ownership to the existing single port80 owner

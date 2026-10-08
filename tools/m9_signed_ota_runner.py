@@ -76,7 +76,7 @@ def run():
         (generated/"signing.cpp").write_text('#include <BearSSLHelpers.h>\nnamespace BearSSL {\n'+signing[first:last]+"\n}\n")
         inc = [generated,GRAPH/"host",GRAPH/"include",ROOT/"firmware/include",ROOT/"experiments/v08_m7/host_shims",bear/"inc",bear/"src"]
         crypto = [*sorted((bear/"src/int").glob("i15_*.c")),*sorted((bear/"src/codec").glob("*.c")),
-                  bear/"src/hash/sha2small.c",*[bear/"src/rsa"/n for n in ("rsa_i15_pub.c","rsa_i15_pkcs1_vrfy.c","rsa_pkcs1_sig_unpad.c","rsa_default_pkcs1_vrfy.c")],generated/"eboot_command.c"]
+                  bear/"src/hash/sha2small.c",bear/"src/x509/pkey_decoder.c",*[bear/"src/rsa"/n for n in ("rsa_i15_pub.c","rsa_i15_pkcs1_vrfy.c","rsa_pkcs1_sig_unpad.c","rsa_default_pkcs1_vrfy.c")],generated/"eboot_command.c"]
         definitions = ["BR_INT128=0","BR_UMUL128=0","BR_LOMUL=1","BR_SLOW_MUL15=1","HOST_MOCK=1","CORE_MOCK=1","M9_SIGNED_OTA_UNWIRED=1","SHINO_ENABLE_FACTORY_RESTORE=0","SHINO_ENABLE_NATIVE_SIGNED_OTA=0"]
         if msvc:
             command = [compiler,"/nologo","/TC","/O2","/c",*["/D"+x for x in definitions],*["/I"+str(x) for x in inc],*map(str,crypto)]

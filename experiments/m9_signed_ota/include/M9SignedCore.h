@@ -31,10 +31,12 @@ struct DigestHash {
 
 class NativeAdapter final {
 public:
-    // The independently provisioned immutable public DER/key outlives this
-    // adapter. Parsing/provisioning and global writer ownership are future seams.
-    NativeAdapter(BearSSL::PublicKey& key,const uint8_t* der,size_t bytes)
-        : key_(key),der_(der),keyBytes_(bytes) {}
+    // Parse the actual verification key from the independently pinned DER;
+    // no separately supplied key can bypass that trust binding. Immutable DER
+    // outlives this adapter. Provisioning/global writer ownership remain seams.
+    NativeAdapter(const uint8_t* der,size_t bytes)
+        : key_(der && bytes>=64 && bytes<=2048?der:nullptr,
+               der && bytes>=64 && bytes<=2048?bytes:0),der_(der),keyBytes_(bytes) {}
     NativeAdapter(const NativeAdapter&)=delete;NativeAdapter& operator=(const NativeAdapter&)=delete;
     bool begin(const Release& release,const Layout& layout){
         if(used_ || poisoned_)return false;
@@ -84,7 +86,7 @@ public:
     // object. Core staging buffer may remain held until reviewed process reset;
     // cleanup and recovery remain HOLD, never an automatic reboot here.
 private:
-    BearSSL::PublicKey& key_;const uint8_t* der_;size_t keyBytes_;
+    BearSSL::PublicKey key_;const uint8_t* der_;size_t keyBytes_;
     UpdaterClass core_;BearSSL::HashSHA256 signingHash_;
     std::unique_ptr<BearSSL::SigningVerifier> verifier_;
     bool used_=false,poisoned_=false,ready_=false,ended_=false;
