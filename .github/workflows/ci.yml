@@ -460,6 +460,11 @@ jobs:
           python -m unittest discover -s companion -p 'test_shino_link.py' -v
           python -c "import pystray; from PIL import Image; print('Windows tray imports OK')"
           python companion/shino_link.py --autostart status
+      - name: Phase R one-GET diagnostic with in-memory Digest transport only
+        run: |
+          python -m compileall -q companion/m9_stagea_status_probe.py
+          python -m unittest discover -s companion -p 'test_m9_stagea_status_probe.py' -v
+          python companion/m9_stagea_status_probe.py --audit
       - name: Media session projection imports and mock PC-only probe (no live session/TV)
         run: |
           python -m pip install -r companion/requirements-media.txt

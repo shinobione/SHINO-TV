@@ -14,6 +14,29 @@
 
 ## Product contract — owner clarification, 1 October 2026
 
+**Phase R sanitized StageA status helper — owner decision, 8 October 2026:**
+[Exact owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6065184600)
+authorizes host-only implementation from clean
+`62a28324aac58e0628e9dd61f473ca91802e09b4`, same branch/Draft PR42.
+Prepare one short future owner command for the exact StageA status GET using
+strict private LINK config/credentials and closed SHINO-StageA Digest. Default
+and audit modes remain offline; bounded responses and fixed sanitized output
+only. Codex must never execute the live option. Validate with in-memory urllib
+fixtures and relevant companion regressions, commit/push/exact-head CI, then
+STOP before device contact. Preserve Phase Q sources/evidence, firmware,
+frozen images, writer binding, LINK sender and resource floors. Normal mount
+PASS remains owner evidence; runtime HOLD/PARTIAL and intermittent404 root
+cause unresolved. No physical promotion or merge; all device counters0.
+
+**Phase R offline result:** [Focused receipt](M09_PHASE_R_STATUS_PROBE.md) and
+[one-command operator README](../companion/M9_STAGEA_STATUS_PROBE.md).
+Sanitized exact-route helper,13 guarded in-memory urllib tests and47 sender/
+LINK regressions PASS. Broader companion run180 PASS with4 existing local
+C++/OpenSSL dependency skips (exact-head Linux CI supplies those dependencies).
+Firmware, tools/writer, LINK sender, Phase Q sources and both frozen image
+hashes unchanged. Codex never executes the live option. Mount PASS is prior
+owner evidence; runtime HOLD/PARTIAL,404 unresolved. STOP before device contact.
+
 **Phase Q GET control-plane repair — owner decision, 8 October 2026:**
 [Exact owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6064567041)
 authorizes offline reproduction/root cause first from clean

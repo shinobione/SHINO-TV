@@ -1,7 +1,25 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
-**Active Phase Q — OFFLINE GET control-plane investigation, 8 October 2026:**
+**Active Phase R — HOST ONLY sanitized status helper, 8 October 2026:**
+[Owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6065184600)
+authorizes implementation from clean `62a28324aac58e0628e9dd61f473ca91802e09b4`,
+same branch/Draft PR42. [Operator README](../companion/M9_STAGEA_STATUS_PROBE.md)
+and [focused receipt](M09_PHASE_R_STATUS_PROBE.md) describe the single-purpose
+PC helper. Default/audit: no private config/credentials or network access.
+Future owner-only explicit live option: existing strict LINK loader and
+read_credentials, exact private IPv4, one exact status GET, SHINO-StageA Digest,
+at most one challenge retry, proxies/redirects disabled, timeout3 s,4096/256 B
+body caps. Fixed sanitized output/allowlisted typed fields; recognize only
+PREBODY vs ROUTE_CLOSED JSON404 codes, otherwise404_UNATTRIBUTED. A single GET
+cannot resolve the earlier intermittent404 or promote the runtime gate.
+Codex never executes the live option; offline in-memory urllib fixtures only.
+Firmware, frozen images, writer, LINK sender and Phase Q sources/evidence
+unchanged. Mount PASS remains prior owner evidence; runtime HOLD/PARTIAL,
+404 root cause UNRESOLVED. All six device counters0; STOP before contact,
+serial, RTC, FS writes, flash, reboot or merge. Exact-head CI recorded in PR42.
+
+**Prior Phase Q — OFFLINE GET control-plane investigation, 8 October 2026:**
 [Owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6064567041)
 and current conversation clarification authorize reproduction/root cause first
 from clean `061b5a844c00776e71a5a7803a2559b7500a4ce7`, existing branch/Draft PR42.
