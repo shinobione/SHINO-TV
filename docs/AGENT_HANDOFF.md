@@ -1,7 +1,26 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
-**Active Phase R — HOST ONLY sanitized status helper, 8 October 2026:**
+**Active Phase S — signed OTA substrate OFFLINE/UNWIRED, 8 October2026:**
+[Owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6065735151)
+authorizes implementation from clean `7455f6b353f1733a78f2a6d25503edb063f7befb`,
+same branch/Draft PR42. [Integration receipt](M09_PHASE_S_SIGNED_OTA_INTEGRATION.md)
+records separate4m2m verifier, strict consent/Digest/stream state, dedicated
+native signing Updater adapter, actual Core/RSA/RTC RAM simulations, mixed-load
+actual StageA host model and disconnected Xtensa/API proof. No live OTA route
+or writer is connected; all113 firmware pins/companion/writer sources retained.
+SIGNED_OTA_OFFLINE_GATE=PASS_UNWIRED_ONLY; production integration HOLD; all
+Phase S production/physical execution NOT_RUN. Public inert fixtures only;
+no owner private key/credentials/BIN/FS/backup read or build/refreeze/rebind.
+Critical signing-vs-unsigned OEM interlock retained; postcommit staging
+authentication, failure cleanup, network ownership, trust provisioning,
+persisted antirollback and actual resource/concurrency gates remain HOLD.
+Phase R HTTP200/resource floors PASS is owner evidence; mount PASS and runtime
+HOLD/PARTIAL, intermittent404 unattributed stay unchanged. Six device counters0.
+Final commit/exact-head CI/changed paths recorded in PR42; STOP after CI, no
+contact/serial/flash/RTC/FS operation, reboot, merge or activation.
+
+**Prior Phase R — HOST ONLY sanitized status helper, 8 October 2026:**
 [Owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6065184600)
 authorizes implementation from clean `62a28324aac58e0628e9dd61f473ca91802e09b4`,
 same branch/Draft PR42. [Operator README](../companion/M9_STAGEA_STATUS_PROBE.md)

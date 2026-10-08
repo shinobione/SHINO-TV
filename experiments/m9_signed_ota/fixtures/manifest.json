@@ -1,0 +1,22 @@
+{
+  "exponent": {
+    "bytes": 3,
+    "sha256": "85f90dfea1d8027e1463e5ca971a250110a20df0119d204a74220bc63516d15b"
+  },
+  "modulus": {
+    "bytes": 256,
+    "sha256": "fecb4b5c1b6fd4fc71915e64003fcdf1d60c610fe8a3d129d01effefbdefc81f"
+  },
+  "public.der": {
+    "bytes": 294,
+    "sha256": "900453c460c3a19c17b6019595d4c2a4acc3d13b80ac18f67b01ade2b6be4c7f"
+  },
+  "raw.inert": {
+    "bytes": 100000,
+    "sha256": "67adaf4b86354b58beab6496dd5ed681ec77de93631297e6f1f65c8748947fb3"
+  },
+  "signed.inert": {
+    "bytes": 100260,
+    "sha256": "b218d53ef13afa95206c4f02d3b307f8cb8257e3bbbbe356f37a928f8821380a"
+  }
+}

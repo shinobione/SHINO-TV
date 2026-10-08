@@ -14,6 +14,35 @@
 
 ## Product contract — owner clarification, 1 October 2026
 
+**Phase S signed OTA substrate — owner decision, 8 October 2026:**
+[Exact owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6065735151)
+authorizes offline implementation/qualification from clean
+`7455f6b353f1733a78f2a6d25503edb063f7befb`, existing branch/Draft PR42.
+Implement a separately opted-in, unwired4m2m signed SHINO release contract,
+stream/consent state machine, native RSA/Core adapter and real pinned Xtensa
+compile proof. Preserve the StageA static_assert, default/profile0/profile2/
+normal source/byte identity, active physical writer, frozen image and FS.
+No owner private key/credentials/BIN/backup read, test-key deployable image,
+live OTA route, updater execution on a device or physical promotion. Preserve
+the critical signed-Updater/OEM unsigned-MD5 mutual exclusion. Source-executed
+host/Core simulations, interrupted/negative tests, resource deltas and exact-
+head CI precede STOP. Six device counters0; no flash/reboot/merge/contact.
+Owner reports Phase R status200 and resource floors PASS; mount gate PASS,
+runtime HOLD/PARTIAL and intermittent404 unattributed remain unchanged.
+
+**Phase S offline result:** [Integration receipt](M09_PHASE_S_SIGNED_OTA_INTEGRATION.md).
+Separate4m2m verifier/consent/stream state and dedicated signed-only native
+Updater adapter are implemented and unwired.10 release regressions,250 actual
+Core/RSA transactions,197 interrupted stream and32 RTC boundaries PASS;
+zero post-failure boot dispatches.392 normal GETs/49 four-metric samples during
+196-chunk host upload model; pinned Xtensa baseline/proof both link. Static RAM
+delta+920 B/.noinit0; original resource floors retained. Production integration
+HOLD: trust/network/writer lifetime/cleanup/antirollback/resource timing and
+postcommit power-loss recovery unresolved. SIGNED_OTA_OFFLINE_GATE=PASS_UNWIRED_ONLY;
+all Phase S production/physical execution NOT_RUN. Firmware/companion/writer/
+frozen identity unchanged, owner private inputs unread. Six counters0, same
+Draft PR42; exact-head CI then STOP, no contact/flash/reboot/merge.
+
 **Phase R sanitized StageA status helper — owner decision, 8 October 2026:**
 [Exact owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6065184600)
 authorizes host-only implementation from clean

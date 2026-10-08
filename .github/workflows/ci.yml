@@ -321,6 +321,8 @@ jobs:
         env:
           SHINO_ARDUINOJSON_SRC: reference-arduinojson/src
         run: python -m unittest discover -s tools -p 'test_*.py' -v
+      - name: Phase S release tool defaults to offline library audit only
+        run: python tools/m9_signed_release.py
       - name: Test Windows telemetry bridge and bounded V0.5 host-only media emulation (no device)
         run: |
           python -m pip install 'Pillow>=10,<13'
