@@ -1,5 +1,45 @@
 # SHINO // TV — Roadmap
 
+## Priorités produit — décision du 9 octobre 2026 (LIRE EN PREMIER)
+
+> **Règle du propriétaire :** SHINO // TV doit devenir un petit écran utile et agréable. Le besoin de maintenance est simple : **installer les futures mises à jour SHINO depuis Windows, par Wi-Fi, sans avoir à reconnecter l'UART/CH340**. « OTA » (over the air) signifie seulement *mise à jour sans câble de données* dans ce projet ; ce n'est **pas** une demande d'usine à gaz de signatures, de gestion d'entreprise, de multiples serveurs ou de phases infinies.
+>
+> **Cette section est la priorité courante.** Les phases historiques, rapports de sécurité et objectifs de recherche ci-dessous sont conservés comme traces techniques, **pas comme un backlog obligatoire à exécuter avant de livrer un produit**. Toute consigne qui ferait passer le développement de l'infrastructure OTA avant l'expérience utilisateur sans besoin démontré doit être réexaminée.
+
+### Résultat attendu par le propriétaire (critère de réussite, pas une phase de laboratoire)
+
+1. Le SmallTV affiche son interface SHINO, avec ses quatre métriques fonctionnelles.
+2. Sur le PC, l'utilisateur choisit **un BIN SHINO compatible et vérifié** depuis une interface simple (page locale ou outil Windows), lance **une mise à jour Wi-Fi**, voit succès/échec sans ambiguïté, puis retrouve le SmallTV démarré avec la **nouvelle version**.
+3. Cette mise à jour ordinaire **n'utilise plus COM8/CH340/UART**, ne nécessite pas le firmware GeekMagic comme étape intermédiaire et **préserve les données LittleFS**.
+4. Quelques opérations expliquées simplement, pas de commandes cryptiques ni de marathon de captures, prompts Codex et validations répétées. Un essai encadré, une preuve de résultat, puis on passe aux fonctionnalités.
+
+### État réel à ne pas embellir
+
+- **Fonctionnel physiquement :** firmware SHINO StageA normal 4m2m déjà installé, démarrage confirmé, quatre cartes CPU/GPU/RAM/GPU TEMP, SHINO // LINK, LittleFS monté en lecture seule (24 fichiers / 181 402 octets) et travail LINK >= 180 s sans reboot/corruption, avec stale/recovery. Relevé ultérieur /status = HTTP 200 et ressources PASS.
+- **Pas encore fonctionnel :** l'actuel StageA **n'a aucun récepteur de mise à jour Wi-Fi activé**. On ne peut donc pas prétendre qu'il sait déjà recevoir une nouvelle application.
+- **Recherche conservée mais non livrée :** les preuves hors ligne des phases S/T démontrent une intégration signée/HTTP en simulation, pas une mise à jour sur le vrai SmallTV. Mémoire et abandon sûr du Core ESP8266 restent bloquants pour **cette implémentation lourde** ; ne pas en déduire sans examen qu'aucune solution plus simple n'existe.
+- **Point de transition incontournable :** avant de pouvoir effectuer *toutes les mises à jour suivantes* par Wi-Fi, il faut installer **une fois** un firmware contenant un mécanisme de mise à jour réellement opérationnel. Puisque StageA n'en possède pas, ce premier passage ne doit **pas** être promis « 100 % Wi-Fi » ; examiner une voie existante prouvée, sinon prévoir une unique installation de transition explicitement autorisée. Aucun flash n'est autorisé par cette roadmap.
+- **Récupération :** le backup privé complet 4 MiB reste la référence de secours par méthode matérielle. Une coupure au mauvais moment peut rendre un ESP8266 non démarrable par Wi-Fi ; ne jamais promettre un rollback automatique ou une sécurité absolue.
+
+### Plan de livraison, sans nouvelles phases alphabétiques
+
+| Ordre | Livrable concret | Terminé quand… |
+| --- | --- | --- |
+| **1 — Choisir la voie la plus simple** | Comparer brièvement un petit uploader authentifié compatible 4m2m, les capacités réellement disponibles sur le StageA, et l'approche signée S/T. **Rejeter la complexité inutile** ; une solution plus simple n'autorise ni image arbitraire ni écriture incontrôlée. | Une décision **GO / NO-GO** avec coûts mémoire, risque de coupure, point de transition initial et commande/UI prévue ; pas une autre architecture de recherche ouverte. |
+| **2 — Faire fonctionner la mise à jour Wi-Fi** | Un seul récepteur sur le réseau SHINO existant, validation stricte de l'identité/format/tailles du BIN, transfert borné, préservation de LittleFS, échec fermé, statut clair et redémarrage uniquement après validation. Sécurité proportionnée au besoin, sans abandonner authentification et intégrité. | Une démonstration bout-en-bout sur un **candidat de test hors ligne**, puis une seule installation/qualification physique séparément approuvée ; la **mise à jour suivante réussit par Wi-Fi sans UART**. |
+| **3 — Faire un beau SHINO // TV** | Conserver la page des quatre valeurs et améliorer lisibilité/contraste/polices ; ajouter progressivement horloge, météo locale configurable et musique/pochette depuis SHINO // LINK, selon la place réelle en mémoire. | Fonctions visibles, stables sur le LCD 240×240, approuvées par le propriétaire, sans perdre le fonctionnement existant. |
+| **4 — Usage quotidien** | Paramétrage simple, démarrage et reconnexion LINK fiables, comportement PC absent, aide courte pour mise à jour et récupération. | Le boîtier est refermé ; l'utilisateur profite de l'écran et ne ressort plus l'UART pour une mise à jour normale. |
+
+### Règles de pilotage anti-usine-à-gaz
+
+- **Une itération = un résultat visible ou un verdict définitif.** Pas de multiplication automatique de « Mission 9 Phase X/Y/Z » pour prolonger une approche qui bloque.
+- **L'outil doit servir le produit.** Les signatures, la protection anti-rejeu, le streaming et les tests ne sont des objectifs que s'ils protègent concrètement la mise à jour choisie ; aucun « cadre OTA professionnel » n'est un livrable demandé par le propriétaire.
+- **Garde-fous conservés :** pas de flash sans autorisation explicite pour un fichier exact, pas de formatage LittleFS, pas d'exposition Internet, pas de déclassement silencieux de la sécurité, pas d'activation d'un writer non vérifié ni de fausse promesse de récupération.
+- **Si le petit updater sûr n'est pas faisable maintenant :** conclure **NO-GO**, préserver le StageA, **revenir aux améliorations visuelles et fonctionnelles**. Ne pas consommer une nouvelle soirée à produire uniquement des preuves supplémentaires de la même impasse.
+- **Codex doit commencer par cette section et résumer le prochain bénéfice utilisateur en une phrase avant d'entreprendre une tâche.** Une roadmap n'autorise ni merge, ni flash, ni redémarrage, ni contact matériel.
+
+---
+
 > **Active product status — 1 October 2026.** This section supersedes the 28 September status claims preserved further below for historical traceability. One owner SmallTV-Ultra, exact 240×240 LCD, Wi-Fi-only maintenance (USB-C power; no UART/JTAG/solder). This is planning, not permission to flash, merge, provision a production key or deploy.
 
 ## 1 October 2026 — Canonical agent handoff and square design references
