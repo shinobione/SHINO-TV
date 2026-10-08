@@ -1,7 +1,21 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
-**Active Phase T — single-owner StageA/OTA OFFLINE, 8 October2026:**
+**Active issue43 — minimal SHINO Wi-Fi installer, 9 October2026:**
+[Owner issue](https://github.com/shinobione/SHINO-TV/issues/43) and
+[product decision](SHINO_WIFI_INSTALL.md) supersede the earlier OTA architecture
+priority. One bounded offline implementation pass, same branch/Draft PR42.
+[Result](SHINO_WIFI_INSTALL_RESULT.md): small application-only Core-derived
+receiver, isolated non-committing abort, Windows GUI/CLI, inert sender/Core RAM
+qualification and paired actual public StageA builds. NO_GO: simultaneous native
+memory floor not established. Live installer gate false; no credential prompt or
+socket, public graph retains only internal proof addresses, no receiver activation.
+No additional phase or physical candidate. Existing StageA/LINK/mount evidence
+and unattributed404 remain unchanged; all six device-operation counters0.
+No owner private file read, frozen image rebuild/refreeze, writer rebind or merge.
+Final SHA/exact-head CI recorded in PR42 receipt; stop after checks.
+
+**Prior Phase T — single-owner StageA/OTA OFFLINE, 8 October2026:**
 [Owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6067111422)
 and [qualification receipt](M09_PHASE_T_STAGE_A_OTA.md) record recovery of the
 interrupted work from `b59964af43b555b75d415e6d063580945e6d99f7`, same branch/Draft

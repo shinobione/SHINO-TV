@@ -2,6 +2,13 @@
 
 ## Priorités produit — décision du 9 octobre 2026 (LIRE EN PREMIER)
 
+**Issue43 — résultat de la passe unique : NO-GO.** Le petit prototype et
+l'installateur Windows hors ligne sont livrés; le budget simultané natif ne
+prouve pas les planchers mémoire inchangés. Installation désactivée, StageA
+inchangé, aucun contact matériel. [Preuves et arrêt](SHINO_WIFI_INSTALL_RESULT.md).
+Conformément au choix propriétaire, pas de nouvelle phase OTA automatique;
+reprendre ensuite le produit visuel uniquement sur demande explicite.
+
 **Choix technique prioritaire (9 octobre) :** [SHINO // INSTALL — candidat Wi-Fi simple](SHINO_WIFI_INSTALL.md). Évaluer en premier un récepteur **application-only** inspiré de l'ArduinoOTA existant (pas U_FS, pas de formatage FS, sécurité privée appropriée), plus un installateur Windows avec choix du BIN et vérification exacte. L'approche RSA S/T reste une référence, **pas le chemin obligatoire**. La prochaine livraison demandée est **un prototype compilé + un verdict mémoire GO/NO-GO**, pas de nouvelles phases documentaires. Aucun upload physique autorisé.
 
 > **Règle du propriétaire :** SHINO // TV doit devenir un petit écran utile et agréable. Le besoin de maintenance est simple : **installer les futures mises à jour SHINO depuis Windows, par Wi-Fi, sans avoir à reconnecter l'UART/CH340**. « OTA » (over the air) signifie seulement *mise à jour sans câble de données* dans ce projet ; ce n'est **pas** une demande d'usine à gaz de signatures, de gestion d'entreprise, de multiples serveurs ou de phases infinies.

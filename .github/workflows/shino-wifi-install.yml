@@ -1,0 +1,64 @@
+name: SHINO minimal Wi-Fi installer offline
+on:
+  push:
+    branches: [feature/shino-tv-m9-flash-layout-liberation]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-install:
+    name: Application-only receiver and Windows installer (NO-GO gate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Public pinned Core and inert installer tests
+        run: |
+          python -m pip install 'platformio==6.1.18'
+          pio pkg install -g -t 'platformio/framework-arduinoespressif8266@3.30102.0'
+          python -m unittest discover -s companion -p test_shino_install.py -v
+          python tools/shino_wifi_runner.py > "${{ runner.temp }}/shino-wifi-host.json"
+      - name: Two actual public StageA graphs; no receiver activation
+        run: |
+          python tools/shino_wifi_build.py research-local/shino-install-ci/baseline
+          python tools/shino_wifi_build.py research-local/shino-install-ci/integrated --integrated
+          pio run -d research-local/shino-install-ci/baseline -e esp12e_m9_4m2m_normal_qualification
+          pio run -d research-local/shino-install-ci/integrated -e esp12e_m9_4m2m_normal_qualification
+          python tools/shino_wifi_resources.py research-local/shino-install-ci/baseline research-local/shino-install-ci/integrated > "${{ runner.temp }}/shino-wifi-resources.json"
+      - name: Exact stop gate and deployed-source preservation
+        run: |
+          python - <<'PY'
+          import json,os,sys
+          from pathlib import Path
+          sys.path.insert(0,'companion')
+          import shino_install
+          assert not shino_install.QUALIFIED_LIVE
+          p=Path(os.environ['RUNNER_TEMP'])
+          host=json.loads((p/'shino-wifi-host.json').read_text())
+          assert host['actual_core'] and host['actual_python_sender'] and host['network_calls']==0
+          assert host['interruption_boundaries']==197
+          for r in host['rows']:
+              assert r['fs_preserved']
+              if r['name'] in ('valid_real_sender','time_wrap'):assert r['commit']==1
+              else:assert r['commit']==0 and r['running']==0
+          resource=json.loads((p/'shino-wifi-resources.json').read_text())
+          assert resource['verdict']=='NO_GO' and not resource['activation']
+          assert resource['floors']==dict(heap=20480,largest=16384,stack=2048,fragmentation=25)
+          assert resource['delta']['noinit']==0
+          for k in ('device_contacts','serial_io','flash_writes','rtc_writes','reboots','device_filesystem_writes'):assert resource[k]==0
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shino-wifi-offline-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/shino-wifi-*.json
+          if-no-files-found: error

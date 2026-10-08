@@ -26,6 +26,10 @@ def source_gate():
     stage = (ROOT/"firmware/src/boot/M9NormalStageA.cpp").read_text()
     assert "SHINO_ENABLE_NATIVE_SIGNED_OTA == 0" in stage
     for name in subprocess.check_output(["git","ls-files","firmware","companion","tools/m9_single_attempt*"],cwd=ROOT,text=True).splitlines():
+        # Issue43 adds only these offline installer paths. Every PREEXISTING
+        # companion, firmware and physical-writer file retains exact identity.
+        if name in ('companion/shino_install.py','companion/test_shino_install.py','companion/SHINO-INSTALL.cmd','companion/SHINO_INSTALL.md'):
+            continue
         # Phase S has no edits to any deployed graph, sender or physical writer.
         old = subprocess.check_output(["git","show","7455f6b353f1733a78f2a6d25503edb063f7befb:"+name],cwd=ROOT)
         assert (ROOT/name).read_bytes().replace(b"\r\n",b"\n") == old.replace(b"\r\n",b"\n"), name
