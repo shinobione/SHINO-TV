@@ -20,7 +20,8 @@ def run(base,candidate):
     assert 'void shinoAbort()' in (packaged/'cores/esp8266/Updater.h').read_text()
     ini=(Path(candidate)/'platformio.ini').read_text()
     assert '-DSHINO_SMALL_OTA_BUFFER=1' in ini and '-DSHINO_MEMORY_TRACE=1' in ini
-    assert 'framework-arduinoespressif8266 @ '+local.resolve().as_uri() in ini
+    from shino_local_framework import platformio_local_uri
+    assert 'framework-arduinoespressif8266 @ '+platformio_local_uri(local.resolve()) in ini
     assert str((Path(candidate)/'.pio/isolated-packages').resolve()) in ini
     r['isolated_framework_package_verified']=True
     size=256;old=4096
