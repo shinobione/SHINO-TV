@@ -138,7 +138,7 @@ def replay_generated_maintenance_routes(exe,directory,env):
                 send('/api/v1/bridge/metrics',sample);n+=1
                 for path in paths:
                     send(path);n+=1
-            proc.stdin.write('stop\\n');proc.stdin.flush()
+            proc.stdin.write('stop\n');proc.stdin.flush()
             tail=proc.communicate(timeout=8)[0]
             if proc.returncode!=0:raise RuntimeError('Host route work failed')
             counts=json.loads(tail)
