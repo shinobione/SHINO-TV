@@ -246,8 +246,8 @@ jobs:
           assert 'ArmGate armGate' in source
           assert 'PUBLIC_REVIEW_DRY_RUN_ONLY' in source
           assert 'if(!armGate.consume(p) || !p.dryRun)return false;' in source
-          native=(p/'include/ShinoWifiUpdate.h').read_text()
-          arm=(p/'include/ShinoArmGate.h').read_text()
+          native=Path('experiments/shino_wifi_install/include/ShinoWifiUpdate.h').read_text()
+          arm=Path('experiments/shino_wifi_install/include/ShinoArmGate.h').read_text()
           assert 'SHINO_PUBLIC_INERT_REVIEW' in native
           assert 'if(!dryRun_)return reject();' in native
           assert 'SHINO_PUBLIC_INERT_REVIEW' in arm
