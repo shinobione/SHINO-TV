@@ -163,7 +163,8 @@ jobs:
           import json,os
           from pathlib import Path
           r=json.loads((Path(os.environ['RUNNER_TEMP'])/'shino-probe-host.json').read_text())
-          assert r['cases']==4 and r['no_flash_no_rtc_no_reboot']
+          assert r['cases']==5 and r['no_flash_no_rtc_no_reboot']
+          assert r['rows'][-1]['case']=='public_install_blocked_at_native_receiver'
           assert r['actual_native'] and r['actual_core']
           assert r['rows'][0]['probed'] and not any(x['probed'] for x in r['rows'][1:])
           PY
