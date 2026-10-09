@@ -33,7 +33,6 @@ SOURCE_GUARDS = (
     "tools/shino_local_framework.py",
     "tools/m9_signed_release.py",
     "tools/shino_wifi_resources.py",
-    "tools/shino_owner_candidate_verify.py",
 )
 
 
