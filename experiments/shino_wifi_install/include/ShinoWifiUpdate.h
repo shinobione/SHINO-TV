@@ -13,6 +13,11 @@
 #include "ShinoWifiPolicy.h"
 namespace ShinoInstall {
 constexpr uint32_t FsStart=0x200000, MaxImage=0xFEFF0;
+#if defined(SHINO_SMALL_OTA_BUFFER) && SHINO_SMALL_OTA_BUFFER
+constexpr uint32_t CoreBufferAdmission=256;
+#else
+constexpr uint32_t CoreBufferAdmission=4096;
+#endif
 inline void encode(const uint8_t* in,size_t n,char* out){const char* a="0123456789abcdef";for(size_t i=0;i<n;++i){out[2*i]=a[in[i]>>4];out[2*i+1]=a[in[i]&15];}out[2*n]=0;}
 inline void mac(const uint8_t* key,const char* message,char* out){
     br_hmac_key_context k; br_hmac_context h; uint8_t digest[32];
@@ -37,7 +42,7 @@ public:
                    uint32_t peer,bool privateAp,uint32_t now,Budget budget,uint32_t current){
         // U_FS and every other command fail BEFORE Updater.begin/allocation/write.
         if(state_!=Challenge || command!=U_FLASH || !privateAp || peer!=peer_ || !timely(now) ||
-           !budget.safe() || budget.heap<20480+4096+1024 || !hex(sha,64)||!hex(build,64)||!hex(proof,64)||
+           !budget.safe() || budget.heap<20480+CoreBufferAdmission+1024 || !hex(sha,64)||!hex(build,64)||!hex(proof,64)||
            size<64000 || size>MaxImage || FsStart-round(size)<round(current)+4096)return reject();
         char body[320],expected[65];
         std::snprintf(body,sizeof(body),"AUTH %s %s %s %u %u %s %s",device_,client_,nonce_,command,size,sha,build);mac(key_,body,expected);
