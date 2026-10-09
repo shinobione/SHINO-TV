@@ -14,7 +14,7 @@ def small_builder(directory):
 if __name__=='__main__':
     r=run(small_builder,native=True)
     assert r['cases']==230 and r['interruption_boundaries']==197
-    assert r['actual_core'] and r['actual_native_pump']==False if 'actual_native_pump' in r else r['actual_core']
+    assert r['actual_core'] and r['actual_python_sender'] and r['network_calls']==0
     for row in r['rows']:
         assert row['fs_preserved'] and row['listeners']==row['queued']==0
         assert row['host_restart_calls']==row['commit']
