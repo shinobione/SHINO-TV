@@ -33,18 +33,18 @@ def authenticated_prebody_snapshot(text):
     and the regular deployed branch remain byte-identical.
     """
     text=replace_once(text,
-      '    server.keepAlive(false); // Rejected body never becomes a second request.\\n'
-      '    if (!auth()) return false;\\n'
+      '    server.keepAlive(false); // Rejected body never becomes a second request.\n'
+      '    if (!auth()) return false;\n'
       '    const int result = M9NormalHttpPolicy::classify(',
-      '    server.keepAlive(false); // Rejected body never becomes a second request.\\n'
-      '    // Capture the decision on parsed request metadata before Digest churn.\\n'
-      '    // Authentication still runs before any error response.\\n'
+      '    server.keepAlive(false); // Rejected body never becomes a second request.\n'
+      '    // Capture the decision on parsed request metadata before Digest churn.\n'
+      '    // Authentication still runs before any error response.\n'
       '    const int result = M9NormalHttpPolicy::classify(')
     text=replace_once(text,
-      '        server.header("Content-Type").c_str(), server.header("Transfer-Encoding").c_str());\\n'
+      '        server.header("Content-Type").c_str(), server.header("Transfer-Encoding").c_str());\n'
       '    if (result != 200)',
-      '        server.header("Content-Type").c_str(), server.header("Transfer-Encoding").c_str());\\n'
-      '    if (!auth()) return false;\\n'
+      '        server.header("Content-Type").c_str(), server.header("Transfer-Encoding").c_str());\n'
+      '    if (!auth()) return false;\n'
       '    if (result != 200)')
     return text
 
