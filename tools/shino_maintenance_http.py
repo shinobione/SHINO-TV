@@ -2,6 +2,7 @@
 from pathlib import Path
 from m9_stagea_build import ROOT
 from shino_maintenance_build import controller
+from shino_transition_build import authenticated_prebody_snapshot, maintenance_http_policy
 
 def prepare_host(directory,shims,composition,sources):
     arduino=shims/'Arduino.h'
@@ -29,7 +30,22 @@ bool begin(){return uploadBegin;}void pump(){++uploadPumps;}void stop(){++upload
 ''')
     wrapper=shims/'web/Webserver.h'
     wrapper.write_text(wrapper.read_text().replace('void begin(){','void quiesce(){server.quiesce();} void begin(){'))
-    stage=directory/'maintenance_stagea.cpp';stage.write_text(controller((ROOT/'firmware/src/boot/M9NormalStageA.cpp').read_text()))
+    # Replay the disposable M9 private HTTP route policy against the ACTUAL
+    # pinned Core parser and actual StageA controller under loopback only.
+    # Maintenance handlers below are read-only stand-ins (status), NOT arming
+    # or OTA permission. Separate receiver/HMAC tests own those semantics.
+    stage=directory/'maintenance_stagea.cpp'
+    source=authenticated_prebody_snapshot(
+        controller((ROOT/'firmware/src/boot/M9NormalStageA.cpp').read_text()))
+    anchor='    service.on("/api/v1/m9/normal/resources", HTTP_GET, status);'
+    assert source.count(anchor)==1
+    source=source.replace(anchor,anchor+''.join(
+        '\\n    service.on("/api/v1/m9/maintenance/'+route+'", HTTP_GET, status);'
+        for route in ("challenge","probe","install","result")))
+    stage.write_text(source)
+    policy=directory/'boot/M9NormalHttpPolicy.h';policy.parent.mkdir(parents=True,exist_ok=True)
+    policy.write_text(maintenance_http_policy(
+        (ROOT/'firmware/include/boot/M9NormalHttpPolicy.h').read_text()))
     composition=composition.replace(str((ROOT/'firmware/src/boot/M9NormalStageA.cpp').as_posix()),stage.as_posix())
     (directory/'stage_composition.inc').write_text(composition)
     lab=(ROOT/'tools/m9_phase_n_http_lab.cpp').read_text()
