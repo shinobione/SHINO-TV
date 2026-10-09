@@ -134,6 +134,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
+      - name: Compile and execute allocation-free memory tracer
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -Iexperiments/shino_wifi_install/include tools/shino_memory_trace_test.cpp -o "${{ runner.temp }}/shino-memory-trace-test"
+          "${{ runner.temp }}/shino-memory-trace-test"
       - name: Native Core host failure and interrupted transfer qualification
         run: |
           python -m pip install 'platformio==6.1.18'
