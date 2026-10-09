@@ -22,16 +22,31 @@ class ArmClient(unittest.TestCase):
     def test_reject_modes_and_short_key(self):
         with self.assertRaises(InstallError):arm_message(D,B,N,'RESET')
         with self.assertRaises(InstallError):prepare_arm(CH,D,'too-short','PROBE')
-    def test_reject_staged_response_for_dry_run(self):
-        class Sender:
-            i=0
-            def line(self,s):self.i+=1
-            def write(self,s):pass
+    def test_probe_rejects_staged_reply_and_accepts_probed_only(self):
+        class IO:
+            def __init__(self,reply):
+                self.reply=reply
+                self.pending=''
+                self.sent=0
+            def line(self,data):
+                self.pending=data
+            def write(self,data):
+                self.sent+=len(data)
+                self.pending='DATA'
             def read(self):
-                self.i+=1
-                if self.i==2:
-                    return 'CAP '+D+' '+('a'*32)+' '+B+' 4m2m APP_ONLY '+N+' '+('0'*64)
-                return 'STAGED '+B
-        # No live network is required to catch a dangerous status mismatch.
-        self.assertFalse('STAGED '+B=='PROBED '+B)
+                if self.pending.startswith('CAP '):
+                    _,device,cn=self.pending.split(' ')
+                    # Exact native receiver CAP proof using the same HMAC key.
+                    key=hashlib.sha256(P.encode()).digest()
+                    value=f'CAP {device} {cn} {B} 4m2m APP_ONLY {N}'
+                    return value+' '+hmac.new(key,value.encode(),hashlib.sha256).hexdigest()
+                if self.pending.startswith('AUTH '):return 'READY'
+                if self.pending=='DATA':return f'ACK {self.sent}'
+                if self.pending=='COMMIT':return self.reply+' '+B
+                raise AssertionError(self.pending)
+        raw=b'hello'
+        m=dict(bytes=len(raw),sha256=hashlib.sha256(raw).hexdigest(),build_id=B)
+        self.assertEqual(upload_probe(IO('PROBED'),D,P,m,raw),'PROBED_PENDING_HTTP_RESULT')
+        with self.assertRaisesRegex(InstallError,'RAM-only'):
+            upload_probe(IO('STAGED'),D,P,m,raw)
 if __name__=='__main__':unittest.main()
