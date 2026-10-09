@@ -1,5 +1,7 @@
 # SHINO // TV — Roadmap
 
+**Préparation unique UART/Wi-Fi (9 octobre)** : lire [le dossier de transition matérielle](SHINO_FINAL_TRANSITION_PREP.md) AVANT tout nouveau travail. But : un firmware combinant essai réseau/mémoire **sans écriture** et récepteur Wi-Fi dormant, si cela est faisable sans perdre les garde-fous, pour éviter de réouvrir le boîtier. Ce dossier est une **consigne d'implémentation hors ligne**, pas un binaire validé ni une permission de toucher l'appareil. Revoir le HEAD/CI et exiger une autorisation séparée pour un fichier exact avant tout UART/flash.
+
 ## Priorité matérielle urgente — propriétaire, 9 octobre 2026
 
 **Résultat de la passe mémoire bornée : NO_GO.** Maintenance callable compilée,
