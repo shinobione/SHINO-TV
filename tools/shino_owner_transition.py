@@ -4,7 +4,6 @@ No network/device/COM. Never uploads firmware and never authorizes physical flas
 All secrets stay under git-ignored research-local/m9-owner/.
 """
 import argparse
-import configparser
 import hashlib
 import json
 import os
@@ -99,7 +98,6 @@ def private_source(directory, config):
     key = hashlib.sha256(config["maintenance_password"].encode("utf-8")).hexdigest()
     for before, after in (
         (f'ReviewDevice[]="{PUBLIC["device"]}"', f'ReviewDevice[]="{config["device"]}"'),
-        ('"a" * 64', 'never-used'),
         ('"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"',
          f'"{config["build"]}"'),
         ('"1111111111111111111111111111111111111111111111111111111111111111"',
@@ -111,12 +109,13 @@ def private_source(directory, config):
         ('    if(!dryRun){respond(403,"{\\\"error\\\":\\\"PUBLIC_REVIEW_DRY_RUN_ONLY\\\"}");return;}',
          '    // Private HMAC, one-use challenge and a prior qualified probe gate INSTALL.'),
     ):
-        if before == '"a" * 64':
-            continue
         body = replace_once(body, before, after)
     src.write_text(body, encoding="utf-8")
     policy = directory / "include/shino_private_policy.h"
     policy_text = policy.read_text(encoding="utf-8")
+    policy_text = replace_once(policy_text,
+                               "// Public inert identity, not a release or device identity.",
+                               "// Owner-specific identity, strictly local offline review.")
     for field, macro in (
         ("ap_psk", "SHINO_SETUP_AP_PSK"),
         ("api_token", "SHINO_BOOTSTRAP_API_TOKEN"),
@@ -152,7 +151,19 @@ def private_source(directory, config):
     return directory
 
 
+def check_checkout():
+    branch = subprocess.check_output(["git", "branch", "--show-current"], cwd=ROOT,
+                                     text=True).strip()
+    if branch != "feature/shino-tv-m9-flash-layout-liberation":
+        raise ValueError("Wrong git branch for the owner transition")
+    dirty = subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT,
+                                    text=True).strip()
+    if dirty:
+        raise ValueError("Uncommitted source changes: refuse private candidate build")
+
+
 def build():
+    check_checkout()
     config = load()
     OWNER.mkdir(parents=True, exist_ok=True)
     directory = OWNER / "transition-build"
@@ -172,12 +183,19 @@ def build():
     binpath = directory / ".pio/build" / ENV / "firmware.bin"
     raw = binpath.read_bytes()
     validate_image(raw)
+    from shino_wifi_resources import one
+    memory = one(directory)
+    if memory["bin_bytes"] != len(raw) or memory["noinit"] != 56:
+        raise RuntimeError("Unexpected native resource fingerprint")
     result = {
         "status": "PRIVATE_BUILD_OFFLINE_PHYSICAL_NO_GO",
         "git_head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT,
                                              text=True).strip(),
         "firmware_sha256": hashlib.sha256(raw).hexdigest(),
         "bytes": len(raw),
+        "linked_flash": memory["linked_flash"],
+        "static_ram": memory["static_ram"],
+        "noinit": memory["noinit"],
         "build_id": config["build"],
         "layout": "4m2m",
         "public_fixture": False,
@@ -196,6 +214,7 @@ def build():
                                                     encoding="utf-8")
     print("PRIVATE_TRANSITION_BUILD_OK — PHYSICAL_FLASH_NO_GO")
     print("Firmware bytes:", len(raw), "SHA256:", result["firmware_sha256"])
+    print("Native static RAM:", result["static_ram"], "bytes")
     print("Report: research-local/m9-owner/transition-report.json")
     print("No device access. Do not upload this candidate.")
 
