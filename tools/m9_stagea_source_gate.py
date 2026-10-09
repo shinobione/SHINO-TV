@@ -10,7 +10,17 @@ def run():
     pins=json.loads((ROOT/'tools/m9_stagea_core_sources.json').read_text())
     for name,digest in pins.items():
         assert hashlib.sha256((core/name).read_bytes().replace(b'\r\n',b'\n')).hexdigest()==digest,name
+    # New local-only wrappers retain an explicit exact-content blob pin.
+    # All historical source identities below remain unchanged.
+    new_offline_script_pins = {
+        'companion/SHINO-OWNER-TRANSITION.cmd': '5d5bacb18ac43b1217a05171e1e26bcd25bd1daa',
+        'companion/SHINO-TRANSITION-CHECK.cmd': 'f6785c16885c0cfcd83ac58f5c857c1a6f122ed4',
+    }
     for name in subprocess.check_output(['git','ls-files','firmware','companion','tools/m9_single_attempt*'],cwd=ROOT,text=True).splitlines():
+        if name in new_offline_script_pins:
+            digest=subprocess.check_output(['git','hash-object','--',name],cwd=ROOT,text=True).strip()
+            assert digest==new_offline_script_pins[name],name
+            continue
         # Explicit new issue43 installer files; old transport identities stay pinned.
         if name in ('companion/shino_install.py','companion/test_shino_install.py','companion/SHINO-INSTALL.cmd','companion/SHINO_INSTALL.md','companion/SHINO-OFFLINE-CHECK.cmd','companion/shino_maintenance_control.py','companion/test_shino_maintenance_control.py'):
             continue
