@@ -5,7 +5,7 @@ Installed, frozen StageA files are never touched; private credentials are not
 accessed. When an owner-approved image is eventually built, public fixture
 identities must be replaced by separately provisioned private material.
 """
-import argparse,json
+import argparse,json,configparser
 from pathlib import Path
 from shino_maintenance_build import prepare as basic
 from m9_stagea_build import ROOT
@@ -17,6 +17,14 @@ def replace_once(body,src,dst):
 
 def prepare(directory):
     directory=basic(directory,small_buffer=True)
+    # The public third graph uses a deliberately published HMAC fixture.
+    # Build-level interlock keeps INSTALL disabled even after a valid probe.
+    ini=directory/'platformio.ini'
+    conf=configparser.ConfigParser(interpolation=None)
+    conf.read(ini)
+    env='env:esp12e_m9_4m2m_normal_qualification'
+    conf[env]['build_flags']+='\n    -DSHINO_PUBLIC_INERT_REVIEW=1'
+    with ini.open('w',encoding='utf-8') as out:conf.write(out)
     source=directory/'src/boot/M9NormalStageA.cpp'
     body=source.read_text()
     body=replace_once(body,'#include "ShinoMaintenance.h"',
@@ -38,8 +46,8 @@ static constexpr char ReviewMaintenanceKey[]=
 ShinoInstall::ArmGate armGate(ShinoInstall::mac);
 bool shinoMaintenanceConsent(ShinoInstall::Consent& c){
     ShinoInstall::ArmRequest p{};
-    if(!armGate.consume(p))return false;
-    c={p.device,p.build,p.key,true,p.dryRun};return true;
+    if(!armGate.consume(p) || !p.dryRun)return false;
+    c={p.device,p.build,p.key,true,true};return true;
 }
 struct CoreSource {''')
     body=replace_once(body,'void metrics() {',
@@ -64,6 +72,8 @@ struct CoreSource {''')
 }
 void armMode(bool dryRun){
     if(!auth())return;
+    // Published fixture identities are not authority to write flash.
+    if(!dryRun){respond(403,"{\\"error\\":\\"PUBLIC_REVIEW_DRY_RUN_ONLY\\"}");return;}
     const String& proof=service().raw().header("X-Shino-Arm");
     if(!configReady || !apReady ||
        !armGate.arm(dryRun,proof.c_str(),millis(),
@@ -136,6 +146,7 @@ void metrics() {''')
     info['experimental_auth_arm']=True
     info['public_inert_hmac_credential_only']=True
     info['not_flashable_or_owner_qualified']=True
+    info['public_install_denied']=True
     info['trusted_consent_bound']=True
     (directory/'public-inputs.json').write_text(json.dumps(info,indent=2))
     return directory
