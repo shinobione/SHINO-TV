@@ -11,6 +11,14 @@ ROOT_CAUSE_UNRESOLVED. New A/B qualification packet is offline only; no device,
 COM8, flash, reboot or merge without new explicit exact-image approval. Do not
 reclassify the historical results below or resume numbered/alphabetic phases.
 
+Private A/B now exist and are independently verified offline:407008 B each,
+42196 B static incl.56 noinit. A=`faee8f927ca468978f5ec4bd133e899b6898bfc6c01e1afe471f392026e70a6b`;
+B=`78fdfbeb2b0b71c2649bcd2033d7d2b3eb8cb19a9cc30b393ad4b75e89336bea`.
+Clean firmware source commit4e51a9fd3c886ec90974cd9cc28da0b38af49ce7. Packet at
+`research-local/m9-owner/http-ota-20261010-ab/`, including Windows launchers and
+AUDIT-only-tested copy of UART writer bound to A (100 blocks). Physical acceptance
+NOT_RUN; device/serial/flash/RTC/FS/reboot counters all0. See the delivery receipt.
+
 **Préparation unique UART/Wi-Fi (9 octobre)** : lire [le dossier de transition matérielle](SHINO_FINAL_TRANSITION_PREP.md) AVANT tout nouveau travail. But : un firmware combinant essai réseau/mémoire **sans écriture** et récepteur Wi-Fi dormant, si cela est faisable sans perdre les garde-fous, pour éviter de réouvrir le boîtier. Ce dossier est une **consigne d'implémentation hors ligne**, pas un binaire validé ni une permission de toucher l'appareil. Revoir le HEAD/CI et exiger une autorisation séparée pour un fichier exact avant tout UART/flash.
 
 ## Priorité matérielle urgente — propriétaire, 9 octobre 2026

@@ -25,6 +25,7 @@ jobs:
       - name: Windows consent and actual Core interruption matrix
         run: |
           python -m unittest discover -s companion -p test_shino_update.py -v
+          python -m unittest discover -s tools -p test_shino_prepare_ota_pair.py -v
           python tools/test_shino_http_ota.py > "${{ runner.temp }}/http-ota-native.json"
       - name: Actual normal HTTP/Digest/Updater on loopback
         env:

@@ -70,6 +70,14 @@ conserve un résultat JSON local neuf et refuse un résultat déjà présent, po
 éviter une seconde tentative accidentelle. Aucun lanceur n'est exécuté par le
 builder. Les budgets simulés et les cadres compilateur restent des preuves host.
 
+`uart-commands.json` contient aussi les commandes initiales COM8 : lectures
+PRE/POST privées de4MiB, copie locale du writer existant liée à A, comparaison
+indépendante avant boot normal. Le writer fait un seul Begin/DATA/Finish/MD5,
+sans répétition ni reboot automatique ; sa commande par défaut est AUDIT.
+Le paquet ne lance aucune de ces commandes. L'ancien writer n'est pas rebindé.
+Les hashes et ressources du paquet actuel sont dans
+[le reçu de livraison](../docs/SHINO_BREAK_THE_LOOP.md).
+
 La staging interrompue ne remplace pas l'application courante. Une coupure
 pendant la copie eboot au reboot peut empêcher tout démarrage. Il n'existe
 pas de rollback automatique dans ce layout ; la récupération reste le backup
