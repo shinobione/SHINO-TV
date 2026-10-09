@@ -42,8 +42,15 @@ int main(){
     assert(!gate.arm(false,proof,650,true,true));
     gate.setProbeResult(true);
     assert(gate.challenge(random,16,700,nonce,sizeof(nonce)));
+#if defined(SHINO_PUBLIC_INERT_REVIEW) && SHINO_PUBLIC_INERT_REVIEW
+    // Even after a qualified RAM-only probe, publicly known credentials
+    // must NEVER authorize an INSTALL.
+    assert(!gate.arm(false,proof,750,true,true));
+    assert(!gate.consume(req));
+#else
     assert(gate.arm(false,proof,750,true,true));
     assert(gate.consume(req)&&!req.dryRun);
+#endif
     gate.invalidate();
     assert(!gate.probeQualified());
     return 0;
