@@ -1,5 +1,15 @@
 # SHINO // TV — Agent handoff / operational source of truth
-Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
+Last owner mandate update: **2026-10-10**; the **2026-10-01** square-scene product contract remains below. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
+
+**Active owner mandate — Operation Break the Loop, 10 October2026:**
+[Concrete replacement](SHINO_BREAK_THE_LOOP.md) and [normal firmware/updater](../ota/README.md)
+supersede the prior experimental maintenance architecture. One persistent HTTP
+server, HMAC application-only POST, Core Updater/eboot with noncommitting abort,
+Windows selection/progress/exact actual-boot confirmation. Existing StageA source,
+installed BIN, private credentials and backups retained. The installed404 remains
+ROOT_CAUSE_UNRESOLVED. New A/B qualification packet is offline only; no device,
+COM8, flash, reboot or merge without new explicit exact-image approval. Do not
+reclassify the historical results below or resume numbered/alphabetic phases.
 
 **Préparation unique UART/Wi-Fi (9 octobre)** : lire [le dossier de transition matérielle](SHINO_FINAL_TRANSITION_PREP.md) AVANT tout nouveau travail. But : un firmware combinant essai réseau/mémoire **sans écriture** et récepteur Wi-Fi dormant, si cela est faisable sans perdre les garde-fous, pour éviter de réouvrir le boîtier. Ce dossier est une **consigne d'implémentation hors ligne**, pas un binaire validé ni une permission de toucher l'appareil. Revoir le HEAD/CI et exiger une autorisation séparée pour un fichier exact avant tout UART/flash.
 

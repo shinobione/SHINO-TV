@@ -1,0 +1,52 @@
+name: SHINO normal HTTP OTA
+on:
+  push:
+    branches: [feature/shino-tv-m9-flash-layout-liberation]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  normal-ota:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Pinned public firmware and full native graph
+        run: |
+          python -m pip install 'platformio==6.1.18'
+          python tools/shino_http_ota_build.py research-local/http-ota-ci
+      - name: Windows consent and actual Core interruption matrix
+        run: |
+          python -m unittest discover -s companion -p test_shino_update.py -v
+          python tools/test_shino_http_ota.py > "${{ runner.temp }}/http-ota-native.json"
+      - name: Actual normal HTTP/Digest/Updater on loopback
+        env:
+          SHINO_ARDUINOJSON_SRC: ${{ github.workspace }}/research-local/http-ota-ci/.pio/libdeps/esp12e_m9_4m2m_normal_qualification/ArduinoJson/src
+        run: python tools/shino_http_ota_network.py > "${{ runner.temp }}/http-ota-network.json"
+      - name: Validate offline evidence
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path(os.environ['RUNNER_TEMP'])
+          native=json.loads((root/'http-ota-native.json').read_text())
+          assert native['interruption_boundaries']==197 and native['actual_pinned_core']
+          assert all(r['fs_preserved'] and not r['running'] for r in native['rows'])
+          assert all(not r['commit'] for r in native['rows'] if r['name']!='valid')
+          network=json.loads((root/'http-ota-network.json').read_text())
+          assert network['authenticated_post_get_requests']==150
+          assert network['actual_normal_parser_digest_core'] and network['commit']==1
+          assert network['fs_preserved'] and network['device_contacts']==0
+          PY
+          git diff --exit-code
+      - uses: actions/upload-artifact@v4
+        with:
+          name: http-ota-public-evidence-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/http-ota-*.json

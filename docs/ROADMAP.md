@@ -1,5 +1,29 @@
 # SHINO // TV — Roadmap
 
+## Décision propriétaire active — Operation Break the Loop, 10 octobre 2026
+
+Le mandat joint à la conversation autorise une livraison concrète hors ligne sur
+la branche et la Draft PR42 existantes : diagnostic sans présumer les correctifs,
+choix d'une architecture minimale, firmware normal avec OTA, installateur Windows,
+tests/builds locaux, deux images privées distinctes A/B et une séquence physique
+unique à soumettre. Les anciennes étapes ARM/PROBE/INSTALL et les prototypes ne
+sont plus des prérequis produit. Conserver l'authentification, l'intégrité/identité,
+les limites 4m2m et LittleFS, les quatre mesures et les secrets locaux.
+
+Le propriétaire rapporte l'installation UART/readback et le démarrage du BIN
+411216 octets, SHA256 `9de1ffe3abbe039bc3ed0f8eb78d1336137a5d1caae74383443fa736d1b9764d`,
+le 9 octobre, puis des GET authentifiés retournant `STAGE_A_PREBODY`/404. Cette
+observation n'établit pas une cause racine ni la qualification des correctifs
+postérieurs. Ne jamais remplacer une preuve matérielle par une simulation.
+
+**Limite actuelle : aucun contact appareil, COM8, flash ou reboot sans accord
+explicite pour l'action et les fichiers/hashes exacts.** Préparer la solution
+entière avant cette demande. Succès final uniquement après A stable, vraie OTA
+A→B, boot/identité/mesures et LittleFS vérifiés, B capable d'une autre OTA.
+Le boîtier reste ouvert jusque-là. Pas de merge ni publication des BIN/secrets.
+
+Les sections et résultats datés ci-dessous restent des preuves historiques.
+
 **Préparation unique UART/Wi-Fi (9 octobre)** : lire [le dossier de transition matérielle](SHINO_FINAL_TRANSITION_PREP.md) AVANT tout nouveau travail. But : un firmware combinant essai réseau/mémoire **sans écriture** et récepteur Wi-Fi dormant, si cela est faisable sans perdre les garde-fous, pour éviter de réouvrir le boîtier. Ce dossier est une **consigne d'implémentation hors ligne**, pas un binaire validé ni une permission de toucher l'appareil. Revoir le HEAD/CI et exiger une autorisation séparée pour un fichier exact avant tout UART/flash.
 
 ## Priorité matérielle urgente — propriétaire, 9 octobre 2026
