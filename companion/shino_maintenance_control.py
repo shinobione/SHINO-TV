@@ -59,15 +59,19 @@ def arm_by_digest(opener,device,password,mode):
         if answer!={'pending':mode}:raise InstallError('Unexpected owner-arm reply')
     return obj
 
-def upload_probe(io,device,password,manifest,image):
+def upload_probe(io,device,password,manifest,image,expected_current_build=None):
     # Same HMAC and exact chunk format as the writer protocol, but only a
     # PROBED reply is acceptable; STAGED is explicitly an ERROR for a probe.
     key=hashlib.sha256(password.encode('utf-8')).digest()
     from secrets import token_hex
     cn=token_hex(16)
     cap=capability(io,device,key,cn)
-    if cap[3] != manifest['build_id'] and not HEX64.fullmatch(cap[3]):
-        raise InstallError('Wrong receiver build ID')
+    # CAP identifies the currently running firmware, not the candidate.
+    # Bind the TCP receiver to the build authenticated via HTTP Digest ARM.
+    if cap[3] == manifest['build_id']:
+        raise InstallError('Selected probe build is already installed')
+    if expected_current_build is not None and cap[3] != expected_current_build:
+        raise InstallError('Receiver build changed since authenticated maintenance ARM')
     signed=f'AUTH {device} {cn} {cap[6]} 0 {len(image)} {manifest["sha256"]} {manifest["build_id"]}'
     io.line(f'AUTH 0 {len(image)} {manifest["sha256"]} {manifest["build_id"]} {proof(key,signed)}')
     if io.read()!='READY':raise InstallError('Probe admission denied')
@@ -100,14 +104,15 @@ def main(argv=None):
     http_secret=getpass.getpass('StageA Digest password: ')
     maintenance_secret=getpass.getpass('Distinct maintenance password (>=32 chars): ')
     opener=digest_open('192.168.4.1',user,http_secret)
-    arm_by_digest(opener,a.device,maintenance_secret,'PROBE')
+    challenge=arm_by_digest(opener,a.device,maintenance_secret,'PROBE')
     import time,socket
     io=None
     for _ in range(6):
         try:io=SocketIO('192.168.4.1');break
         except (socket.timeout,ConnectionRefusedError):time.sleep(0.2)
     if io is None:raise InstallError('Probe listener never appeared')
-    try:print(upload_probe(io,a.device,maintenance_secret,m,a.image.read_bytes()))
+    try:print(upload_probe(io,a.device,maintenance_secret,m,a.image.read_bytes(),
+                           expected_current_build=challenge['build']))
     finally:io.close()
     with opener.open('http://192.168.4.1/api/v1/m9/maintenance/result',timeout=5) as res:
         status=json.loads(res.read(513).decode('ascii'))
