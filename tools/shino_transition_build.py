@@ -26,6 +26,29 @@ def maintenance_http_policy(text):
         std::strcmp(path, "/api/v1/m9/maintenance/result") == 0)) return 200;''')
 
 
+def authenticated_prebody_snapshot(text):
+    """Preserve strict request decision across Digest allocator churn.
+
+    Only the disposable M9 maintenance graph changes. Frozen StageA sources
+    and the regular deployed branch remain byte-identical.
+    """
+    text=replace_once(text,
+      '    server.keepAlive(false); // Rejected body never becomes a second request.\\n'
+      '    if (!auth()) return false;\\n'
+      '    const int result = M9NormalHttpPolicy::classify(',
+      '    server.keepAlive(false); // Rejected body never becomes a second request.\\n'
+      '    // Capture the decision on parsed request metadata before Digest churn.\\n'
+      '    // Authentication still runs before any error response.\\n'
+      '    const int result = M9NormalHttpPolicy::classify(')
+    text=replace_once(text,
+      '        server.header("Content-Type").c_str(), server.header("Transfer-Encoding").c_str());\\n'
+      '    if (result != 200)',
+      '        server.header("Content-Type").c_str(), server.header("Transfer-Encoding").c_str());\\n'
+      '    if (!auth()) return false;\\n'
+      '    if (result != 200)')
+    return text
+
+
 def prepare(directory):
     directory=basic(directory,small_buffer=True)
     # The public third graph uses a deliberately published HMAC fixture.
@@ -142,6 +165,7 @@ void metrics() {''')
     if(maintenance.takeProbeCompleted())armGate.setProbeResult(tracePassed());
 #endif
     if (apReady) service().handleClient();''')
+    body=authenticated_prebody_snapshot(body)
     source.write_text(body)
     policy=directory/'include/boot/M9NormalHttpPolicy.h'
     policy.write_text(maintenance_http_policy(policy.read_text()))
