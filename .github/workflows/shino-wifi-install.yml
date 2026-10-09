@@ -139,6 +139,7 @@ jobs:
       - name: Owner-private transition source isolation and credential regression (no secrets)
         run: |
           python tools/test_shino_owner_transition.py
+          python tools/test_shino_owner_candidate_verify.py
       - name: Windows offline maintenance Digest/HMAC arm contract
         run: |
           python companion/test_shino_maintenance_control.py
