@@ -28,6 +28,9 @@ public:
         std::strcpy(device_,c.device);std::strcpy(build_,c.build);std::memcpy(key_,c.key,32);dryRun_=c.dryRun;
 #if defined(SHINO_MEMORY_TRACE) && SHINO_MEMORY_TRACE
         trace_.clear();
+        // The state machine is Pending immediately after request(), so a
+        // Normal-mode sample must be taken here before the HTTP owner closes.
+        trace_.add(TracePoint::Normal,hooks_.budget());
 #endif
 #if defined(SHINO_MAINTENANCE_PROBE) && SHINO_MAINTENANCE_PROBE
         probeCompleted_=false;
