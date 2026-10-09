@@ -25,7 +25,17 @@ def source_gate():
     assert frozen_sources()["firmware_files_checked"] == 113
     stage = (ROOT/"firmware/src/boot/M9NormalStageA.cpp").read_text()
     assert "SHINO_ENABLE_NATIVE_SIGNED_OTA == 0" in stage
+    # These two later-added local-only launchers are pinned to exact Git blobs.
+    # The earlier frozen baseline cannot contain files created afterwards.
+    new_offline_script_pins = {
+        'companion/SHINO-OWNER-TRANSITION.cmd': '5d5bacb18ac43b1217a05171e1e26bcd25bd1daa',
+        'companion/SHINO-TRANSITION-CHECK.cmd': 'f6785c16885c0cfcd83ac58f5c857c1a6f122ed4',
+    }
     for name in subprocess.check_output(["git","ls-files","firmware","companion","tools/m9_single_attempt*"],cwd=ROOT,text=True).splitlines():
+        if name in new_offline_script_pins:
+            digest = subprocess.check_output(["git","hash-object","--",name],cwd=ROOT,text=True).strip()
+            assert digest == new_offline_script_pins[name], "offline launcher changed: " + name
+            continue
         # Issue43 adds only these offline installer paths. Every PREEXISTING
         # companion, firmware and physical-writer file retains exact identity.
         if name in ('companion/shino_install.py','companion/test_shino_install.py','companion/SHINO-INSTALL.cmd','companion/SHINO_INSTALL.md','companion/SHINO-OFFLINE-CHECK.cmd','companion/shino_maintenance_control.py','companion/test_shino_maintenance_control.py'):
