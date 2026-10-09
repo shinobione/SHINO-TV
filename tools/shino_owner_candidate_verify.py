@@ -21,19 +21,15 @@ from shino_install import inspect
 
 CURRENT_STAGEA_BYTES = 399264
 PINNED_LAYOUT = "4m2m"
-SOURCE_GUARDS = (
-    "firmware/",
-    "experiments/shino_wifi_install/",
-    "tools/m9_stagea_build.py",
-    "tools/shino_wifi_build.py",
-    "tools/shino_maintenance_build.py",
-    "tools/shino_transition_build.py",
-    "tools/shino_owner_transition.py",
-    "tools/shino_wifi_core.py",
-    "tools/shino_local_framework.py",
-    "tools/m9_signed_release.py",
-    "tools/shino_wifi_resources.py",
-)
+SOURCE_GUARDS = ("firmware/", "experiments/", "tools/")
+# These were added strictly for offline review after the known owner build.
+# They are not firmware inputs. All other tooling changes require a new review.
+REVIEW_ONLY = frozenset({
+    "tools/m9_stagea_source_gate.py",
+    "tools/m9_signed_ota_runner.py",
+    "tools/shino_owner_candidate_verify.py",
+    "tools/test_shino_owner_candidate_verify.py",
+})
 
 
 def git(*args):
@@ -43,8 +39,9 @@ def git(*args):
 def firmware_source_drift(built_from, head):
     modified = git("diff", "--name-only", built_from, head).splitlines()
     return [name for name in modified
-            if any(name == prefix or name.startswith(prefix)
-                   for prefix in SOURCE_GUARDS)]
+            if name not in REVIEW_ONLY
+            and any(name == prefix or name.startswith(prefix)
+                    for prefix in SOURCE_GUARDS)]
 
 
 def audit(owner=OWNER):
