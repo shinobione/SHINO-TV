@@ -1,6 +1,8 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+**Préparation unique UART/Wi-Fi (9 octobre)** : lire [le dossier de transition matérielle](SHINO_FINAL_TRANSITION_PREP.md) AVANT tout nouveau travail. But : un firmware combinant essai réseau/mémoire **sans écriture** et récepteur Wi-Fi dormant, si cela est faisable sans perdre les garde-fous, pour éviter de réouvrir le boîtier. Ce dossier est une **consigne d'implémentation hors ligne**, pas un binaire validé ni une permission de toucher l'appareil. Revoir le HEAD/CI et exiger une autorisation séparée pour un fichier exact avant tout UART/flash.
+
 ## Priorité matérielle urgente — propriétaire, 9 octobre 2026
 
 **Latest bounded memory attempt: NO_GO.** [Callable maintenance result](SHINO_WIFI_MAINTENANCE_RESULT.md)
