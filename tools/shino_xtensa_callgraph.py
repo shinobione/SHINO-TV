@@ -52,10 +52,28 @@ def require_paths(disassembly,markers=(
             root_addr=next(k for k,v in nodes.items() if v[0]=='M9NormalStageA::loop()')
             root_calls=[label for _,label in nodes[root_addr][1]]
             known=[name for name,_ in nodes.values() if marker in name]
+            # Keep this gate FAIL CLOSED. On failure disclose bounded,
+            # native objdump evidence so we can diagnose tailcalls/callx,
+            # alias symbols and LTO before even proposing another user run.
+            addr_by_name={name:addr for addr,(name,_) in nodes.items()}
+            suspected=[addr for name,addr in addr_by_name.items() if marker in name]
+            callers=[(name,[label for target,label in edges if target in suspected])
+                     for _,(name,edges) in nodes.items()
+                     if any(target in suspected for target,_ in edges)]
+            loop_text=disassembly[
+                disassembly.find('<M9NormalStageA::loop()>:'):
+                disassembly.find('<M9NormalStageA::loop()>:')+12500]
+            asm_focus=[line.strip() for line in loop_text.splitlines()
+                       if any(token in line for token in ('call','callx','\\tj','<ShinoInstall','\\tb','\\tret'))][:95]
+            indirect_or_jumps=[line.strip() for line in disassembly.splitlines()
+                               if marker in line or ('callx' in line and '<' not in line)][:55]
             raise AssertionError(
                 f'Compiled {marker} NOT reachable from StageA loop: '
                 f'symbols_in_elf={known[:8]}; '
-                f'loop_direct_calls={root_calls[:15]}; '
+                f'pump_callers_by_direct_call={callers[:16]}; '
+                f'loop_direct_calls={root_calls[:22]}; '
+                f'loop_asm_focus={asm_focus}; '
+                f'candidate_symbol_or_indirect_jump_lines={indirect_or_jumps}; '
                 f'reachable_functions={len(visited)}')
         paths[marker]=min(matches,key=len)
     return paths
