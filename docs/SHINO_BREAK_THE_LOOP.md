@@ -72,6 +72,7 @@ La CI du HEAD final est demandée sur la même Draft PR42 ; son état est à lir
 sur GitHub, sans reprendre les PASS des anciens commits. Les ajouts ultérieurs
 au commit de construction concernent le paquet UART, ses tests, les quatre pins
 des nouveaux fichiers Windows dans les contrôles historiques et ce reçu ;
+la portabilité POSIX du banc réseau est vérifiée séparément en CI ;
 aucun source firmware de A/B n'est modifié.
 
 Limites conservées : aucun rollback automatique, panne possible pendant copie

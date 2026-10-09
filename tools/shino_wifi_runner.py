@@ -7,7 +7,7 @@ from v08_m8r_runner import compiler_environment
 sys.path.insert(0,str(ROOT/'companion'))
 from shino_install import send,proof,capability,InstallError
 from m9_signed_fixture_image import inert_image
-def build(directory,lab=None,prepare_host=None,defines=(),small_buffer=False):
+def build(directory,lab=None,prepare_host=None,defines=(),small_buffer=False,threaded=False):
     core=core_root();generated=materialize(directory/'core',core,small_buffer=small_buffer);bear=core/'tools/sdk/ssl/bearssl'
     host=directory/'host';host.mkdir()
     (host/'MD5Builder.h').write_text('''#pragma once
@@ -34,7 +34,7 @@ struct MD5Builder {br_md5_context ctx;uint8_t digest[16]{};void begin(){br_md5_i
     sources=[lab or ROOT/'tools/shino_wifi_lab.cpp',generated/'Updater.cpp']
     flags=[('/D' if msvc else '-D')+d for d in (*defines, *((['SHINO_SMALL_OTA_BUFFER=1']) if small_buffer else []))]
     command=([compiler,'/nologo','/std:c++20','/EHsc','/O2','/DHOST_MOCK=1',*flags,*inc,*map(str,sources),*map(str,objects),'/link','/OUT:'+str(exe)] if msvc else
-             [compiler,'-std=c++17','-O2','-DHOST_MOCK=1',*flags,*inc,*map(str,sources),*map(str,objects),'-o',str(exe)])
+             [compiler,'-std=c++17','-O2',*(['-pthread'] if threaded else []),'-DHOST_MOCK=1',*flags,*inc,*map(str,sources),*map(str,objects),'-o',str(exe)])
     p=subprocess.run(command,cwd=directory,env=env,capture_output=True,text=True,timeout=90)
     if p.returncode:raise RuntimeError(p.stdout+p.stderr)
     return exe,env

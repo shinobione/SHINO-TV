@@ -29,6 +29,7 @@ lab_real_clock=true;std::atomic<bool> done=false;std::atomic<unsigned> advance=0
 std::thread control([&](){std::string line;while(std::getline(std::cin,line)){
     if(line=="stop")break;
     if(line.rfind("advance ",0)==0)advance=unsigned(std::stoul(line.substr(8)));
+    if(line=="stats")std::cout<<"{\"accepted\":"<<accepted<<",\"bytes_read\":"<<bytesRead<<",\"bytes_written\":"<<bytesWritten<<",\"live_sockets\":"<<liveSockets<<",\"destroyed\":"<<destroyed<<"}"<<std::endl;
 }done=true;});
 std::cout<<M9NormalStageA::server.getServer().port<<std::endl;
 while(!done){

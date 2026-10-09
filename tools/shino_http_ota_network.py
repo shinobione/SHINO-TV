@@ -2,11 +2,13 @@
 import hashlib
 import http.client
 import json
+import queue
 import shutil
 import socket
 import subprocess
 import sys
 import tempfile
+import threading
 from pathlib import Path
 from unittest.mock import patch
 from urllib.request import Request,build_opener,ProxyHandler,HTTPPasswordMgrWithDefaultRealm,HTTPDigestAuthHandler
@@ -47,6 +49,11 @@ def prepare_host(host):
     (host/"Arduino.h").write_text(arduino)
     socket=(inherited.LAB/"host_shims/HostSocket.h").read_text()
     socket=socket.replace('#include <openssl/evp.h>','#include <bearssl.h>')
+    socket=socket.replace('#include <unistd.h>','#include <unistd.h>\n#include <fcntl.h>')
+    # ESP WiFiServer.accept() is nonblocking. POSIX select may report a pending
+    # connection that is aborted before accept; a blocking shim can stall forever.
+    socket=socket.replace('trackSocket();sockaddr_in a{};',
+                          'trackSocket();\n#ifndef _WIN32\nfcntl(listener,F_SETFL,fcntl(listener,F_GETFL,0)|O_NONBLOCK);\n#endif\nsockaddr_in a{};')
     socket=socket.replace('unsigned len=0;EVP_Digest(input.data(),input.size(),digest,&len,EVP_md5(),nullptr);',
                           'br_md5_context md5;br_md5_init(&md5);br_md5_update(&md5,input.data(),input.size());br_md5_out(&md5,digest);')
     socket=socket.replace('struct IPAddress {uint32_t value=1;','struct IPAddress {uint32_t value=1;IPAddress()=default;IPAddress(int,int,int,int){}uint8_t operator[](size_t i)const{return i==0?192:i==1?168:i==2?4:2;}bool operator==(const IPAddress& p)const{return value==p.value;}')
@@ -77,8 +84,9 @@ def prepare_host(host):
 
 def run():
     with tempfile.TemporaryDirectory(prefix="shino-http-network-") as td:
-        directory=Path(td);exe,env=build(directory,ROOT/"tools/shino_http_ota_network_lab.cpp",prepare_host)
+        directory=Path(td);exe,env=build(directory,ROOT/"tools/shino_http_ota_network_lab.cpp",prepare_host,threaded=True)
         process=subprocess.Popen([str(exe)],cwd=directory,env=env,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        requests=0
         try:
             port_line=process.stdout.readline()
             if not port_line:raise RuntimeError(process.stderr.read())
@@ -88,7 +96,6 @@ def run():
             def get(path):
                 with reader.open(Request(base+path,headers={"Connection":"keep-alive"}),timeout=6) as r:return json.loads(r.read())
             sample=b'{"ok":true,"gpu_available":true,"cpu_usage":22.5,"gpu_usage":34.5,"memory_used_gb":8,"memory_total_gb":16,"gpu_vram_mb":2048,"gpu_temp_c":56,"gpu_power":120}'
-            requests=0
             for _ in range(30):
                 with reader.open(Request(base+"/api/v1/bridge/metrics",data=sample,headers={"Content-Type":"application/json","Connection":"keep-alive"}),timeout=6) as response:
                     assert json.loads(response.read())["status"]=="RAM_SAMPLE_ACCEPTED"
@@ -128,6 +135,15 @@ def run():
             if process.returncode:raise RuntimeError(error)
             report=json.loads(output);assert report["commit"]==report["restarts"]==1 and report["fs_preserved"]
             return dict(authenticated_post_get_requests=requests,ttl_stale_and_recovery=True,rejected_transfers_recovered=rejected,update=body,actual_normal_parser_digest_core=True,network="HOST_LOOPBACK",flash_rtc_radio="MOCKED",device_contacts=0,**report)
+        except Exception:
+            diagnostic="process terminated"
+            if process.poll() is None:
+                process.stdin.write("stats\n");process.stdin.flush();reply=queue.Queue()
+                threading.Thread(target=lambda:reply.put(process.stdout.readline()),daemon=True).start()
+                try:diagnostic=reply.get(timeout=2).strip()
+                except queue.Empty:diagnostic="stats unavailable"
+            print(f"Loopback failure after {requests} accepted requests: {diagnostic}",file=sys.stderr)
+            raise
         finally:
             if process.poll() is None:process.kill();process.communicate()
 
