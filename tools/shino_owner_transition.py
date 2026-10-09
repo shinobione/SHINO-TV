@@ -45,6 +45,8 @@ def validate_owner(config):
         raise ValueError("Invalid device ID")
     if not re.fullmatch(r"[0-9a-f]{64}", config["build"]):
         raise ValueError("Invalid build ID")
+    if config["device"] == PUBLIC["device"] or config["build"] == PUBLIC["build"]:
+        raise ValueError("Public fixture identity rejected")
     for field in ("ap_psk", "api_token", "digest_password", "maintenance_password"):
         text = config[field]
         if not isinstance(text, str) or not re.fullmatch(r"[A-Za-z0-9_-]{32,120}", text):
