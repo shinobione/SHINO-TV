@@ -5,7 +5,7 @@ namespace ShinoInstall {
 class ReclaimingHttp:public ESP8266WebServer {
 public:
     using ESP8266WebServer::ESP8266WebServer;
-    void quiesce(){
+    __attribute__((noinline)) void quiesce(){
         // Core close() alone leaves pending contexts queued. Close the listener
         // first, then drain/abort; callbacks cannot add more accepted clients.
         _server.close();

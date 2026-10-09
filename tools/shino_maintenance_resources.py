@@ -29,12 +29,13 @@ def run(baseline,candidate):
     assert available, 'Xtensa objdump not installed in isolated or global PlatformIO packages'
     objdump=available[0]
     disassembly=subprocess.check_output([str(objdump),'-dC',str(elf)],text=True)
-    loop=re.search(r'<M9NormalStageA::loop\(\)>:\n(.*?)(?=\n[0-9a-f]+ <|\Z)',disassembly,re.S).group(1)
-    calls=[s.strip() for s in loop.splitlines() if 'call' in s]
-    assert any('shinoMaintenanceConsent' in s for s in calls)
-    assert any('ShinoInstall::Native::pump' in s for s in calls)
-    assert any('ShinoInstall::Native::begin' in s for s in calls)
-    assert any('ShinoInstall::ReclaimingHttp::quiesce' in s for s in calls)
+    # Verify a TRANSITIVE actual machine-call path from StageA::loop.
+    # gcc may place Maintenance::tick out of line when tracing is enabled.
+    from shino_xtensa_callgraph import audit,require_paths
+    call_paths=require_paths(disassembly)
+    visited,nodes=audit(disassembly)
+    root_addr=next(addr for addr,(name,_) in nodes.items() if name=='M9NormalStageA::loop()')
+    calls=[label for _,label in nodes[root_addr][1]]
     delta={k:built[k]-base[k] for k in ('static_ram','bin_bytes','linked_flash','noinit')}
     def frame(term):return max(r['bytes'] for r in built['frames'] if term in r['function'])
     shared=frame('M9NormalStageA::loop')+frame('Native::pump')+frame('Native::line')
@@ -45,7 +46,7 @@ def run(baseline,candidate):
     normal_known=sum(normal_payload.values())
     return dict(verdict='NO_GO',principal_blocker='SIMULTANEOUS_NATIVE_MEMORY_FLOOR_NOT_ESTABLISHED',
         callable_native='PASS_OFFLINE',host_lifecycle='SEPARATE_HOST_EVIDENCE',baseline=base,candidate=built,delta=delta,
-        native_types=types,loop_direct_calls=calls,normal_known_dynamic_payload=normal_payload,
+        native_types=types,loop_direct_calls=calls,transitive_call_paths=call_paths,normal_known_dynamic_payload=normal_payload,
         normal_known_dynamic_payload_total=normal_known,
         reclaim_credit_limit='724 B native payload is guaranteed only after normal registration. Metadata, request Strings, active/queued clients and fragmentation vary. Host release is not physical high-water.',
         maintenance_dynamic_payload=dict(updater=4096,secondary_stack=0,rsa=0,json=0,ordinary_http=0),

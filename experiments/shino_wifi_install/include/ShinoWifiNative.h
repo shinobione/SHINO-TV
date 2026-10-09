@@ -21,7 +21,7 @@ public:
 #endif
            {}
     ~Native(){stop();}
-    bool begin(){
+    __attribute__((noinline)) bool begin(){
         if(begun_ || failed_ || done_ || !privateAp() || !budget().safe() || budget().heap<25600)return false;
         begun_=true;started_=millis();listener_.begin(8266,1);
         if(!listener_.status() || !budget().safe()){fail();return false;}
@@ -40,7 +40,7 @@ public:
         used_=0;expected_=0;
     }
     bool busy()const{return receiver_ && receiver_->receiving();}
-    void pump(){
+    __attribute__((noinline)) void pump(){
         if(done_ || failed_)return;
         if(!privateAp()){fail();return;}
         if(!accepted_){
