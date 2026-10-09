@@ -55,6 +55,27 @@ def run():
         trial('bad_hmac_pre_admission','wrong_hmac')
         trial('filesystem_command_rejected', 'unsupported',command=100)
         trial('bad_image_sha_denied','bad_hash')
+        # Independent real Native writer construction with the PUBLIC fixture
+        # gate compiled on. Even authenticated valid AUTH must fail before
+        # Updater.begin/write/end, with no RTC copy or reboot.
+        writer_exe,writer_env=build(Path(work)/'public_writer_rejection',
+            ROOT/'tools/shino_maintenance_native_lab.cpp',host_shims,
+            defines=('SHINO_PUBLIC_INERT_REVIEW=1',),small_buffer=True)
+        blocked=IO(writer_exe,writer_env,password)
+        try:
+            key=hashlib.sha256(password.encode()).digest()
+            cn=secrets.token_hex(16)
+            cap=capability(blocked,device,key,cn)
+            signed=f'AUTH {device} {cn} {cap[6]} 0 {len(raw)} {hash_value} {build_id}'
+            auth=proof(key,signed)
+            assert blocked.command(f'AUTH 0 {len(raw)} {hash_value} {build_id} {auth}')=='ERR'
+            report=blocked.report()
+            assert not report['commit'] and not report['probed'] and not report['running']
+            assert report['writes']==report['erase']==report['host_restart_calls']==0
+            assert report['fs_preserved']
+            rows.append({'case':'public_install_blocked_at_native_receiver',
+                         'probed':False,'flash_calls':0,'rtc_calls':0,'reboots':0})
+        finally:blocked.close()
     return dict(cases=len(rows),actual_native=True,actual_core=True,
                 physical='NOT_RUN',io='RAM_ONLY',no_flash_no_rtc_no_reboot=True,
                 dry_run_reply='PROBED',rows=rows)
