@@ -13,7 +13,7 @@ def run():
     rows=[]
     with tempfile.TemporaryDirectory(prefix='shino-probe-public-') as work:
         exe,env=build(Path(work),ROOT/'tools/shino_maintenance_native_lab.cpp',
-            host_shims,defines=('SHINO_PROBE_TEST=1',),small_buffer=True)
+            host_shims,defines=('SHINO_PROBE_TEST=1','SHINO_PUBLIC_INERT_REVIEW=1'),small_buffer=True)
         password=secrets.token_hex(32)
         device='0123456789abcdef'
         raw=inert_image()
