@@ -120,3 +120,58 @@ jobs:
           name: shino-maintenance-offline-${{ github.event.pull_request.head.sha || github.sha }}
           path: ${{ runner.temp }}/shino-maintenance-*.json
           if-no-files-found: error
+
+  offline-small-buffer:
+    name: Core 256-byte buffer; real StageA graph and interrupted transfer (HOLD)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Native Core host failure and interrupted transfer qualification
+        run: |
+          python -m pip install 'platformio==6.1.18'
+          pio pkg install -g -t 'platformio/framework-arduinoespressif8266@3.30102.0'
+          python tools/shino_small_buffer_native.py > "${{ runner.temp }}/shino-small-buffer-host.json"
+      - name: Compile both real 4m2m public StageA graphs
+        run: |
+          python tools/shino_wifi_build.py research-local/shino-small-buffer-ci/base
+          python -c "import sys;from pathlib import Path;sys.path.insert(0,'tools');from shino_maintenance_build import prepare;prepare(Path('research-local/shino-small-buffer-ci/small'),small_buffer=True)"
+          pio run -d research-local/shino-small-buffer-ci/base -e esp12e_m9_4m2m_normal_qualification
+          pio run -d research-local/shino-small-buffer-ci/small -e esp12e_m9_4m2m_normal_qualification
+          python tools/shino_small_buffer_resources.py research-local/shino-small-buffer-ci/base research-local/shino-small-buffer-ci/small > "${{ runner.temp }}/shino-small-buffer-resources.json"
+      - name: Assert data, safety invariants, and no activation
+        run: |
+          python - <<'PY'
+          import json,os,sys
+          from pathlib import Path
+          sys.path.insert(0,'companion')
+          from shino_install import QUALIFIED_LIVE
+          assert not QUALIFIED_LIVE
+          p=Path(os.environ['RUNNER_TEMP'])
+          h=json.loads((p/'shino-small-buffer-host.json').read_text())
+          assert h['cases']==230 and h['interruption_boundaries']==197 and h['actual_core']
+          assert h['core_updater_buffer_bytes']==256 and h['network_calls']==0
+          r=json.loads((p/'shino-small-buffer-resources.json').read_text())
+          assert r['small_core_buffer_bytes']==256
+          assert r['scenario_is_not_native_high_water']
+          assert r['verdict']=='HOLD_FOR_NATIVE_OBSERVATION'
+          assert not r['activation'] and not r['trusted_consent_bound']
+          assert r['floors']==dict(heap=20480,largest=16384,stack=2048,fragmentation=25)
+          assert r['delta']['noinit']==0
+          for key in ('device_contacts','serial_io','flash_writes','rtc_writes','reboots','device_filesystem_writes'):
+              assert r[key]==0
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shino-small-buffer-offline-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/shino-small-buffer-*.json
+          if-no-files-found: error
