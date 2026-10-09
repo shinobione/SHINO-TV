@@ -140,6 +140,7 @@ jobs:
         run: |
           python tools/test_shino_owner_transition.py
           python tools/test_shino_owner_candidate_verify.py
+          python tools/test_m9_prebody_regression.py
       - name: Windows offline maintenance Digest/HMAC arm contract
         run: |
           python companion/test_shino_maintenance_control.py
