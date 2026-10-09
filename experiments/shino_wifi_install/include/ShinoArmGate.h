@@ -37,6 +37,11 @@ public:
         return std::snprintf(out,capacity,"%s",nonce_)==32;
     }
     bool arm(bool dryRun,const char* signedProof,uint32_t now,bool normalMode,bool privateAp){
+#if defined(SHINO_PUBLIC_INERT_REVIEW) && SHINO_PUBLIC_INERT_REVIEW
+        // Public fixture identities/keys can never authorize physical INSTALL.
+        // Consume any outstanding challenge and fail closed, even after a probe.
+        if(!dryRun){nonceValid_=false;return false;}
+#endif
         if(!configured_ || !normalMode || !privateAp || active_ || !nonceValid_ ||
             uint32_t(now-challengeTime_)>=15000 || !signedProof || !hex(signedProof,64)){
             nonceValid_=false;return false;
