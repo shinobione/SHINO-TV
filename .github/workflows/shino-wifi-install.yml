@@ -226,6 +226,25 @@ jobs:
           pio pkg install -g -t 'platformio/framework-arduinoespressif8266@3.30102.0'
           python tools/shino_transition_build.py research-local/shino-third-graph-ci/transition
           pio run -d research-local/shino-third-graph-ci/transition -e esp12e_m9_4m2m_normal_qualification
+      - name: Exact linked Xtensa transition RAM/BIN audit (still NO-GO)
+        run: |
+          python -c "import sys;from pathlib import Path;sys.path.insert(0,'tools');from shino_maintenance_build import prepare;prepare(Path('research-local/shino-third-graph-ci/maintenance-baseline'),small_buffer=True)"
+          pio run -d research-local/shino-third-graph-ci/maintenance-baseline -e esp12e_m9_4m2m_normal_qualification
+          python tools/shino_transition_resources.py research-local/shino-third-graph-ci/maintenance-baseline research-local/shino-third-graph-ci/transition > "${{ runner.temp }}/shino-third-graph-resources.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          r=json.loads((Path(os.environ['RUNNER_TEMP'])/'shino-third-graph-resources.json').read_text())
+          assert r['verdict']=='NO_GO_FOR_PHYSICAL_INSTALL'
+          assert r['physical_memory_high_water']=='NOT_MEASURED'
+          assert r['sdk_tcp_allocator_stack_upper_bound']=='NOT_ESTABLISHED'
+          assert r['buffer_bytes']==256
+          assert not r['public_install_enabled'] and not r['qualified_live']
+          assert not r['physical_flash_authorized']
+          assert r['delta']['noinit']==0
+          assert r['floors']==dict(heap=20480,largest=16384,stack=2048,fragmentation=25)
+          for k in ('device_contacts','serial_io','flash_writes','rtc_writes','device_filesystem_writes','reboots'):assert r[k]==0
+          PY
       - name: Fail closed on identity / flash authority / deployed source changes
         run: |
           python - <<'PY'
