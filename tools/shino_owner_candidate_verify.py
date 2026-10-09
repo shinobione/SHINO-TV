@@ -40,6 +40,13 @@ def git(*args):
     return subprocess.check_output(["git", *args], cwd=ROOT, text=True, stderr=subprocess.DEVNULL).strip()
 
 
+def firmware_source_drift(built_from, head):
+    modified = git("diff", "--name-only", built_from, head).splitlines()
+    return [name for name in modified
+            if any(name == prefix or name.startswith(prefix)
+                   for prefix in SOURCE_GUARDS)]
+
+
 def audit(owner=OWNER):
     owner = Path(owner).resolve()
     if owner != OWNER.resolve() or owner.is_symlink():
@@ -85,10 +92,7 @@ def audit(owner=OWNER):
     head = git("rev-parse", "HEAD")
     if git("merge-base", built_from, head) != built_from:
         raise ValueError("Source commit not an ancestor of HEAD")
-    modified = git("diff", "--name-only", built_from, head).splitlines()
-    build_related = [name for name in modified
-                     if any(name == prefix or name.startswith(prefix)
-                            for prefix in SOURCE_GUARDS)]
+    build_related = firmware_source_drift(built_from, head)
     if build_related:
         raise ValueError("Private firmware-producing sources changed: " + ", ".join(build_related))
     return {
