@@ -96,6 +96,62 @@ def urllib_workload(exe,directory,env,actual=False):
         finally:
             if p.poll() is None:p.kill();p.communicate()
 
+def replay_generated_maintenance_routes(exe,directory,env):
+    """Exercise generated maintenance GET allowlist after live mock POST traffic.
+
+    Real pinned HTTP parser, Digest and normal StageA controller; maintenance
+    handlers are status-only host stubs, never a real PROBE/INSTALL action.
+    """
+    import sys
+    from urllib.request import build_opener, ProxyHandler, HTTPPasswordMgrWithDefaultRealm
+    from urllib.request import HTTPDigestAuthHandler, Request
+    sys.path.insert(0,str(ROOT/'companion'))
+    from push_fsless_metrics import NoRedirect
+    sample=b'{"ok":true,"gpu_available":true,"cpu_usage":22.5,"gpu_usage":34.5,"memory_used_gb":8,"memory_total_gb":16,"gpu_vram_mb":2048,"gpu_temp_c":56,"gpu_power":120}'
+    with (directory/'m9-generated-route-trace.txt').open('w+',encoding='utf-8') as trace:
+        proc=subprocess.Popen([str(exe),'--serve'],cwd=directory,env=env,stdin=subprocess.PIPE,
+                              stdout=subprocess.PIPE,stderr=trace,text=True)
+        try:
+            port=int(proc.stdout.readline())
+            base=f'http://127.0.0.1:{port}'
+            paths=('/api/v1/m9/normal/status',
+                   '/api/v1/m9/maintenance/result',
+                   '/api/v1/m9/maintenance/challenge',
+                   '/api/v1/m9/maintenance/probe',
+                   '/api/v1/m9/maintenance/install')
+            def send(path,body=None):
+                mgr=HTTPPasswordMgrWithDefaultRealm()
+                mgr.add_password('SHINO-StageA',base+path,'shino','PUBLIC-INERT-LAB-HTTP-FIXTURE')
+                op=build_opener(ProxyHandler({}),NoRedirect(),HTTPDigestAuthHandler(mgr))
+                headers={'Accept':'application/json','Connection':'close'}
+                if body is not None:headers['Content-Type']='application/json'
+                req=Request(base+path,headers=headers,method='POST' if body is not None else 'GET',data=body)
+                with op.open(req,timeout=5) as response:
+                    if response.status!=200:raise RuntimeError('StageA generated route not accepted')
+                    data=json.loads(response.read())
+                    if body is not None:
+                        if data.get('status')!='RAM_SAMPLE_ACCEPTED':raise RuntimeError('RAM-only telemetry missing')
+                    elif data.get('mode')!='M9_NORMAL_STAGE_A':
+                        raise RuntimeError('Generated route handler missing')
+            n=0
+            for i in range(12):
+                send('/api/v1/bridge/metrics',sample);n+=1
+                for path in paths:
+                    send(path);n+=1
+            proc.stdin.write('stop\\n');proc.stdin.flush()
+            tail=proc.communicate(timeout=8)[0]
+            if proc.returncode!=0:raise RuntimeError('Host route work failed')
+            counts=json.loads(tail)
+            if counts['policy404']!=0 or counts['not_found']!=0:
+                raise RuntimeError('Generated route after POST unexpectedly rejected')
+            return {'pass':True,'authenticated_post_get_cycles':12,'accepted':n,
+                    'maintenance_endpoints':len(paths)-1,'actual_parser_and_stagea':True,
+                    'maintenance_handlers':'READ_ONLY_HOST_STUBS',
+                    'radio_sdk_ota':'NOT_TESTED','device_contacts':0,'device_writes':0}
+        finally:
+            if proc.poll() is None:proc.kill();proc.communicate()
+
+
 def run(maintenance=False):
     spec=importlib.util.spec_from_file_location('m9_normal_webserver',ROOT/'firmware/scripts/m9_normal_webserver.py')
     module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
@@ -169,6 +225,7 @@ const LittleFsMountProbeStatus& status(){return state;}}
         if c.returncode:raise RuntimeError(c.stdout+c.stderr)
         result['actual_stage_a_workload']=urllib_workload(actual,directory,env,actual=True)
         if maintenance:
+            result['generated_private_http_route_replay']=replay_generated_maintenance_routes(actual,directory,env)
             c=subprocess.run([str(actual),'--maintenance'],cwd=directory,env=env,capture_output=True,text=True,timeout=90)
             if c.returncode:raise RuntimeError(c.stdout+c.stderr)
             result['maintenance_lifecycle']=json.loads(c.stdout)
