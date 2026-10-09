@@ -7,8 +7,8 @@ from v08_m8r_runner import compiler_environment
 sys.path.insert(0,str(ROOT/'companion'))
 from shino_install import send,proof,capability,InstallError
 from m9_signed_fixture_image import inert_image
-def build(directory,lab=None,prepare_host=None,defines=()):
-    core=core_root();generated=materialize(directory/'core',core);bear=core/'tools/sdk/ssl/bearssl'
+def build(directory,lab=None,prepare_host=None,defines=(),small_buffer=False):
+    core=core_root();generated=materialize(directory/'core',core,small_buffer=small_buffer);bear=core/'tools/sdk/ssl/bearssl'
     host=directory/'host';host.mkdir()
     (host/'MD5Builder.h').write_text('''#pragma once
 #include "Arduino.h"
@@ -32,7 +32,7 @@ struct MD5Builder {br_md5_context ctx;uint8_t digest[16]{};void begin(){br_md5_i
     if p.returncode:raise RuntimeError(p.stdout+p.stderr)
     objects=[directory/(x.stem+('.obj' if msvc else '.o')) for x in crypto];exe=directory/('receiver.exe' if msvc else 'receiver')
     sources=[lab or ROOT/'tools/shino_wifi_lab.cpp',generated/'Updater.cpp']
-    flags=[('/D' if msvc else '-D')+d for d in defines]
+    flags=[('/D' if msvc else '-D')+d for d in (*defines, *((['SHINO_SMALL_OTA_BUFFER=1']) if small_buffer else []))]
     command=([compiler,'/nologo','/std:c++20','/EHsc','/O2','/DHOST_MOCK=1',*flags,*inc,*map(str,sources),*map(str,objects),'/link','/OUT:'+str(exe)] if msvc else
              [compiler,'-std=c++17','-O2','-DHOST_MOCK=1',*flags,*inc,*map(str,sources),*map(str,objects),'-o',str(exe)])
     p=subprocess.run(command,cwd=directory,env=env,capture_output=True,text=True,timeout=90)
@@ -110,9 +110,11 @@ def run(builder=build,native=False):
                             else:assert io.command('COMMIT')=='ERR'
                         else:io.command('ABORT')
                     elif name in ('erase_fault','write_fault'):
-                        io.command('FAULT '+name.split('_')[0]);io.write(raw[:512]);assert io.read()=='ACK 512'
-                        # Failure occurs when the actual 4KiB Core buffer flushes.
-                        for at in range(512,4608,512):
+                        io.command('FAULT '+name.split('_')[0])
+                        # Both Core's default 4096 B and opt-in 256 B buffers
+                        # must stop at the FIRST failing physical flash flush.
+                        answer=''
+                        for at in range(0,4608,512):
                             io.write(raw[at:at+512]);answer=io.read()
                             if answer=='ERR':break
                         assert answer=='ERR'
