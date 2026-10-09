@@ -9,6 +9,12 @@ from shino_maintenance_resources import run as measure
 def run(base,candidate):
     r=measure(base,candidate)
     assert r['callable_native']=='PASS_OFFLINE'
+    # Verify actual built disposable Core and firmware flag, not a wishful
+    # 256-byte mathematical substitution on a default 4096-byte graph.
+    source=(Path(candidate)/'.pio/shino-updater/Updater.cpp').read_text()
+    assert source.count('if (false) { // SHINO public low-memory 256-byte updater qualification')==1
+    ini=(Path(candidate)/'platformio.ini').read_text()
+    assert '-DSHINO_SMALL_OTA_BUFFER=1' in ini
     assert not r['activation'] and not r['trusted_consent_bound']
     assert r['floors']==dict(heap=20480,largest=16384,stack=2048,fragmentation=25)
     size=256;old=4096
