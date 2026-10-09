@@ -62,3 +62,61 @@ jobs:
           name: shino-wifi-offline-${{ github.event.pull_request.head.sha || github.sha }}
           path: ${{ runner.temp }}/shino-wifi-*.json
           if-no-files-found: error
+  offline-maintenance:
+    name: Callable StageA maintenance ownership and memory (NO-GO)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Actual public callable StageA pair
+        run: |
+          python -m pip install 'platformio==6.1.18'
+          python tools/shino_wifi_build.py research-local/shino-maintenance-ci/baseline
+          python tools/shino_maintenance_build.py research-local/shino-maintenance-ci/candidate
+          pio run -d research-local/shino-maintenance-ci/baseline -e esp12e_m9_4m2m_normal_qualification
+          pio run -d research-local/shino-maintenance-ci/candidate -e esp12e_m9_4m2m_normal_qualification
+          python tools/shino_maintenance_resources.py research-local/shino-maintenance-ci/baseline research-local/shino-maintenance-ci/candidate > "${{ runner.temp }}/shino-maintenance-resources.json"
+      - name: Actual StageA HTTP lifetime and Native Core faults
+        env:
+          SHINO_ARDUINOJSON_SRC: ${{ github.workspace }}/research-local/shino-maintenance-ci/candidate/.pio/libdeps/esp12e_m9_4m2m_normal_qualification/ArduinoJson/src
+        run: |
+          python tools/shino_maintenance_http.py > "${{ runner.temp }}/shino-maintenance-http.json"
+          python tools/shino_maintenance_native.py > "${{ runner.temp }}/shino-maintenance-native.json"
+      - name: Preserve closed physical gate
+        run: |
+          python - <<'PY'
+          import json,os,sys
+          from pathlib import Path
+          sys.path.insert(0,'companion')
+          import shino_install
+          assert not shino_install.QUALIFIED_LIVE
+          p=Path(os.environ['RUNNER_TEMP'])
+          r=json.loads((p/'shino-maintenance-resources.json').read_text())
+          assert r['verdict']=='NO_GO' and not r['activation'] and not r['trusted_consent_bound']
+          assert r['floors']==dict(heap=20480,largest=16384,stack=2048,fragmentation=25)
+          h=json.loads((p/'shino-maintenance-http.json').read_text())
+          assert h['maintenance_lifecycle']['cycles']==12
+          assert h['actual_stage_a_workload']['accepted_post_count']==202
+          n=json.loads((p/'shino-maintenance-native.json').read_text())
+          assert n['cases']==230 and n['interruption_boundaries']==197 and n['actual_native_pump']
+          assert len(n['compile_rejected_interlocks'])==2
+          for row in n['rows']:
+              assert row['fs_preserved'] and not row['running'] and row['listeners']==row['queued']==0
+              assert row['host_restart_calls']==row['commit']
+              assert not row['connected']
+              if row['name'] not in ('valid_real_sender','time_wrap'):assert row['commit']==0
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shino-maintenance-offline-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/shino-maintenance-*.json
+          if-no-files-found: error

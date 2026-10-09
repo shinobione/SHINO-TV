@@ -96,7 +96,7 @@ def urllib_workload(exe,directory,env,actual=False):
         finally:
             if p.poll() is None:p.kill();p.communicate()
 
-def run():
+def run(maintenance=False):
     spec=importlib.util.spec_from_file_location('m9_normal_webserver',ROOT/'firmware/scripts/m9_normal_webserver.py')
     module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
     with tempfile.TemporaryDirectory(prefix='m9-stagea-http-') as td:
@@ -155,6 +155,9 @@ const LittleFsMountProbeStatus& status(){return state;}}
         for name in ('M9NormalStageA.cpp','M9NormalDashboard.cpp','FslessMetrics.cpp'):
             composition+=f'#include "{(ROOT/"firmware/src/boot"/name).as_posix()}"\n'
         (directory/'stage_composition.inc').write_text(composition)
+        if maintenance:
+            from shino_maintenance_http import prepare_host
+            sources=prepare_host(directory,shims,composition,sources)
         import os
         aj=Path(os.environ.get('SHINO_ARDUINOJSON_SRC',str(ROOT/'firmware/.pio/libdeps/esp12e/ArduinoJson/src'))).resolve()
         assert '#define ARDUINOJSON_VERSION "7.4.3"' in (aj/'ArduinoJson/version.hpp').read_text()
@@ -165,6 +168,10 @@ const LittleFsMountProbeStatus& status(){return state;}}
         c=subprocess.run(cmd,cwd=directory,env=env,capture_output=True,text=True,timeout=90)
         if c.returncode:raise RuntimeError(c.stdout+c.stderr)
         result['actual_stage_a_workload']=urllib_workload(actual,directory,env,actual=True)
+        if maintenance:
+            c=subprocess.run([str(actual),'--maintenance'],cwd=directory,env=env,capture_output=True,text=True,timeout=90)
+            if c.returncode:raise RuntimeError(c.stdout+c.stderr)
+            result['maintenance_lifecycle']=json.loads(c.stdout)
         result['scope']='StageA pinned parser/Core Digest + actual controller/status/telemetry/dashboard; host loopback + radio/FS/SDK mocks'
         result['owner_residual_404']='NOT_REPRODUCED_ROOT_CAUSE_UNRESOLVED'
         result['firmware_changed']=False

@@ -2,17 +2,39 @@
 #pragma once
 #include <ESP8266WiFi.h>
 #include "ShinoWifiUpdate.h"
+#if (defined(ARDUINO_SIGNING) && ARDUINO_SIGNING) || (defined(SHINO_ENABLE_FACTORY_RESTORE) && SHINO_ENABLE_FACTORY_RESTORE)
+#error "Unsigned maintenance must not coexist with global signing or OEM recovery"
+#endif
 namespace ShinoInstall {
 class Native {
 public:
     Native(const char* device,const char* build,const uint8_t* key):device_(device),build_(build),key_(key),listener_(8266){}
-    bool begin(){if(!privateAp())return false;listener_.begin();return true;}
+    ~Native(){stop();}
+    bool begin(){
+        if(begun_ || failed_ || done_ || !privateAp() || !budget().safe() || budget().heap<25600)return false;
+        begun_=true;started_=millis();listener_.begin(8266,1);
+        if(!listener_.status() || !budget().safe()){fail();return false;}return true;
+    }
+    bool failed()const{return failed_;}
+    bool committed()const{return done_;}
+    void stop(){
+        listener_.close();
+        while(listener_.hasClient()){auto pending=listener_.accept();pending.abort();}
+        client_.abort();client_=WiFiClient();
+        if(receiver_){receiver_->abort();receiver_->~Receiver();receiver_=nullptr;}
+        used_=0;expected_=0;
+    }
     bool busy()const{return receiver_ && receiver_->receiving();}
     void pump(){
-        if(done_)return;
+        if(done_ || failed_)return;
         if(!privateAp()){fail();return;}
-        if(!client_){client_=listener_.accept();if(!client_)return;started_=last_=millis();}
-        auto extra=listener_.accept();if(extra)extra.stop(); // Never replace active owner.
+        if(!accepted_){
+            if(uint32_t(millis()-started_)>=15000){fail();return;}
+            client_=listener_.accept();if(!client_)return;accepted_=true;
+            // Exactly one owner; no listener/new connections alongside Updater.
+            listener_.close();while(listener_.hasClient()){auto pending=listener_.accept();pending.abort();}
+            started_=last_=millis();if(!budget().safe()){fail();return;}
+        }
         if(!client_.connected() || uint32_t(millis()-started_)>=60000 || uint32_t(millis()-last_)>=3000){fail();return;}
         if(receiver_ && receiver_->receiving() && receiver_->received()<expected_){
             size_t count=std::min(size_t(512),std::min(size_t(client_.available()),size_t(expected_-receiver_->received())));
@@ -30,28 +52,33 @@ public:
 private:
     const char *device_,*build_;const uint8_t* key_;WiFiServer listener_;WiFiClient client_;
     alignas(Receiver) uint8_t storage_[sizeof(Receiver)];Receiver* receiver_=nullptr;
-    char buffer_[512]{};uint16_t used_=0;uint32_t started_=0,last_=0,expected_=0;bool done_=false;
+    char buffer_[512]{};uint16_t used_=0;uint32_t started_=0,last_=0,expected_=0;bool done_=false,failed_=false,accepted_=false,begun_=false;
     bool privateAp()const{return WiFi.getMode()==WIFI_AP && WiFi.softAPIP()==IPAddress(192,168,4,1);}
     bool localPeer(){auto p=client_.remoteIP();return client_.localIP()==WiFi.softAPIP() && p[0]==192&&p[1]==168&&p[2]==4&&p[3]>1&&p[3]<255;}
     uint32_t peer(){auto p=client_.remoteIP();return uint32_t(p[0])<<24|uint32_t(p[1])<<16|uint32_t(p[2])<<8|p[3];}
     Budget budget(){uint32_t heap,block;uint8_t frag;ESP.getHeapStats(&heap,&block,&frag);return {heap,block,ESP.getFreeContStack(),frag};}
-    void fail(){if(receiver_){receiver_->abort();receiver_->~Receiver();receiver_=nullptr;}client_.stop();used_=0;expected_=0;}
-    void line(){
+    void fail(){stop();failed_=true;}
+    __attribute__((noinline)) void line(){
         if(!localPeer()){fail();return;}
-        if(!receiver_){
+        if(!receiver_){capabilityLine();return;}
+        if(receiver_->receiving()){commitLine();return;}
+        authorizeLine();
+    }
+    __attribute__((noinline)) void capabilityLine(){
             char dev[17],cn[33],tail;int n=0;
             if(std::sscanf(buffer_,"CAP %16s %32s%n%c",dev,cn,&n,&tail)!=2 || size_t(n)!=std::strlen(buffer_) || std::strcmp(dev,device_)){fail();return;}
             uint8_t random[16];for(unsigned i=0;i<4;++i){uint32_t r=os_random();std::memcpy(random+4*i,&r,4);}char nonce[33];encode(random,16,nonce);
             receiver_=new(storage_) Receiver(device_,build_,key_);
             if(!receiver_->capability(cn,nonce,peer(),privateAp(),millis(),buffer_,sizeof(buffer_))){fail();return;}client_.print(buffer_);return;
-        }
-        if(receiver_->receiving()){
+    }
+    __attribute__((noinline)) void commitLine(){
             if(std::strcmp(buffer_,"COMMIT") || client_.available() || !receiver_->commit(millis(),budget())){fail();return;}
             client_.printf("STAGED %s\n",receiver_->nextBuild());client_.flush(1000);client_.stop();listener_.stop();done_=true;
-            // Research proof is unreachable. Future explicit installer consent
-            // encompasses this reboot; an ACK alone never means boot success.
+            // No consent supplier is wired in public graphs. A future approved
+            // installer consent encompasses reboot; ACK is not boot success.
             ESP.restart();return;
-        }
+    }
+    __attribute__((noinline)) void authorizeLine(){
         unsigned cmd,size;char sha[65],build[65],proof[65],tail;int n=0;
         if(std::sscanf(buffer_,"AUTH %u %u %64s %64s %64s%n%c",&cmd,&size,sha,build,proof,&n,&tail)!=5 || size_t(n)!=std::strlen(buffer_) ||
             !receiver_->authorize(cmd,size,sha,build,proof,peer(),privateAp(),millis(),budget(),ESP.getSketchSize())){fail();return;}

@@ -1,5 +1,9 @@
 # SHINO // INSTALL — issue43 bounded offline result
 
+Historical issue43 receipt. The later owner-requested memory attempt is in
+[the maintenance result](SHINO_WIFI_MAINTENANCE_RESULT.md); it remains NO_GO.
+The numbers and link-only description below are preserved as prior evidence.
+
 **NO_GO. One principal blocker: simultaneous native memory floors are not
 established.** This is a smaller working offline prototype, not an approved
 physical image. Stop here; no new OTA phase or automatic follow-on work.

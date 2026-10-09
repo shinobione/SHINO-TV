@@ -10,13 +10,9 @@
 #include <cstring>
 #include <cstdio>
 #include <algorithm>
+#include "ShinoWifiPolicy.h"
 namespace ShinoInstall {
 constexpr uint32_t FsStart=0x200000, MaxImage=0xFEFF0;
-struct Budget {
-    uint32_t heap,block,stack; uint8_t frag;
-    bool safe()const{return heap>=20480 && block>=16384 && stack>=2048 && frag<=25;}
-};
-inline bool hex(const char* s,size_t n){if(std::strlen(s)!=n)return false;for(size_t i=0;i<n;++i)if(!((s[i]>='0'&&s[i]<='9')||(s[i]>='a'&&s[i]<='f')))return false;return true;}
 inline void encode(const uint8_t* in,size_t n,char* out){const char* a="0123456789abcdef";for(size_t i=0;i<n;++i){out[2*i]=a[in[i]>>4];out[2*i+1]=a[in[i]&15];}out[2*n]=0;}
 inline void mac(const uint8_t* key,const char* message,char* out){
     br_hmac_key_context k; br_hmac_context h; uint8_t digest[32];

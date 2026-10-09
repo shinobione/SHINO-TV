@@ -2,6 +2,13 @@
 
 ## Priorité matérielle urgente — propriétaire, 9 octobre 2026
 
+**Résultat de la passe mémoire bornée : NO_GO.** Maintenance callable compilée,
+HTTP détruit avant upload, abandon/reconnexion testés hors ligne. Payload HTTP
+connu libéré724 B, delta statique+1260 B; marge illustrative1016 B après crédit,
+sans borne SDK/socket/allocateur. Les planchers simultanés restent non prouvés.
+[Résultat et arrêt](SHINO_WIFI_MAINTENANCE_RESULT.md). Installateur désactivé;
+aucune autorisation matérielle, fermeture du boîtier ou nouvelle phase.
+
 **But immédiat : REFERMER LE BOÎTIER SmallTV-ULTRA AU PLUS VITE, en rendant les futures mises à jour SHINO possibles par Wi-Fi, SANS rebrancher les pinces/UART.** Cette décision supplante l'idée de passer maintenant à la cosmétique du LCD. **Aucun travail sur les polices/couleurs/horloge/musique ne doit retarder la fermeture.**
 
 Le premier vrai jalon est « une mise à jour SHINO → SHINO réussie par Wi-Fi après la transition », pas « 38 jobs PASS » ni une étude supplémentaire. L'actuel StageA n'a aucun récepteur Wi-Fi d'installation. La dernière installation initiale peut donc nécessiter **une fois** le CH340 tant qu'une autre voie n'est pas prouvée. **Ne pas retirer les pinces/fermer définitivement avant la preuve de mise à jour, ou accepter expressément de renoncer au Wi-Fi.**
