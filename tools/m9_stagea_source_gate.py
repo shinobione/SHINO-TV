@@ -12,7 +12,7 @@ def run():
         assert hashlib.sha256((core/name).read_bytes().replace(b'\r\n',b'\n')).hexdigest()==digest,name
     for name in subprocess.check_output(['git','ls-files','firmware','companion','tools/m9_single_attempt*'],cwd=ROOT,text=True).splitlines():
         # Explicit new issue43 installer files; old transport identities stay pinned.
-        if name in ('companion/shino_install.py','companion/test_shino_install.py','companion/SHINO-INSTALL.cmd','companion/SHINO_INSTALL.md'):
+        if name in ('companion/shino_install.py','companion/test_shino_install.py','companion/SHINO-INSTALL.cmd','companion/SHINO_INSTALL.md','companion/SHINO-OFFLINE-CHECK.cmd'):
             continue
         original=subprocess.check_output(['git','show','b59964af43b555b75d415e6d063580945e6d99f7:'+name],cwd=ROOT)
         assert (ROOT/name).read_bytes().replace(b'\r\n',b'\n')==original.replace(b'\r\n',b'\n'),name
