@@ -54,8 +54,17 @@ def prepare_host(host):
     # connection that is aborted before accept; a blocking shim can stall forever.
     socket=socket.replace('trackSocket();sockaddr_in a{};',
                           'trackSocket();\n#ifndef _WIN32\nfcntl(listener,F_SETFL,fcntl(listener,F_GETFL,0)|O_NONBLOCK);\n#endif\nsockaddr_in a{};')
+    socket=socket.replace('if(s!=INVALID_SOCKET){pending.emplace_back(s);accepted++;}',
+                          'if(s!=INVALID_SOCKET){\n#ifndef _WIN32\nfcntl(s,F_SETFL,fcntl(s,F_GETFL,0)|O_NONBLOCK);\n#endif\npending.emplace_back(s);accepted++;}')
     socket=socket.replace('unsigned len=0;EVP_Digest(input.data(),input.size(),digest,&len,EVP_md5(),nullptr);',
                           'br_md5_context md5;br_md5_init(&md5);br_md5_update(&md5,input.data(),input.size());br_md5_out(&md5,digest);')
+    socket=socket.replace('inline std::atomic<size_t> allocs',
+                          'inline std::atomic<int> last_fd{-1},last_ioctl{-9},last_available{-9},last_select{-9},last_peek{-9};\ninline std::atomic<size_t> allocs')
+    socket=socket.replace('int n=0;ioctl(ctx->fd,FIONREAD,&n);','int n=0;last_fd=ctx->fd;last_ioctl=ioctl(ctx->fd,FIONREAD,&n);last_available=n;')
+    socket=socket.replace('return select(int(ctx->fd)+1,&f,nullptr,nullptr,&t)>0;',
+                          'last_select=select(int(ctx->fd)+1,&f,nullptr,nullptr,&t);return last_select>0;')
+    socket=socket.replace('return recv(ctx->fd,&c,1,MSG_PEEK)>0;',
+                          'last_peek=recv(ctx->fd,&c,1,MSG_PEEK);return last_peek>0;')
     socket=socket.replace('struct IPAddress {uint32_t value=1;','struct IPAddress {uint32_t value=1;IPAddress()=default;IPAddress(int,int,int,int){}uint8_t operator[](size_t i)const{return i==0?192:i==1?168:i==2?4:2;}bool operator==(const IPAddress& p)const{return value==p.value;}')
     socket=socket.replace('void setTimeout(int ms)', 'int read(uint8_t* out,size_t n){if(!readable())return 0;return recv(ctx->fd,reinterpret_cast<char*>(out),int(n),0);}\n void setNoDelay(bool){} void flush(int){} IPAddress localIP(){return {};}\n void setTimeout(int ms)')
     socket=socket.replace('virtual ~Stream()=default;','virtual ~Stream()=default;int peek(){return 0;}size_t readBytes(uint8_t*,size_t){return 0;}')
