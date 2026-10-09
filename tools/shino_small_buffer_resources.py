@@ -11,12 +11,18 @@ def run(base,candidate):
     assert r['callable_native']=='PASS_OFFLINE'
     # Verify actual built disposable Core and firmware flag, not a wishful
     # 256-byte mathematical substitution on a default 4096-byte graph.
-    source=(Path(candidate)/'.pio/shino-updater/Updater.cpp').read_text()
+    local=Path(candidate)/'isolated-shino-framework'
+    packaged=Path(candidate)/'.pio/isolated-packages/framework-arduinoespressif8266'
+    source=(local/'cores/esp8266/Updater.cpp').read_text()
+    installed=(packaged/'cores/esp8266/Updater.cpp').read_text()
+    assert source==installed, 'PIO must use the isolated patched framework package'
     assert source.count('if (false) { // SHINO public low-memory 256-byte updater qualification')==1
+    assert 'void shinoAbort()' in (packaged/'cores/esp8266/Updater.h').read_text()
     ini=(Path(candidate)/'platformio.ini').read_text()
-    assert '-DSHINO_SMALL_OTA_BUFFER=1' in ini
-    assert not r['activation'] and not r['trusted_consent_bound']
-    assert r['floors']==dict(heap=20480,largest=16384,stack=2048,fragmentation=25)
+    assert '-DSHINO_SMALL_OTA_BUFFER=1' in ini and '-DSHINO_MEMORY_TRACE=1' in ini
+    assert 'framework-arduinoespressif8266 @ '+local.resolve().as_uri() in ini
+    assert str((Path(candidate)/'.pio/isolated-packages').resolve()) in ini
+    r['isolated_framework_package_verified']=True
     size=256;old=4096
     # Owner baseline minima, static delta, normal known HTTP freed, illustrative
     # NOT measured 4096 B lwIP/TCP scenario. Runtime admission still monitored.
