@@ -148,7 +148,8 @@ jobs:
           python tools/shino_wifi_build.py research-local/shino-small-buffer-ci/base
           python -c "import sys;from pathlib import Path;sys.path.insert(0,'tools');from shino_maintenance_build import prepare;prepare(Path('research-local/shino-small-buffer-ci/small'),small_buffer=True)"
           pio run -d research-local/shino-small-buffer-ci/base -e esp12e_m9_4m2m_normal_qualification
-          pio run -d research-local/shino-small-buffer-ci/small -e esp12e_m9_4m2m_normal_qualification
+          pio run -v -d research-local/shino-small-buffer-ci/small -e esp12e_m9_4m2m_normal_qualification > "${{ runner.temp }}/shino-small-buffer-build.log"
+          grep -F 'isolated-packages/framework-arduinoespressif8266/cores/esp8266/Updater.cpp' "${{ runner.temp }}/shino-small-buffer-build.log"
           python tools/shino_small_buffer_resources.py research-local/shino-small-buffer-ci/base research-local/shino-small-buffer-ci/small > "${{ runner.temp }}/shino-small-buffer-resources.json"
       - name: Assert data, safety invariants, and no activation
         run: |
@@ -164,6 +165,7 @@ jobs:
           assert h['core_updater_buffer_bytes']==256 and h['network_calls']==0
           r=json.loads((p/'shino-small-buffer-resources.json').read_text())
           assert r['small_core_buffer_bytes']==256
+          assert r['isolated_framework_package_verified']
           assert r['scenario_is_not_native_high_water']
           assert r['verdict']=='HOLD_FOR_NATIVE_OBSERVATION'
           assert not r['activation'] and not r['trusted_consent_bound']
