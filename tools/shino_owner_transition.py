@@ -137,6 +137,7 @@ def private_source(directory, config):
     ini.write_text(ini_text, encoding="utf-8")
     meta = directory / "public-inputs.json"
     info = json.loads(meta.read_text(encoding="utf-8"))
+    info["identity_sha256"] = hashlib.sha256(policy.read_bytes()).hexdigest()
     info["public_inert_hmac_credential_only"] = False
     info["public_install_denied"] = False
     info["owner_private_identity"] = True
@@ -162,6 +163,13 @@ def check_checkout():
                                     text=True).strip()
     if dirty:
         raise ValueError("Uncommitted source changes: refuse private candidate build")
+    local = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT,
+                                    text=True).strip()
+    remote = subprocess.check_output(
+        ["git", "rev-parse", "refs/remotes/origin/feature/shino-tv-m9-flash-layout-liberation"],
+        cwd=ROOT, text=True).strip()
+    if local != remote:
+        raise ValueError("Local branch differs from fetched origin: fast-forward first")
 
 
 def build():
