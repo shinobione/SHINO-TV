@@ -19,8 +19,15 @@ def run(baseline,candidate):
     types=dict(zip(('http','native','owner','string','handler','uri'),struct.unpack('<6I',rows[0]['data'])))
     assert types['owner']>=max(types['http'],types['native']) and types['string']==12
     assert not any('retainedInstall' in k or 'shinoInstallProof' in k for k in symbols)
-    packages=Path(os.environ.get('PLATFORMIO_CORE_DIR',str(Path.home()/'.platformio')))/'packages'
-    objdump=next((packages/'toolchain-xtensa/bin').glob('xtensa-lx106-elf-objdump*'))
+    # A local framework-package build can also isolate PlatformIO packages.
+    # Search its actual toolchain first, then the ordinary global cache.
+    roots=[Path(candidate)/'.pio/isolated-packages',
+           Path(os.environ.get('PLATFORMIO_CORE_DIR',str(Path.home()/'.platformio')))/'packages']
+    available=[tool for root in roots
+               for tool in (root/'toolchain-xtensa/bin').glob('xtensa-lx106-elf-objdump*')
+               if tool.is_file()]
+    assert available, 'Xtensa objdump not installed in isolated or global PlatformIO packages'
+    objdump=available[0]
     disassembly=subprocess.check_output([str(objdump),'-dC',str(elf)],text=True)
     loop=re.search(r'<M9NormalStageA::loop\(\)>:\n(.*?)(?=\n[0-9a-f]+ <|\Z)',disassembly,re.S).group(1)
     calls=[s.strip() for s in loop.splitlines() if 'call' in s]
