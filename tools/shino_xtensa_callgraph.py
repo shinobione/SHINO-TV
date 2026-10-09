@@ -65,8 +65,18 @@ def require_paths(disassembly,markers=(
                 disassembly.find('<M9NormalStageA::loop()>:')+12500]
             asm_focus=[line.strip() for line in loop_text.splitlines()
                        if any(token in line for token in ('call','callx','\\tj','<ShinoInstall','\\tb','\\tret'))][:95]
+            # Record the *surrounding instructions* for indirect calls made
+            # by StageA::loop. The target may be materialized in a prior l32r,
+            # not represented in objdump as a call0 <symbol>.
+            lines=loop_text.splitlines()
+            indirect_context=[]
+            for i,line in enumerate(lines):
+                if re.search(r'\\bcallx(?:0|4|8|12)\\b',line):
+                    indirect_context.append(dict(call=line.strip(),
+                        before=[t.strip() for t in lines[max(0,i-17):i]],
+                        after=[t.strip() for t in lines[i+1:i+6]]))
             indirect_or_jumps=[line.strip() for line in disassembly.splitlines()
-                               if marker in line or ('callx' in line and '<' not in line)][:55]
+                               if marker in line or ('callx' in line and '<' not in line)][:12]
             raise AssertionError(
                 f'Compiled {marker} NOT reachable from StageA loop: '
                 f'symbols_in_elf={known[:8]}; '
@@ -74,6 +84,7 @@ def require_paths(disassembly,markers=(
                 f'loop_direct_calls={root_calls[:22]}; '
                 f'loop_asm_focus={asm_focus}; '
                 f'candidate_symbol_or_indirect_jump_lines={indirect_or_jumps}; '
+                f'loop_callx_instruction_contexts={indirect_context[:5]}; '
                 f'reachable_functions={len(visited)}')
         paths[marker]=min(matches,key=len)
     return paths
