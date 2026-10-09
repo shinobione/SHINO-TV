@@ -16,13 +16,23 @@ public:
     ~Maintenance(){if(upload_){upload_->stop();upload_->~Upload();}if(http_){http_->quiesce();http_->~Http();}erase();}
     Http& http(){return *http_;}
     Mode mode()const{return mode_;}
+#if defined(SHINO_MAINTENANCE_PROBE) && SHINO_MAINTENANCE_PROBE
+    bool takeProbeCompleted(){bool was=probeCompleted_;probeCompleted_=false;return was;}
+#endif
 #if defined(SHINO_MEMORY_TRACE) && SHINO_MEMORY_TRACE
     const MemoryTrace& measurements()const{return trace_;}
 #endif
     bool request(const Consent& c){
         if(mode_!=Normal || !c.owner || !c.device || !c.build || !c.key || !hex(c.device,16) || !hex(c.build,64))return false;
         uint8_t nonzero=0;for(unsigned i=0;i<32;++i)nonzero|=c.key[i];if(!nonzero)return false;
-        std::strcpy(device_,c.device);std::strcpy(build_,c.build);std::memcpy(key_,c.key,32);dryRun_=c.dryRun;mode_=Pending;return true;
+        std::strcpy(device_,c.device);std::strcpy(build_,c.build);std::memcpy(key_,c.key,32);dryRun_=c.dryRun;
+#if defined(SHINO_MEMORY_TRACE) && SHINO_MEMORY_TRACE
+        trace_.clear();
+#endif
+#if defined(SHINO_MAINTENANCE_PROBE) && SHINO_MAINTENANCE_PROBE
+        probeCompleted_=false;
+#endif
+        mode_=Pending;return true;
     }
     // Called at the next cooperative loop boundary, never in an HTTP callback.
     // False pauses HTTP, dashboard, telemetry handlers and normal JSON work.
@@ -64,7 +74,7 @@ public:
             sample(TracePoint::DuringStaging);
 #endif
 #if defined(SHINO_MAINTENANCE_PROBE) && SHINO_MAINTENANCE_PROBE
-            if(upload_->probed()){finish();return mode_==Normal;}
+            if(upload_->probed()){finish();probeCompleted_=mode_==Normal;return mode_==Normal;}
 #endif
             if(upload_->committed()){mode_=Committed;return false;}
             if(upload_->failed())finish();
@@ -82,6 +92,9 @@ private:
     void sample(TracePoint point){trace_.add(point,hooks_.budget());}
 #endif
     char device_[17]{},build_[65]{};uint8_t key_[32]{};bool dryRun_=false;
+#if defined(SHINO_MAINTENANCE_PROBE) && SHINO_MAINTENANCE_PROBE
+    bool probeCompleted_=false;
+#endif
     static bool admit(Budget b){return b.safe() && b.heap>=20480+4096+1024;}
     void erase(){volatile uint8_t* p=key_;for(unsigned i=0;i<32;++i)p[i]=0;device_[0]=build_[0]=0;dryRun_=false;}
     void finish(){upload_->stop();upload_->~Upload();upload_=nullptr;restore();}
