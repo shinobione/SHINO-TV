@@ -56,6 +56,7 @@ class OwnerTransition(unittest.TestCase):
                 '    if(!dryRun){respond(403,"{\\\"error\\\":\\\"PUBLIC_REVIEW_DRY_RUN_ONLY\\\"}");return;}\n',
                 encoding="utf-8")
             (directory / "include/shino_private_policy.h").write_text(
+                '// Public inert identity, not a release or device identity.\n'
                 '#define SHINO_SETUP_AP_PSK "PUBLIC-INERT-AP-FIXTURE"\n'
                 '#define SHINO_BOOTSTRAP_API_TOKEN "PUBLIC-INERT-TOKEN-FIXTURE-00000000"\n'
                 '#define SHINO_RESCUE_HTTP_PASSWORD "PUBLIC-INERT-LAB-HTTP-FIXTURE"\n',
