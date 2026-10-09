@@ -15,6 +15,17 @@ def replace_once(body,src,dst):
     assert body.count(src)==1,(src[:80],body.count(src))
     return body.replace(src,dst)
 
+def maintenance_http_policy(text):
+    """Return exact private/public maintenance GET allowlist; fail on drift."""
+    return replace_once(text,
+      'std::strcmp(path, "/api/v1/bridge/metrics") == 0)) return 200;',
+      '''std::strcmp(path, "/api/v1/bridge/metrics") == 0 ||
+        std::strcmp(path, "/api/v1/m9/maintenance/challenge") == 0 ||
+        std::strcmp(path, "/api/v1/m9/maintenance/probe") == 0 ||
+        std::strcmp(path, "/api/v1/m9/maintenance/install") == 0 ||
+        std::strcmp(path, "/api/v1/m9/maintenance/result") == 0)) return 200;''')
+
+
 def prepare(directory):
     directory=basic(directory,small_buffer=True)
     # The public third graph uses a deliberately published HMAC fixture.
@@ -133,15 +144,7 @@ void metrics() {''')
     if (apReady) service().handleClient();''')
     source.write_text(body)
     policy=directory/'include/boot/M9NormalHttpPolicy.h'
-    text=policy.read_text()
-    text=replace_once(text,
-      'std::strcmp(path, "/api/v1/bridge/metrics") == 0)) return 200;',
-      '''std::strcmp(path, "/api/v1/bridge/metrics") == 0 ||
-        std::strcmp(path, "/api/v1/m9/maintenance/challenge") == 0 ||
-        std::strcmp(path, "/api/v1/m9/maintenance/probe") == 0 ||
-        std::strcmp(path, "/api/v1/m9/maintenance/install") == 0 ||
-        std::strcmp(path, "/api/v1/m9/maintenance/result") == 0)) return 200;''')
-    policy.write_text(text)
+    policy.write_text(maintenance_http_policy(policy.read_text()))
     info=json.loads((directory/'public-inputs.json').read_text())
     info['experimental_auth_arm']=True
     info['public_inert_hmac_credential_only']=True
