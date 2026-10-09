@@ -143,6 +143,10 @@ jobs:
         run: |
           g++ -std=c++17 -Wall -Wextra -Werror -Iexperiments/shino_wifi_install/include tools/shino_arm_gate_test.cpp -o "${{ runner.temp }}/shino-arm-gate-test"
           "${{ runner.temp }}/shino-arm-gate-test"
+      - name: Reject public-fixture INSTALL after a successful dry run
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -DSHINO_PUBLIC_INERT_REVIEW=1 -Iexperiments/shino_wifi_install/include tools/shino_arm_gate_test.cpp -o "${{ runner.temp }}/shino-public-arm-gate-test"
+          "${{ runner.temp }}/shino-public-arm-gate-test"
       - name: Compile and execute allocation-free memory tracer
         run: |
           g++ -std=c++17 -Wall -Wextra -Werror -Iexperiments/shino_wifi_install/include tools/shino_memory_trace_test.cpp -o "${{ runner.temp }}/shino-memory-trace-test"
@@ -230,7 +234,9 @@ jobs:
           x=json.loads((p/'public-inputs.json').read_text())
           assert x['public_inert_hmac_credential_only']
           assert x['experimental_auth_arm'] and x['not_flashable_or_owner_qualified']
-          assert x['trusted_consent_bound']
+          assert x['trusted_consent_bound'] and x['public_install_denied']
+          ini=(p/'platformio.ini').read_text()
+          assert '-DSHINO_PUBLIC_INERT_REVIEW=1' in ini
           source=(p/'src/boot/M9NormalStageA.cpp').read_text()
           assert 'ShinoArmGate.h' in source
           assert 'service.on("/api/v1/m9/maintenance/challenge", HTTP_GET' in source
@@ -238,6 +244,14 @@ jobs:
           assert 'service.on("/api/v1/m9/maintenance/install", HTTP_GET' in source
           assert 'service.on("/api/v1/m9/maintenance/result", HTTP_GET' in source
           assert 'ArmGate armGate' in source
+          assert 'PUBLIC_REVIEW_DRY_RUN_ONLY' in source
+          assert 'if(!armGate.consume(p) || !p.dryRun)return false;' in source
+          native=(p/'include/ShinoWifiUpdate.h').read_text()
+          arm=(p/'include/ShinoArmGate.h').read_text()
+          assert 'SHINO_PUBLIC_INERT_REVIEW' in native
+          assert 'if(!dryRun_)return reject();' in native
+          assert 'SHINO_PUBLIC_INERT_REVIEW' in arm
+          assert 'if(!dryRun){nonceValid_=false;return false;}' in arm
           assert 'PUBLIC-INERT' in (p/'include/shino_private_policy.h').read_text()
           assert '-DSHINO_SMALL_OTA_BUFFER=1' in (p/'platformio.ini').read_text()
           assert (p/'.pio/build/esp12e_m9_4m2m_normal_qualification/firmware.elf').is_file()
