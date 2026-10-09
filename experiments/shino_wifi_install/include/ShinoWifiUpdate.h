@@ -44,6 +44,11 @@ public:
         if(state_!=Challenge || command!=U_FLASH || !privateAp || peer!=peer_ || !timely(now) ||
            !budget.safe() || budget.heap<20480+CoreBufferAdmission+1024 || !hex(sha,64)||!hex(build,64)||!hex(proof,64)||
            size<64000 || size>MaxImage || FsStart-round(size)<round(current)+4096)return reject();
+#if defined(SHINO_PUBLIC_INERT_REVIEW) && SHINO_PUBLIC_INERT_REVIEW
+        // Defense in depth: the public review firmware cannot stage a real
+        // update, even if a caller bypasses the normal ARM route.
+        if(!dryRun_)return reject();
+#endif
         char body[320],expected[65];
         std::snprintf(body,sizeof(body),"AUTH %s %s %s %u %u %s %s",device_,client_,nonce_,command,size,sha,build);mac(key_,body,expected);
         if(!equal(expected,proof,64))return reject();
