@@ -43,14 +43,24 @@ void MaintenanceHooks::resume(Webserver& service){
 
 def prepare(directory,small_buffer=False):
     directory=wifi(directory,False)
-    script=directory/'scripts/phase_t_build.py'
-    script.write_text(script.read_text()+"\nfrom shino_wifi_core import materialize as updater\np=updater(Path(env.subst('$PROJECT_DIR'))/'.pio/shino-updater',env.PioPlatform().get_package_dir('framework-arduinoespressif8266'),small_buffer="+str(bool(small_buffer))+")\nenv.Prepend(CPPPATH=[str(p)])\nenv.Append(CXXFLAGS=['-include',str(p/'Updater.h')])\n")
     if small_buffer:
+        # A materialized source file in .pio is NOT linked automatically by PIO.
+        # Override only this disposable project's framework package and storage.
+        # The physical/global Core package is preserved byte-for-byte.
+        import configparser
+        from shino_local_framework import prepare as local_framework
+        local=local_framework(directory)
         ini=directory/'platformio.ini'
-        config=ini.read_text()
-        marker='-I'+str(ROOT/'experiments/shino_wifi_install/include').replace('\\','/')
-        assert marker in config
-        ini.write_text(config.replace(marker,marker+'\n    -DSHINO_SMALL_OTA_BUFFER=1\n    -DSHINO_MEMORY_TRACE=1',1))
+        conf=configparser.ConfigParser(interpolation=None)
+        conf.read(ini)
+        env_name='env:esp12e_m9_4m2m_normal_qualification'
+        conf[env_name]['platform_packages']='framework-arduinoespressif8266 @ '+local.as_uri()
+        conf['platformio']['packages_dir']=str((directory/'.pio/isolated-packages').resolve())
+        conf[env_name]['build_flags']+='\n    -DSHINO_SMALL_OTA_BUFFER=1\n    -DSHINO_MEMORY_TRACE=1'
+        with ini.open('w',encoding='utf-8') as out:conf.write(out)
+    else:
+        script=directory/'scripts/phase_t_build.py'
+        script.write_text(script.read_text()+"\nfrom shino_wifi_core import materialize as updater\np=updater(Path(env.subst('$PROJECT_DIR'))/'.pio/shino-updater',env.PioPlatform().get_package_dir('framework-arduinoespressif8266'))\nenv.Prepend(CPPPATH=[str(p)])\nenv.Append(CXXFLAGS=['-include',str(p/'Updater.h')])\n")
     header=directory/'include/web/Webserver.h'
     header.write_text(header.read_text().replace('#include <ESP8266WebServer.h>','#include "ShinoReclaimingHttp.h"').replace('    ESP8266WebServer _server;',
         '    ShinoInstall::ReclaimingHttp _server;').replace('    void handleClient();','    void handleClient();\n    void quiesce(){_server.quiesce();}'))
