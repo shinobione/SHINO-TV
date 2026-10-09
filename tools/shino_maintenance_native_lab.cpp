@@ -11,7 +11,12 @@ int main(){
  const char* password=std::getenv("SHINO_TEST_SECRET");if(!password)return 2;
  const char* id="0123456789abcdef";const char* build="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
  uint8_t key[32];br_sha256_context h;br_sha256_init(&h);br_sha256_update(&h,password,std::strlen(password));br_sha256_out(&h,key);
- ShinoInstall::Native native(id,build,key);bool begun=false;eboot_command_clear();std::string line;
+#ifdef SHINO_PROBE_TEST
+ ShinoInstall::Native native(id,build,key,true);
+#else
+ ShinoInstall::Native native(id,build,key);
+#endif
+ bool begun=false;eboot_command_clear();std::string line;
  while(std::getline(std::cin,line)){
   std::istringstream in(line);std::string op;in>>op;
   if(op=="LISTENFAIL"){listenFail=true;std::cout<<"FAULT\n";}
@@ -26,7 +31,7 @@ int main(){
   else if(op=="DISCONNECT"){peer.connected=false;native.pump();std::cout<<"DISCONNECTED\n";}
   else if(op=="REPORT"){
    eboot_command command{};bool commit=eboot_command_read(&command)==0,fs=true;for(size_t i=0x200000;i<ESP.flash.size();++i)fs&=ESP.flash[i]==0xff;
-   std::cout<<"{\"commit\":"<<commit<<",\"running\":"<<native.busy()<<",\"erase\":"<<ESP.eraseCalls<<",\"writes\":"<<ESP.writeCalls<<",\"fs_preserved\":"<<fs<<",\"listeners\":"<<listeners<<",\"queued\":"<<pending.size()<<",\"connected\":"<<peer.connected<<",\"host_restart_calls\":"<<ESP.restarts<<"}\n";
+   std::cout<<"{\"commit\":"<<commit<<",\"probed\":"<<native.probed()<<",\"running\":"<<native.busy()<<",\"erase\":"<<ESP.eraseCalls<<",\"writes\":"<<ESP.writeCalls<<",\"fs_preserved\":"<<fs<<",\"listeners\":"<<listeners<<",\"queued\":"<<pending.size()<<",\"connected\":"<<peer.connected<<",\"host_restart_calls\":"<<ESP.restarts<<"}\n";
   }else{
    if(!begun){begun=true;if(!native.begin()){native.stop();peer.connected=false;}else{pending.push_back(&peer);pending.push_back(&extra);}}
    peer.output.clear();

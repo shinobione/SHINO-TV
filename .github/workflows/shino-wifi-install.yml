@@ -145,6 +145,17 @@ jobs:
           python -m pip install 'platformio==6.1.18'
           pio pkg install -g -t 'platformio/framework-arduinoespressif8266@3.30102.0'
           python tools/shino_small_buffer_native.py > "${{ runner.temp }}/shino-small-buffer-host.json"
+      - name: Authenticated full-transfer dry-run; assert zero flash/RTC/reboot
+        run: |
+          python tools/shino_probe_offline.py > "${{ runner.temp }}/shino-probe-host.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          r=json.loads((Path(os.environ['RUNNER_TEMP'])/'shino-probe-host.json').read_text())
+          assert r['cases']==4 and r['no_flash_no_rtc_no_reboot']
+          assert r['actual_native'] and r['actual_core']
+          assert r['rows'][0]['probed'] and not any(x['probed'] for x in r['rows'][1:])
+          PY
       - name: Compile both real 4m2m public StageA graphs
         run: |
           python tools/shino_wifi_build.py research-local/shino-small-buffer-ci/base
