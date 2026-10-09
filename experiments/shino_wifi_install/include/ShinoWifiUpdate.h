@@ -9,6 +9,7 @@
 #endif
 #include <cstring>
 #include <cstdio>
+#include <cstdlib>
 #include <algorithm>
 #include "ShinoWifiPolicy.h"
 namespace ShinoInstall {
@@ -53,7 +54,15 @@ public:
         std::snprintf(body,sizeof(body),"AUTH %s %s %s %u %u %s %s",device_,client_,nonce_,command,size,sha,build);mac(key_,body,expected);
         if(!equal(expected,proof,64))return reject();
         size_=size;stage_=FsStart-round(size);std::strcpy(sha_,sha);std::strcpy(nextBuild_,build);
-        if(!dryRun_ && !core_.begin(size_,U_FLASH))return reject();
+        if(dryRun_){
+            // Physical DRY-RUN reserves a real heap allocation equal to the
+            // isolated Core buffer but calls NO Updater/flash/RTC functions.
+            // It measures one real allocation, NOT full OTA high-water.
+            probeReserve_=std::malloc(CoreBufferAdmission);
+            if(!probeReserve_)return reject();
+            volatile uint8_t* ptr=static_cast<volatile uint8_t*>(probeReserve_);
+            ptr[0]=0;ptr[CoreBufferAdmission-1]=0;
+        }else if(!core_.begin(size_,U_FLASH))return reject();
         br_sha256_init(&hash_);state_=Receiving;last_=now;return true;
     }
     bool add(uint8_t* p,size_t n,uint32_t now,Budget b){
@@ -69,19 +78,21 @@ public:
         if(!equal(actual,sha_,64))return reject();
         if(!dryRun_ && (!stagedImage() || !core_.end(false)))return reject();
         // Probe commits ONLY a RAM-only SHA-256 check. No Updater call.
-        state_=Committed;return true;
+        releaseProbeReserve();state_=Committed;return true;
     }
-    void abort(){if(state_!=Committed){if(!dryRun_)core_.shinoAbort();state_=Failed;}}
+    void abort(){releaseProbeReserve();if(state_!=Committed){if(!dryRun_)core_.shinoAbort();state_=Failed;}}
     bool receiving()const{return state_==Receiving;}
     bool dryRun()const{return dryRun_;}
     bool committed()const{return state_==Committed;}
     uint32_t received()const{return received_;}
     const char* nextBuild()const{return nextBuild_;}
-    bool bufferReleased(){return dryRun_ || !core_.isRunning();}
+    bool bufferReleased(){return dryRun_?probeReserve_==nullptr:!core_.isRunning();}
 private:
     enum State:uint8_t{Idle,Challenge,Receiving,Committed,Failed};State state_=Idle;
     UpdaterClass core_;br_sha256_context hash_{};
     const char *device_,*build_;const uint8_t* key_;bool dryRun_=false;
+    void* probeReserve_=nullptr;
+    void releaseProbeReserve(){if(probeReserve_){std::free(probeReserve_);probeReserve_=nullptr;}}
     char client_[33]{},nonce_[33]{},sha_[65]{},nextBuild_[65]{};
     uint32_t peer_=0,start_=0,last_=0,size_=0,stage_=0,received_=0;
     static uint32_t round(uint32_t n){return (n+4095)&~4095u;}
