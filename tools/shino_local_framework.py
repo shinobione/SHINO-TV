@@ -5,6 +5,16 @@ Updater.cpp (256-byte Core buffer path) and Updater.h (noncommitting abort)
 differ. PIO must then build from this local package, not original framework.
 """
 from pathlib import Path
+
+def platformio_local_uri(path):
+    """PlatformIO 6.1.18 copies file:// URIs by stripping exactly 7 chars.
+
+    pathlib.Path.as_uri() gives file:///C:/... on Windows, which becomes the
+    INVALID /C:/... path after PlatformIO removes the prefix. Generate a
+    source URI that yields a native drive path after that operation.
+    On POSIX this remains the conventional file:///absolute/path form.
+    """
+    return "file://" + path.as_posix()
 import hashlib,json,shutil
 from v07_pinned_core_probe import core_root
 from shino_wifi_core import materialize,ROOT
