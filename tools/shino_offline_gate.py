@@ -28,6 +28,7 @@ def main():
     (ROOT/'research-local').mkdir(exist_ok=True)
     if RESULT.exists(): RESULT.unlink()
     LOG.write_text('SHINO / OFFLINE 256-BYTE CHECK — no device operations\n',encoding='utf-8')
+    step('Windows/POSIX local framework URI regression', [sys.executable,str(ROOT/'tools/test_shino_local_uri.py')],LOG)
     pio=shutil.which('pio') or shutil.which('platformio')
     if not pio: raise RuntimeError('Install PlatformIO 6.1.18 and its pinned public Core; no hardware needed.')
     with tempfile.TemporaryDirectory(prefix='shino-256-review-',dir=ROOT/'research-local') as scratch:
