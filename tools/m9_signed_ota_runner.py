@@ -28,7 +28,7 @@ def source_gate():
     for name in subprocess.check_output(["git","ls-files","firmware","companion","tools/m9_single_attempt*"],cwd=ROOT,text=True).splitlines():
         # Issue43 adds only these offline installer paths. Every PREEXISTING
         # companion, firmware and physical-writer file retains exact identity.
-        if name in ('companion/shino_install.py','companion/test_shino_install.py','companion/SHINO-INSTALL.cmd','companion/SHINO_INSTALL.md','companion/SHINO-OFFLINE-CHECK.cmd'):
+        if name in ('companion/shino_install.py','companion/test_shino_install.py','companion/SHINO-INSTALL.cmd','companion/SHINO_INSTALL.md','companion/SHINO-OFFLINE-CHECK.cmd','companion/shino_maintenance_control.py','companion/test_shino_maintenance_control.py'):
             continue
         # Phase S has no edits to any deployed graph, sender or physical writer.
         old = subprocess.check_output(["git","show","7455f6b353f1733a78f2a6d25503edb063f7befb:"+name],cwd=ROOT)

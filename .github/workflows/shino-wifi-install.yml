@@ -136,6 +136,9 @@ jobs:
           python-version: '3.13'
       - name: Xtensa indirect/nested call-graph proof regression
         run: python tools/test_shino_xtensa_callgraph.py
+      - name: Windows offline maintenance Digest/HMAC arm contract
+        run: |
+          python companion/test_shino_maintenance_control.py
       - name: One-use authenticated maintenance arm; reject replay and unqualified install
         run: |
           g++ -std=c++17 -Wall -Wextra -Werror -Iexperiments/shino_wifi_install/include tools/shino_arm_gate_test.cpp -o "${{ runner.temp }}/shino-arm-gate-test"
