@@ -40,7 +40,7 @@ bool begin(){return uploadBegin;}void pump(){++uploadPumps;}void stop(){++upload
     anchor='    service.on("/api/v1/m9/normal/resources", HTTP_GET, status);'
     assert source.count(anchor)==1
     source=source.replace(anchor,anchor+''.join(
-        '\\n    service.on("/api/v1/m9/maintenance/'+route+'", HTTP_GET, status);'
+        '\n    service.on("/api/v1/m9/maintenance/'+route+'", HTTP_GET, status);'
         for route in ("challenge","probe","install","result")))
     stage.write_text(source)
     policy=directory/'boot/M9NormalHttpPolicy.h';policy.parent.mkdir(parents=True,exist_ok=True)
