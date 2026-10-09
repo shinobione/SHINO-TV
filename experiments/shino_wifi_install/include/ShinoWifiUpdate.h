@@ -29,7 +29,7 @@ inline bool equal(const char* a,const char* b,size_t n){uint8_t v=0;for(size_t i
 // maintenance HMAC, NOT vendor signing. Installed StageA never constructs it.
 class Receiver {
 public:
-    Receiver(const char* device,const char* build,const uint8_t* key):device_(device),build_(build),key_(key){}
+    Receiver(const char* device,const char* build,const uint8_t* key,bool dryRun=false):device_(device),build_(build),key_(key),dryRun_(dryRun){}
     ~Receiver(){abort();}
     bool capability(const char* clientNonce,const char* serverNonce,uint32_t peer,bool privateAp,uint32_t now,char* out,size_t cap){
         if(state_!=Idle || !key_ || !hex(device_,16) || !hex(build_,64) || !privateAp || !peer ||
@@ -48,32 +48,35 @@ public:
         std::snprintf(body,sizeof(body),"AUTH %s %s %s %u %u %s %s",device_,client_,nonce_,command,size,sha,build);mac(key_,body,expected);
         if(!equal(expected,proof,64))return reject();
         size_=size;stage_=FsStart-round(size);std::strcpy(sha_,sha);std::strcpy(nextBuild_,build);
-        if(!core_.begin(size_,U_FLASH))return reject();
+        if(!dryRun_ && !core_.begin(size_,U_FLASH))return reject();
         br_sha256_init(&hash_);state_=Receiving;last_=now;return true;
     }
     bool add(uint8_t* p,size_t n,uint32_t now,Budget b){
         if(state_!=Receiving || !timely(now)||!b.safe() || !n || n>512 || n>size_-received_)return reject();
         if(received_==0 && (n<4 || p[0]!=0xE9 || p[2]!=2 || p[3]!=0x40))return reject();
-        if(core_.write(p,n)!=n || core_.hasError())return reject();
+        if(!dryRun_ && (core_.write(p,n)!=n || core_.hasError()))return reject();
         br_sha256_update(&hash_,p,n);received_+=uint32_t(n);last_=now;return true;
     }
     // Called only on explicit COMMIT after exact byte count; no end(true).
     bool commit(uint32_t now,Budget b){
-        if(state_!=Receiving || !timely(now)||!b.safe() || received_!=size_ || !core_.isFinished())return reject();
+        if(state_!=Receiving || !timely(now)||!b.safe() || received_!=size_ || (!dryRun_ && !core_.isFinished()))return reject();
         uint8_t digest[32];char actual[65];br_sha256_out(&hash_,digest);encode(digest,32,actual);
-        if(!equal(actual,sha_,64) || !stagedImage())return reject();
-        if(!core_.end(false))return reject();state_=Committed;return true;
+        if(!equal(actual,sha_,64))return reject();
+        if(!dryRun_ && (!stagedImage() || !core_.end(false)))return reject();
+        // Probe commits ONLY a RAM-only SHA-256 check. No Updater call.
+        state_=Committed;return true;
     }
-    void abort(){if(state_!=Committed){core_.shinoAbort();state_=Failed;}}
+    void abort(){if(state_!=Committed){if(!dryRun_)core_.shinoAbort();state_=Failed;}}
     bool receiving()const{return state_==Receiving;}
+    bool dryRun()const{return dryRun_;}
     bool committed()const{return state_==Committed;}
     uint32_t received()const{return received_;}
     const char* nextBuild()const{return nextBuild_;}
-    bool bufferReleased(){return !core_.isRunning();}
+    bool bufferReleased(){return dryRun_ || !core_.isRunning();}
 private:
     enum State:uint8_t{Idle,Challenge,Receiving,Committed,Failed};State state_=Idle;
     UpdaterClass core_;br_sha256_context hash_{};
-    const char *device_,*build_;const uint8_t* key_;
+    const char *device_,*build_;const uint8_t* key_;bool dryRun_=false;
     char client_[33]{},nonce_[33]{},sha_[65]{},nextBuild_[65]{};
     uint32_t peer_=0,start_=0,last_=0,size_=0,stage_=0,received_=0;
     static uint32_t round(uint32_t n){return (n+4095)&~4095u;}

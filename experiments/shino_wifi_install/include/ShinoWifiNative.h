@@ -15,7 +15,7 @@ public:
 #if defined(SHINO_MEMORY_TRACE) && SHINO_MEMORY_TRACE
            ,MemoryTrace* trace=nullptr
 #endif
-           ):device_(device),build_(build),key_(key),listener_(8266)
+           ,bool dryRun=false):device_(device),build_(build),key_(key),listener_(8266),dryRun_(dryRun)
 #if defined(SHINO_MEMORY_TRACE) && SHINO_MEMORY_TRACE
            ,trace_(trace)
 #endif
@@ -31,7 +31,8 @@ public:
         return true;
     }
     bool failed()const{return failed_;}
-    bool committed()const{return done_;}
+    bool committed()const{return done_ && !dryRun_;}
+    bool probed()const{return done_ && dryRun_;}
     void stop(){
         listener_.close();
         while(listener_.hasClient()){auto pending=listener_.accept();pending.abort();}
@@ -73,7 +74,7 @@ public:
         ESP.wdtFeed();yield();
     }
 private:
-    const char *device_,*build_;const uint8_t* key_;WiFiServer listener_;WiFiClient client_;
+    const char *device_,*build_;const uint8_t* key_;WiFiServer listener_;WiFiClient client_;bool dryRun_=false;
     alignas(Receiver) uint8_t storage_[sizeof(Receiver)];Receiver* receiver_=nullptr;
 #if defined(SHINO_MEMORY_TRACE) && SHINO_MEMORY_TRACE
     MemoryTrace* trace_=nullptr;
@@ -95,7 +96,7 @@ private:
             char dev[17],cn[33],tail;int n=0;
             if(std::sscanf(buffer_,"CAP %16s %32s%n%c",dev,cn,&n,&tail)!=2 || size_t(n)!=std::strlen(buffer_) || std::strcmp(dev,device_)){fail();return;}
             uint8_t random[16];for(unsigned i=0;i<4;++i){uint32_t r=os_random();std::memcpy(random+4*i,&r,4);}char nonce[33];encode(random,16,nonce);
-            receiver_=new(storage_) Receiver(device_,build_,key_);
+            receiver_=new(storage_) Receiver(device_,build_,key_,dryRun_);
             if(!receiver_->capability(cn,nonce,peer(),privateAp(),millis(),buffer_,sizeof(buffer_))){fail();return;}client_.print(buffer_);return;
     }
     __attribute__((noinline)) void commitLine(){
@@ -103,10 +104,11 @@ private:
             observe(TracePoint::BeforeCommit);
 #endif
             if(std::strcmp(buffer_,"COMMIT") || client_.available() || !receiver_->commit(millis(),budget())){fail();return;}
-            client_.printf("STAGED %s\n",receiver_->nextBuild());client_.flush(1000);client_.stop();listener_.stop();done_=true;
-            // No consent supplier is wired in public graphs. A future approved
-            // installer consent encompasses reboot; ACK is not boot success.
-            ESP.restart();return;
+            client_.printf(dryRun_?"PROBED %s\n":"STAGED %s\n",receiver_->nextBuild());
+            client_.flush(1000);client_.stop();listener_.stop();done_=true;
+            // A valid dry-run never reboots, changes RTC or stages an eboot copy.
+            // The writer is separately authenticated and not yet exposed live.
+            if(!dryRun_)ESP.restart();return;
     }
     __attribute__((noinline)) void authorizeLine(){
 #if defined(SHINO_MEMORY_TRACE) && SHINO_MEMORY_TRACE

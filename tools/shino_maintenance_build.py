@@ -56,7 +56,7 @@ def prepare(directory,small_buffer=False):
         env_name='env:esp12e_m9_4m2m_normal_qualification'
         conf[env_name]['platform_packages']='framework-arduinoespressif8266 @ '+platformio_local_uri(local)
         conf['platformio']['packages_dir']=str((directory/'.pio/isolated-packages').resolve())
-        conf[env_name]['build_flags']+='\n    -DSHINO_SMALL_OTA_BUFFER=1\n    -DSHINO_MEMORY_TRACE=1'
+        conf[env_name]['build_flags']+='\n    -DSHINO_SMALL_OTA_BUFFER=1\n    -DSHINO_MEMORY_TRACE=1\n    -DSHINO_MAINTENANCE_PROBE=1'
         with ini.open('w',encoding='utf-8') as out:conf.write(out)
     else:
         script=directory/'scripts/phase_t_build.py'

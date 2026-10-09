@@ -8,7 +8,7 @@
 namespace ShinoInstall {
 // Only a trusted, separately reviewed owner-consent supplier may queue this.
 // There is no HTTP route, default key, installer override or device trigger.
-struct Consent { const char* device; const char* build; const uint8_t* key; bool owner; };
+struct Consent { const char* device; const char* build; const uint8_t* key; bool owner; bool dryRun=false; };
 template<class Http, class Upload, class Hooks> class Maintenance {
 public:
     enum Mode { Normal, Pending, Uploading, Hold, Committed };
@@ -22,7 +22,7 @@ public:
     bool request(const Consent& c){
         if(mode_!=Normal || !c.owner || !c.device || !c.build || !c.key || !hex(c.device,16) || !hex(c.build,64))return false;
         uint8_t nonzero=0;for(unsigned i=0;i<32;++i)nonzero|=c.key[i];if(!nonzero)return false;
-        std::strcpy(device_,c.device);std::strcpy(build_,c.build);std::memcpy(key_,c.key,32);mode_=Pending;return true;
+        std::strcpy(device_,c.device);std::strcpy(build_,c.build);std::memcpy(key_,c.key,32);dryRun_=c.dryRun;mode_=Pending;return true;
     }
     // Called at the next cooperative loop boundary, never in an HTTP callback.
     // False pauses HTTP, dashboard, telemetry handlers and normal JSON work.
@@ -42,7 +42,11 @@ public:
             // No credit for static arrays. Check AFTER dynamic HTTP destruction.
             if(!admit(hooks_.budget())){restore();return mode_==Normal;}
 #if defined(SHINO_MEMORY_TRACE) && SHINO_MEMORY_TRACE
+            #if defined(SHINO_MAINTENANCE_PROBE) && SHINO_MAINTENANCE_PROBE
+            upload_=new(slot_) Upload(device_,build_,key_,&trace_,dryRun_);
+#else
             upload_=new(slot_) Upload(device_,build_,key_,&trace_);
+#endif
 #else
             upload_=new(slot_) Upload(device_,build_,key_);
 #endif
@@ -59,6 +63,9 @@ public:
 #if defined(SHINO_MEMORY_TRACE) && SHINO_MEMORY_TRACE
             sample(TracePoint::DuringStaging);
 #endif
+#if defined(SHINO_MAINTENANCE_PROBE) && SHINO_MAINTENANCE_PROBE
+            if(upload_->probed()){finish();return mode_==Normal;}
+#endif
             if(upload_->committed()){mode_=Committed;return false;}
             if(upload_->failed())finish();
             return mode_==Normal;
@@ -74,9 +81,9 @@ private:
     MemoryTrace trace_{};
     void sample(TracePoint point){trace_.add(point,hooks_.budget());}
 #endif
-    char device_[17]{},build_[65]{};uint8_t key_[32]{};
+    char device_[17]{},build_[65]{};uint8_t key_[32]{};bool dryRun_=false;
     static bool admit(Budget b){return b.safe() && b.heap>=20480+4096+1024;}
-    void erase(){volatile uint8_t* p=key_;for(unsigned i=0;i<32;++i)p[i]=0;device_[0]=build_[0]=0;}
+    void erase(){volatile uint8_t* p=key_;for(unsigned i=0;i<32;++i)p[i]=0;device_[0]=build_[0]=0;dryRun_=false;}
     void finish(){upload_->stop();upload_->~Upload();upload_=nullptr;restore();}
     void restore(){
 #if defined(SHINO_MEMORY_TRACE) && SHINO_MEMORY_TRACE
