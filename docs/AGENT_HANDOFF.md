@@ -1,6 +1,20 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last product contract update: **2026-10-01**. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+## Priorité matérielle urgente — propriétaire, 9 octobre 2026
+
+**But immédiat : REFERMER LE BOÎTIER SmallTV-ULTRA AU PLUS VITE, en rendant les futures mises à jour SHINO possibles par Wi-Fi, SANS rebrancher les pinces/UART.** Cette décision supplante l'idée de passer maintenant à la cosmétique du LCD. **Aucun travail sur les polices/couleurs/horloge/musique ne doit retarder la fermeture.**
+
+Le premier vrai jalon est « une mise à jour SHINO → SHINO réussie par Wi-Fi après la transition », pas « 38 jobs PASS » ni une étude supplémentaire. L'actuel StageA n'a aucun récepteur Wi-Fi d'installation. La dernière installation initiale peut donc nécessiter **une fois** le CH340 tant qu'une autre voie n'est pas prouvée. **Ne pas retirer les pinces/fermer définitivement avant la preuve de mise à jour, ou accepter expressément de renoncer au Wi-Fi.**
+
+**Chemin critique le plus court :** partir du petit récepteur app-only de l'issue #43 et traiter **uniquement** son NO-GO mémoire. Chercher d'abord à désactiver temporairement les fonctions non indispensables **durant une mise à jour en mode maintenance** (HTTP/dashboard/telemetry/ressources inutiles) pour réduire le pic dynamique ; conserver le Wi-Fi privé, l'authentification, l'intégrité de l'image, les protections LittleFS et les seuils mémoire. Mesurer sur **un graphe réellement actif**, pas seulement sur des pointeurs de fonctions conservés pour le linker. Si l'architecture ne peut pas maintenir les seuils sans risque, conclure NO-GO rapidement ; ne pas revenir automatiquement à la grosse implémentation S/T ni créer de nouvelles phases.
+
+Si un **candidat fermé et borné** existe : d'abord les tests/builds hors ligne et l'inspection des ressources ; ensuite soumettre un paquet unique de qualification physique et une demande d'**autorisation explicite portant sur l'image exacte** pour **une** dernière intervention UART. Installer, vérifier le boot/les quatre cartes/LINK, effectuer **une vraie mise à jour suivante via Wi-Fi**, revérifier boot + identités + LittleFS préservé, **puis seulement retirer les pinces et refermer le boîtier**. L'absence de rollback automatique ESP8266 reste un risque explicite ; aucune garantie « zéro brick ».
+
+**État constaté, non modifié :** issue #43 terminée hors ligne en NO-GO (mémoire simultanée non démontrée, scénario prudent seulement +116 B de marge), logiciel d'installation désactivé, StageA d'origine fonctionnel et immuable, PR #42 Draft. Cette priorité ne valide **aucune** écriture, reflash, redémarrage, accès réseau ou opération physique par l'agent. La prochaine intervention doit produire **du code exploitable ou un motif d'arrêt**, pas une nouvelle roadmap de sécurité.
+
+---
+
 **Active issue43 — minimal SHINO Wi-Fi installer, 9 October2026:**
 [Owner issue](https://github.com/shinobione/SHINO-TV/issues/43) and
 [product decision](SHINO_WIFI_INSTALL.md) supersede the earlier OTA architecture
