@@ -137,14 +137,14 @@ def install(binary,manifest,identity_path,confirm_sha,progress=lambda n,total:No
         try:
             after=check_status(io.status(),identity)
             if after["build_id"]==m["build_id"] and after["sha256"]==m["sha256"] and after["bytes"]==m["bytes"] and after["boot_id"]!=before["boot_id"]:
-                if after.get("metrics_fresh") is True:
+                if after.get("metrics_fresh") is True and after["heap"]>=25600:
                     return dict(status="BOOT_AND_TELEMETRY_CONFIRMED",sha256=m["sha256"],build_id=m["build_id"],bytes=m["bytes"],
                                 before_boot_id=before["boot_id"],boot_id=after["boot_id"],fs_preserved=True,fs_files=after["fs_files"],fs_bytes=after["fs_bytes"],
                                 next_ota_available=True,postboot_measurements={field:after[field] for field in ("heap","block","stack","frag")},
                                 transfer_measurements=acknowledged or "REPLY_LOST_UNKNOWN")
                 # B booted; allow the normal LINK cadence to recover first.
         except (UpdateError,OSError):pass
-    return dict(status="STAGED_BOOT_OR_TELEMETRY_UNCONFIRMED" if acknowledged else "UNKNOWN_NO_RETRY",sha256=m["sha256"],physical_acceptance=False)
+    return dict(status="POSTBOOT_ACCEPTANCE_UNCONFIRMED" if acknowledged else "UNKNOWN_NO_RETRY",sha256=m["sha256"],physical_acceptance=False)
 
 
 def save_receipt(path,result):

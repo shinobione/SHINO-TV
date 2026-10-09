@@ -29,6 +29,7 @@ def qualify(binary,manifest,identity_path,authorize_read,cycles=30):
                 if response.status!=200 or len(raw)>4096:raise UpdateError("Repeated GET failed; stop")
                 json.loads(raw)
         time.sleep(2)
+    if minimum["heap"]<25600:raise UpdateError("Future OTA admission heap not maintained; stop")
     return dict(status="PHYSICAL_READONLY_QUALIFICATION_PASS",sha256=m["sha256"],build_id=m["build_id"],cycles=cycles,
                 minima=minimum,frag_max=maximum_frag,fs_hash_inventory_verified=True,metrics_fresh=True,
                 boot_stable=True,ota_admission_heap_observed=minimum["heap"]>=25600,flash_writes=0,reboots=0)

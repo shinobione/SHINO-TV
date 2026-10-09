@@ -54,10 +54,10 @@ class UpdaterTests(unittest.TestCase):
         self.assertEqual(result["status"],"BOOT_AND_TELEMETRY_CONFIRMED");self.assertEqual(io.posts,1)
         self.assertEqual(result["transfer_measurements"],"REPLY_LOST_UNKNOWN")
     def test_ack_never_suffices_for_boot(self):
-        for field,value in (("boot_id",self.before["boot_id"]),("sha256","c"*64),("build_id","c"*64),("metrics_fresh",False),("fs_ok",False),("heap",20479),("ota_enabled",False)):
+        for field,value in (("boot_id",self.before["boot_id"]),("sha256","c"*64),("build_id","c"*64),("metrics_fresh",False),("fs_ok",False),("heap",20479),("heap",25599),("ota_enabled",False)):
             with self.subTest(field=field):
                 self.ticks=0;io=self.io(dict(self.after,**{field:value}));result=self.install(io)
-                self.assertEqual(result["status"],"STAGED_BOOT_OR_TELEMETRY_UNCONFIRMED");self.assertEqual(io.posts,1)
+                self.assertEqual(result["status"],"POSTBOOT_ACCEPTANCE_UNCONFIRMED");self.assertEqual(io.posts,1)
     def test_lost_reply_unresolved_unknown(self):
         io=self.io(self.before,True);self.assertEqual(self.install(io)["status"],"UNKNOWN_NO_RETRY");self.assertEqual(io.posts,1)
     def test_bad_initial_resources_prevent_upload(self):

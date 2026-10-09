@@ -56,6 +56,9 @@ upload ; aucun retry. Le succès exige un **nouveau boot**, le SHA256 réel du
 firmware exécuté, le build attendu, les fichiers vérifiés, les mesures fraîches
 et un récepteur OTA encore disponible. Une réponse perdue se résout seulement
 par ces lectures ; sinon le résultat reste UNKNOWN.
+La confirmation exige aussi que B retrouve le plancher d'admission25600 octets
+de heap ; un boot avec mesures mais sans marge pour une prochaine OTA ne suffit
+pas à déclarer le succès. La qualification bornée vérifie ce même plancher.
 
 Pour l'essai initial, `tools/shino_prepare_ota_pair.py` prépare A/B distincts
 et un unique paquet local, après commit du code. Il protège l'image installée

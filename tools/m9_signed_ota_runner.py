@@ -32,9 +32,9 @@ def source_gate():
         'companion/SHINO-TRANSITION-CHECK.cmd': 'f6785c16885c0cfcd83ac58f5c857c1a6f122ed4',
         # New HTTP OTA product files are separate from the frozen signed graph.
         'companion/SHINO-UPDATE.cmd': '43902cd1e0bdab70495beedfbd76205ddc8b93c8',
-        'companion/shino_update.py': '4d6a589d1c62870b4eac498d6a95191534bf01fd',
-        'companion/shino_qualify.py': 'b36e73f2b36596f91df0ae3a63b088db13f1e3c7',
-        'companion/test_shino_update.py': 'bbf0ed0f596a1735368c8130504d8e5a8c15f077',
+        'companion/shino_update.py': '10c788f0cbcd2e099a96d24d4cb3077e37cf18f5',
+        'companion/shino_qualify.py': '03eb2c1685755877be7568ec0ee8da8235d255a2',
+        'companion/test_shino_update.py': 'df2fa2b229db093414609e9ca17d5ee16b7a3fd0',
     }
     for name in subprocess.check_output(["git","ls-files","firmware","companion","tools/m9_single_attempt*"],cwd=ROOT,text=True).splitlines():
         if name in new_offline_script_pins:
