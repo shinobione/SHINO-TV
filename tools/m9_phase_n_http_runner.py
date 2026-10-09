@@ -123,7 +123,7 @@ def replay_generated_maintenance_routes(exe,directory,env):
                 mgr=HTTPPasswordMgrWithDefaultRealm()
                 mgr.add_password('SHINO-StageA',base+path,'shino','PUBLIC-INERT-LAB-HTTP-FIXTURE')
                 op=build_opener(ProxyHandler({}),NoRedirect(),HTTPDigestAuthHandler(mgr))
-                headers={'Accept':'application/json','Connection':'close'}
+                headers={'Accept':'application/json','Connection':'keep-alive'}
                 if body is not None:headers['Content-Type']='application/json'
                 req=Request(base+path,headers=headers,method='POST' if body is not None else 'GET',data=body)
                 with op.open(req,timeout=5) as response:
