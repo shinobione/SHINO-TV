@@ -57,6 +57,7 @@ class OwnerBuildGate(unittest.TestCase):
                 return SimpleNamespace(returncode=0)
             resources = {"bin_bytes":65000,"noinit":56,"static_ram":42060,"linked_flash":60000}
             with patch.object(repair, "OWNER", target), \
+                 patch.object(repair, "ROOT", target), \
                  patch.object(repair, "check_checkout"), \
                  patch.object(repair, "load", return_value=dict(OWNER_CONFIG)), \
                  patch.object(repair.secrets, "token_hex", return_value=fresh), \
