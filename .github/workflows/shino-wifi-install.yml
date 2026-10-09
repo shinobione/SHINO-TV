@@ -198,3 +198,46 @@ jobs:
           name: shino-small-buffer-offline-${{ github.event.pull_request.head.sha || github.sha }}
           path: ${{ runner.temp }}/shino-small-buffer-*.json
           if-no-files-found: error
+
+  offline-transition-arm:
+    name: Third public StageA graph — challenge, dry run, dormant updater (NOT FLASHABLE)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Build isolated public-inert authorized arm graph
+        run: |
+          python -m pip install 'platformio==6.1.18'
+          pio pkg install -g -t 'platformio/framework-arduinoespressif8266@3.30102.0'
+          python tools/shino_transition_build.py research-local/shino-third-graph-ci/transition
+          pio run -d research-local/shino-third-graph-ci/transition -e esp12e_m9_4m2m_normal_qualification
+      - name: Fail closed on identity / flash authority / deployed source changes
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('research-local/shino-third-graph-ci/transition')
+          x=json.loads((p/'public-inputs.json').read_text())
+          assert x['public_inert_hmac_credential_only']
+          assert x['experimental_auth_arm'] and x['not_flashable_or_owner_qualified']
+          assert x['trusted_consent_bound']
+          source=(p/'src/boot/M9NormalStageA.cpp').read_text()
+          assert 'ShinoArmGate.h' in source
+          assert 'service.on("/api/v1/m9/maintenance/challenge", HTTP_GET' in source
+          assert 'service.on("/api/v1/m9/maintenance/probe", HTTP_GET' in source
+          assert 'service.on("/api/v1/m9/maintenance/install", HTTP_GET' in source
+          assert 'service.on("/api/v1/m9/maintenance/result", HTTP_GET' in source
+          assert 'ArmGate armGate' in source
+          assert 'PUBLIC-INERT' in (p/'include/shino_private_policy.h').read_text()
+          assert '-DSHINO_SMALL_OTA_BUFFER=1' in (p/'platformio.ini').read_text()
+          assert (p/'.pio/build/esp12e_m9_4m2m_normal_qualification/firmware.elf').is_file()
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
