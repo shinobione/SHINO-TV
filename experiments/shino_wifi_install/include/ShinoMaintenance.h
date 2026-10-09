@@ -26,7 +26,11 @@ public:
     }
     // Called at the next cooperative loop boundary, never in an HTTP callback.
     // False pauses HTTP, dashboard, telemetry handlers and normal JSON work.
-    bool tick(){
+    // Keep the state-machine dispatch out of StageA::loop. An inlined,
+    // conditionally-specialized dispatch obscured the real Native::pump path
+    // in Xtensa disassembly. This makes actual reachable machine calls
+    // auditable without accepting orphan symbols or callx guesses.
+    __attribute__((noinline)) bool tick(){
 #if defined(SHINO_MEMORY_TRACE) && SHINO_MEMORY_TRACE
         if(mode_==Normal)sample(TracePoint::Normal);
 #endif
