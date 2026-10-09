@@ -12,7 +12,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from shino_transition_build import maintenance_http_policy
+from shino_transition_build import maintenance_http_policy, authenticated_prebody_snapshot
 from m9_stagea_build import ROOT
 
 BASE_POLICY = ROOT / "firmware/include/boot/M9NormalHttpPolicy.h"
@@ -76,7 +76,7 @@ class PrebodyRegression(unittest.TestCase):
                            stderr=subprocess.PIPE, timeout=10)
 
     def test_digest_not_allowed_to_mutate_prebody_decision(self):
-        source = STAGE_A.read_text(encoding="utf-8")
+        source = authenticated_prebody_snapshot(STAGE_A.read_text(encoding="utf-8"))
         before = source.split("bool beforeBody() {", 1)[1].split("void telemetry() {", 1)[0]
         self.assertLess(before.index("M9NormalHttpPolicy::classify("),
                         before.index("if (!auth()) return false;"))
