@@ -50,7 +50,7 @@ def prepare(directory,small_buffer=False):
         config=ini.read_text()
         marker='-I'+str(ROOT/'experiments/shino_wifi_install/include').replace('\\','/')
         assert marker in config
-        ini.write_text(config.replace(marker,marker+'\n    -DSHINO_SMALL_OTA_BUFFER=1',1))
+        ini.write_text(config.replace(marker,marker+'\n    -DSHINO_SMALL_OTA_BUFFER=1\n    -DSHINO_MEMORY_TRACE=1',1))
     header=directory/'include/web/Webserver.h'
     header.write_text(header.read_text().replace('#include <ESP8266WebServer.h>','#include "ShinoReclaimingHttp.h"').replace('    ESP8266WebServer _server;',
         '    ShinoInstall::ReclaimingHttp _server;').replace('    void handleClient();','    void handleClient();\n    void quiesce(){_server.quiesce();}'))
