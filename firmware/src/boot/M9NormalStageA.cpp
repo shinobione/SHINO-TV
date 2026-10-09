@@ -68,15 +68,10 @@ void status() {
 bool beforeBody() {
     auto& server = service.raw();
     server.keepAlive(false); // Rejected body never becomes a second request.
-    // Snapshot the complete, strict, allocation-free route decision BEFORE
-    // Digest authentication allocates/parses temporary Strings. The observed
-    // device regression followed authenticated POST/GET transitions: never
-    // depend on mutable request metadata after authentication churn. Preserve
-    // auth-first RESPONSE semantics; a rejected unauthenticated path gets 401.
+    if (!auth()) return false;
     const int result = M9NormalHttpPolicy::classify(server.method() == HTTP_GET, server.method() == HTTP_POST,
         server.uri().c_str(), server.header("Content-Length").c_str(),
         server.header("Content-Type").c_str(), server.header("Transfer-Encoding").c_str());
-    if (!auth()) return false;
     if (result != 200) { respond(result, "{\"error\":\"STAGE_A_PREBODY\"}"); return false; }
     if (server.method() == HTTP_POST && !configReady) {
         respond(503, "{\"error\":\"READONLY_CONFIG_HOLD\"}"); return false;
