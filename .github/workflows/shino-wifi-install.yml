@@ -248,6 +248,9 @@ jobs:
           assert r['floors']==dict(heap=20480,largest=16384,stack=2048,fragmentation=25)
           for k in ('device_contacts','serial_io','flash_writes','rtc_writes','device_filesystem_writes','reboots'):assert r[k]==0
           PY
+      - name: Real synthetic owner-private 4m2m Xtensa build (no private artifacts)
+        run: |
+          python tools/shino_owner_ci.py
       - name: Fail closed on identity / flash authority / deployed source changes
         run: |
           python - <<'PY'
