@@ -3,6 +3,7 @@ import hashlib,hmac,json,unittest
 from shino_maintenance_control import parse_challenge,arm_message,prepare_arm,upload_probe,InstallError
 D='0123456789abcdef'
 B='a'*64
+NEXT='b'*64
 N='0102030405060708090a0b0c0d0e0f10'
 P='not-a-fixture-maintenance-password-which-is-long-enough'
 CH=json.dumps({'nonce':N,'device':D,'build':B}).encode()
@@ -42,11 +43,21 @@ class ArmClient(unittest.TestCase):
                     return value+' '+hmac.new(key,value.encode(),hashlib.sha256).hexdigest()
                 if self.pending.startswith('AUTH '):return 'READY'
                 if self.pending=='DATA':return f'ACK {self.sent}'
-                if self.pending=='COMMIT':return self.reply+' '+B
+                if self.pending=='COMMIT':return self.reply+' '+NEXT
                 raise AssertionError(self.pending)
         raw=b'hello'
-        m=dict(bytes=len(raw),sha256=hashlib.sha256(raw).hexdigest(),build_id=B)
-        self.assertEqual(upload_probe(IO('PROBED'),D,P,m,raw),'PROBED_PENDING_HTTP_RESULT')
+        m=dict(bytes=len(raw),sha256=hashlib.sha256(raw).hexdigest(),build_id=NEXT)
+        self.assertEqual(upload_probe(IO('PROBED'),D,P,m,raw,expected_current_build=B),
+                         'PROBED_PENDING_HTTP_RESULT')
         with self.assertRaisesRegex(InstallError,'RAM-only'):
-            upload_probe(IO('STAGED'),D,P,m,raw)
+            upload_probe(IO('STAGED'),D,P,m,raw,expected_current_build=B)
+        wrong_build=IO('PROBED')
+        with self.assertRaisesRegex(InstallError,'build changed'):
+            upload_probe(wrong_build,D,P,m,raw,expected_current_build='c'*64)
+        self.assertEqual(wrong_build.sent,0)
+        already_installed=IO('PROBED')
+        with self.assertRaisesRegex(InstallError,'already installed'):
+            upload_probe(already_installed,D,P,dict(m,build_id=B),raw,
+                         expected_current_build=B)
+        self.assertEqual(already_installed.sent,0)
 if __name__=='__main__':unittest.main()
