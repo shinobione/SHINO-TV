@@ -71,7 +71,7 @@ def require_paths(disassembly,markers=(
             lines=loop_text.splitlines()
             indirect_context=[]
             for i,line in enumerate(lines):
-                if re.search(r'\\bcallx(?:0|4|8|12)\\b',line):
+                if 'callx' in line:
                     indirect_context.append(dict(call=line.strip(),
                         before=[t.strip() for t in lines[max(0,i-17):i]],
                         after=[t.strip() for t in lines[i+1:i+6]]))
