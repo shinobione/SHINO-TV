@@ -1,6 +1,21 @@
 # SHINO // TV — Roadmap
 
-## Décision propriétaire active — Operation Break the Loop, 10 octobre 2026
+## Reprise propriétaire du 10 octobre 2026 — stack et diagnostics
+
+Lire intégralement [le dossier officiel du matin](SHINO_2026-10-10_MORNING_HANDOFF.md).
+A est désormais installé et fonctionnel selon les preuves propriétaire ; B n'a
+pas été tenté. Le blocage observé est stack1632 <2048, avec heap31912,
+bloc29744 et fragmentation7 ; sa cause technique exacte reste à démontrer.
+Le mandat courant autorise une correction minimale hors ligne, les builds/tests
+et des diagnostics précis du qualificateur. Ne pas abaisser les seuils, masquer
+le high-water, modifier les images/identifiants privés ni créer une architecture
+ou mission supplémentaire. Aucun contact SmallTV, COM8, reflash, OTA ou reboot
+sans nouvel accord exact. Préserver A installé et toutes les preuves historiques.
+Résultat hors ligne : [correction stack et diagnostics](SHINO_HTTP_OTA_STACK_FIX.md).
+Les buffers lourds sortent de la stack et les neuf caps de frames sont contrôlés
+au build ; réserve2048 inchangée. La qualification physique reste HOLD.
+
+## Décision propriétaire antérieure — Operation Break the Loop, 10 octobre 2026
 
 Le mandat joint à la conversation autorise une livraison concrète hors ligne sur
 la branche et la Draft PR42 existantes : diagnostic sans présumer les correctifs,

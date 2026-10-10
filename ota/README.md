@@ -1,7 +1,10 @@
 # SHINO // UPDATE
 
 Une application normale, un serveur HTTP persistant, un installateur Windows.
-La livraison reste **non installée / qualification physique non exécutée**.
+A fonctionne sur le SmallTV selon [le dossier officiel du matin](../docs/SHINO_2026-10-10_MORNING_HANDOFF.md),
+avec une qualification **HOLD : stack1632 <2048**. La
+[correction stack et diagnostics](../docs/SHINO_HTTP_OTA_STACK_FIX.md) reste
+hors ligne, non installée ; aucune OTA B n'a été tentée.
 
 Le firmware garde le StageA normal : AP WPA2 privé existant, Digest
 `SHINO-StageA` pour la télémétrie/statuts, quatre cartes et TTL 6 secondes,
@@ -34,6 +37,10 @@ Admission heap >=25600, puis heap >=20480, bloc >=16384, continuation >=2048,
 fragmentation <=25%, contrôlés pendant transfert/validation ; timeout 5 s
 d'inactivité et 120 s total. Un franchissement arrête le transfert sans commit.
 Les mesures ponctuelles ne bornent pas tous les pics SDK/IRQ/lwIP.
+La stack est un minimum historique depuis le repaint de setup ; aucun repaint
+runtime ne masque les pics. Les buffers JSON et contextes HMAC disposent d'un
+stockage statique avec propriété bornée ; le build refuse une régression des
+neuf frames compilées critiques. La marge heap native reste à qualifier.
 
 Depuis la racine, préparer une future release privée, sans contact appareil :
 
@@ -72,14 +79,19 @@ exigent une confirmation ; l'upload exige le hash exact affiché. Chaque lanceur
 conserve un résultat JSON local neuf et refuse un résultat déjà présent, pour
 éviter une seconde tentative accidentelle. Aucun lanceur n'est exécuté par le
 builder. Les budgets simulés et les cadres compilateur restent des preuves host.
+Le qualificateur enregistre aussi les échecs : cycle, route, code HTTP ou
+catégorie précise, mesure observée et seuil. Son code2 est conservé par le CMD
+après pause ; les détails privés d'exception/headers/body restent locaux.
 
 `uart-commands.json` contient aussi les commandes initiales COM8 : lectures
 PRE/POST privées de4MiB, copie locale du writer existant liée à A, comparaison
 indépendante avant boot normal. Le writer fait un seul Begin/DATA/Finish/MD5,
 sans répétition ni reboot automatique ; sa commande par défaut est AUDIT.
 Le paquet ne lance aucune de ces commandes. L'ancien writer n'est pas rebindé.
-Les hashes et ressources du paquet actuel sont dans
-[le reçu de livraison](../docs/SHINO_BREAK_THE_LOOP.md).
+Les hashes et ressources du paquet original sont dans
+[le reçu historique de livraison](../docs/SHINO_BREAK_THE_LOOP.md) ; son A a
+depuis été installé selon le dossier du matin. Le nouveau paquet corrigé ne
+remplace aucun de ces fichiers et ne constitue aucune autorisation physique.
 
 La staging interrompue ne remplace pas l'application courante. Une coupure
 pendant la copie eboot au reboot peut empêcher tout démarrage. Il n'existe

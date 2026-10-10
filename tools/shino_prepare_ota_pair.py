@@ -84,7 +84,10 @@ def prepare(directory):
                   f'echo SHA-256 {report["sha256"]}\n'
                   'choice /C ON /N /M "Autoriser ces lectures appareil (O/N) ? "\nif errorlevel 2 exit /b 1\n'
                   f'python "{ROOT/"companion/shino_qualify.py"}" --bin "{directory/name/".pio/build"/ENV/"firmware.bin"}" '
-                  f'--manifest "{directory/name/"release.json"}" --authorize-read --receipt "{directory/(name+"-readonly-receipt.json")}"\npause\n')
+                  f'--manifest "{directory/name/"release.json"}" --authorize-read --receipt "{directory/(name+"-readonly-receipt.json")}"\n'
+                  'set "SHINO_QUALIFY_EXIT=%ERRORLEVEL%"\n'
+                  'if not "%SHINO_QUALIFY_EXIT%"=="0" echo Qualification interrompue : voir le diagnostic ci-dessus.\n'
+                  'pause\nexit /b %SHINO_QUALIFY_EXIT%\n')
         (directory/("QUALIFY-"+name+".cmd")).write_text(launcher,encoding="utf-8")
     packet=dict(status="OFFLINE_READY_PHYSICAL_NOT_RUN",A=a,B=b,source_commit=a["source_commit"],protected_files_unchanged=True,
                 serial_port="COM8",device_contacts=0,physical_authorized=False,

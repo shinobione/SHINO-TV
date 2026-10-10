@@ -112,6 +112,16 @@ def run():
                 for path in ("/status","/api/v1/m9/normal/status","/api/v1/m9/maintenance/result","/api/v1/update/status"):
                     get(path);requests+=1
             before=get("/api/v1/update/status");assert before["metrics_fresh"]
+            process.stdin.write("scratch busy\n");process.stdin.flush()
+            assert json.loads(process.stdout.readline())=={"scratch_busy":True}
+            for path in ("/api/v1/update/status","/api/v1/bridge/metrics"):
+                try:get(path);raise AssertionError("Nested scratch use was accepted")
+                except HTTPError as error:
+                    assert error.code==503 and json.loads(error.read())["error"]=="RESPONSE_BUSY";error.close()
+            process.stdin.write("scratch free\n");process.stdin.flush()
+            assert json.loads(process.stdout.readline())=={"scratch_busy":False}
+            assert get("/api/v1/update/status")["metrics_fresh"]
+            assert get("/api/v1/bridge/metrics")["cpu_usage"]==22.5
             process.stdin.write("advance 7000\n");process.stdin.flush()
             assert json.loads(process.stdout.readline())=={"advanced":True}
             assert not get("/api/v1/update/status")["metrics_fresh"]
@@ -143,7 +153,7 @@ def run():
             process.stdin.write("stop\n");process.stdin.flush();output,error=process.communicate(timeout=8)
             if process.returncode:raise RuntimeError(error)
             report=json.loads(output);assert report["commit"]==report["restarts"]==1 and report["fs_preserved"]
-            return dict(authenticated_post_get_requests=requests,ttl_stale_and_recovery=True,rejected_transfers_recovered=rejected,update=body,actual_normal_parser_digest_core=True,network="HOST_LOOPBACK",flash_rtc_radio="MOCKED",device_contacts=0,**report)
+            return dict(authenticated_post_get_requests=requests,scratch_guard_rejections=2,scratch_owner_preserved=True,ttl_stale_and_recovery=True,rejected_transfers_recovered=rejected,update=body,actual_normal_parser_digest_core=True,network="HOST_LOOPBACK",flash_rtc_radio="MOCKED",device_contacts=0,**report)
         except Exception:
             diagnostic="process terminated"
             if process.poll() is None:

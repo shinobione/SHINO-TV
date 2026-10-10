@@ -42,6 +42,19 @@ ShinoHttpOta::Budget minima{UINT32_MAX,UINT32_MAX,UINT32_MAX,0};
 alignas(ShinoHttpOta::Transfer) uint8_t transferStorage[sizeof(ShinoHttpOta::Transfer)];
 alignas(4) uint8_t transferBuffer[512];
 ShinoHttpOta::Release incoming;
+// One synchronous HTTP handler owns this scratch until respond() returns,
+// including SDK yields. Reject nested use before changing its contents.
+char responseBody[768];
+bool responseBusy=false;
+class ResponseLease {
+    bool held_;
+public:
+    ResponseLease():held_(!responseBusy){if(held_)responseBusy=true;}
+    ~ResponseLease(){if(held_)responseBusy=false;}
+    explicit operator bool()const{return held_;}
+    ResponseLease(const ResponseLease&)=delete;
+    ResponseLease& operator=(const ResponseLease&)=delete;
+};
 constexpr char descriptor[]="SHINO-HTTP-OTA-1|" SHINO_OTA_DEVICE "|" SHINO_OTA_BUILD "|4m2m|APP_ONLY";
 void randomNonce(char* out){uint8_t bytes[16];for(unsigned i=0;i<4;++i){uint32_t r=os_random();std::memcpy(bytes+4*i,&r,4);}ShinoHttpOta::encode(bytes,16,out);}
 ShinoHttpOta::Budget budget(){ShinoHttpOta::Budget b{};ESP.getHeapStats(&b.heap,&b.block,&b.frag);b.stack=ESP.getFreeContStack();return b;}
@@ -148,9 +161,9 @@ struct HttpSink {
 };
 void status(){const M9NormalStatusJson::Snapshot s{observer.status(),M9LittleFsMountProbe::status(),configReady,apReady};HttpSink sink;if(!M9NormalStatusJson::emit(s,sink))respond(500,"{\"error\":\"STATUS_BOUND\"}");}
 void identity(){
+    ResponseLease lease;if(!lease){respond(503,"{\"error\":\"RESPONSE_BUSY\"}");return;}
     const auto b=budget();const auto& f=M9LittleFsMountProbe::status();
-    char body[768];
-    const int count=std::snprintf(body,sizeof(body),
+    const int count=std::snprintf(responseBody,sizeof(responseBody),
         "{\"protocol\":\"shino-http-ota-1\",\"descriptor\":\"%s\",\"device\":\"%s\",\"build_id\":\"%s\","
         "\"boot_id\":\"%s\",\"nonce\":\"%s\",\"sha256\":\"%s\",\"bytes\":%u,\"ota_enabled\":%s,"
         "\"fs_ok\":%s,\"fs_files\":%u,\"fs_bytes\":%u,\"metrics_fresh\":%s,"
@@ -162,8 +175,8 @@ void identity(){
         unsigned(b.heap),unsigned(b.block),unsigned(b.stack),unsigned(b.frag),lastUpdate,
         unsigned(minima.heap==UINT32_MAX?0:minima.heap),unsigned(minima.block==UINT32_MAX?0:minima.block),
         unsigned(minima.stack==UINT32_MAX?0:minima.stack),unsigned(minima.frag));
-    if(count<0||size_t(count)>=sizeof(body)){respond(500,"{\"error\":\"IDENTITY_BOUND\"}");return;}
-    respond(200,body);
+    if(count<0||size_t(count)>=sizeof(responseBody)){respond(500,"{\"error\":\"IDENTITY_BOUND\"}");return;}
+    respond(200,responseBody);
 }
 void telemetry(){
     const String payload=server.arg("plain");JsonDocument doc;
@@ -171,7 +184,12 @@ void telemetry(){
     String error;if(!FslessMetrics::apply(doc.as<JsonVariantConst>(),error)){respond(422,"{\"error\":\"TELEMETRY\"}");return;}
     dirty=true;respond(200,"{\"status\":\"RAM_SAMPLE_ACCEPTED\",\"persisted\":false}");
 }
-void metrics(){JsonDocument doc;FslessMetrics::describe(doc);char body[768];if(measureJson(doc)>=sizeof(body)){respond(500,"{\"error\":\"METRICS_BOUND\"}");return;}serializeJson(doc,body,sizeof(body));respond(200,body);}
+void metrics(){
+    ResponseLease lease;if(!lease){respond(503,"{\"error\":\"RESPONSE_BUSY\"}");return;}
+    JsonDocument doc;FslessMetrics::describe(doc);
+    if(measureJson(doc)>=sizeof(responseBody)){respond(500,"{\"error\":\"METRICS_BOUND\"}");return;}
+    serializeJson(doc,responseBody,sizeof(responseBody));respond(200,responseBody);
+}
 bool hashRunning(){
     const uint32_t size=ESP.getSketchSize();if(size<64000||size>ShinoHttpOta::MaxImage)return false;
     br_sha256_context h;br_sha256_init(&h);

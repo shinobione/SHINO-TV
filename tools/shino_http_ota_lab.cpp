@@ -22,6 +22,16 @@ int main(){
             if(sha.size()!=64||build.size()!=64||proof.size()!=64){std::cout<<"ERR\n";continue;}
             std::strcpy(r.sha,sha.c_str());std::strcpy(r.build,build.c_str());
             std::cout<<(transfer.begin(r,"0123456789abcdef",std::string(64,'a').c_str(),std::string(32,'1').c_str(),proof.c_str(),key,ESP.current,budget,true)?"READY\n":"ERR\n");
+        }else if(op=="PROOF_GUARD"){
+            ShinoHttpOta::ProofWorkspace workspace{};workspace.busy=true;
+            std::memset(&workspace.key,0xa5,sizeof(workspace.key));std::memset(&workspace.mac,0xa5,sizeof(workspace.mac));
+            const auto owned=workspace;char output[65];std::memset(output,'#',sizeof(output));
+            ShinoHttpOta::Release r{};r.bytes=64000;std::strcpy(r.sha,std::string(64,'b').c_str());std::strcpy(r.build,r.sha);
+            bool intact=!ShinoHttpOta::proof(workspace,key,"0123456789abcdef",std::string(32,'1').c_str(),r,output);
+            intact&=workspace.busy&&!std::memcmp(&workspace.key,&owned.key,sizeof(workspace.key))&&!std::memcmp(&workspace.mac,&owned.mac,sizeof(workspace.mac));
+            for(char value:output)intact&=value=='#';
+            workspace.busy=false;intact&=ShinoHttpOta::proof(workspace,key,"0123456789abcdef",std::string(32,'1').c_str(),r,output)&&!workspace.busy;
+            std::cout<<(intact?"GUARD_OK\n":"ERR\n");
         }else if(op=="DATA"){
             std::string bytes;in>>bytes;auto data=decode(bytes);
             if(transfer.add(data.data(),data.size(),budget))std::cout<<"ACK "<<transfer.received()<<"\n";else std::cout<<"ERR\n";

@@ -28,12 +28,23 @@ inline void encode(const uint8_t* in,size_t n,char* out){
 }
 inline bool equal(const char* a,const char* b,size_t n){uint8_t v=0;for(size_t i=0;i<n;++i)v|=uint8_t(a[i]^b[i]);return v==0;}
 struct Release {uint32_t bytes=0;char sha[65]{},build[65]{};};
-__attribute__((noinline)) inline void proof(const uint8_t* key,const char* device,const char* nonce,const Release& r,char* out){
-    char message[240];
-    std::snprintf(message,sizeof(message),"SHINO-HTTP-OTA-1\n%s\n%s\n%u\n%s\n%s",device,nonce,unsigned(r.bytes),r.sha,r.build);
-    br_hmac_key_context k; br_hmac_context h; uint8_t digest[32];
-    br_hmac_key_init(&k,&br_sha256_vtable,key,32);br_hmac_init(&h,&k,32);
-    br_hmac_update(&h,message,std::strlen(message));br_hmac_out(&h,digest);encode(digest,32,out);
+struct ProofWorkspace {br_hmac_key_context key{};br_hmac_context mac{};bool busy=false;};
+__attribute__((noinline)) inline bool proof(ProofWorkspace& workspace,const uint8_t* key,const char* device,const char* nonce,const Release& r,char* out){
+    // Each statically owned Transfer retains its contexts outside the 4 KiB
+    // continuation stack. Reject reentry before touching another call's data.
+    if(workspace.busy)return false;
+    workspace.busy=true;
+    struct Lease {bool& busy;~Lease(){busy=false;}} lease{workspace.busy};
+    uint8_t digest[32];
+    br_hmac_key_init(&workspace.key,&br_sha256_vtable,key,32);br_hmac_init(&workspace.mac,&workspace.key,32);
+    // Stream the identical signed bytes; no 240-byte message or printf frame.
+    char digits[11];char* decimal=digits+sizeof(digits);*--decimal='\0';
+    uint32_t bytes=r.bytes;do{*--decimal=char('0'+bytes%10);bytes/=10;}while(bytes);
+    static constexpr char domain[]="SHINO-HTTP-OTA-1\n";
+    br_hmac_update(&workspace.mac,domain,sizeof(domain)-1);
+    const char* fields[]={device,nonce,decimal,r.sha,r.build};
+    for(unsigned i=0;i<5;++i){br_hmac_update(&workspace.mac,fields[i],std::strlen(fields[i]));if(i!=4)br_hmac_update(&workspace.mac,"\n",1);}
+    br_hmac_out(&workspace.mac,digest);encode(digest,32,out);return true;
 }
 inline uint32_t rounded(uint32_t n){return (n+4095)&~4095u;}
 
@@ -48,10 +59,14 @@ public:
            !hex(r.sha,64)||!hex(r.build,64)||!std::strcmp(current,r.build)||
            r.bytes<64000 || r.bytes>MaxImage || currentBytes<64000 || currentBytes>MaxImage ||
            FsStart-rounded(r.bytes)<rounded(currentBytes)+4096)return false;
-        char expected[65];proof(key,device,nonce,r,expected);
-        if(!equal(expected,signature,64))return false;
+        char expected[65];
+        if(!proof(proof_,key,device,nonce,r,expected)||!equal(expected,signature,64))return false;
         release_=r;stage_=FsStart-rounded(r.bytes);
-        std::snprintf(tag_,sizeof(tag_),"SHINO-HTTP-OTA-1|%s|%s|4m2m|APP_ONLY",device,r.build);
+        static constexpr char prefix[]="SHINO-HTTP-OTA-1|",suffix[]="|4m2m|APP_ONLY";
+        static_assert(sizeof(prefix)-1+16+1+64+sizeof(suffix)<=sizeof(tag_),"Bounded release tag");
+        char* tag=tag_;std::memcpy(tag,prefix,sizeof(prefix)-1);tag+=sizeof(prefix)-1;
+        std::memcpy(tag,device,16);tag+=16;*tag++='|';std::memcpy(tag,r.build,64);tag+=64;
+        std::memcpy(tag,suffix,sizeof(suffix));
         if(!core_.begin(r.bytes,U_FLASH))return false;
         active_=true;br_sha256_init(&hash_);return (!check_||check_())?true:fail();
     }
@@ -76,7 +91,7 @@ public:
     bool committed()const{return committed_;}
     uint32_t stage()const{return stage_;}
 private:
-    UpdaterClass core_;br_sha256_context hash_{};Release release_{};
+    UpdaterClass core_;br_sha256_context hash_{};Release release_{};ProofWorkspace proof_{};
     uint32_t stage_=0,received_=0;bool active_=false,committed_=false;
     char tag_[128]{};
     bool (*check_)()=nullptr;

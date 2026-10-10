@@ -22,9 +22,13 @@ jobs:
         run: |
           python -m pip install 'platformio==6.1.18'
           python tools/shino_http_ota_build.py research-local/http-ota-ci
+          cp research-local/http-ota-ci/report.json "${{ runner.temp }}/http-ota-build.json"
+          python tools/m9_stagea_source_gate.py > "${{ runner.temp }}/http-ota-source.json"
       - name: Windows consent and actual Core interruption matrix
         run: |
           python -m unittest discover -s companion -p test_shino_update.py -v
+          python -m unittest discover -s companion -p test_shino_link.py -v
+          python -m unittest discover -s companion -p test_push_fsless_metrics.py -v
           python -m unittest discover -s tools -p test_shino_prepare_ota_pair.py -v
           python tools/test_shino_http_ota.py > "${{ runner.temp }}/http-ota-native.json"
       - name: Actual normal HTTP/Digest/Updater on loopback
@@ -39,12 +43,20 @@ jobs:
           root=Path(os.environ['RUNNER_TEMP'])
           native=json.loads((root/'http-ota-native.json').read_text())
           assert native['interruption_boundaries']==197 and native['actual_pinned_core']
+          assert native['cases']==227 and native['actual_windows_hmac']
           assert all(r['fs_preserved'] and not r['running'] for r in native['rows'])
           assert all(not r['commit'] for r in native['rows'] if r['name']!='valid')
           network=json.loads((root/'http-ota-network.json').read_text())
           assert network['authenticated_post_get_requests']==150
           assert network['actual_normal_parser_digest_core'] and network['commit']==1
           assert network['fs_preserved'] and network['device_contacts']==0
+          assert network['scratch_guard_rejections']==2 and network['scratch_owner_preserved']
+          build=json.loads((root/'http-ota-build.json').read_text())
+          assert build['stack_frames']['identity']<=160 and build['stack_frames']['metrics']<=112
+          assert build['stack_frames']['hmac_proof']<=128 and build['noinit']==56
+          assert build['physical']=='NOT_RUN' and not build['private']
+          source=json.loads((root/'http-ota-source.json').read_text())
+          assert source['PHASE_T_SOURCE']=='PASS_OFFLINE' and source['device_contacts']==0
           PY
           git diff --exit-code
       - uses: actions/upload-artifact@v4

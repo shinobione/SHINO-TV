@@ -43,18 +43,29 @@ def run():
         def upload(io,data=raw):
             for at in range(0,len(data),512):
                 io.write(data[at:at+512]);assert io.read()==f"ACK {min(at+512,len(data))}"
+        with trial("hmac_workspace_guard") as io:
+            assert io.command("PROOF_GUARD")=="GUARD_OK"
+            assert io.report()["writes"]==io.report()["erase"]==io.report()["commit"]==0
+        # Independent Windows HMAC covers the decimal field's width transitions.
+        for size in (64000,99999,100000,999999,1000000,0xFEFF0):
+            with trial("hmac_size_"+str(size)) as io:
+                release=dict(m,bytes=size);assert begin(io,release)=="READY"
+                io.command("ABORT");assert io.report()["writes"]==io.report()["erase"]==io.report()["commit"]==0
         with trial("valid") as io:
             assert begin(io)=="READY";upload(io);assert io.command("FINISH")=="STAGED";assert io.report()["commit"]==1
-        for name in ("wrong_hmac","oversize","wrong_build","low_heap","low_block","low_stack","fragmented","low_admission"):
+        for name in ("wrong_hmac","oversize","wrong_build","low_heap","low_block","low_stack","observed_stack_1632","fragmented","low_admission"):
             with trial(name) as io:
                 release=dict(m);p=None
                 if name=="wrong_hmac":p="0"*64
                 if name=="oversize":release["bytes"]=0xFEFF1
                 if name=="wrong_build":release["build_id"]="a"*64
-                if name.startswith("low") or name=="fragmented":
-                    values={"low_heap":"20479 50000 3248 1","low_block":"60000 16383 3248 1","low_stack":"60000 50000 2047 1","fragmented":"60000 50000 3248 26","low_admission":"25599 50000 3248 1"}
+                if name.startswith("low") or name in ("fragmented","observed_stack_1632"):
+                    values={"low_heap":"20479 50000 3248 1","low_block":"60000 16383 3248 1","low_stack":"60000 50000 2047 1","observed_stack_1632":"60000 50000 1632 1","fragmented":"60000 50000 3248 26","low_admission":"25599 50000 3248 1"}
                     io.command("BUDGET "+values[name])
                 assert begin(io,release,p)=="ERR";assert io.report()["writes"]==io.report()["erase"]==0
+        with trial("floor_after_hmac") as io:
+            io.command("HEALTH 0");assert begin(io)=="ERR"
+            assert io.report()["writes"]==io.report()["erase"]==io.report()["commit"]==0
         for name in ("bad_hash","bad_crc","wrong_identity","flash_corrupt","read_fail","erase_fail","write_fail","floor_during_transfer","floor_before_commit","deadline_during_verification","extra_bytes","gzip"):
             with trial(name) as io:
                 data=bytearray(raw);release=dict(m)

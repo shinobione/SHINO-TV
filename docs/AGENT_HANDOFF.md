@@ -1,7 +1,21 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last owner mandate update: **2026-10-10**; the **2026-10-01** square-scene product contract remains below. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
-**Active owner mandate — Operation Break the Loop, 10 October2026:**
+**Current resume mandate — 10 October2026, after owner qualification:**
+Read the complete [official morning handoff](SHINO_2026-10-10_MORNING_HANDOFF.md)
+first. Installed A is owner-confirmed booted, four cards/LINK/FS and three HTTP200
+reads; stack1632 <2048 is HOLD, not a telemetry/404 diagnosis. B OTA NOT_RUN.
+Implement only a minimal offline stack correction and specific sanitized
+qualification errors; thresholds and private artifacts remain unchanged.
+No SmallTV/COM8/flash/OTA/reboot without fresh exact-operation approval.
+The offline/NOT_RUN delivery records below predate this owner qualification.
+Offline [stack/qualifier correction](SHINO_HTTP_OTA_STACK_FIX.md): identity912→160,
+metrics880→112, HMAC720→128, fixed RAM +1224 in matched public builds. Nine
+compiler frame caps retain the floor2048. Current installed A remains HOLD;
+the first physical GET path producing1632 is unknown. Proposed next operation
+is one exact new-A UART bootstrap under fresh approval, with no B OTA approval.
+
+**Prior owner mandate — Operation Break the Loop, 10 October2026:**
 [Concrete replacement](SHINO_BREAK_THE_LOOP.md) and [normal firmware/updater](../ota/README.md)
 supersede the prior experimental maintenance architecture. One persistent HTTP
 server, HMAC application-only POST, Core Updater/eboot with noncommitting abort,

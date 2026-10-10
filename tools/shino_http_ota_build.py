@@ -53,6 +53,26 @@ def descriptor(device,build):
     return f"SHINO-HTTP-OTA-1|{device}|{build}|4m2m|APP_ONLY"
 
 
+def stack_frames(directory):
+    """Pinned compiler frame caps, never a whole-call-chain/device PASS."""
+    root=Path(directory)/".pio/build"/ENV
+    normal=(root/"src/boot/M9NormalStageA.cpp.su").read_text(encoding="utf-8")
+    updater=(root/"FrameworkArduino/Updater.cpp.su").read_text(encoding="utf-8")
+    caps={"identity":("::identity()",160),"metrics":("::metrics()",112),
+          "hmac_proof":("ShinoHttpOta::proof(",128),"ota_begin":("Transfer::begin(",128),
+          "ota_upload":("::upload(uint32_t)",128),"ota_staging":("Transfer::stagedImage()",416),
+          "ota_segments":("Transfer::segments(",352),"ota_finish":("Transfer::finish(",144),
+          "core_end":("UpdaterClass::end(bool)",192)}
+    measured={}
+    for name,(marker,cap) in caps.items():
+        source=updater if name=="core_end" else normal
+        rows=[line.rsplit("\t",2) for line in source.splitlines() if marker in line]
+        if len(rows)!=1 or len(rows[0])!=3 or rows[0][2]!="static":raise ValueError("Missing or unbounded stack frame: "+name)
+        measured[name]=int(rows[0][1])
+        if measured[name]>cap:raise ValueError(f"Compiled stack frame regressed: {name} {measured[name]} > {cap}")
+    return measured
+
+
 def prepare(directory,config=None):
     directory=Path(directory).resolve()
     if directory.exists():raise ValueError("New output directory required")
@@ -117,6 +137,7 @@ def build(directory,private=False):
     if raw.count(descriptor(device,identity).encode())!=1:raise ValueError("Embedded release identity missing or ambiguous")
     resources=one(directory)
     layout=elf_layout(binary.with_suffix(".elf"))
+    frames=stack_frames(directory)
     if resources["noinit"]!=56:raise ValueError("Unexpected RTC/noinit footprint")
     manifest=dict(schema=1,family="SHINO-StageA",layout="4m2m",protocol="shino-http-ota-1",device=device,
                   bytes=len(raw),sha256=hashlib.sha256(raw).hexdigest(),build_id=identity)
@@ -124,7 +145,7 @@ def build(directory,private=False):
     report=dict(manifest,source_commit=subprocess.check_output(["git","rev-parse","HEAD"],cwd=ROOT,text=True).strip(),
                 source_dirty=bool(subprocess.check_output(["git","status","--porcelain"],cwd=ROOT,text=True).strip()),
                 static_ram=resources["static_ram"],linked_flash=resources["linked_flash"],noinit=resources["noinit"],
-                layout_symbols=layout,
+                layout_symbols=layout,stack_frames=frames,
                 private=private,core_buffer=4096,physical="NOT_RUN",device_contacts=0)
     (directory/"report.json").write_text(json.dumps(report,indent=2)+"\n",encoding="utf-8")
     print(json.dumps(report,ensure_ascii=True))
