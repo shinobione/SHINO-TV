@@ -64,6 +64,22 @@ class TestForensics(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"repaint"):
             f.highwater_source_guard(normal,changed)
 
+    def test_b3_telemetry_scratch_is_leased_and_destructed(self):
+        normal = f.TRACKED_NORMAL.read_text(encoding="utf-8")
+        resources = f.TRACKED_RESOURCES.read_text(encoding="utf-8")
+        self.assertIn("TelemetryScratchLease scratch;", normal)
+        self.assertIn("ResponseLease responseLease_;", normal)
+        self.assertIn("scratch_->~TelemetryScratch();", normal)
+        self.assertTrue(f.highwater_source_guard(normal, resources))
+        with self.assertRaises(AssertionError):
+            f.highwater_source_guard(
+                normal.replace("ResponseLease responseLease_;", "bool unguarded_;"),
+                resources)
+        with self.assertRaises(AssertionError):
+            f.highwater_source_guard(
+                normal.replace("scratch_->~TelemetryScratch();", "/* lost destructor */"),
+                resources)
+
     def test_audit_has_no_device_or_firmware_side_effect(self):
         framed={key:{"state":"MEASURED_STATIC","frame_bytes":64} for key in f.TARGETS}
         with patch.object(f,"collect_frames",return_value=(framed,[])), \
