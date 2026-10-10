@@ -1,8 +1,6 @@
 """Actual complete normal HTTP OTA graph on loopback, RAM flash/RTC only."""
 import hashlib
 import http.client
-from concurrent.futures import ThreadPoolExecutor
-from time import perf_counter
 import json
 import queue
 import shutil
@@ -13,7 +11,7 @@ import tempfile
 import threading
 from pathlib import Path
 from unittest.mock import patch
-from urllib.request import Request,build_opener,ProxyHandler,HTTPPasswordMgrWithDefaultRealm,HTTPDigestAuthHandler
+from urllib.request import Request,build_opener,ProxyHandler,HTTPPasswordMgrWithDefaultRealm,HTTPDigestAuthHandler,parse_http_list,parse_keqv_list
 from urllib.error import HTTPError
 from shino_http_ota_build import materialize_http
 from shino_wifi_runner import build,ROOT
@@ -95,67 +93,77 @@ def prepare_host(host,device="0123456789abcdef",current_build="a"*64):
     (host/"network_composition.inc").write_text(''.join(f'#include "{(ROOT/p).as_posix()}"\n' for p in ("ota/firmware/Normal.cpp","firmware/src/boot/M9NormalDashboard.cpp","firmware/src/boot/FslessMetrics.cpp")))
 
 
-def exercise_parallel_digest(base, sample, rounds=8):
-    """Two independent Digest sessions colliding at the real Normal.cpp handler.
+def exercise_digest_nonce_invalidation(base):
+    """Deterministic, actual-Core Digest challenge overwrite, loopback only.
 
-    Only against 127.0.0.1, RAM flash, never the owner device. One logical GET
-    and one RAM telemetry POST per round, each with a 6-second bound. This is
-    an adversarial loopback regression, NOT a Wi-Fi / native stack benchmark.
+    The server stores ONE nonce/opaque pair. GET client A gets challenge A,
+    GET client B gets challenge B, then B authenticates while A's older
+    challenge gets a 401 despite a valid password. Never retries the stale
+    request. Demonstrates an authentication concurrency failure, NOT a
+    measured device timeout or proof of physical root cause.
     """
     assert base.startswith("http://127.0.0.1:")
-    assert type(rounds) is int and 1 <= rounds <= 16
-
-    def fresh_reader():
-        manager = HTTPPasswordMgrWithDefaultRealm()
-        manager.add_password("SHINO-StageA", base, "shino",
+    url = base + "/api/v1/update/status"
+    no_auth = build_opener(ProxyHandler({}), NoRedirect())
+    credentials = HTTPPasswordMgrWithDefaultRealm()
+    credentials.add_password("SHINO-StageA", base, "shino",
                              "PUBLIC-INERT-LAB-HTTP-FIXTURE")
-        return build_opener(ProxyHandler({}), NoRedirect(),
-                            HTTPDigestAuthHandler(manager))
+    signer = HTTPDigestAuthHandler(credentials)
 
-    status_reader = fresh_reader()
-    telemetry_reader = fresh_reader()
-    get_max_ms = 0
-    post_max_ms = 0
+    def get_challenge():
+        request = Request(url, headers={"Connection": "close"})
+        try:
+            with no_auth.open(request, timeout=6):
+                raise AssertionError("Unauthenticated status unexpectedly accepted")
+        except HTTPError as error:
+            try:
+                assert error.code == 401
+                header = error.headers.get("www-authenticate", "")
+                assert header.lower().startswith("digest ")
+                challenge = parse_keqv_list(parse_http_list(header[7:]))
+                assert challenge.get("realm") == "SHINO-StageA"
+                assert challenge.get("nonce") and challenge.get("opaque")
+                return challenge
+            finally:
+                error.close()
 
-    def call(reader, request, barrier):
-        barrier.wait(timeout=3)
-        started = perf_counter()
-        with reader.open(request, timeout=6) as response:
-            assert response.status == 200
-            result = json.loads(response.read(4097))
-        return result, int((perf_counter() - started) * 1000)
+    def response_to(challenge):
+        request = Request(url, headers={"Connection": "close"})
+        proof = signer.get_authorization(request, challenge)
+        assert proof
+        request.add_unredirected_header("Authorization", "Digest " + proof)
+        return request
 
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        for _ in range(rounds):
-            # Main and both workers reach the barrier: no sequential request
-            # ordering can accidentally conceal a two-client accept collision.
-            barrier = threading.Barrier(3)
-            get_request = Request(
-                base + "/api/v1/update/status",
-                headers={"Connection": "close", "Cache-Control": "no-store"})
-            post_request = Request(
-                base + "/api/v1/bridge/metrics", data=sample,
-                headers={"Content-Type": "application/json",
-                         "Connection": "close", "Cache-Control": "no-store"})
-            get_future = executor.submit(call, status_reader, get_request, barrier)
-            post_future = executor.submit(call, telemetry_reader, post_request, barrier)
-            barrier.wait(timeout=3)
-            got, get_ms = get_future.result(timeout=8)
-            posted, post_ms = post_future.result(timeout=8)
-            assert got["protocol"] == "shino-http-ota-1"
-            assert got["fs_ok"] and got["ota_enabled"]
-            assert posted["status"] == "RAM_SAMPLE_ACCEPTED"
-            assert posted["persisted"] is False
-            get_max_ms = max(get_max_ms, get_ms)
-            post_max_ms = max(post_max_ms, post_ms)
+    challenged_a = get_challenge()
+    challenged_b = get_challenge()
+    assert challenged_a["nonce"] != challenged_b["nonce"]
+    assert challenged_a["opaque"] != challenged_b["opaque"]
 
-    return dict(parallel_digest_gets=rounds, parallel_digest_telemetry_posts=rounds,
-                parallel_max_get_latency_ms=get_max_ms,
-                parallel_max_post_latency_ms=post_max_ms,
-                parallel_requests_bounded=True,
-                parallel_actual_normal_parser=True,
-                parallel_rf_lwip="NOT_MODELED",
-                parallel_ota_posts=0)
+    # Same credentials, same target, authentic response to NEW challenge.
+    with no_auth.open(response_to(challenged_b), timeout=6) as accepted:
+        assert accepted.status == 200
+        body = json.loads(accepted.read(4097))
+        assert body["protocol"] == "shino-http-ota-1"
+
+    # Stale A response MUST fail; this is the single-nonce limitation,
+    # not a bad password and not an unsafe second OTA attempt.
+    try:
+        with no_auth.open(response_to(challenged_a), timeout=6):
+            raise AssertionError("Stale Digest challenge incorrectly accepted")
+    except HTTPError as rejected:
+        try:
+            assert rejected.code == 401
+        finally:
+            rejected.close()
+
+    return dict(digest_nonce_rotation_reproduced=True,
+                digest_new_challenge_accepted=True,
+                digest_old_challenge_rejected=True,
+                digest_challenges=2,
+                digest_ota_posts=0,
+                digest_actual_normal_parser=True,
+                digest_lwip_rf="NOT_MODELED",
+                digest_physical_timeout_proven=False)
 
 
 def run(binary=None,manifest=None,current_binary=None,current_manifest=None):
@@ -192,7 +200,7 @@ def run(binary=None,manifest=None,current_binary=None,current_manifest=None):
                 for path in ("/status","/api/v1/m9/normal/status","/api/v1/m9/maintenance/result","/api/v1/update/status"):
                     get(path);requests+=1
             before=get("/api/v1/update/status");assert before["metrics_fresh"]
-            overlap=exercise_parallel_digest(base,sample,rounds=8)
+            digest_proof=exercise_digest_nonce_invalidation(base)
             process.stdin.write("upload busy\n");process.stdin.flush()
             assert json.loads(process.stdout.readline())=={"upload_busy":True}
             c=http.client.HTTPConnection("127.0.0.1",port,timeout=6)
@@ -258,7 +266,7 @@ def run(binary=None,manifest=None,current_binary=None,current_manifest=None):
             process.stdin.write("stop\n");process.stdin.flush();output,error=process.communicate(timeout=8)
             if process.returncode:raise RuntimeError(error)
             report=json.loads(output);assert report["commit"]==report["restarts"]==1 and report["fs_preserved"]
-            return dict(**overlap,authenticated_post_get_requests=requests,scratch_guard_rejections=2,normal_status_guard_rejections=3,upload_guard_rejections=1,scratch_owner_preserved=True,ttl_stale_and_recovery=True,rejected_transfers_recovered=rejected,update=body,actual_normal_parser_digest_core=True,
+            return dict(**digest_proof,authenticated_post_get_requests=requests,scratch_guard_rejections=2,normal_status_guard_rejections=3,upload_guard_rejections=1,scratch_owner_preserved=True,ttl_stale_and_recovery=True,rejected_transfers_recovered=rejected,update=body,actual_normal_parser_digest_core=True,
                         exact_compiled_bin=binary is not None,uploaded_bytes=len(raw),target_sha256=m["sha256"],
                         exact_current_bin=current_binary is not None,network="HOST_LOOPBACK",flash_rtc_radio="MOCKED",device_contacts=0,**report)
         except Exception:

@@ -76,3 +76,26 @@ and memory shims do not model RF contention, lwIP, memory fragmentation, or
 real Xtensa continuation stack. A host PASS is not physical B2 qualification.
 No physical device contact, OTA, UART, reset, firmware modification,
 credential publication or new owner action is requested.
+
+## Phase 2 failure and deterministic Core proof
+
+The first experimental 8-pair concurrent loopback test failed with repeated
+Digest 401 responses (\`urllib.error.HTTPError: HTTP Error 401: digest auth
+failed\`), despite the original 150 sequential requests passing.
+This is a **negative finding**, not a successful concurrency regression.
+
+Core 3.1.2 \`ESP8266WebServer-impl.h\` sets its single mutable \`_snonce\`
+and \`_sopaque\` afresh on each \`requestAuthentication(DIGEST_AUTH,...)\`.
+Its \`authenticateDigest(...)\` rejects any authorization whose nonce or
+opaque differs from that latest pair. Independent clients can therefore
+invalidate one another's Digest challenge/response windows.
+
+A deterministic loopback test now: (1) obtains client A challenge, (2)
+obtains client B challenge, (3) validates B with correct credentials,
+(4) verifies that A's equally valid-but-stale challenge is rejected with
+401. No retry, no socket requests to physical B2. The CI asserts the
+**known limitation is reproduced**, not that concurrent authentication is
+fixed. This proves a Core-level mechanism capable of causing the physical
+symptom, but the physical cycle-5 \`NETWORK_TIMEOUT\` remains unclassified;
+RF/lwIP and five-second timeout competition have not been ruled out.
+Do not convert the original B2 \`HOLD\` to PASS or authorize B3 on this alone.

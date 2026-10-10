@@ -101,9 +101,10 @@ jobs:
           assert {'boot_entry_gap','app_entry_gap'} <= {r['name'] for r in exact['rows']}
           network=json.loads((root/'http-ota-network.json').read_text())
           assert network['authenticated_post_get_requests']==150
-          assert network['parallel_digest_gets']==8 and network['parallel_digest_telemetry_posts']==8
-          assert network['parallel_requests_bounded'] and network['parallel_actual_normal_parser']
-          assert network['parallel_ota_posts']==0 and network['parallel_rf_lwip']=='NOT_MODELED'
+          assert network['digest_nonce_rotation_reproduced']
+          assert network['digest_new_challenge_accepted'] and network['digest_old_challenge_rejected']
+          assert network['digest_challenges']==2 and network['digest_ota_posts']==0
+          assert network['digest_actual_normal_parser'] and not network['digest_physical_timeout_proven']
           assert network['actual_normal_parser_digest_core'] and network['commit']==1
           assert network['exact_compiled_bin'] and network['uploaded_bytes']==exact['positive']['bytes']
           assert network['fs_preserved'] and network['device_contacts']==0
