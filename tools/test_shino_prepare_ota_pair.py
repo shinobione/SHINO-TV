@@ -64,8 +64,8 @@ class BindingTests(unittest.TestCase):
         self.assertEqual(Path(args[2]),entry)
         before=self.directory/"PRE-4MiB.bin"
         after=self.directory/"POST-4MiB.bin"
-        before.write_bytes(b"\\xff"*0x400000)
-        after.write_bytes(self.raw+b"\\xff"*(0x400000-len(self.raw)))
+        before.write_bytes(b"\xff"*0x400000)
+        after.write_bytes(self.raw+b"\xff"*(0x400000-len(self.raw)))
         run=subprocess.run([sys.executable,"-I",str(entry),str(self.binary),
                             str(before),str(after),"--expected-sha256",self.sha],
                            cwd=self.directory,capture_output=True,text=True,timeout=35)
