@@ -13,6 +13,8 @@ $manifest = Join-Path $root "release.json"
 $report = Join-Path $root "report.json"
 $receipt = Join-Path $root "OTA-B-single-upload-receipt.json"
 $marker = Join-Path $root "OTA-B-single-upload-attempt.marker"
+$legacyLock = Join-Path $root "OTA-B-first-attempt.lock"
+$legacyReceipt = Join-Path $root "OTA-B-first-attempt-receipt.json"
 $expectedA = "5c1ce8a86766282d84547fe71e2f4bb19db5077442829e2c8526e376072aa964"
 $expectedB = "1effdaf7172f2ce7caebd44a64e840164c418ccde95477c88ea9a28b4166aa48"
 $source = "1e179b4103f8792be3c1c04186b7451a8ce2bc1d"
@@ -22,7 +24,8 @@ foreach ($file in @($bin, $manifest, $report)) {
         throw "STOP: Private B release file missing. No device contact."
     }
 }
-if ((Test-Path -LiteralPath $receipt) -or (Test-Path -LiteralPath $marker)) {
+if ((Test-Path -LiteralPath $receipt) -or (Test-Path -LiteralPath $marker) -or
+    (Test-Path -LiteralPath $legacyLock) -or (Test-Path -LiteralPath $legacyReceipt)) {
     throw "STOP: A previous or uncertain attempt is registered. NO RETRY."
 }
 $m = Get-Content -LiteralPath $manifest -Raw | ConvertFrom-Json
