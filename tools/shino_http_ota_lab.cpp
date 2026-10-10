@@ -22,6 +22,14 @@ int main(){
             if(sha.size()!=64||build.size()!=64||proof.size()!=64){std::cout<<"ERR\n";continue;}
             std::strcpy(r.sha,sha.c_str());std::strcpy(r.build,build.c_str());
             std::cout<<(transfer.begin(r,"0123456789abcdef",std::string(64,'a').c_str(),std::string(32,'1').c_str(),proof.c_str(),key,ESP.current,budget,true)?"READY\n":"ERR\n");
+        }else if(op=="ALIGN_PROBE"){
+            alignas(4) uint32_t word=0;
+            const bool actualCoreContract=
+                !ESP.flashRead(0x1000,&word,1) &&
+                !ESP.flashRead(0x1003,&word,1) &&
+                !ESP.flashRead(0x1003,&word,4) &&
+                ESP.flashRead(0x1000,&word,4);
+            std::cout<<(actualCoreContract?"ALIGN_OK\\n":"ERR\\n");
         }else if(op=="PROOF_GUARD"){
             ShinoHttpOta::ProofWorkspace workspace{};workspace.busy=true;
             std::memset(&workspace.key,0xa5,sizeof(workspace.key));std::memset(&workspace.mac,0xa5,sizeof(workspace.mac));
