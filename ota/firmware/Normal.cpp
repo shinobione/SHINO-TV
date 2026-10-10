@@ -159,7 +159,33 @@ struct HttpSink {
     void begin(size_t bytes){server.sendHeader(F("Cache-Control"),F("no-store"));server.setContentLength(bytes);server.send(200,"application/json","");}
     void write(const char* p,size_t n){server.sendContent(p,n);}
 };
-void status(){const M9NormalStatusJson::Snapshot s{observer.status(),M9LittleFsMountProbe::status(),configReady,apReady};HttpSink sink;if(!M9NormalStatusJson::emit(s,sink))respond(500,"{\"error\":\"STATUS_BOUND\"}");}
+void status(){
+    // The legacy emit(s, sink) keeps a 512-byte JSON array on continuation
+    // stack. This physical GET is part of the normal A qualification sequence
+    // and its historical high-water survives into the next identity request.
+    // Reuse the already-allocated 768-byte response workspace, sharing the
+    // exact same reentrancy lease used by the identity/metrics endpoints.
+    static_assert(sizeof(responseBody)>=M9NormalStatusJson::BUFFER_BYTES,
+                  "Shared response scratch must fit every normal-status chunk");
+    ResponseLease lease;if(!lease){respond(503,"{\"error\":\"RESPONSE_BUSY\"}");return;}
+    const M9NormalStatusJson::Snapshot s{observer.status(),M9LittleFsMountProbe::status(),configReady,apReady};
+    size_t total=0;
+    for(unsigned i=0;i<4;++i){
+        const int n=M9NormalStatusJson::part(responseBody,sizeof(responseBody),i,s);
+        if(n<0||size_t(n)>=sizeof(responseBody)){respond(500,"{\"error\":\"STATUS_BOUND\"}");return;}
+        total+=size_t(n);
+    }
+    HttpSink sink;sink.begin(total);
+    for(unsigned i=0;i<4;++i){
+        const int n=M9NormalStatusJson::part(responseBody,sizeof(responseBody),i,s);
+        if(n<0||size_t(n)>=sizeof(responseBody)){
+            // Header was already sent: terminate an inconsistent stream, do
+            // not add a second JSON response or expose an invalid buffer span.
+            server.client().stop();return;
+        }
+        sink.write(responseBody,size_t(n));
+    }
+}
 void identity(){
     ResponseLease lease;if(!lease){respond(503,"{\"error\":\"RESPONSE_BUSY\"}");return;}
     const auto b=budget();const auto& f=M9LittleFsMountProbe::status();
