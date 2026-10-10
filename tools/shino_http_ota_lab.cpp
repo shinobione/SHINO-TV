@@ -29,7 +29,7 @@ int main(){
                 !ESP.flashRead(0x1003,&word,1) &&
                 !ESP.flashRead(0x1003,&word,4) &&
                 ESP.flashRead(0x1000,&word,4);
-            std::cout<<(actualCoreContract?"ALIGN_OK\\n":"ERR\\n");
+            std::cout<<(actualCoreContract?"ALIGN_OK\n":"ERR\n");
         }else if(op=="PROOF_GUARD"){
             ShinoHttpOta::ProofWorkspace workspace{};workspace.busy=true;
             std::memset(&workspace.key,0xa5,sizeof(workspace.key));std::memset(&workspace.mac,0xa5,sizeof(workspace.mac));
