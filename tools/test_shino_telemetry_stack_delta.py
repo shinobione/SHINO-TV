@@ -32,6 +32,26 @@ class TestB2StackDelta(unittest.TestCase):
         change(s,b)
         with self.assertRaises(gate.Hold):gate.compare(BASE,s,b)
 
+    def test_real_b3_compiled_delta_not_synthetic(self):
+        # The HTTP CI builds research-local/http-ota-ci BEFORE invoking this
+        # suite. Baseline B2 branches retain synthetic-only unit coverage.
+        from shino_b2_stack_forensics import audit
+        root = Path(__file__).resolve().parents[1]
+        normal = (root / "ota/firmware/Normal.cpp").read_text(encoding="utf-8")
+        if "TelemetryScratchLease scratch;" not in normal:
+            self.skipTest("No B3 telemetry scratch candidate in this source tree")
+        folder = root / "research-local/http-ota-ci"
+        report = folder / "report.json"
+        self.assertTrue(report.is_file(), "B3 must have a real public PIO build")
+        actual_stack = audit(folder)
+        actual_build = json.loads(report.read_text(encoding="utf-8"))
+        result = gate.compare(BASE, actual_stack, actual_build)
+        self.assertGreater(result["compiled_frame_reduction_bytes"], 0)
+        self.assertLess(result["candidate_frame_bytes"], BASE["baseline_telemetry_frame_bytes"])
+        self.assertEqual(result["physical_qualification"], "HOLD")
+        self.assertFalse(result["ota_authorized"])
+        print("B3_ACTUAL_COMPILED_DELTA=" + json.dumps(result, sort_keys=True))
+
     def test_positive_is_only_compiled_frame_not_native_or_ota(self):
         s,b=candidate()
         result=gate.compare(BASE,s,b)
