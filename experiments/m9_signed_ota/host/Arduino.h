@@ -38,6 +38,13 @@ struct HostESP {
     FlashMode_t magicFlashChipMode(uint8_t n){return FlashMode_t(n);}
     uint32_t magicFlashChipSize(uint8_t n){return n==4?0x400000:0x800000;}
     bool flashRead(uint32_t at,void* out,size_t n){++readCalls;if(failRead || at+n>flash.size())return false;std::memcpy(out,flash.data()+at,n);return true;}
+    // Model the REAL ESP8266 Core 3.1.2 typed flashRead overload:
+    // a uint32_t* read rejects a non-multiple-of-four length or unaligned
+    // buffer. The prior void* mock masked a deterministic failed footer read.
+    bool flashRead(uint32_t at,uint32_t* out,size_t n){
+        if((at&3u)||(n&3u)||(reinterpret_cast<uintptr_t>(out)&3u))return false;
+        return flashRead(at,static_cast<void*>(out),n);
+    }
     bool flashWrite(uint32_t at,uint8_t* data,size_t n){++writeCalls;if(failWrite || at<((current+4095)&~4095u) || at+n>0x200000)return false;std::memcpy(flash.data()+at,data,n);return true;}
     bool flashEraseSector(uint32_t s){++eraseCalls;if(failErase || s*4096<((current+4095)&~4095u) || s*4096+4096>0x200000)return false;std::fill(flash.begin()+s*4096,flash.begin()+(s+1)*4096,0xff);return true;}
 };
