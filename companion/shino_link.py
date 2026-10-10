@@ -20,6 +20,7 @@ import time
 import webbrowser
 
 from metrics_server import collect_metrics, query_nvidia
+from shino_digest_coord import CoordinationBusy, digest_exchange
 from push_fsless_metrics import (
     SenderError, SendStatus, encode_sample, make_opener, read_credentials, send_sample, validate_host,
 )
@@ -109,6 +110,16 @@ def save_config(path: Path, host: str, credentials: Path) -> None:
     finally:
         if temporary is not None:
             temporary.unlink(missing_ok=True)
+
+
+def coordinated_link_sender(host, opener, sample, timeout=3.0):
+    """Complete Digest POST serialized with other cooperating SHINO clients."""
+    try:
+        with digest_exchange(host):
+            return send_sample(host, opener, sample, timeout=timeout)
+    except (CoordinationBusy, OSError):
+        # No unsafe send outside the lock. Preserve LINK's natural backoff.
+        return SendStatus.CLIENT_ERROR
 
 
 class LinkEngine:
@@ -225,7 +236,8 @@ def make_engine(config: dict[str, str]) -> LinkEngine:
     import psutil
     psutil.cpu_percent(interval=None)  # Prime nonblocking first CPU sample.
     engine=LinkEngine(config["host"], opener,
-                      lambda: collect_metrics(psutil, query_nvidia), opener_factory=factory)
+                      lambda: collect_metrics(psutil, query_nvidia),
+                      sender=coordinated_link_sender, opener_factory=factory)
     engine.opener_factory=lambda: make_opener(engine.host,user,password)
     return engine
 

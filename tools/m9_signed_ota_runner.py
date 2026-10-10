@@ -52,6 +52,14 @@ def source_gate():
         if name in ('companion/shino_http_observe.py',
                     'companion/test_shino_http_observe.py'):
             continue
+        # New Windows-side Digest coordination and alternative qualifier
+        # added after the historic signed/StageA freeze. Do not exempt any
+        # historical firmware or physical updater path.
+        if name in ('companion/shino_digest_coord.py',
+                    'companion/test_shino_digest_coord.py',
+                    'companion/shino_coordinated_qualify.py',
+                    'companion/test_shino_coordinated_qualify.py'):
+            continue
         if name in ('companion/shino_install.py','companion/test_shino_install.py','companion/SHINO-INSTALL.cmd','companion/SHINO_INSTALL.md','companion/SHINO-OFFLINE-CHECK.cmd','companion/shino_maintenance_control.py','companion/test_shino_maintenance_control.py'):
             continue
         # Phase S has no edits to any deployed graph, sender or physical writer.

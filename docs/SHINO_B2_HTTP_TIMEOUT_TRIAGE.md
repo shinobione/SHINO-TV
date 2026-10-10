@@ -99,3 +99,28 @@ fixed. This proves a Core-level mechanism capable of causing the physical
 symptom, but the physical cycle-5 \`NETWORK_TIMEOUT\` remains unclassified;
 RF/lwIP and five-second timeout competition have not been ruled out.
 Do not convert the original B2 \`HOLD\` to PASS or authorize B3 on this alone.
+
+## Phase 3 — Windows coordination candidate (PC only, not yet physical PASS)
+
+The proposed opt-in coordinator uses a per-RFC1918-target inter-process
+OS byte lock at the user's local SHINO-TV application-data directory.
+On Windows it uses nonblocking \`msvcrt.locking\`; on Unix host tests,
+\`fcntl.flock\`. The lock spans the **entire** Digest challenge, authorized
+request and response body, not merely the socket open. A second cooperating
+client waits at most 1.5 seconds and then fails closed; it never bypasses
+the lock or retries an HTTP request. A killed process releases its OS lock.
+The tiny non-secret lock file stays on disk to avoid unlink/recreate races.
+
+Normal SHINO LINK's actual \`make_engine_from_config\` uses the coordinated
+sender. The earlier \`LinkEngine\` injected-sender lab API is unchanged.
+The new PC-only \`shino_coordinated_qualify.py\` runs the existing qualifier
+with the coordinated reader only upon separate explicit authorization and
+an independent receipt path; the original failed B2 receipt and
+\`QUALIFY-B2.cmd\` remain frozen. The short observer also shares this
+coordination when explicitly authorized. **Uncoordinated legacy/custom
+clients can still invalidate Digest challenges**, and coordination does
+not prevent RF interference or prove a native B2 stability pass.
+
+Cross-process CI tests must pass on Windows and Linux before proposing
+any owner-side observation. No network, device contact or firmware update
+is required or authorized to test this candidate offline.

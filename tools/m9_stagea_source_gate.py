@@ -36,6 +36,14 @@ def run():
         if name in ('companion/shino_http_observe.py',
                     'companion/test_shino_http_observe.py'):
             continue
+        # New Windows-side Digest coordination and alternative qualifier
+        # added after the historic signed/StageA freeze. Do not exempt any
+        # historical firmware or physical updater path.
+        if name in ('companion/shino_digest_coord.py',
+                    'companion/test_shino_digest_coord.py',
+                    'companion/shino_coordinated_qualify.py',
+                    'companion/test_shino_coordinated_qualify.py'):
+            continue
         if name in ('companion/shino_install.py','companion/test_shino_install.py','companion/SHINO-INSTALL.cmd','companion/SHINO_INSTALL.md','companion/SHINO-OFFLINE-CHECK.cmd','companion/shino_maintenance_control.py','companion/test_shino_maintenance_control.py'):
             continue
         original=subprocess.check_output(['git','show','b59964af43b555b75d415e6d063580945e6d99f7:'+name],cwd=ROOT)

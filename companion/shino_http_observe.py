@@ -11,6 +11,7 @@ import time
 from pathlib import Path
 
 from shino_qualify import QualificationFailure, read_json
+from shino_digest_coord import CoordinatedReader
 from shino_update import (
     DEFAULT_IDENTITY, Transport, UpdateError, check_status, inspect, load_identity
 )
@@ -133,6 +134,7 @@ def main(argv=None):
             if identity["device"] != release["device"]:
                 raise UpdateError("Private device mismatch")
             io = Transport(identity)
+            io.reader = CoordinatedReader(io.reader, io.host)
             result = observe(io, identity, release, cycles=args.cycles)
     except (UpdateError, ValueError, OSError, KeyError, TypeError):
         result = stopped("LOCAL_INPUT_OR_DEVICE_IDENTITY_INVALID", 0, "LOCAL", 0)
