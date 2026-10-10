@@ -218,10 +218,30 @@ def run(binary=None,manifest=None,current_binary=None,current_manifest=None):
                 try:get(path);raise AssertionError("Nested scratch use was accepted: "+path)
                 except HTTPError as error:
                     assert error.code==503 and json.loads(error.read())["error"]=="RESPONSE_BUSY";error.close()
+            # B3 telemetry POST must obey the SAME scratch lease as GET.
+            try:
+                reader.open(Request(base+"/api/v1/bridge/metrics",data=sample,
+                                    headers={"Content-Type":"application/json"}),timeout=6)
+                raise AssertionError("Nested telemetry POST bypassed scratch lease")
+            except HTTPError as error:
+                assert error.code==503 and json.loads(error.read())["error"]=="RESPONSE_BUSY"
+                error.close()
             process.stdin.write("scratch free\n");process.stdin.flush()
             assert json.loads(process.stdout.readline())=={"scratch_busy":False}
             assert get("/api/v1/update/status")["metrics_fresh"]
             assert get("/api/v1/bridge/metrics")["cpu_usage"]==22.5
+            # Failure paths must destruct the placed JsonDocument / String,
+            # keep last valid RAM sample, and leave the next request routable.
+            for body,reason in ((b'{"ok":true,"broken"', "JSON"),
+                                (b'{"ok":true,"gpu_available":true}',"TELEMETRY")):
+                try:
+                    reader.open(Request(base+"/api/v1/bridge/metrics",data=body,
+                                        headers={"Content-Type":"application/json"}),timeout=6)
+                    raise AssertionError("Invalid B3 telemetry payload accepted")
+                except HTTPError as error:
+                    assert error.code==422 and json.loads(error.read())["error"]==reason
+                    error.close()
+                assert get("/api/v1/bridge/metrics")["cpu_usage"]==22.5
             for path in ("/status","/api/v1/m9/normal/status","/api/v1/m9/normal/resources"):
                 normal=get(path)
                 assert normal["mode"]=="M9_NORMAL_STAGE_A" and normal["config_loaded_readonly"]
@@ -266,7 +286,7 @@ def run(binary=None,manifest=None,current_binary=None,current_manifest=None):
             process.stdin.write("stop\n");process.stdin.flush();output,error=process.communicate(timeout=8)
             if process.returncode:raise RuntimeError(error)
             report=json.loads(output);assert report["commit"]==report["restarts"]==1 and report["fs_preserved"]
-            return dict(**digest_proof,authenticated_post_get_requests=requests,scratch_guard_rejections=2,normal_status_guard_rejections=3,upload_guard_rejections=1,scratch_owner_preserved=True,ttl_stale_and_recovery=True,rejected_transfers_recovered=rejected,update=body,actual_normal_parser_digest_core=True,
+            return dict(**digest_proof,authenticated_post_get_requests=requests,scratch_guard_rejections=2,b3_telemetry_scratch_busy_rejected=True,b3_telemetry_error_paths_recover=True,normal_status_guard_rejections=3,upload_guard_rejections=1,scratch_owner_preserved=True,ttl_stale_and_recovery=True,rejected_transfers_recovered=rejected,update=body,actual_normal_parser_digest_core=True,
                         exact_compiled_bin=binary is not None,uploaded_bytes=len(raw),target_sha256=m["sha256"],
                         exact_current_bin=current_binary is not None,network="HOST_LOOPBACK",flash_rtc_radio="MOCKED",device_contacts=0,**report)
         except Exception:
