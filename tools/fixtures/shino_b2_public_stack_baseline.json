@@ -1,0 +1,39 @@
+{
+  "source_sha256": "bd20e294427a381a5833da52763b76b8e193a0bfd3625c917e2bf753430d83fd",
+  "baseline_telemetry_frame_bytes": 224,
+  "handler_frames": {
+    "identity_get": 160,
+    "normal_status_get": 96,
+    "telemetry_post": 224,
+    "metrics_get": 112,
+    "pre_body_gate": 64,
+    "response_send": 48
+  },
+  "static_ram": 43496,
+  "linked_flash": 403563,
+  "image_bytes": 407712,
+  "noinit": 56,
+  "core_buffer": 4096,
+  "layout_symbols": {
+    "_EEPROM_start": 1080012800,
+    "_FS_start": 1077936128,
+    "_FS_end": 1080008704
+  },
+  "retained_frame_caps": {
+    "identity": 160,
+    "metrics": 112,
+    "normal_status": 96,
+    "hmac_proof": 128,
+    "ota_begin": 128,
+    "ota_upload": 128,
+    "ota_flash_read": 64,
+    "ota_staging": 176,
+    "ota_segments": 240,
+    "ota_finish": 144,
+    "core_end": 192
+  },
+  "evidence_git_head": "bd4519e8979de05319fea104df157b4d25442961",
+  "evidence_run_id": 38089232890,
+  "evidence_artifact_id": 11684050916,
+  "physical": "NOT_RUN"
+}
