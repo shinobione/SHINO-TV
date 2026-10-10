@@ -44,6 +44,14 @@ def source_gate():
             continue
         # Issue43 adds only these offline installer paths. Every PREEXISTING
         # companion, firmware and physical-writer file retains exact identity.
+        # The B2 diagnostic scripts were introduced *after* this pinned
+        # signed/StageA baseline. They are PC read-only observability and
+        # have no deployed firmware, rescue, serial or OTA writer authority.
+        # Only these two exact paths are exempt; all historical source
+        # identities below are still compared byte-for-byte.
+        if name in ('companion/shino_http_observe.py',
+                    'companion/test_shino_http_observe.py'):
+            continue
         if name in ('companion/shino_install.py','companion/test_shino_install.py','companion/SHINO-INSTALL.cmd','companion/SHINO_INSTALL.md','companion/SHINO-OFFLINE-CHECK.cmd','companion/shino_maintenance_control.py','companion/test_shino_maintenance_control.py'):
             continue
         # Phase S has no edits to any deployed graph, sender or physical writer.
