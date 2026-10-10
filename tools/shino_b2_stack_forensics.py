@@ -93,7 +93,17 @@ def highwater_source_guard(normal: str, resources: str):
     assert "if(apReady)server.handleClient();" in normal
     assert "observer.poll();" in normal
     assert "server.requestAuthentication(DIGEST_AUTH," in normal
-    assert "const String payload=server.arg(\"plain\");JsonDocument doc;" in normal
+    # Either the pinned B2 locals or the B3 guarded, per-request placement
+    # workspace must be present; never silently accept a missing parser.
+    b2_local = "const String payload=server.arg(\"plain\");JsonDocument doc;" in normal
+    b3_scratch = all(part in normal for part in (
+        "TelemetryScratchLease scratch;",
+        "ResponseLease responseLease_;",
+        "scratch_->~TelemetryScratch();",
+        'deserializeJson(scratch->doc,server.arg("plain"))',
+        "FslessMetrics::apply(scratch->doc.as<JsonVariantConst>(),scratch->error)",
+    ))
+    assert b2_local or b3_scratch
     assert "void identity()" in normal and "void status()" in normal
     assert "void telemetry()" in normal and "void metrics()" in normal
     assert "void poll()" in resources
@@ -127,6 +137,7 @@ def audit(folder: Path):
                                     "telemetry_POST", "digest_challenge_or_verify",
                                     "display_render_and_yield"],
         source_sha256=hashlib.sha256(normal.encode()).hexdigest(),
+        candidate_source_changed=hashlib.sha256(normal.encode()).hexdigest() != "bd20e294427a381a5833da52763b76b8e193a0bfd3625c917e2bf753430d83fd",
         handler_frames=handlers,
         top_normal_frames=normal_functions[:16],
         compiled_ota_max_path_bytes=max(p["compiled_bytes"] for p in ota["paths"].values()),
