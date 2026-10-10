@@ -61,7 +61,8 @@ def stack_frames(directory):
     caps={"identity":("::identity()",160),"metrics":("::metrics()",112),
           "normal_status":("::status()",256),
           "hmac_proof":("ShinoHttpOta::proof(",128),"ota_begin":("Transfer::begin(",128),
-          "ota_upload":("::upload(uint32_t)",128),"ota_staging":("Transfer::stagedImage()",416),
+          "ota_upload":("::upload(uint32_t)",128),"ota_flash_read":("Transfer::read(",192),
+          "ota_staging":("Transfer::stagedImage()",416),
           "ota_segments":("Transfer::segments(",352),"ota_finish":("Transfer::finish(",144),
           "core_end":("UpdaterClass::end(bool)",192)}
     measured={}
