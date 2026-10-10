@@ -78,7 +78,7 @@ class TelemetryScratchLease {
 public:
     TelemetryScratchLease():responseLease_(),
         scratch_(responseLease_?new(telemetryScratchStorage) TelemetryScratch():nullptr){}
-    ~TelemetryScratchLease(){if(scratch_)scratch_->~TelemetryScratch();}
+    ~TelemetryScratchLease(){if(scratch_){observer.sampleHandlerHeap();scratch_->~TelemetryScratch();}}
     explicit operator bool()const{return scratch_!=nullptr;}
     TelemetryScratch* operator->(){return scratch_;}
     TelemetryScratchLease(const TelemetryScratchLease&)=delete;
