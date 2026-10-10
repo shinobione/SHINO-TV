@@ -96,7 +96,7 @@ private:
     char tag_[128]{};
     bool (*check_)()=nullptr;
     bool fail(){abort();return false;}
-    bool read(uint32_t at,void* out,size_t n){
+    __attribute__((noinline)) bool read(uint32_t at,void* out,size_t n){
         // ESP8266 Core 3.1.2: flashRead(uint32_t*, length) REJECTS
         // lengths not divisible by 4, and underlying SPI needs word-
         // aligned addresses. Checksum footers read one byte at addr % 4=3.
