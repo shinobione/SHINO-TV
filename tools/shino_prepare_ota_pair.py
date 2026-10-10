@@ -35,6 +35,17 @@ def prepare_uart(directory):
         if body.count(old)!=1:raise ValueError("Existing writer binding drift")
         body=body.replace(old,new)
     target.write_text(body,encoding="utf-8")
+    # Under Python -I, sys.path excludes the directory containing the script.
+    # The sibling m9_stage1_readback_verify.py imports other pinned sibling
+    # modules, so calling it directly with -I failed on the owner's first POST
+    # verification. Keep -I and restore ONLY this pinned private helper directory.
+    post_entry=bound/"verify_post_entry.py"
+    post_entry.write_text(
+        "import sys\\nfrom pathlib import Path\\n"
+        "sys.path.insert(0, str(Path(__file__).resolve().parent))\\n"
+        "from m9_stage1_readback_verify import main\\n"
+        "if __name__ == '__main__':\\n    raise SystemExit(main())\\n",
+        encoding="utf-8")
     runner=bound/"m9_single_attempt_physical_runner.py"
     runner.write_text(runner.read_text(encoding="utf-8").replace("rounded_extent='0x000000..0x061FFF'",f"rounded_extent='0x000000..0x{rounded-1:06X}'"),encoding="utf-8")
     pins["executor_helpers_sha256_lf"][target.name]=hashlib.sha256(body.replace("\r\n","\n").encode()).hexdigest()
@@ -48,7 +59,7 @@ def prepare_uart(directory):
                   target=0,rounded_end=rounded,begin_count=1,data_blocks=blocks,finish_count=1,automatic_retries=0,
                   uart_audit_argv=argv,uart_execute_argv=argv+["--execute","--owner-go","GO SINGLE ATTEMPT "+report["sha256"]],
                   fresh_pre_argv=reader+[str(directory/"PRE-4MiB.bin")],fresh_post_argv=reader+[str(directory/"POST-4MiB.bin")],
-                  verify_post_argv=[LOCAL_PYTHON,"-I",str(bound/"m9_stage1_readback_verify.py"),str(binary),str(directory/"PRE-4MiB.bin"),str(directory/"POST-4MiB.bin"),"--expected-sha256",report["sha256"]],
+                  verify_post_argv=[LOCAL_PYTHON,"-I",str(post_entry),str(binary),str(directory/"PRE-4MiB.bin"),str(directory/"POST-4MiB.bin"),"--expected-sha256",report["sha256"]],
                   source_sha256_lf={p.name:hashlib.sha256(p.read_bytes().replace(b"\r\n",b"\n")).hexdigest() for p in bound.iterdir()},
                   prerequisites=["Explicit owner permission for exact A, COM8 and PRE/POST reads", "Manually established ROM download mode with GPIO0 LOW", "Fresh private PRE, exact installed image and same 4MiB device verified", "Independent POST verification before manual normal boot"],
                   stop="Any missing acknowledgement, uncertain write or identity mismatch: stop; no retry or recovery write")
