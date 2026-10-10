@@ -219,9 +219,15 @@ def run(binary=None,manifest=None,current_binary=None,current_manifest=None):
                 except HTTPError as error:
                     assert error.code==503 and json.loads(error.read())["error"]=="RESPONSE_BUSY";error.close()
             # B3 telemetry POST must obey the SAME scratch lease as GET.
+            # Isolate the rejected POST's urllib Digest negotiation from the
+            # long-lived read client. An interrupted/error HTTP auth exchange
+            # can poison urllib's retained challenge state, independently of
+            # device handling. Both clients still use REAL Digest credentials.
+            rejected_post_reader=build_opener(
+                ProxyHandler({}),NoRedirect(),HTTPDigestAuthHandler(mgr))
             try:
-                reader.open(Request(base+"/api/v1/bridge/metrics",data=sample,
-                                    headers={"Content-Type":"application/json"}),timeout=6)
+                rejected_post_reader.open(Request(base+"/api/v1/bridge/metrics",data=sample,
+                                                 headers={"Content-Type":"application/json"}),timeout=6)
                 raise AssertionError("Nested telemetry POST bypassed scratch lease")
             except HTTPError as error:
                 assert error.code==503 and json.loads(error.read())["error"]=="RESPONSE_BUSY"
