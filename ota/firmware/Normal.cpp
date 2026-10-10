@@ -12,6 +12,7 @@
 #include <ESP8266WebServer.h>
 #include "ShinoHttpOta.h"
 #include "ShinoRelease.h"
+#include <new> // placement new for per-request telemetry scratch
 static_assert(SHINO_BOOT_PROFILE==1 && SHINO_M9_NORMAL_QUALIFICATION==1 &&
               SHINO_ENABLE_FACTORY_RESTORE==0 && SHINO_ENABLE_NATIVE_SIGNED_OTA==0 &&
               SHINO_ENABLE_FS_MIGRATION==0,"Dedicated application-only normal firmware");
@@ -62,6 +63,26 @@ public:
     explicit operator bool()const{return held_;}
     ResponseLease(const ResponseLease&)=delete;
     ResponseLease& operator=(const ResponseLease&)=delete;
+};
+// Static bytes hold only C++ object headers. Heap allocations owned by the
+// ArduinoJson document and String are released at the end of EVERY request.
+// Share the response lease so a nested/yielded handler cannot clobber it.
+struct TelemetryScratch {
+    JsonDocument doc;
+    String error;
+};
+alignas(TelemetryScratch) unsigned char telemetryScratchStorage[sizeof(TelemetryScratch)];
+class TelemetryScratchLease {
+    ResponseLease responseLease_;
+    TelemetryScratch* scratch_;
+public:
+    TelemetryScratchLease():responseLease_(),
+        scratch_(responseLease_?new(telemetryScratchStorage) TelemetryScratch():nullptr){}
+    ~TelemetryScratchLease(){if(scratch_)scratch_->~TelemetryScratch();}
+    explicit operator bool()const{return scratch_!=nullptr;}
+    TelemetryScratch* operator->(){return scratch_;}
+    TelemetryScratchLease(const TelemetryScratchLease&)=delete;
+    TelemetryScratchLease& operator=(const TelemetryScratchLease&)=delete;
 };
 constexpr char descriptor[]="SHINO-HTTP-OTA-1|" SHINO_OTA_DEVICE "|" SHINO_OTA_BUILD "|4m2m|APP_ONLY";
 void randomNonce(char* out){uint8_t bytes[16];for(unsigned i=0;i<4;++i){uint32_t r=os_random();std::memcpy(bytes+4*i,&r,4);}ShinoHttpOta::encode(bytes,16,out);}
@@ -216,9 +237,15 @@ void identity(){
     respond(200,responseBody);
 }
 void telemetry(){
-    const String payload=server.arg("plain");JsonDocument doc;
-    if(deserializeJson(doc,payload)){respond(422,"{\"error\":\"JSON\"}");return;}
-    String error;if(!FslessMetrics::apply(doc.as<JsonVariantConst>(),error)){respond(422,"{\"error\":\"TELEMETRY\"}");return;}
+    TelemetryScratchLease scratch;
+    if(!scratch){respond(503,"{\"error\":\"RESPONSE_BUSY\"}");return;}
+    // Heap held by the JSON document / error String is freed every request.
+    if(deserializeJson(scratch->doc,server.arg("plain"))){
+        respond(422,"{\"error\":\"JSON\"}");return;
+    }
+    if(!FslessMetrics::apply(scratch->doc.as<JsonVariantConst>(),scratch->error)){
+        respond(422,"{\"error\":\"TELEMETRY\"}");return;
+    }
     dirty=true;respond(200,"{\"status\":\"RAM_SAMPLE_ACCEPTED\",\"persisted\":false}");
 }
 void metrics(){
