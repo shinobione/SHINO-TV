@@ -28,6 +28,13 @@ L'installation A2 et l'OTA B2 nécessitent un nouvel accord propriétaire pour
 chaque opération et ses fichiers/hashes exacts. Ne pas promettre la fermeture
 du boîtier avant qualification physique A2→B2.
 
+Livraison logicielle : [OTA Breakthrough](SHINO_HTTP_OTA_BREAKTHROUGH.md).
+Nouvelle paire privée A2/B2, source propre6bb6e747,407728 octets chaque ;
+octets exacts receiver/Core/eboot et HTTP A2→B2 PASS hors ligne,135 refus sûrs/
+122 coupures chaque.229 artefacts privés historiques inchangés. Paquet
+READY_FOR_OWNER_AUTHORIZATION ; mémoire native et preuve physique HOLD,
+toutes les nouvelles opérations appareil NOT_RUN. CI-OPT et Draft PR42 conservées.
+
 ## Reprise propriétaire du 10 octobre 2026 — stack et diagnostics
 
 Lire intégralement [le dossier officiel du matin](SHINO_2026-10-10_MORNING_HANDOFF.md).

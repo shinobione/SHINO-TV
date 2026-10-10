@@ -83,12 +83,32 @@ full dumps and private replay receipts remain ignored and exclusively local.
 
 ## New private pair and operator route
 
-Prepare A2/B2 from a clean implementation commit into the fresh directory
+Prepared A2/B2 from clean implementation commit
+`6bb6e7479faee0a5169e2bc74f96d08f890cfb51` into the fresh directory
 `research-local/m9-owner/http-ota-breakthrough-20261010-a2-b2/`. Both images use
 the same receiver/source/layout and owner credentials, with distinct build IDs
-and hashes. The private manifests and `README-OPERATEUR.md` contain the exact
-paths/bytes/hashes/build IDs. Historical packets and all4MiB backups are retained.
-The pair qualification receipt will be appended after its exact-byte replay.
+and hashes. Each BIN is407728 bytes; static RAM43548 includes56 noinit, linked
+flash403571; the same frame caps and compiled1840-byte maximum pass for both.
+The private manifests and `README-OPERATEUR.md` contain the exact paths/bytes/
+hashes/build IDs; they are not uploaded. Historical packets and all4MiB backups
+are retained:229 pre-inventoried artifacts rehashed unchanged.
+
+Each exact private BIN passes135 negative cases/122 cuts, plus positive Core
+commit and pinned eboot copy/load, using the other exact BIN as the current RAM
+application. Thus B2 can also receive a distinct valid image in the model.
+The actual HTTP A2→B2 model sends407728 bytes and commits/restarts once, with
+150 authenticated POST/GET requests and all disconnect/reentrancy regressions.
+The exact A2 UART inert transaction has one Begin,100 unique DATA, one Finish,
+one MD5 and no retry; a second invocation is refused. Independent model PRE/POST
+checks3784704 protected bytes unchanged. Generated UART AUDIT and Windows offline
+inspection pass without opening a port or creating a physical attempt marker.
+Actual PRE/POST output names remain unused; model files are explicitly labelled.
+
+Local `qualification-summary.json`, `evidence/`, `network-exact-A2-B2.json`,
+`uart-audit.json` and `offline-packet-audit.json` retain the detailed private
+results. The software packet is **READY_FOR_OWNER_AUTHORIZATION**. All new
+device/COM8/readback/flash/OTA/reboot operations are NOT_RUN; native simultaneous
+memory and physical A2→B2 acceptance remain HOLD pending exact-operation approval.
 
 The bound UART wrapper checks its command-book/helper/candidate hashes and the
 fresh PRE's installed-A/private FS/SDK fingerprint before write. Each PRE/write/
@@ -103,6 +123,8 @@ After separate exact-operation owner approvals:
 
 1. Manual ROM mode → fresh PRE4MiB → single UART A2 write → fresh POST4MiB →
    independent local verification. No recovery write or automatic reset.
+   Re-establish ROM manually after PRE: its read-flash stub remains active and
+   the qualified writer requires a fresh ROM session, not an existing stub.
 2. Authorized normal boot → LINK/four cards → bounded read-only A2 qualification
    with exact SHA/build, stable boot, filesystem hashes and resource floors.
 3. One authorized Wi-Fi B2 POST → distinct boot ID/executed SHA/build, LittleFS,

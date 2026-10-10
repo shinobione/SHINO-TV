@@ -100,7 +100,7 @@ def operator_readme(directory,labels,a,b):
                       "Build ID privé : "+report["build_id"]])
     lines.extend(["", "## Parcours opérateur après les accords exacts", "",
         "1. Établir manuellement le mode ROM connu, GPIO0 LOW. Lancer PRE-"+a_label+".cmd : nouvelle capture 4 MiB, aucun écrasement.",
-        "2. Lancer WRITE-"+a_label+".cmd une fois. Le PRE doit correspondre à l'application A installée et au fingerprint privé FS/SDK. Un Begin, blocs DATA uniques, un Finish et un MD5 ; zéro retry.",
+        "2. Après le PRE, réétablir manuellement le mode ROM connu avec GPIO0 LOW : la lecture laisse un stub actif, que le writer refuse comme session préexistante. Lancer WRITE-"+a_label+".cmd une fois. Le PRE doit correspondre à l'application A installée et au fingerprint privé FS/SDK. Un Begin, blocs DATA uniques, un Finish et un MD5 ; zéro retry.",
         "3. Lancer POST-"+a_label+".cmd puis VERIFY-POST-"+a_label+".cmd. Exiger le BIN exact, son padding et tous les octets protégés inchangés. Arrêter sur tout écart.",
         "4. Après accord de démarrage, libérer GPIO0 et démarrer normalement. Connecter LINK, vérifier les quatre cartes, puis QUALIFY-"+a_label+".cmd. Exiger SHA/build exacts, boot stable, LittleFS/hashs vérifiés, métriques fraîches et planchers mémoire.",
         "5. Après accord OTA portant sur le SHA de "+b_label+", lancer UPDATE-"+b_label+".cmd une fois. Il exige le SHA exécuté de "+a_label+" et réserve un marqueur durable avant l'unique POST. Relancer LINK pour la confirmation après boot ; jamais renvoyer le BIN.",
