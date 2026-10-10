@@ -12,6 +12,8 @@ std::vector<uint8_t> decode(const std::string& s){std::vector<uint8_t> out;for(s
 int main(){
     const char* password=std::getenv("SHINO_TEST_SECRET");if(!password)return 2;
     uint8_t key[32];br_sha256_context hash;br_sha256_init(&hash);br_sha256_update(&hash,password,std::strlen(password));br_sha256_out(&hash,key);
+    const char* device=std::getenv("SHINO_TEST_DEVICE");if(!device)device="0123456789abcdef";
+    if(std::strlen(device)!=16)return 3;
     ShinoHttpOta::Transfer transfer(check);ShinoHttpOta::Budget budget{60000,50000,3248,1};
     eboot_command_clear();std::string line;
     while(std::getline(std::cin,line)){
@@ -21,7 +23,7 @@ int main(){
             ShinoHttpOta::Release r{};r.bytes=size;
             if(sha.size()!=64||build.size()!=64||proof.size()!=64){std::cout<<"ERR\n";continue;}
             std::strcpy(r.sha,sha.c_str());std::strcpy(r.build,build.c_str());
-            std::cout<<(transfer.begin(r,"0123456789abcdef",std::string(64,'a').c_str(),std::string(32,'1').c_str(),proof.c_str(),key,ESP.current,budget,true)?"READY\n":"ERR\n");
+            std::cout<<(transfer.begin(r,device,std::string(64,'a').c_str(),std::string(32,'1').c_str(),proof.c_str(),key,ESP.current,budget,true)?"READY\n":"ERR\n");
         }else if(op=="ALIGN_PROBE"){
             alignas(4) uint32_t word=0;
             const bool actualCoreContract=
