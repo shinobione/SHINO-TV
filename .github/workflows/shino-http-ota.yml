@@ -54,9 +54,11 @@ jobs:
           python tools/shino_http_ota_build.py research-local/http-ota-ci
           cp research-local/http-ota-ci/report.json "${{ runner.temp }}/http-ota-build.json"
           cp research-local/http-ota-ci/stack-paths.json "${{ runner.temp }}/http-ota-stack.json"
+          python tools/shino_b2_stack_forensics.py research-local/http-ota-ci > "${{ runner.temp }}/http-ota-normal-stack.json"
           python tools/m9_stagea_source_gate.py > "${{ runner.temp }}/http-ota-source.json"
       - name: Windows consent and actual Core interruption matrix
         run: |
+          python -m unittest discover -s tools -p test_shino_b2_stack_forensics.py -v
           python -m unittest discover -s companion -p test_shino_update.py -v
           python -m unittest discover -s companion -p test_shino_link.py -v
           python -m unittest discover -s companion -p test_push_fsless_metrics.py -v
@@ -118,6 +120,12 @@ jobs:
           stack=json.loads((root/'http-ota-stack.json').read_text())
           assert stack['required_free_bytes']==2048 and not stack['whole_native_upper_bound']
           assert stack['core_commit_reachable'] and not stack['nested_verification']
+          b2=json.loads((root/'http-ota-normal-stack.json').read_text())
+          assert b2['stack_free_floor']==2048 and b2['native_highwater_is_historical']
+          assert not b2['reset_during_poll'] and not b2['complete_normal_native_upper_bound']
+          assert b2['handler_frames']['identity_get']['state']=='MEASURED_STATIC'
+          assert b2['handler_frames']['normal_status_get']['state']=='MEASURED_STATIC'
+          assert b2['physical']=='NOT_RUN' and b2['device_contacts']==0
           assert max(p['compiled_bytes'] for p in stack['paths'].values())<=2048
           source=json.loads((root/'http-ota-source.json').read_text())
           assert source['PHASE_T_SOURCE']=='PASS_OFFLINE' and source['device_contacts']==0
