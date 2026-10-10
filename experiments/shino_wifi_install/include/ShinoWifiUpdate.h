@@ -98,7 +98,34 @@ private:
     static uint32_t round(uint32_t n){return (n+4095)&~4095u;}
     bool timely(uint32_t now)const{return uint32_t(now-start_)<60000 && uint32_t(now-last_)<3000;}
     bool reject(){abort();return false;}
-    bool read(uint32_t at,void* out,size_t n){return at<=size_ && n<=size_-at && ESP.flashRead(stage_+at,reinterpret_cast<uint32_t*>(out),n);}
+    bool read(uint32_t at,void* out,size_t n){
+        // This retired/unwired receiver is still a CI dependency. Keep its
+        // real Core contract correct rather than weakening the shared mock.
+        if(!out||!n||at>size_||n>size_-at||stage_>FsStart||round(size_)>FsStart-stage_)return false;
+        const uint32_t limit=stage_+round(size_);uint32_t source=stage_+at;
+        auto* target=static_cast<uint8_t*>(out);size_t left=n;alignas(4) uint32_t word=0;
+        if(source&3u){
+            const uint32_t aligned=source&~uint32_t(3);
+            if(aligned>limit-4||!ESP.flashRead(aligned,&word,4))return false;
+            const size_t skip=source&3u,take=std::min(left,size_t(4)-skip);
+            std::memcpy(target,reinterpret_cast<const uint8_t*>(&word)+skip,take);
+            target+=take;source+=uint32_t(take);left-=take;
+        }
+        const size_t bulk=left&~size_t(3);
+        if(bulk){
+            if(uintptr_t(target)%4==0){
+                if(!ESP.flashRead(source,reinterpret_cast<uint32_t*>(target),bulk))return false;
+            }else{
+                for(size_t i=0;i<bulk;i+=4){
+                    if(!ESP.flashRead(source+uint32_t(i),&word,4))return false;
+                    std::memcpy(target+i,&word,4);
+                }
+            }
+            target+=bulk;source+=uint32_t(bulk);left-=bulk;
+        }
+        if(left){if(source>limit-4||!ESP.flashRead(source,&word,4))return false;std::memcpy(target,&word,left);}
+        return true;
+    }
     bool stagedImage(){
         // Rehash ACTUAL staging and validate CRC, both eboot/app segment bounds
         // and checksums. Flash/RAM seams execute exactly this code in host tests.
@@ -118,7 +145,7 @@ private:
         alignas(4) uint8_t hdr[8];if(!read(off,hdr,8)||hdr[0]!=0xE9||hdr[1]<1||hdr[1]>16||hdr[2]!=2||hdr[3]!=0x40)return false;
         uint32_t entry;std::memcpy(&entry,hdr+4,4);uint32_t iramLo=off?0x40100000:0x4010f000,iramHi=off?0x4010c000:0x40110000;
         if(entry<iramLo||entry>=iramHi)return false;
-        uint32_t at=off+8;uint8_t sum=0xef;uint32_t starts[16]{},ends[16]{};
+        uint32_t at=off+8;uint8_t sum=0xef;uint32_t starts[16]{},ends[16]{};bool entryLoaded=false;
         for(unsigned s=0;s<hdr[1];++s){alignas(4) uint32_t seg[2];if(!read(at,seg,8))return false;at+=8;
             uint32_t address=seg[0],n=seg[1],limit=0;
             if(address>=0x3ffe8000 && address<(off?0x40000000u:0x3fffc000u))limit=off?0x40000000u:0x3fffc000u;
@@ -126,13 +153,14 @@ private:
             if(off && address>=0x40201010&&address<0x402ffff0 && address==0x40200000+at)limit=0x402ffff0;
             if(!limit || address%4 || !n || n>limit-address || at>size_ || n>size_-at)return false;
             for(unsigned old=0;old<s;++old)if(address<ends[old] && starts[old]<address+n)return false;starts[s]=address;ends[s]=address+n;
+            if(address>=iramLo&&address<iramHi&&entry>=address&&entry-address<n)entryLoaded=true;
             alignas(4) uint8_t chunk[128];
             for(uint32_t used=0;used<n;used+=sizeof(chunk)){uint32_t count=std::min(uint32_t(sizeof(chunk)),n-used);if(!read(at+used,chunk,count))return false;
                 for(uint32_t i=0;i<count;++i)sum^=(off && at+used+i>=0x1010 && at+used+i<0x1018)?0:chunk[i];yield();}
             at+=n;
         }
         uint32_t footer=((at-off)/16)*16+15+off;alignas(4) uint8_t last[4]{};
-        if(!read(footer,last,1)||last[0]!=sum)return false;
+        if(!entryLoaded||!read(footer,last,1)||last[0]!=sum)return false;
         return off?footer+1==size_:footer+1<=4096;
     }
 };

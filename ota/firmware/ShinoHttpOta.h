@@ -178,7 +178,7 @@ private:
         uint32_t entry;std::memcpy(&entry,hdr+4,4);
         const uint32_t iramLo=off?0x40100000:0x4010f000,iramHi=off?0x4010c000:0x40110000;
         if(entry<iramLo||entry>=iramHi)return false;
-        uint32_t at=off+8;uint8_t sum=0xef;uint32_t starts[16]{},ends[16]{};
+        uint32_t at=off+8;uint8_t sum=0xef;uint32_t starts[16]{},ends[16]{};bool entryLoaded=false;
         for(unsigned s=0;s<hdr[1];++s){
             alignas(4) uint32_t seg[2];if(!read(at,seg,8))return false;at+=8;
             const uint32_t address=seg[0],n=seg[1];uint32_t limit=0;
@@ -188,6 +188,7 @@ private:
             if(!limit||address%4||!n||n>limit-address||at>release_.bytes||n>release_.bytes-at)return false;
             for(unsigned old=0;old<s;++old)if(address<ends[old]&&starts[old]<address+n)return false;
             starts[s]=address;ends[s]=address+n;
+            if(address>=iramLo&&address<iramHi&&entry>=address&&entry-address<n)entryLoaded=true;
             auto& chunk=verifyBuffer_;
             for(uint32_t used=0;used<n;used+=sizeof(chunk)){
                 if(check_&&!check_())return false;
@@ -198,7 +199,7 @@ private:
             at+=n;
         }
         const uint32_t footer=((at-off)/16)*16+15+off;alignas(4) uint8_t last[4]{};
-        if(!read(footer,last,1)||last[0]!=sum)return false;
+        if(!entryLoaded||!read(footer,last,1)||last[0]!=sum)return false;
         return off?footer+1==release_.bytes:footer+1<=4096;
     }
 };

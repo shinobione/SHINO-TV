@@ -132,7 +132,7 @@ def qualify(binary,manifest,expected_sha256,current_binary=None):
         # Correctly authenticated bad CRC, metadata, header and segment checksum
         # must be rejected independently of the streaming SHA check.
         for name in ("corrupt_stream","bad_crc","bad_metadata_size","bad_checksum",
-                     "bad_entry","flash_read_fault","staging_bit_flip","full_abort",
+                     "bad_entry","boot_entry_gap","app_entry_gap","flash_read_fault","staging_bit_flip","full_abort",
                      "floor_before_commit","floor_during_readback"):
             with trial(name) as io:
                 data=bytearray(raw);release=dict(m)
@@ -144,7 +144,17 @@ def qualify(binary,manifest,expected_sha256,current_binary=None):
                 elif name=="bad_entry":
                     struct.pack_into("<I",data,0x1004,0x40120000)
                     struct.pack_into("<I",data,0x1014,arduino_crc(data))
-                if name in ("bad_crc","bad_metadata_size","bad_checksum","bad_entry"):
+                elif name in ("boot_entry_gap","app_entry_gap"):
+                    offset=0 if name=="boot_entry_gap" else 0x1000
+                    entry=0x4010fffc if offset==0 else 0x4010bffc
+                    at=offset+8
+                    for _ in range(data[offset+1]):
+                        address,n=struct.unpack_from("<II",data,at)
+                        assert not address<=entry<address+n,"Gap fixture must lie outside every loaded segment"
+                        at+=8+n
+                    struct.pack_into("<I",data,offset+4,entry)
+                    struct.pack_into("<I",data,0x1014,arduino_crc(data))
+                if name in ("bad_crc","bad_metadata_size","bad_checksum","bad_entry","boot_entry_gap","app_entry_gap"):
                     release["sha256"]=hashlib.sha256(data).hexdigest()
                 begin(io,release);upload(io,data)
                 if name=="flash_read_fault":io.command("FAULT read")

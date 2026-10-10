@@ -12,13 +12,13 @@ test exact newly compiled images and prepare a new private A2/B2 pair. Preserve
 CI-OPT, all memory floors, the persistent server, 4m2m, LINK and four cards.
 No SmallTV/COM8/readback/flash/reboot/real OTA/merge authorized. Every later
 physical operation needs fresh explicit owner approval for its exact file/hash.
-Delivery: private A2/B2 each407728 B, same clean receiver source6bb6e747,
-135 negative cases/122 cuts each and pinned eboot copy/load; exact HTTP A2→B2
-commits once in RAM. Static43548 including56 noinit; staging176/segments224,
-known compiled max1840, native bound unproven.229 archived private artifacts
-unchanged. Packet `research-local/m9-owner/http-ota-breakthrough-20261010-a2-b2/`
-is READY_FOR_OWNER_AUTHORIZATION; physical NOT_RUN/HOLD. See the receipt for
-the short route and manual ROM re-entry required between PRE and write.
+Final metadata probe demonstrated an entry-in-unloaded-IRAM gap; both boot/app
+entries now require membership in a loaded segment. Frames staging176/segments240,
+known compiled max1840, native bound unproven. The first unused6bb6e747 private
+pair is retired locally; definitive `http-ota-breakthrough-20261010-a2-b2-final/`
+will carry the new correction and exact-byte receipt.229 archived private
+artifacts unchanged. Physical NOT_RUN/HOLD. See the receipt for the short route
+and manual ROM re-entry required between PRE and write.
 
 **Prior resume mandate — 10 October2026, after owner qualification:**
 Read the complete [official morning handoff](SHINO_2026-10-10_MORNING_HANDOFF.md)

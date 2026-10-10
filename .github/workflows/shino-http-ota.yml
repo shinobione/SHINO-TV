@@ -108,7 +108,7 @@ jobs:
           build=json.loads((root/'http-ota-build.json').read_text())
           assert build['stack_frames']['identity']<=160 and build['stack_frames']['metrics']<=112
           assert build['stack_frames']['hmac_proof']<=128 and build['noinit']==56
-          assert build['stack_frames']['ota_staging']<=176 and build['stack_frames']['ota_segments']<=224
+          assert build['stack_frames']['ota_staging']<=176 and build['stack_frames']['ota_segments']<=240
           assert build['physical']=='NOT_RUN' and not build['private']
           stack=json.loads((root/'http-ota-stack.json').read_text())
           assert stack['required_free_bytes']==2048 and not stack['whole_native_upper_bound']

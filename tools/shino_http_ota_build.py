@@ -63,7 +63,7 @@ def stack_frames(directory):
           "hmac_proof":("ShinoHttpOta::proof(",128),"ota_begin":("Transfer::begin(",128),
           "ota_upload":("::upload(uint32_t)",128),"ota_flash_read":("Transfer::read(",64),
           "ota_staging":("Transfer::stagedImage()",176),
-          "ota_segments":("Transfer::segments(",224),"ota_finish":("Transfer::finish(",144),
+          "ota_segments":("Transfer::segments(",240),"ota_finish":("Transfer::finish(",144),
           "core_end":("UpdaterClass::end(bool)",192)}
     measured={}
     for name,(marker,cap) in caps.items():
