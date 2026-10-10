@@ -2,6 +2,8 @@
 import hashlib
 import importlib.util
 import json
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -51,6 +53,28 @@ class BindingTests(unittest.TestCase):
         self.assertEqual(result["automatic_retries"],0)
         self.assertEqual(self.commands["rounded_end"],0x64000)
         self.assertFalse(self.commands["physical_authorized"])
+
+    def test_exact_offline_pre_post_verifier_under_isolated_python(self):
+        # Regression for the owner's ModuleNotFoundError on post-readback.
+        # Exercise exact generated argv shape under -I, with two local fake
+        # 4MiB files, no COM port or hardware access.
+        args=self.commands["verify_post_argv"]
+        entry=self.directory/"uart-A/verify_post_entry.py"
+        self.assertEqual(args[1],"-I")
+        self.assertEqual(Path(args[2]),entry)
+        before=self.directory/"PRE-4MiB.bin"
+        after=self.directory/"POST-4MiB.bin"
+        before.write_bytes(b"\\xff"*0x400000)
+        after.write_bytes(self.raw+b"\\xff"*(0x400000-len(self.raw)))
+        run=subprocess.run([sys.executable,"-I",str(entry),str(self.binary),
+                            str(before),str(after),"--expected-sha256",self.sha],
+                           cwd=self.directory,capture_output=True,text=True,timeout=35)
+        self.assertEqual(run.returncode,0,run.stderr)
+        report=json.loads(run.stdout)
+        self.assertEqual(report["status"],"PASS_LOCAL_STAGE1_READBACK_MODEL")
+        self.assertTrue(report["protected_byte_exact"])
+        self.assertEqual(report["protected_bytes_compared"],0x400000-0x64000)
+        self.assertFalse(report["serial_io_performed"])
 
     def test_each_failure_is_terminal_without_second_attempt(self):
         # Inspect the unchanged fixture once; this matrix targets the writer's
