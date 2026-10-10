@@ -41,10 +41,10 @@ def prepare_uart(directory):
     # verification. Keep -I and restore ONLY this pinned private helper directory.
     post_entry=bound/"verify_post_entry.py"
     post_entry.write_text(
-        "import sys\\nfrom pathlib import Path\\n"
-        "sys.path.insert(0, str(Path(__file__).resolve().parent))\\n"
-        "from m9_stage1_readback_verify import main\\n"
-        "if __name__ == '__main__':\\n    raise SystemExit(main())\\n",
+        "import sys\nfrom pathlib import Path\n"
+        "sys.path.insert(0, str(Path(__file__).resolve().parent))\n"
+        "from m9_stage1_readback_verify import main\n"
+        "if __name__ == '__main__':\n    raise SystemExit(main())\n",
         encoding="utf-8")
     runner=bound/"m9_single_attempt_physical_runner.py"
     runner.write_text(runner.read_text(encoding="utf-8").replace("rounded_extent='0x000000..0x061FFF'",f"rounded_extent='0x000000..0x{rounded-1:06X}'"),encoding="utf-8")
