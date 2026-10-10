@@ -36,6 +36,8 @@ def source_gate():
         'companion/shino_qualify.py': '69992a082d06b93c4a2b94ab1be14fb4c07c890a',
         'companion/test_shino_update.py': 'd1afe393073c1baaad60c36093f20a33375a46a9',
         'companion/SHINO-ONE-SHOT-B.ps1': '197ab9b8f71133fb27d8931a849eb6f5aff10d3a',
+        # Deliberate PC-only LINK update, exact Git blob; no wildcard exemption.
+        'companion/shino_link.py': '9c7826702bc8475a6287024ac7128942701fe4ec',
     }
     for name in subprocess.check_output(["git","ls-files","firmware","companion","tools/m9_single_attempt*"],cwd=ROOT,text=True).splitlines():
         if name in new_offline_script_pins:

@@ -37,13 +37,16 @@ class TestDigestCoord(unittest.TestCase):
         # inter-process locking or Windows msvcrt byte-lock behavior.
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            script = (
-                "import sys;from pathlib import Path;"
-                "from shino_digest_coord import digest_exchange,CoordinationBusy;"
-                "try:\n"
-                " with digest_exchange('192.168.4.1',wait_seconds=float(sys.argv[2]),directory=Path(sys.argv[1])):print('ACQUIRED')\n"
-                "except CoordinationBusy: print('BUSY')\n"
-            )
+            script = """import sys
+from pathlib import Path
+from shino_digest_coord import digest_exchange, CoordinationBusy
+try:
+    with digest_exchange('192.168.4.1', wait_seconds=float(sys.argv[2]),
+                         directory=Path(sys.argv[1])):
+        print('ACQUIRED')
+except CoordinationBusy:
+    print('BUSY')
+"""
             env = dict(os.environ, PYTHONPATH=str(Path(__file__).resolve().parent))
             with digest_exchange(HOST, directory=root):
                 done = subprocess.run([sys.executable, "-c", script, str(root), "0.15"],
