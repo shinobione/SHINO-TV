@@ -42,7 +42,14 @@ class TestB2StackDelta(unittest.TestCase):
             self.skipTest("No B3 telemetry scratch candidate in this source tree")
         folder = root / "research-local/http-ota-ci"
         report = folder / "report.json"
-        self.assertTrue(report.is_file(), "B3 must have a real public PIO build")
+        if not report.is_file():
+            # The full repository audit job discovers this same unit test
+            # without compiling PlatformIO. Only the HTTP OTA job owns the
+            # compiled public evidence and must fail if it is missing.
+            import os
+            if os.environ.get("GITHUB_WORKFLOW") == "SHINO normal HTTP OTA":
+                self.fail("HTTP OTA CI missing required B3 public PIO build")
+            self.skipTest("Source-only job: compiled B3 delta runs in HTTP OTA CI")
         actual_stack = audit(folder)
         actual_build = json.loads(report.read_text(encoding="utf-8"))
         result = gate.compare(BASE, actual_stack, actual_build)
