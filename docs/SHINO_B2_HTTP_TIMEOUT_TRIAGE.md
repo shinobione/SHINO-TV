@@ -54,3 +54,25 @@ Keep the known working B2 installed. Additional physical acceptance stays HOLD.
 Investigate HTTP single-client fairness, Digest challenge frequency,
 read/response latency and stack high-water *offline*. Any firmware fix requires
 a new build and a distinct owner approval for OTA; not authorized here.
+
+## Offline Phase 2 — simultaneous Digest/telemetry adversarial regression
+
+The exact Core 3.1.2 \`ESP8266WebServer.h\` uses
+\`HTTP_MAX_DATA_WAIT = 5000 ms\` and \`HTTP_MAX_CLOSE_WAIT = 2000 ms\`.
+The B2 qualification client also uses a 5-second read bound. A competing
+client that holds a server slot is a credible **hypothesis**, not a
+demonstrated diagnosis. The core also has a 30-ms pending-client shortcut.
+
+\`tools/shino_http_ota_network.py\` now launches eight synchronized pairs of
+independent Digest-authenticated clients against the **actual Normal.cpp
+HTTP/parser/handlers running in a loopback host process**: one status GET and
+one bounded RAM telemetry POST, each with a six-second timeout. The old
+sequential 150 requests, negative tests and valid host-mode OTA remain in
+place. GitHub Actions asserts eight successful status/telemetry pairs and
+records the largest GET/POST response latency as offline evidence.
+
+Strict limitations: the ESP8266 Core HTTP source is pinned, but host socket
+and memory shims do not model RF contention, lwIP, memory fragmentation, or
+real Xtensa continuation stack. A host PASS is not physical B2 qualification.
+No physical device contact, OTA, UART, reset, firmware modification,
+credential publication or new owner action is requested.

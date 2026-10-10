@@ -1,6 +1,8 @@
 """Actual complete normal HTTP OTA graph on loopback, RAM flash/RTC only."""
 import hashlib
 import http.client
+from concurrent.futures import ThreadPoolExecutor
+from time import perf_counter
 import json
 import queue
 import shutil
@@ -93,6 +95,69 @@ def prepare_host(host,device="0123456789abcdef",current_build="a"*64):
     (host/"network_composition.inc").write_text(''.join(f'#include "{(ROOT/p).as_posix()}"\n' for p in ("ota/firmware/Normal.cpp","firmware/src/boot/M9NormalDashboard.cpp","firmware/src/boot/FslessMetrics.cpp")))
 
 
+def exercise_parallel_digest(base, sample, rounds=8):
+    """Two independent Digest sessions colliding at the real Normal.cpp handler.
+
+    Only against 127.0.0.1, RAM flash, never the owner device. One logical GET
+    and one RAM telemetry POST per round, each with a 6-second bound. This is
+    an adversarial loopback regression, NOT a Wi-Fi / native stack benchmark.
+    """
+    assert base.startswith("http://127.0.0.1:")
+    assert type(rounds) is int and 1 <= rounds <= 16
+
+    def fresh_reader():
+        manager = HTTPPasswordMgrWithDefaultRealm()
+        manager.add_password("SHINO-StageA", base, "shino",
+                             "PUBLIC-INERT-LAB-HTTP-FIXTURE")
+        return build_opener(ProxyHandler({}), NoRedirect(),
+                            HTTPDigestAuthHandler(manager))
+
+    status_reader = fresh_reader()
+    telemetry_reader = fresh_reader()
+    get_max_ms = 0
+    post_max_ms = 0
+
+    def call(reader, request, barrier):
+        barrier.wait(timeout=3)
+        started = perf_counter()
+        with reader.open(request, timeout=6) as response:
+            assert response.status == 200
+            result = json.loads(response.read(4097))
+        return result, int((perf_counter() - started) * 1000)
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        for _ in range(rounds):
+            # Main and both workers reach the barrier: no sequential request
+            # ordering can accidentally conceal a two-client accept collision.
+            barrier = threading.Barrier(3)
+            get_request = Request(
+                base + "/api/v1/update/status",
+                headers={"Connection": "close", "Cache-Control": "no-store"})
+            post_request = Request(
+                base + "/api/v1/bridge/metrics", data=sample,
+                headers={"Content-Type": "application/json",
+                         "Connection": "close", "Cache-Control": "no-store"})
+            get_future = executor.submit(call, status_reader, get_request, barrier)
+            post_future = executor.submit(call, telemetry_reader, post_request, barrier)
+            barrier.wait(timeout=3)
+            got, get_ms = get_future.result(timeout=8)
+            posted, post_ms = post_future.result(timeout=8)
+            assert got["protocol"] == "shino-http-ota-1"
+            assert got["fs_ok"] and got["ota_enabled"]
+            assert posted["status"] == "RAM_SAMPLE_ACCEPTED"
+            assert posted["persisted"] is False
+            get_max_ms = max(get_max_ms, get_ms)
+            post_max_ms = max(post_max_ms, post_ms)
+
+    return dict(parallel_digest_gets=rounds, parallel_digest_telemetry_posts=rounds,
+                parallel_max_get_latency_ms=get_max_ms,
+                parallel_max_post_latency_ms=post_max_ms,
+                parallel_requests_bounded=True,
+                parallel_actual_normal_parser=True,
+                parallel_rf_lwip="NOT_MODELED",
+                parallel_ota_posts=0)
+
+
 def run(binary=None,manifest=None,current_binary=None,current_manifest=None):
     if binary is not None:
         target,raw=inspect(binary,manifest)
@@ -127,6 +192,7 @@ def run(binary=None,manifest=None,current_binary=None,current_manifest=None):
                 for path in ("/status","/api/v1/m9/normal/status","/api/v1/m9/maintenance/result","/api/v1/update/status"):
                     get(path);requests+=1
             before=get("/api/v1/update/status");assert before["metrics_fresh"]
+            overlap=exercise_parallel_digest(base,sample,rounds=8)
             process.stdin.write("upload busy\n");process.stdin.flush()
             assert json.loads(process.stdout.readline())=={"upload_busy":True}
             c=http.client.HTTPConnection("127.0.0.1",port,timeout=6)
@@ -192,7 +258,7 @@ def run(binary=None,manifest=None,current_binary=None,current_manifest=None):
             process.stdin.write("stop\n");process.stdin.flush();output,error=process.communicate(timeout=8)
             if process.returncode:raise RuntimeError(error)
             report=json.loads(output);assert report["commit"]==report["restarts"]==1 and report["fs_preserved"]
-            return dict(authenticated_post_get_requests=requests,scratch_guard_rejections=2,normal_status_guard_rejections=3,upload_guard_rejections=1,scratch_owner_preserved=True,ttl_stale_and_recovery=True,rejected_transfers_recovered=rejected,update=body,actual_normal_parser_digest_core=True,
+            return dict(**overlap,authenticated_post_get_requests=requests,scratch_guard_rejections=2,normal_status_guard_rejections=3,upload_guard_rejections=1,scratch_owner_preserved=True,ttl_stale_and_recovery=True,rejected_transfers_recovered=rejected,update=body,actual_normal_parser_digest_core=True,
                         exact_compiled_bin=binary is not None,uploaded_bytes=len(raw),target_sha256=m["sha256"],
                         exact_current_bin=current_binary is not None,network="HOST_LOOPBACK",flash_rtc_radio="MOCKED",device_contacts=0,**report)
         except Exception:
