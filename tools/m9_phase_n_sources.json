@@ -1,0 +1,29 @@
+{
+  "baseline_commit": "2bd225ad21e8e0839b7757c7092a227a1fb81de1",
+  "predecessor_sha256_lf": {
+    "firmware/include/boot/ShinoBootProfile.h": "1d8448a42495b0cfb6bbf8846521406518982e90751281c3f38d0857dfbc9325",
+    "firmware/platformio.ini": "8e2ddd40279273cf5e846c5c37aab9a35471e76ac4a0ad33d40c3147ea24a60b",
+    "firmware/src/main.cpp": "65df1e0a89a168b5f8920dc275ad2fc37410a3bdc09408053b8c4d5c8dcd57d7",
+    "firmware/include/config/ConfigManager.h": "45706553956d3dbe9fd7e5e5ff9f0fb42367ae7c1f330754701e7cb978b1dcc2",
+    "firmware/src/config/ConfigManager.cpp": "0adbfb3ad90806d922233e2e989309eabf46cab838e5269c1518f6648e6b7a76",
+    "firmware/src/boot/M9LittleFsMountProbe.cpp": "23e9d0248ed9e306c58750d286b681f6aca4b58ad6128be0865fea59bed1487e"
+  },
+  "current_sha256_lf": {
+    "firmware/include/boot/ShinoBootProfile.h": "ca595cdc556a97a3f4fadff5f5b7cdd903abb0727086a7aad4de545fb4411c79",
+    "firmware/platformio.ini": "1ead2c68e7faa78e655b6a4f7406bf19f9158ecb442d66b3351b8bbbde873d3f",
+    "firmware/src/main.cpp": "a50922e66b00a4c3efb7bb6d879667333a44140697c99995965ffba6990bc19d",
+    "firmware/include/config/ConfigManager.h": "99f3af93252dbcb61012e7eafd65f6118bffd76ea7952f664653b42a1d0a5187",
+    "firmware/src/config/ConfigManager.cpp": "49acaa29d94803dbd2226895192f1382242c5f08cb3bbbd28023095788f25453",
+    "firmware/src/boot/M9LittleFsMountProbe.cpp": "735750e17efa539abef7942513b2514e40d82095e2c6fa89db6a027b6656f899",
+    "firmware/scripts/m9_normal_qualification_gate.py": "051766659bff6b4eb59e7ff5b193534a97ff83c8f73cec5ebb159b90d93d6114",
+    "firmware/include/boot/M9StageAConfig.h": "199fbd1204e10205e4f3a05ccfd414b0c35042fa34cea0424853c6c9b28ffbdd",
+    "firmware/include/boot/M9NormalStageA.h": "eed9ff8359cd3d6d59ca06bcfb544150fca43677ea0cbc17ce10518632564bf3",
+    "firmware/include/boot/M9NormalResources.h": "f930012acbb465f341ab0a68a7b53db743365796895826ae0ad728c38f54dd6c",
+    "firmware/include/boot/M9NormalStatusJson.h": "64cf0022dba582b0621c7270f68f808aa6210ad1ed4728c94259d23bacc79a97",
+    "firmware/src/boot/M9NormalStageA.cpp": "99b93fa7b8efcd478116ca8d8c0672d831e1c5e6f3091dd129c86168f6ebb718",
+    "firmware/src/boot/M9NormalDashboard.cpp": "eea7c14199e2c1f8653b66fe227f03cd4d4fd385a0c4cfb1a92c192ddbac1609",
+    "firmware/scripts/m9_normal_webserver.py": "a825244d3fc99f675de83f78df0bc5556554669b19d07ddd3bcc684665b4ff54",
+    "firmware/scripts/m9_normal_webserver_build.py": "2d50eafb4dcd5e87b63d3b267a84a8c423808cb62ca908c79a629d75d03eb5f2",
+    "firmware/include/boot/M9NormalHttpPolicy.h": "d09b067d4066dc22258b0181bbd64d25ef09e6f076740475801ff8039ccd26e2"
+  }
+}

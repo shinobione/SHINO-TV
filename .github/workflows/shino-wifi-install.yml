@@ -1,0 +1,325 @@
+name: SHINO minimal Wi-Fi installer offline
+on:
+  push:
+    branches: [feature/shino-tv-m9-flash-layout-liberation]
+  pull_request:
+  workflow_dispatch:
+concurrency:
+  # Separate push and PR groups: a branch push cannot cancel a required PR check.
+  # Manual runs have their own group and cannot be cancelled by new commits.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || (github.event.pull_request.number || github.ref) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref != 'refs/heads/main') }}
+
+permissions:
+  contents: read
+  pull-requests: read
+jobs:
+  changes:
+    name: Changed-path scope (always reported)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      relevant: ${{ steps.filter.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify the path filter itself
+        run: python -m unittest discover -s tools -p 'test_ci_scope.py' -q
+      - name: Evaluate changed files (fail open)
+        id: filter
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python tools/ci_scope.py --group wifi
+  offline-install:
+    needs: changes
+    if: needs.changes.outputs.relevant == 'true'
+    name: Application-only receiver and Windows installer (NO-GO gate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Public pinned Core and inert installer tests
+        run: |
+          python -m pip install 'platformio==6.1.18'
+          pio pkg install -g -t 'platformio/framework-arduinoespressif8266@3.30102.0'
+          python -m unittest discover -s companion -p test_shino_install.py -v
+          python tools/shino_wifi_runner.py > "${{ runner.temp }}/shino-wifi-host.json"
+      - name: Two actual public StageA graphs; no receiver activation
+        run: |
+          python tools/shino_wifi_build.py research-local/shino-install-ci/baseline
+          python tools/shino_wifi_build.py research-local/shino-install-ci/integrated --integrated
+          pio run -d research-local/shino-install-ci/baseline -e esp12e_m9_4m2m_normal_qualification
+          pio run -d research-local/shino-install-ci/integrated -e esp12e_m9_4m2m_normal_qualification
+          python tools/shino_wifi_resources.py research-local/shino-install-ci/baseline research-local/shino-install-ci/integrated > "${{ runner.temp }}/shino-wifi-resources.json"
+      - name: Exact stop gate and deployed-source preservation
+        run: |
+          python - <<'PY'
+          import json,os,sys
+          from pathlib import Path
+          sys.path.insert(0,'companion')
+          import shino_install
+          assert not shino_install.QUALIFIED_LIVE
+          p=Path(os.environ['RUNNER_TEMP'])
+          host=json.loads((p/'shino-wifi-host.json').read_text())
+          assert host['actual_core'] and host['actual_python_sender'] and host['network_calls']==0
+          assert host['interruption_boundaries']==197
+          for r in host['rows']:
+              assert r['fs_preserved']
+              if r['name'] in ('valid_real_sender','time_wrap'):assert r['commit']==1
+              else:assert r['commit']==0 and r['running']==0
+          resource=json.loads((p/'shino-wifi-resources.json').read_text())
+          assert resource['verdict']=='NO_GO' and not resource['activation']
+          assert resource['floors']==dict(heap=20480,largest=16384,stack=2048,fragmentation=25)
+          assert resource['delta']['noinit']==0
+          for k in ('device_contacts','serial_io','flash_writes','rtc_writes','reboots','device_filesystem_writes'):assert resource[k]==0
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shino-wifi-offline-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/shino-wifi-*.json
+          if-no-files-found: error
+  offline-maintenance:
+    needs: changes
+    if: needs.changes.outputs.relevant == 'true'
+    name: Callable StageA maintenance ownership and memory (NO-GO)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Actual public callable StageA pair
+        run: |
+          python -m pip install 'platformio==6.1.18'
+          python tools/shino_wifi_build.py research-local/shino-maintenance-ci/baseline
+          python tools/shino_maintenance_build.py research-local/shino-maintenance-ci/candidate
+          pio run -d research-local/shino-maintenance-ci/baseline -e esp12e_m9_4m2m_normal_qualification
+          pio run -d research-local/shino-maintenance-ci/candidate -e esp12e_m9_4m2m_normal_qualification
+          python tools/shino_maintenance_resources.py research-local/shino-maintenance-ci/baseline research-local/shino-maintenance-ci/candidate > "${{ runner.temp }}/shino-maintenance-resources.json"
+      - name: Actual StageA HTTP lifetime and Native Core faults
+        env:
+          SHINO_ARDUINOJSON_SRC: ${{ github.workspace }}/research-local/shino-maintenance-ci/candidate/.pio/libdeps/esp12e_m9_4m2m_normal_qualification/ArduinoJson/src
+        run: |
+          python tools/shino_maintenance_http.py > "${{ runner.temp }}/shino-maintenance-http.json"
+          python tools/shino_maintenance_native.py > "${{ runner.temp }}/shino-maintenance-native.json"
+      - name: Preserve closed physical gate
+        run: |
+          python - <<'PY'
+          import json,os,sys
+          from pathlib import Path
+          sys.path.insert(0,'companion')
+          import shino_install
+          assert not shino_install.QUALIFIED_LIVE
+          p=Path(os.environ['RUNNER_TEMP'])
+          r=json.loads((p/'shino-maintenance-resources.json').read_text())
+          assert r['verdict']=='NO_GO' and not r['activation'] and not r['trusted_consent_bound']
+          assert r['floors']==dict(heap=20480,largest=16384,stack=2048,fragmentation=25)
+          h=json.loads((p/'shino-maintenance-http.json').read_text())
+          assert h['maintenance_lifecycle']['cycles']==12
+          assert h['actual_stage_a_workload']['accepted_post_count']==202
+          n=json.loads((p/'shino-maintenance-native.json').read_text())
+          assert n['cases']==230 and n['interruption_boundaries']==197 and n['actual_native_pump']
+          assert len(n['compile_rejected_interlocks'])==2
+          for row in n['rows']:
+              assert row['fs_preserved'] and not row['running'] and row['listeners']==row['queued']==0
+              assert row['host_restart_calls']==row['commit']
+              assert not row['connected']
+              if row['name'] not in ('valid_real_sender','time_wrap'):assert row['commit']==0
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shino-maintenance-offline-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/shino-maintenance-*.json
+          if-no-files-found: error
+
+  offline-small-buffer:
+    needs: changes
+    if: needs.changes.outputs.relevant == 'true'
+    name: Core 256-byte buffer; real StageA graph and interrupted transfer (HOLD)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Xtensa indirect/nested call-graph proof regression
+        run: python tools/test_shino_xtensa_callgraph.py
+      - name: Owner-private transition source isolation and credential regression (no secrets)
+        run: |
+          python tools/test_shino_owner_transition.py
+          python tools/test_shino_owner_candidate_verify.py
+          python tools/test_m9_prebody_regression.py
+          python tools/test_shino_m9_repair_build.py
+      - name: Windows offline maintenance Digest/HMAC arm contract
+        run: |
+          python companion/test_shino_maintenance_control.py
+      - name: One-use authenticated maintenance arm; reject replay and unqualified install
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -Iexperiments/shino_wifi_install/include tools/shino_arm_gate_test.cpp -o "${{ runner.temp }}/shino-arm-gate-test"
+          "${{ runner.temp }}/shino-arm-gate-test"
+      - name: Reject public-fixture INSTALL after a successful dry run
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -DSHINO_PUBLIC_INERT_REVIEW=1 -Iexperiments/shino_wifi_install/include tools/shino_arm_gate_test.cpp -o "${{ runner.temp }}/shino-public-arm-gate-test"
+          "${{ runner.temp }}/shino-public-arm-gate-test"
+      - name: Compile and execute allocation-free memory tracer
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -Iexperiments/shino_wifi_install/include tools/shino_memory_trace_test.cpp -o "${{ runner.temp }}/shino-memory-trace-test"
+          "${{ runner.temp }}/shino-memory-trace-test"
+      - name: Native Core host failure and interrupted transfer qualification
+        run: |
+          python -m pip install 'platformio==6.1.18'
+          pio pkg install -g -t 'platformio/framework-arduinoespressif8266@3.30102.0'
+          python tools/shino_small_buffer_native.py > "${{ runner.temp }}/shino-small-buffer-host.json"
+      - name: Authenticated full-transfer dry-run; assert zero flash/RTC/reboot
+        run: |
+          python tools/shino_probe_offline.py > "${{ runner.temp }}/shino-probe-host.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          r=json.loads((Path(os.environ['RUNNER_TEMP'])/'shino-probe-host.json').read_text())
+          assert r['cases']==5 and r['no_flash_no_rtc_no_reboot']
+          assert r['rows'][-1]['case']=='public_install_blocked_at_native_receiver'
+          assert r['actual_native'] and r['actual_core']
+          assert r['rows'][0]['probed'] and not any(x['probed'] for x in r['rows'][1:])
+          PY
+      - name: Compile both real 4m2m public StageA graphs
+        run: |
+          python tools/shino_wifi_build.py research-local/shino-small-buffer-ci/base
+          python -c "import sys;from pathlib import Path;sys.path.insert(0,'tools');from shino_maintenance_build import prepare;prepare(Path('research-local/shino-small-buffer-ci/small'),small_buffer=True)"
+          pio run -d research-local/shino-small-buffer-ci/base -e esp12e_m9_4m2m_normal_qualification
+          pio run -v -d research-local/shino-small-buffer-ci/small -e esp12e_m9_4m2m_normal_qualification > "${{ runner.temp }}/shino-small-buffer-build.log"
+          grep -F 'isolated-packages/framework-arduinoespressif8266/cores/esp8266/Updater.cpp' "${{ runner.temp }}/shino-small-buffer-build.log"
+          python tools/shino_small_buffer_resources.py research-local/shino-small-buffer-ci/base research-local/shino-small-buffer-ci/small > "${{ runner.temp }}/shino-small-buffer-resources.json"
+      - name: Assert data, safety invariants, and no activation
+        run: |
+          python - <<'PY'
+          import json,os,sys
+          from pathlib import Path
+          sys.path.insert(0,'companion')
+          from shino_install import QUALIFIED_LIVE
+          assert not QUALIFIED_LIVE
+          p=Path(os.environ['RUNNER_TEMP'])
+          h=json.loads((p/'shino-small-buffer-host.json').read_text())
+          assert h['cases']==230 and h['interruption_boundaries']==197 and h['actual_core']
+          assert h['core_updater_buffer_bytes']==256 and h['network_calls']==0
+          r=json.loads((p/'shino-small-buffer-resources.json').read_text())
+          assert r['small_core_buffer_bytes']==256
+          assert r['isolated_framework_package_verified']
+          assert r['scenario_is_not_native_high_water']
+          assert r['verdict']=='HOLD_FOR_NATIVE_OBSERVATION'
+          assert not r['activation'] and not r['trusted_consent_bound']
+          assert r['floors']==dict(heap=20480,largest=16384,stack=2048,fragmentation=25)
+          assert r['delta']['noinit']==0
+          for key in ('device_contacts','serial_io','flash_writes','rtc_writes','reboots','device_filesystem_writes'):
+              assert r[key]==0
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shino-small-buffer-offline-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/shino-small-buffer-*.json
+          if-no-files-found: error
+
+  offline-transition-arm:
+    needs: changes
+    if: needs.changes.outputs.relevant == 'true'
+    name: Third public StageA graph — challenge, dry run, dormant updater (NOT FLASHABLE)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Build isolated public-inert authorized arm graph
+        run: |
+          python -m pip install 'platformio==6.1.18'
+          pio pkg install -g -t 'platformio/framework-arduinoespressif8266@3.30102.0'
+          python tools/shino_transition_build.py research-local/shino-third-graph-ci/transition
+          pio run -d research-local/shino-third-graph-ci/transition -e esp12e_m9_4m2m_normal_qualification
+      - name: Exact linked Xtensa transition RAM/BIN audit (still NO-GO)
+        run: |
+          python -c "import sys;from pathlib import Path;sys.path.insert(0,'tools');from shino_maintenance_build import prepare;prepare(Path('research-local/shino-third-graph-ci/maintenance-baseline'),small_buffer=True)"
+          pio run -d research-local/shino-third-graph-ci/maintenance-baseline -e esp12e_m9_4m2m_normal_qualification
+          python tools/shino_transition_resources.py research-local/shino-third-graph-ci/maintenance-baseline research-local/shino-third-graph-ci/transition > "${{ runner.temp }}/shino-third-graph-resources.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          r=json.loads((Path(os.environ['RUNNER_TEMP'])/'shino-third-graph-resources.json').read_text())
+          assert r['verdict']=='NO_GO_FOR_PHYSICAL_INSTALL'
+          assert r['physical_memory_high_water']=='NOT_MEASURED'
+          assert r['sdk_tcp_allocator_stack_upper_bound']=='NOT_ESTABLISHED'
+          assert r['buffer_bytes']==256
+          assert not r['public_install_enabled'] and not r['qualified_live']
+          assert not r['physical_flash_authorized']
+          assert r['delta']['noinit']==0
+          assert r['floors']==dict(heap=20480,largest=16384,stack=2048,fragmentation=25)
+          for k in ('device_contacts','serial_io','flash_writes','rtc_writes','device_filesystem_writes','reboots'):assert r[k]==0
+          PY
+      - name: Real synthetic owner-private 4m2m Xtensa build (no private artifacts)
+        run: |
+          python tools/shino_owner_ci.py
+      - name: Fail closed on identity / flash authority / deployed source changes
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('research-local/shino-third-graph-ci/transition')
+          x=json.loads((p/'public-inputs.json').read_text())
+          assert x['public_inert_hmac_credential_only']
+          assert x['experimental_auth_arm'] and x['not_flashable_or_owner_qualified']
+          assert x['trusted_consent_bound'] and x['public_install_denied']
+          ini=(p/'platformio.ini').read_text()
+          assert '-DSHINO_PUBLIC_INERT_REVIEW=1' in ini
+          source=(p/'src/boot/M9NormalStageA.cpp').read_text()
+          assert 'ShinoArmGate.h' in source
+          assert 'service.on("/api/v1/m9/maintenance/challenge", HTTP_GET' in source
+          assert 'service.on("/api/v1/m9/maintenance/probe", HTTP_GET' in source
+          assert 'service.on("/api/v1/m9/maintenance/install", HTTP_GET' in source
+          assert 'service.on("/api/v1/m9/maintenance/result", HTTP_GET' in source
+          assert 'ArmGate armGate' in source
+          assert 'PUBLIC_REVIEW_DRY_RUN_ONLY' in source
+          assert 'if(!armGate.consume(p) || !p.dryRun)return false;' in source
+          native=Path('experiments/shino_wifi_install/include/ShinoWifiUpdate.h').read_text()
+          arm=Path('experiments/shino_wifi_install/include/ShinoArmGate.h').read_text()
+          assert 'SHINO_PUBLIC_INERT_REVIEW' in native
+          assert 'if(!dryRun_)return reject();' in native
+          assert 'SHINO_PUBLIC_INERT_REVIEW' in arm
+          assert 'if(!dryRun){nonceValid_=false;return false;}' in arm
+          assert 'PUBLIC-INERT' in (p/'include/shino_private_policy.h').read_text()
+          assert '-DSHINO_SMALL_OTA_BUFFER=1' in (p/'platformio.ini').read_text()
+          assert (p/'.pio/build/esp12e_m9_4m2m_normal_qualification/firmware.elf').is_file()
+          PY
+          git diff --exit-code
+          test -z "$(git status --porcelain)"

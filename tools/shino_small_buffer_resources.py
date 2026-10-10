@@ -1,0 +1,54 @@
+"""Paired public Xtensa graph and 256-byte Updater memory scenario.
+
+This is NOT a physical heap/stack high-water certification or flash authority.
+"""
+import argparse,json
+from pathlib import Path
+from shino_maintenance_resources import run as measure
+
+def run(base,candidate):
+    r=measure(base,candidate)
+    assert r['callable_native']=='PASS_OFFLINE'
+    # Verify actual built disposable Core and firmware flag, not a wishful
+    # 256-byte mathematical substitution on a default 4096-byte graph.
+    local=Path(candidate)/'isolated-shino-framework'
+    packaged=Path(candidate)/'.pio/isolated-packages/framework-arduinoespressif8266'
+    source=(local/'cores/esp8266/Updater.cpp').read_text()
+    installed=(packaged/'cores/esp8266/Updater.cpp').read_text()
+    assert source==installed, 'PIO must use the isolated patched framework package'
+    assert source.count('if (false) { // SHINO public low-memory 256-byte updater qualification')==1
+    assert 'void shinoAbort()' in (packaged/'cores/esp8266/Updater.h').read_text()
+    ini=(Path(candidate)/'platformio.ini').read_text()
+    assert '-DSHINO_SMALL_OTA_BUFFER=1' in ini and '-DSHINO_MEMORY_TRACE=1' in ini
+    from shino_local_framework import platformio_local_uri
+    assert 'framework-arduinoespressif8266 @ '+platformio_local_uri(local.resolve()) in ini
+    assert str((Path(candidate)/'.pio/isolated-packages').resolve()) in ini
+    r['isolated_framework_package_verified']=True
+    size=256;old=4096
+    # Owner baseline minima, static delta, normal known HTTP freed, illustrative
+    # NOT measured 4096 B lwIP/TCP scenario. Runtime admission still monitored.
+    owner=r['observed_owner']['heap'];delta=r['delta']['static_ram']
+    tcp=r['illustrative_tcp_reserve'];http=r['normal_known_dynamic_payload_total']
+    pre_tcp=owner-delta+http
+    pre_update=pre_tcp-tcp
+    post_buffer=pre_update-size
+    r['small_core_buffer_bytes']=size
+    r['default_core_buffer_bytes']=old
+    r['buffer_reduction_bytes']=old-size
+    r['core_begin_admission_heap']=20480+size+1024
+    r['maintenance_entry_admission_heap']=25600
+    r['scenario_pre_tcp_heap']=pre_tcp
+    r['scenario_pre_update_heap']=pre_update
+    r['scenario_post_256_buffer_heap']=post_buffer
+    r['scenario_post_buffer_margin_above_floor']=post_buffer-20480
+    r['scenario_is_not_native_high_water']=True
+    r['observed_sdk_socket_allocator_peak']='NOT_MEASURED'
+    r['physical_probe']='PENDING_USER_AUTHORIZATION_AND_CANDIDATE_REVIEW'
+    r['verdict']='HOLD_FOR_NATIVE_OBSERVATION'
+    return r
+
+if __name__=='__main__':
+    p=argparse.ArgumentParser()
+    p.add_argument('base',type=Path);p.add_argument('candidate',type=Path)
+    a=p.parse_args()
+    print(json.dumps(run(a.base,a.candidate),indent=2))

@@ -4,12 +4,100 @@ on:
   push:
     branches: [main, 'planning/**', 'feature/**', 'safety/**', 'codex/**']
   pull_request:
+    types: [opened, reopened, synchronize, labeled]
+  workflow_dispatch:
+
+concurrency:
+  # Separate push and PR groups: a branch push cannot cancel a required PR check.
+  # Manual runs have their own group and cannot be cancelled by new commits.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || (github.event.pull_request.number || github.ref) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref != 'refs/heads/main') }}
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
+  changes:
+    name: Core CI scope (always reported)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      active: ${{ steps.active.outputs.relevant }}
+      home: ${{ steps.ci_home.outputs.relevant }}
+      artwork: ${{ steps.ci_artwork.outputs.relevant }}
+      v07: ${{ steps.ci_v07.outputs.relevant }}
+      crypto: ${{ steps.ci_crypto.outputs.relevant }}
+      preparse: ${{ steps.ci_preparse.outputs.relevant }}
+      bridge: ${{ steps.ci_bridge.outputs.relevant }}
+      windows: ${{ steps.ci_windows.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Read-only scope unit tests
+        run: python -m unittest discover -s tools -p test_ci_scope.py -q
+      - name: Confirm an open PR before skipping a duplicate branch push
+        id: active
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python tools/ci_scope.py --group ci-core
+      - name: Scope home
+        if: steps.active.outputs.relevant == 'true'
+        id: ci_home
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python tools/ci_scope.py --skip-duplicate-check --group ci-home
+      - name: Scope artwork
+        if: steps.active.outputs.relevant == 'true'
+        id: ci_artwork
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python tools/ci_scope.py --skip-duplicate-check --group ci-artwork
+      - name: Scope v07
+        if: steps.active.outputs.relevant == 'true'
+        id: ci_v07
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python tools/ci_scope.py --skip-duplicate-check --group ci-v07
+      - name: Scope crypto
+        if: steps.active.outputs.relevant == 'true'
+        id: ci_crypto
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python tools/ci_scope.py --skip-duplicate-check --group ci-crypto
+      - name: Scope preparse
+        if: steps.active.outputs.relevant == 'true'
+        id: ci_preparse
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python tools/ci_scope.py --skip-duplicate-check --group ci-preparse
+      - name: Scope bridge
+        if: steps.active.outputs.relevant == 'true'
+        id: ci_bridge
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python tools/ci_scope.py --skip-duplicate-check --group ci-bridge
+      - name: Scope windows
+        if: steps.active.outputs.relevant == 'true'
+        id: ci_windows
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python tools/ci_scope.py --skip-duplicate-check --group ci-windows
   home-lan:
+    needs: changes
+    if: needs.changes.outputs.active == 'true' && (needs.changes.outputs.home == 'true' || (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'ci-full'))
     name: P1 persistent SDK Wi-Fi and LAN boundaries (offline only)
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -44,6 +132,8 @@ jobs:
           path: ${{ runner.temp }}/p1-*.json
           if-no-files-found: error
   artwork-pilot:
+    needs: changes
+    if: needs.changes.outputs.active == 'true' && (needs.changes.outputs.artwork == 'true' || (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'ci-full'))
     name: V2.2 native scenes, clipped marquee and linked resources (no device)
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -81,6 +171,8 @@ jobs:
             ${{ runner.temp }}/artwork-128-previews
           if-no-files-found: error
   v08-m8r-stack-remediation:
+    needs: changes
+    if: needs.changes.outputs.active == 'true' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'ci-full'))
     name: V0.8 Mission 8R focused regressions and linked StackThunk isolation (no device)
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -125,6 +217,8 @@ jobs:
           path: ${{ runner.temp }}/v08-m8r-*.json
           if-no-files-found: error
   v08-m8-preinstall-stack-gate:
+    needs: changes
+    if: needs.changes.outputs.active == 'true' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'ci-full'))
     name: V0.8 Mission 8 static stop evidence (no device)
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -156,6 +250,8 @@ jobs:
           path: ${{ runner.temp }}/v08-m8-stack.json
           if-no-files-found: error
   v08-m7-native-receiver:
+    needs: changes
+    if: needs.changes.outputs.active == 'true' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'ci-full'))
     name: V0.8 Mission 7 offline native receiver and full static links (no device)
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -194,6 +290,8 @@ jobs:
           path: ${{ runner.temp }}/v08-m7-*.json
           if-no-files-found: error
   v08-m6c-r7-partial:
+    needs: changes
+    if: needs.changes.outputs.active == 'true' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'ci-full'))
     name: V0.8 Mission 6C partial R7 and architecture blockers (loopback only)
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -234,6 +332,8 @@ jobs:
           path: ${{ runner.temp }}/v08-m6c-evidence.json
           if-no-files-found: error
   v08-m6b-host-security:
+    needs: changes
+    if: needs.changes.outputs.active == 'true' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'ci-full'))
     name: V0.8 Mission 6B corrected host security and unchanged wire differential (no device)
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -267,6 +367,8 @@ jobs:
           path: ${{ runner.temp }}/v08-m6b-security-evidence.json
           if-no-files-found: error
   v07-source-executed-ingress:
+    needs: changes
+    if: needs.changes.outputs.active == 'true' && (needs.changes.outputs.v07 == 'true' || (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'ci-full'))
     name: V0.7 pinned-source C++ ingress lab (host only)
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -290,6 +392,8 @@ jobs:
           python tools/v07_cpp_lab_runner.py
           python tools/v07_cpp_lab_runner.py v07_single_owner_handoff_lab.cpp
   test:
+    needs: changes
+    if: needs.changes.outputs.active == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -314,8 +418,15 @@ jobs:
         run: |
           test "$(git -C reference-arduinojson rev-parse HEAD)" = "77771d3c07668e01d8f52acb03910c1110bb373f"
           python tools/verify_native_arduinojson_parity.py
+      - name: Install pinned M9 source-audit packages (no serial execution)
+        run: python -m pip install 'esptool==5.4.0' 'esp-pylib==1.1.5' 'pyserial==3.5' 'littlefs-python==0.15.0'
+
       - name: Test static firmware inspector
+        env:
+          SHINO_ARDUINOJSON_SRC: reference-arduinojson/src
         run: python -m unittest discover -s tools -p 'test_*.py' -v
+      - name: Phase S release tool defaults to offline library audit only
+        run: python tools/m9_signed_release.py
       - name: Test Windows telemetry bridge and bounded V0.5 host-only media emulation (no device)
         run: |
           python -m pip install 'Pillow>=10,<13'
@@ -331,6 +442,8 @@ jobs:
           node --check simulator/now-playing-live.mjs
 
   v08-host-crypto-vectors:
+    needs: changes
+    if: needs.changes.outputs.active == 'true' && (needs.changes.outputs.crypto == 'true' || (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'ci-full'))
     name: V0.8 fixed public crypto vectors (host only)
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -346,6 +459,8 @@ jobs:
         run: node --test tools/test_v08_crypto_lab.js
 
   v08-single-owner-preparse:
+    needs: changes
+    if: needs.changes.outputs.active == 'true' && (needs.changes.outputs.preparse == 'true' || (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'ci-full'))
     name: V0.8 pinned parser handoff and isolated native link (no device)
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -371,6 +486,8 @@ jobs:
           git rev-parse HEAD
 
   v08-full-bridge-qualification:
+    needs: changes
+    if: needs.changes.outputs.active == 'true' && (needs.changes.outputs.bridge == 'true' || (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'ci-full'))
     name: V0.8 full bridge link and host protocol qualification (no device)
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -437,6 +554,8 @@ jobs:
           if-no-files-found: error
 
   shino-link-windows-smoke:
+    needs: changes
+    if: needs.changes.outputs.active == 'true' && (needs.changes.outputs.windows == 'true' || (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'ci-full'))
     name: SHINO LINK Windows-only smoke (PC, no device)
     runs-on: windows-latest
     timeout-minutes: 10
@@ -455,6 +574,11 @@ jobs:
           python -m unittest discover -s companion -p 'test_shino_link.py' -v
           python -c "import pystray; from PIL import Image; print('Windows tray imports OK')"
           python companion/shino_link.py --autostart status
+      - name: Phase R one-GET diagnostic with in-memory Digest transport only
+        run: |
+          python -m compileall -q companion/m9_stagea_status_probe.py
+          python -m unittest discover -s companion -p 'test_m9_stagea_status_probe.py' -v
+          python companion/m9_stagea_status_probe.py --audit
       - name: Media session projection imports and mock PC-only probe (no live session/TV)
         run: |
           python -m pip install -r companion/requirements-media.txt

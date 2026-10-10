@@ -1,0 +1,122 @@
+{
+  "assets": {
+    "web/css/pico.min.css": {
+      "bytes_lf": 83319,
+      "sha256_lf": "fbc9a63fc9fc9f72d12fd7fc9806e11fa9f77ae4f9cad146b27003a1119ba3db"
+    },
+    "web/css/style.css": {
+      "bytes_lf": 3583,
+      "sha256_lf": "b6749df4bc2d08b6d2b1592aea1f5ece3cafc8a4a2ab7c0ada21f5ebb6fce1f3"
+    },
+    "web/footer.html": {
+      "bytes_lf": 178,
+      "sha256_lf": "0ed57b9fc3c8539ee7e1c101da41cb47a41b7b21ef6c5bc4b403e617bab2121e"
+    },
+    "web/gif_upload.html": {
+      "bytes_lf": 3060,
+      "sha256_lf": "4a90a270a15f07b9547381729739f06796894451ff029e133181866025e0ad12"
+    },
+    "web/header.html": {
+      "bytes_lf": 1889,
+      "sha256_lf": "95d474c2deabc810c5b4ccc8eef98e7cd6e3a3efee71628cd01d03ecf89fce7d"
+    },
+    "web/index.html": {
+      "bytes_lf": 2087,
+      "sha256_lf": "997894256dc6f60a3472af5a53e1003ee4ee4559b35113b0e7064cc82ce301ba"
+    },
+    "web/js/alpinejs.min.js": {
+      "bytes_lf": 45764,
+      "sha256_lf": "7b69e646c4d6fd6e45d321755c7c78f0775ffaf0a0b1ab793b7ab860f6a2cd44"
+    },
+    "web/js/gifUploadHandler.js": {
+      "bytes_lf": 3589,
+      "sha256_lf": "f18308918e2dd550bfe7c3794ff89f6f6c686f1a19dc2500ddf4f289e1916292"
+    },
+    "web/js/logsHandler.js": {
+      "bytes_lf": 2108,
+      "sha256_lf": "a1e58617e75d1a349c3c8f54376603f5d363a958291c38c38eeddd921834303b"
+    },
+    "web/js/main.js": {
+      "bytes_lf": 651,
+      "sha256_lf": "863e43ce596ccdecc769b46461da0246c9729ccd72c9928a1b5eef61370b3c7e"
+    },
+    "web/js/ntpHandler.js": {
+      "bytes_lf": 2197,
+      "sha256_lf": "3e68c21bfff5bb2a139ad5c707aed8a1abc36f106182e745967c24d079eaf451"
+    },
+    "web/js/rebootHandler.js": {
+      "bytes_lf": 540,
+      "sha256_lf": "823d3117595761a0a019979fce20fa4d145a332b0a0ba8f9cda38f3e1205f5ca"
+    },
+    "web/js/rotationHandler.js": {
+      "bytes_lf": 1482,
+      "sha256_lf": "9aa321b69cc258b0d2a3baf572fc4c6cc18c5642b7b0c81891ed7b7074072548"
+    },
+    "web/js/themeSwitcher.js": {
+      "bytes_lf": 4476,
+      "sha256_lf": "5af4c0a2ea2b357022c7e3135df1fa72686081b2b53f6fb74963aaa8d788be21"
+    },
+    "web/js/tokenHandler.js": {
+      "bytes_lf": 3014,
+      "sha256_lf": "dca1f08cdca100b708efd41aef83e8fad082906ff69c5bab524e3d465346856f"
+    },
+    "web/js/utils.js": {
+      "bytes_lf": 1583,
+      "sha256_lf": "38867daaa6389c42981d92010f375e9e95e10fdf8e98676a97f134108035828c"
+    },
+    "web/js/wifiHandler.js": {
+      "bytes_lf": 3005,
+      "sha256_lf": "c6ec2f655d93152de0ed0f77526ad7892cc3bca52a104eb962206731b9a0b490"
+    },
+    "web/logs.html": {
+      "bytes_lf": 2783,
+      "sha256_lf": "5c97202aa3ea8e19994996a738296363fade62bec47e0c70508679c14a1d9a8e"
+    },
+    "web/ntp.html": {
+      "bytes_lf": 2068,
+      "sha256_lf": "681940d72d1fd7643e0f615287ede90f87aebd686eb68623c1c854456b0c2bec"
+    },
+    "web/rotation.html": {
+      "bytes_lf": 2323,
+      "sha256_lf": "812f5b51dd3e92b6694e16a14200322cff2adb24d843d1c3437a4755775b2478"
+    },
+    "web/token.html": {
+      "bytes_lf": 5077,
+      "sha256_lf": "21fb4b8b698a3ccfc5d34e3ef6138bba183d80829db6a6c01dcbf41beae090c2"
+    },
+    "web/update.html": {
+      "bytes_lf": 1708,
+      "sha256_lf": "aadd2804d3f3adc3d4396c69c302500a03e01a84d8d1ed01f614d4641e6e5bf4"
+    },
+    "web/wifi.html": {
+      "bytes_lf": 4833,
+      "sha256_lf": "be92d5d6810bd9b82fe7da534abb90c6b115e3446bd3be507d682cc8673a872a"
+    }
+  },
+  "blank_config": {
+    "api_token": "",
+    "lcd_rotation": 0,
+    "wifi_password": "",
+    "wifi_ssid": ""
+  },
+  "geometry": {
+    "environment": "env:esp12e_m9_4m2m",
+    "flash_end_exclusive": 4194304,
+    "fs_block": 8192,
+    "fs_bytes": 2072576,
+    "fs_end_exclusive": 4169728,
+    "fs_page": 256,
+    "fs_start": 2097152
+  },
+  "independent_parser": "littlefs-python==0.15.0",
+  "mklittlefs_package": "platformio/tool-mklittlefs@1.203.210628",
+  "mklittlefs_version": "0.2.3-35-g943d2f7",
+  "pinned_source_sha256_lf": {
+    "eagle.flash.4m2m.ld": "0109b8f5acd746ff051444f5d0c99e85e519dff07ffa24d4fba7523384bea4c4",
+    "mklittlefs-main.cpp": "651e7e32ac1004499fb53b9b72724e4c3a462028fe4afe82bf8446729470fda7",
+    "platformio-builder-main.py": "18cec6eadeeb724b84c4de0376d19edd323d01c782b415e73134c8fcf28ec91d"
+  },
+  "schema": 1,
+  "scope": "reviewed inactive legacy assets only; no normal-profile or route activation",
+  "source_normalization": "CRLF to LF; packaged source timestamps fixed; builder root wall-clock metadata still varies"
+}

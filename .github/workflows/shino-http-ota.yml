@@ -1,0 +1,125 @@
+name: SHINO normal HTTP OTA
+on:
+  push:
+    branches: [feature/shino-tv-m9-flash-layout-liberation]
+  pull_request:
+  workflow_dispatch:
+concurrency:
+  # Separate push and PR groups: a branch push cannot cancel a required PR check.
+  # Manual runs have their own group and cannot be cancelled by new commits.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || (github.event.pull_request.number || github.ref) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref != 'refs/heads/main') }}
+
+permissions:
+  contents: read
+  pull-requests: read
+jobs:
+  changes:
+    name: Changed-path scope (always reported)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      relevant: ${{ steps.filter.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify the path filter itself
+        run: python -m unittest discover -s tools -p 'test_ci_scope.py' -q
+      - name: Evaluate changed files (fail open)
+        id: filter
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python tools/ci_scope.py --group http
+  normal-ota:
+    needs: changes
+    if: needs.changes.outputs.relevant == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Pinned public firmware and full native graph
+        run: |
+          python -m pip install 'platformio==6.1.18'
+          python tools/shino_http_ota_build.py research-local/http-ota-ci
+          cp research-local/http-ota-ci/report.json "${{ runner.temp }}/http-ota-build.json"
+          cp research-local/http-ota-ci/stack-paths.json "${{ runner.temp }}/http-ota-stack.json"
+          python tools/m9_stagea_source_gate.py > "${{ runner.temp }}/http-ota-source.json"
+      - name: Windows consent and actual Core interruption matrix
+        run: |
+          python -m unittest discover -s companion -p test_shino_update.py -v
+          python -m unittest discover -s companion -p test_shino_link.py -v
+          python -m unittest discover -s companion -p test_push_fsless_metrics.py -v
+          python -m unittest discover -s tools -p test_shino_prepare_ota_pair.py -v
+          python -m unittest discover -s tools -p test_shino_http_ota_packet_control.py -v
+          python tools/test_shino_http_ota.py > "${{ runner.temp }}/http-ota-native.json"
+      - name: Core read contract and exact compiled BIN through commit and eboot RAM
+        run: |
+          python tools/test_shino_http_ota_flash.py > "${{ runner.temp }}/http-ota-flash.json"
+          python - <<'PY'
+          import json,sys,os
+          from pathlib import Path
+          sys.path.insert(0,'tools')
+          from shino_http_ota_exact_image_replay import qualify
+          p=Path('research-local/http-ota-ci')
+          m=json.loads((p/'release.json').read_text())
+          r=qualify(p/'.pio/build/esp12e_m9_4m2m_normal_qualification/firmware.bin',p/'release.json',m['sha256'])
+          (Path(os.environ['RUNNER_TEMP'])/'http-ota-exact.json').write_text(json.dumps(r,indent=2),encoding='utf-8')
+          PY
+      - name: Actual normal HTTP/Digest/Updater on loopback
+        env:
+          SHINO_ARDUINOJSON_SRC: ${{ github.workspace }}/research-local/http-ota-ci/.pio/libdeps/esp12e_m9_4m2m_normal_qualification/ArduinoJson/src
+        run: python tools/shino_http_ota_network.py --bin research-local/http-ota-ci/.pio/build/esp12e_m9_4m2m_normal_qualification/firmware.bin --manifest research-local/http-ota-ci/release.json > "${{ runner.temp }}/http-ota-network.json"
+      - name: Validate offline evidence
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path(os.environ['RUNNER_TEMP'])
+          native=json.loads((root/'http-ota-native.json').read_text())
+          assert native['interruption_boundaries']==197 and native['actual_pinned_core']
+          assert native['cases']==227 and native['actual_windows_hmac']
+          assert all(r['fs_preserved'] and not r['running'] for r in native['rows'])
+          assert all(not r['commit'] for r in native['rows'] if r['name']!='valid')
+          flash=json.loads((root/'http-ota-flash.json').read_text())
+          assert flash['valid_byte_reads']==320 and flash['legacy_footer_rejected']
+          exact=json.loads((root/'http-ota-exact.json').read_text())
+          assert exact['legacy_valid_image_rejected'] and exact['interruption_boundaries']>=100
+          assert exact['positive']['pinned_eboot_copy_load_model']
+          assert exact['positive']['bytes']==json.loads((root/'http-ota-build.json').read_text())['bytes']
+          assert all(not r['commit'] and r['current_preserved'] and r['reserved_preserved'] for r in exact['rows'])
+          assert {'boot_entry_gap','app_entry_gap'} <= {r['name'] for r in exact['rows']}
+          network=json.loads((root/'http-ota-network.json').read_text())
+          assert network['authenticated_post_get_requests']==150
+          assert network['actual_normal_parser_digest_core'] and network['commit']==1
+          assert network['exact_compiled_bin'] and network['uploaded_bytes']==exact['positive']['bytes']
+          assert network['fs_preserved'] and network['device_contacts']==0
+          assert network['scratch_guard_rejections']==2 and network['scratch_owner_preserved']
+          assert network['upload_guard_rejections']==1 and 'readback_disconnect' in network['rejected_transfers_recovered']
+          build=json.loads((root/'http-ota-build.json').read_text())
+          assert build['stack_frames']['identity']<=160 and build['stack_frames']['metrics']<=112
+          assert build['stack_frames']['hmac_proof']<=128 and build['noinit']==56
+          assert build['stack_frames']['ota_staging']<=176 and build['stack_frames']['ota_segments']<=240
+          assert build['physical']=='NOT_RUN' and not build['private']
+          stack=json.loads((root/'http-ota-stack.json').read_text())
+          assert stack['required_free_bytes']==2048 and not stack['whole_native_upper_bound']
+          assert stack['core_commit_reachable'] and not stack['nested_verification']
+          assert max(p['compiled_bytes'] for p in stack['paths'].values())<=2048
+          source=json.loads((root/'http-ota-source.json').read_text())
+          assert source['PHASE_T_SOURCE']=='PASS_OFFLINE' and source['device_contacts']==0
+          PY
+          git diff --exit-code
+      - uses: actions/upload-artifact@v4
+        with:
+          name: http-ota-public-evidence-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/http-ota-*.json

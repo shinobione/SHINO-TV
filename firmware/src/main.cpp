@@ -36,13 +36,25 @@
 #include "scenes/SceneManager.h"
 #include "recovery/FactoryRollback.h"
 #include "shino_private_policy.h"
+#include "boot/ShinoBootProfile.h"
+// M9_PHASE_N_BEGIN
+#if SHINO_M9_NORMAL_QUALIFICATION == 1
+#include "boot/M9NormalStageA.h"
+#endif
+// M9_PHASE_N_END
+#if SHINO_BOOT_PROFILE == 2
+#include "boot/M9LittleFsMountProbe.h"
+#include "boot/M9MountProbeResources.h"
+#endif
 #include <array>
 
 #ifndef METRICS_URL
 #define METRICS_URL ""
 #endif
 
+#if SHINO_BOOT_PROFILE != 2
 ConfigManager configManager;
+#endif
 static String shinoApName;
 const char* AP_SSID = nullptr;
 const char* AP_PASSWORD = SHINO_SETUP_AP_PSK;
@@ -54,9 +66,8 @@ static_assert(sizeof(SHINO_RESCUE_HTTP_PASSWORD) >= 21, "Per-build rescue HTTP s
 #endif
 // Initial install only. A normal boot with a different flash/FS map needs a
 // separately reviewed migration and is NOT exposed by this source revision.
-#if SHINO_BOOT_PROFILE != 0
-#error "Normal SHINO boot is prohibited until a reviewed FS/data migration gate exists."
-#endif
+// The shared ShinoBootProfile.h keeps normal profile 1 prohibited and requires
+// explicit opt-in for profile 2. Profile-0 setup/loop bodies stay unchanged.
 
 WiFiManager* wifiManager = nullptr;
 static constexpr const char* KV_SALT_STR = "GeekMagicOpenFirmwareIsAwesome";
@@ -114,6 +125,11 @@ static auto littleFsHasEntries() -> bool {
  *
  */
 void setup() {
+// M9_PHASE_N_BEGIN
+#if SHINO_M9_NORMAL_QUALIFICATION == 1
+    M9NormalStageA::beforeSetup(); // Before serial/delay/logging: whole normal setup.
+#endif
+// M9_PHASE_N_END
     Serial.begin(SERIAL_BAUD_RATE);
     delay(BOOT_DELAY_MS);
     Serial.println("");
@@ -123,6 +139,24 @@ void setup() {
     // FIRST instruction path after serial startup: never mount/format LittleFS,
     // initialize EEPROM, migrate config, write boot counters, or use WiFi STA.
     FirstBootBridge::run();
+    EspClass::wdtEnable(WDTO_2S);
+    return;
+// M9_PHASE_N_BEGIN
+#elif SHINO_BOOT_PROFILE == 1
+    M9NormalStageA::begin(configManager);
+    EspClass::wdtEnable(WDTO_2S);
+    M9NormalStageA::afterSetup();
+    return;
+// M9_PHASE_N_END
+#elif SHINO_BOOT_PROFILE == 2
+    FirstBootBridge::run(); // Protected AP/LCD remains available on probe failure.
+#if SHINO_M9_MOUNT_PROBE_RESOURCE_DIAGNOSTICS == 1
+    M9MountProbeResources::beforeMount();
+#endif
+    M9LittleFsMountProbe::begin();
+#if SHINO_M9_MOUNT_PROBE_RESOURCE_DIAGNOSTICS == 1
+    M9MountProbeResources::afterMount();
+#endif
     EspClass::wdtEnable(WDTO_2S);
     return;
 #else
@@ -232,6 +266,18 @@ void setup() {
 void loop() {
 #if SHINO_BOOT_PROFILE == 0
     FirstBootBridge::loop();
+    return;
+// M9_PHASE_N_BEGIN
+#elif SHINO_BOOT_PROFILE == 1
+    M9NormalStageA::loop();
+    return;
+// M9_PHASE_N_END
+#elif SHINO_BOOT_PROFILE == 2
+    FirstBootBridge::loop();
+    M9LittleFsMountProbe::poll();
+#if SHINO_M9_MOUNT_PROBE_RESOURCE_DIAGNOSTICS == 1
+    M9MountProbeResources::poll(); // Only at the end of the normal profile-2 loop.
+#endif
     return;
 #else
     if (RescueMode::isActive()) {

@@ -4,6 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 MAIN = (ROOT / "firmware/src/main.cpp").read_text()
+PROFILE = (ROOT / "firmware/include/boot/ShinoBootProfile.h").read_text()
 BRIDGE = (ROOT / "firmware/src/boot/FirstBootBridge.cpp").read_text()
 POLICY = (ROOT / "tools/generate_shino_device_policy.py").read_text()
 WEB = (ROOT / "firmware/src/web/Webserver.cpp").read_text()
@@ -23,8 +24,9 @@ class FirstBootGate(unittest.TestCase):
         self.assertLess(MAIN.index("FirstBootBridge::run();"), MAIN.index("configManager.secure.begin()"))
         self.assertLess(MAIN.index("FirstBootBridge::run();"), MAIN.index("RescueMode::checkBootLoop()"))
         self.assertIn("#if SHINO_BOOT_PROFILE == 0", MAIN)
-        self.assertIn("#if SHINO_BOOT_PROFILE != 0", MAIN)
-        self.assertIn('#error "Normal SHINO boot is prohibited', MAIN)
+        self.assertIn("#if SHINO_BOOT_PROFILE != 0", PROFILE)
+        self.assertIn("#if SHINO_BOOT_PROFILE == 1", PROFILE)
+        self.assertIn('#error "Normal SHINO boot is prohibited', PROFILE)
         self.assertIn("FirstBootBridge::loop();", MAIN)
 
     def test_bridge_has_no_direct_fs_eeprom_or_persisted_wifi_calls(self):

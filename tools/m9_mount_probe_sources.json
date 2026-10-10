@@ -1,0 +1,9 @@
+{
+  "cores/esp8266/FS.cpp": "8addc4cc19231ea8f8050f66594cc73ddbaae858dbae582d90cb2a1177291adf",
+  "cores/esp8266/FSImpl.h": "865522ff1ad185da1cf676addf1d4896d487ae536e06d63d393d3b2272e6a7f1",
+  "cores/esp8266/flash_hal.h": "c9778ab81c5f0abf5c43e5e89133b7c4fcd7e0419ccd525e53961cbf98d9a56e",
+  "libraries/LittleFS/lib/littlefs/lfs.c": "8c28c80018293820d5400759f4918359b09d869c1a1240959b0647cc844783b5",
+  "libraries/LittleFS/src/LittleFS.cpp": "8469776a65283b496fc238379e426fafaa817337caa6e08596f39483c66401d5",
+  "libraries/LittleFS/src/LittleFS.h": "d731ea562e0e9c1bfd2b32d2f8ff605099721dd04a7de6f2f6cad2d6d8a955ba",
+  "libraries/LittleFS/src/lfs.c": "c99bd47672e1a6ad5407281fe03c6e8ea66641c7aa2e5c1a04c9712932e800c9"
+}

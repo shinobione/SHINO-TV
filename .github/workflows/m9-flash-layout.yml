@@ -1,0 +1,511 @@
+name: Mission 9 flash layout — OFFLINE only
+
+on:
+  push:
+    branches: ['feature/shino-tv-m9-flash-layout-liberation']
+    paths:
+      - 'firmware/**'
+      - 'recovery/**'
+      - 'tools/m9_flash_layout.py'
+      - 'tools/m9_phase_n*'
+      - 'tools/test_m9_phase_n*'
+      - 'docs/M09_PHASE_N_STAGE_A.md'
+      - 'tools/test_m9_flash_layout.py'
+      - 'tools/m9_first_migration.py'
+      - 'tools/m9_fsless_gate.py'
+      - 'tools/m9_master_restore_preflight.py'
+      - 'tools/test_m9_first_migration.py'
+      - 'tools/m9_stage1_readback_verify.py'
+      - 'tools/m9_executor_preflight.py'
+      - 'tools/m9_executor_sources.json'
+      - 'tools/test_m9_phase_c.py'
+      - 'tools/m9_rtc_neutralization.py'
+      - 'tools/test_m9_rtc_neutralization.py'
+      - 'tools/m9_stage2_fs_candidate.py'
+      - 'tools/m9_stage2_readback_verify.py'
+      - 'tools/m9_stage2_executor.py'
+      - 'tools/m9_stage2_sources.json'
+      - 'tools/test_m9_stage2.py'
+      - 'tools/m9_mount_probe.py'
+      - 'tools/m9_mount_stack.py'
+      - 'tools/m9_normal_readiness.py'
+      - 'tools/test_m9_normal_readiness.py'
+      - 'docs/M09_NORMAL_PROFILE_READINESS.md'
+      - 'docs/M09_SUCCESSOR_PHYSICAL_ACCEPTANCE.md'
+      - 'tools/m9_mount_stack_sources.json'
+      - 'tools/test_m9_mount_stack.py'
+      - 'docs/M09_MOUNT_STACK_REMEDIATION.md'
+      - 'tools/m9_mount_probe_sources.json'
+      - 'tools/test_m9_mount_probe.py'
+      - 'tools/m9_mount_probe_resources.py'
+      - 'tools/test_m9_mount_probe_resources.py'
+      - 'tools/m9_resource_baseline_sources.json'
+      - 'tools/m9_resource_core_sources.json'
+      - 'docs/M09_MOUNT_PROBE_RESOURCE_INSTRUMENTATION.md'
+      - 'docs/M09_LITTLEFS_MOUNT_PROBE_QUALIFICATION.md'
+      - 'docs/M09_STAGE2_LITTLEFS_QUALIFICATION.md'
+      - 'docs/M09_RTC_EBOOT_NEUTRALIZATION.md'
+      - 'docs/M09_PHYSICAL_EXECUTOR_QUALIFICATION.md'
+      - 'tools/verify_fs_provisioning.py'
+      - 'tools/test_verify_fs_provisioning.py'
+      - 'tools/verify_factory_ota.py'
+      - 'tools/generate_shino_device_policy.py'
+      - 'docs/M09_FLASH_LAYOUT_LIBERATION.md'
+      - 'docs/M09_FIRST_PHYSICAL_MIGRATION.md'
+      - '.github/workflows/m9-flash-layout.yml'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    paths:
+      - 'firmware/**'
+      - 'recovery/**'
+      - 'tools/m9_flash_layout.py'
+      - 'tools/m9_phase_n*'
+      - 'tools/test_m9_phase_n*'
+      - 'docs/M09_PHASE_N_STAGE_A.md'
+      - 'tools/test_m9_flash_layout.py'
+      - 'tools/m9_first_migration.py'
+      - 'tools/m9_fsless_gate.py'
+      - 'tools/m9_master_restore_preflight.py'
+      - 'tools/test_m9_first_migration.py'
+      - 'tools/m9_stage1_readback_verify.py'
+      - 'tools/m9_executor_preflight.py'
+      - 'tools/m9_executor_sources.json'
+      - 'tools/test_m9_phase_c.py'
+      - 'tools/m9_rtc_neutralization.py'
+      - 'tools/test_m9_rtc_neutralization.py'
+      - 'tools/m9_stage2_fs_candidate.py'
+      - 'tools/m9_stage2_readback_verify.py'
+      - 'tools/m9_stage2_executor.py'
+      - 'tools/m9_stage2_sources.json'
+      - 'tools/test_m9_stage2.py'
+      - 'tools/m9_mount_probe.py'
+      - 'tools/m9_mount_stack.py'
+      - 'tools/m9_normal_readiness.py'
+      - 'tools/test_m9_normal_readiness.py'
+      - 'docs/M09_NORMAL_PROFILE_READINESS.md'
+      - 'docs/M09_SUCCESSOR_PHYSICAL_ACCEPTANCE.md'
+      - 'tools/m9_mount_stack_sources.json'
+      - 'tools/test_m9_mount_stack.py'
+      - 'docs/M09_MOUNT_STACK_REMEDIATION.md'
+      - 'tools/m9_mount_probe_sources.json'
+      - 'tools/test_m9_mount_probe.py'
+      - 'docs/M09_LITTLEFS_MOUNT_PROBE_QUALIFICATION.md'
+      - 'docs/M09_STAGE2_LITTLEFS_QUALIFICATION.md'
+      - 'docs/M09_RTC_EBOOT_NEUTRALIZATION.md'
+      - 'docs/M09_PHYSICAL_EXECUTOR_QUALIFICATION.md'
+      - 'tools/verify_fs_provisioning.py'
+      - 'tools/test_verify_fs_provisioning.py'
+      - 'tools/verify_factory_ota.py'
+      - 'tools/generate_shino_device_policy.py'
+      - 'docs/M09_FLASH_LAYOUT_LIBERATION.md'
+      - 'docs/M09_FIRST_PHYSICAL_MIGRATION.md'
+      - '.github/workflows/m9-flash-layout.yml'
+      - '.github/workflows/ci.yml'
+
+concurrency:
+  # Separate push and PR groups: a branch push cannot cancel a required PR check.
+  # Manual runs have their own group and cannot be cancelled by new commits.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || (github.event.pull_request.number || github.ref) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref != 'refs/heads/main') }}
+
+permissions:
+  contents: read
+
+jobs:
+  m9-offline-4m2m:
+    name: 4m3m baseline vs opt-in 4m2m (no device)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact PR/head source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Fetch immutable OEM app reference for disposable build policy
+        uses: actions/checkout@v4
+        with:
+          repository: GeekMagicClock/smalltv-ultra
+          ref: 55d7877fcba8b1cb7a66a0830d35d5b374bc8540
+          path: reference-geekmagic
+          persist-credentials: false
+          sparse-checkout: |
+            Ultra-V9.0.44
+
+      - name: Fetch pinned public version-2 stub source for RTC audit
+        uses: actions/checkout@v4
+        with:
+          repository: espressif/esp-flasher-stub
+          ref: 23959b780454adf885916d42f2274ec648e96a94
+          path: reference-m9-stub
+          persist-credentials: false
+          sparse-checkout: |
+            src
+
+      - name: Fetch pinned public stub library memory macros
+        uses: actions/checkout@v4
+        with:
+          repository: espressif/esp-stub-lib
+          ref: d61983fa4d1f66b9c088608c1f702ad877121279
+          path: reference-m9-stub-lib
+          persist-credentials: false
+          sparse-checkout: |
+            include
+            src
+
+      - name: Fetch pinned public mklittlefs source for metadata audit
+        uses: actions/checkout@v4
+        with:
+          repository: earlephilhower/mklittlefs
+          ref: 943d2f76736eef6630edd4933e42c3016194770b
+          path: reference-m9-mklittlefs
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            main.cpp
+
+      - name: Install pinned offline build tools
+        run: python -m pip install 'platformio==6.1.18' 'esptool==5.4.0' 'esp-pylib==1.1.5' 'pyserial==3.5' 'littlefs-python==0.15.0'
+
+      - name: Verify exact target geometry and unit tests
+        run: |
+          python -m unittest discover -s tools -p 'test_m9_flash_layout.py' -v
+          python -m unittest discover -s tools -p 'test_m9_first_migration.py' -v
+          python -m unittest discover -s tools -p 'test_m9_phase_c.py' -v
+          python -m unittest discover -s tools -p 'test_m9_rtc_neutralization.py' -v
+          python -m unittest discover -s tools -p 'test_m9_stage2.py' -v
+          python -m unittest discover -s tools -p 'test_m9_mount_probe.py' -v
+          python -m unittest discover -s tools -p 'test_m9_mount_probe_resources.py' -v
+          python -m unittest discover -s tools -p 'test_m9_mount_stack.py' -v
+          python -m unittest discover -s tools -p 'test_m9_normal_readiness.py' -v
+          python tools/m9_normal_readiness.py > "${{ runner.temp }}/m9-normal-readiness.json"
+          python -m unittest discover -s tools -p 'test_first_boot_bridge_source.py' -v
+          python -m unittest discover -s tools -p 'test_fsless_dashboard_source.py' -v
+          python -m unittest discover -s tools -p 'test_verify_fs_provisioning.py' -v
+          python tools/m9_flash_layout.py > "${{ runner.temp }}/m9-layout.json"
+          python - <<'PY'
+          import json, os
+          report = json.load(open(os.path.join(os.environ["RUNNER_TEMP"], "m9-layout.json")))
+          assert report["gate"] == "PASS_OFFLINE_GEOMETRY"
+          assert report["device_contacts"] == report["device_writes"] == 0
+          assert report["layout"]["filesystem_start"] == 0x200000
+          assert report["layout"]["filesystem_bytes"] == 2072576
+          assert report["layout"]["post_filesystem_reserved_bytes"] == 24576
+          assert report["layout"]["symmetric_max_to_max_gap_bytes"] == 8192
+          assert report["platformio"]["default_env"] == "esp12e"
+          assert report["platformio"]["mission9_ldscript"] == "eagle.flash.4m2m.ld"
+          PY
+
+      - name: Verify immutable OEM package and generate disposable FS-less policy
+        run: |
+          test "$(git -C reference-geekmagic rev-parse HEAD)" = "55d7877fcba8b1cb7a66a0830d35d5b374bc8540"
+          python tools/verify_factory_ota.py --manifest recovery/factory_ota_v9_0_44.json reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip
+          python tools/generate_shino_device_policy.py --oem-zip reference-geekmagic/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip >/dev/null
+          grep -q '^#define SHINO_BOOT_PROFILE 0$' firmware/include/shino_private_policy.h
+          grep -q '^#define SHINO_ENABLE_FACTORY_RESTORE 0$' firmware/include/shino_private_policy.h
+          grep -q '^#define SHINO_ENABLE_FS_MIGRATION 0$' firmware/include/shino_private_policy.h
+
+      - name: Compile unchanged 4m3m baseline and escrow image
+        run: |
+          # PlatformIO removes the previous environment build directory when
+          # switching environments in this project, so escrow each BIN
+          # immediately after its own successful compile.
+          pio run -d firmware -e esp12e
+          cp firmware/.pio/build/esp12e/firmware.bin "${{ runner.temp }}/m9-baseline-4m3m.bin"
+          test -s "${{ runner.temp }}/m9-baseline-4m3m.bin"
+
+      - name: Compile opt-in 4m2m candidate and escrow image
+        run: |
+          pio run -d firmware -e esp12e_m9_4m2m
+          # Static package/Core audit only: never import/run a serial executor.
+          python tools/m9_executor_preflight.py --source-only --core-root "$HOME/.platformio/packages/framework-arduinoespressif8266"
+          python tools/m9_rtc_neutralization.py --core-root "$HOME/.platformio/packages/framework-arduinoespressif8266" --stub-root reference-m9-stub --stub-lib-root reference-m9-stub-lib
+          cp firmware/.pio/build/esp12e_m9_4m2m/firmware.bin "${{ runner.temp }}/m9-candidate-4m2m.bin"
+          test -s "${{ runner.temp }}/m9-candidate-4m2m.bin"
+
+      - name: Normal profile remains compile prohibited (expected rejection, no candidate)
+        run: |
+          python - <<'PY'
+          import os, shutil, subprocess
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"]) / "m9-normal-profile-refusal"
+          root.mkdir()
+          shutil.copyfile("firmware/include/boot/ShinoBootProfile.h", root / "ShinoBootProfile.h")
+          (root / "shino_private_policy.h").write_text("#define SHINO_BOOT_PROFILE 1\n")
+          compiler = Path.home() / ".platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-g++"
+          result = subprocess.run([str(compiler), "-E", "-x", "c++", str(root / "ShinoBootProfile.h")], capture_output=True)
+          assert result.returncode != 0 and b"Normal SHINO boot is prohibited" in result.stderr
+          print("PROFILE1_EXPECTED_COMPILE_REJECTION_PASS; NO_NORMAL_CANDIDATE")
+          PY
+
+      - name: Phase B FS-less source and linked candidate gate (no MASTER or device)
+        run: |
+          "$HOME/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-nm" -C firmware/.pio/build/esp12e_m9_4m2m/firmware.elf > "${{ runner.temp }}/m9-symbols.txt"
+          python tools/m9_fsless_gate.py --policy firmware/include/shino_private_policy.h --symbols "${{ runner.temp }}/m9-symbols.txt" > "${{ runner.temp }}/m9-fsless.json"
+          python tools/m9_first_migration.py "${{ runner.temp }}/m9-candidate-4m2m.bin" --render-commands > "${{ runner.temp }}/m9-first-migration.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"])
+          report = json.loads((root / "m9-first-migration.json").read_text())
+          assert report["sector_rounded_write_extent"] < 0x100000
+          assert report["physical_authorization"] is False
+          assert report["filesystem_write_performed"] is False
+          assert report["serial_io_performed"] is False
+          assert report["image_evidence"]["arduino_crc_valid"] is True
+          source = json.loads((root / "m9-fsless.json").read_text())
+          assert source["build"]["status"] == "PASS_FSLESS_POLICY_AND_LINKED_SYMBOLS"
+          PY
+
+      - name: Build and verify fresh SHINO 4m2m LittleFS image offline
+        run: |
+          # PlatformIO's buildfs target may replace normal build products, so
+          # application BINs were escrowed in runner.temp in the previous step.
+          pio run -d firmware -e esp12e_m9_4m2m -t buildfs
+          python tools/verify_fs_provisioning.py             --image firmware/.pio/build/esp12e_m9_4m2m/littlefs.bin             --source-root firmware/data             --platformio firmware/platformio.ini             --environment env:esp12e_m9_4m2m             --out "${{ runner.temp }}/m9-fs.json"
+          python - <<'PY'
+          import json, os
+          report=json.load(open(os.path.join(os.environ["RUNNER_TEMP"],"m9-fs.json")))
+          assert report["image_bytes"] == 2072576
+          assert report["platformio_environment"] == "env:esp12e_m9_4m2m"
+          assert report["first_boot_migration_writer_compiled"] is False
+          assert report["device_read_or_upload_performed"] is False
+          assert report["owner_FS_migration_permission"] is False
+          PY
+
+      - name: Phase F pinned raw-FS source audit and independent disposable package check
+        run: |
+          # Public source copies only. No owner image/readback or serial executor.
+          python - <<'PY'
+          import os, shutil
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"]) / "m9-stage2-stub-audit"
+          root.mkdir()
+          for origin, name in (
+              ("reference-m9-stub/src/command_handler.c", "src-command_handler.c"),
+              ("reference-m9-stub/src/commands.h", "src-commands.h"),
+              ("reference-m9-stub/src/main.c", "src-main.c"),
+              ("reference-m9-stub-lib/src/flash.c", "lib-src-flash.c"),
+              ("reference-m9-stub-lib/src/target/common/src/flash.c", "lib-src-target-common-src-flash.c"),
+              ("reference-m9-stub-lib/src/target/esp8266/src/flash.c", "lib-src-target-esp8266-src-flash.c"),
+              ("reference-m9-stub-lib/src/target/esp8266/src/rom-patched.c", "lib-src-target-esp8266-src-rom-patched.c"),
+          ):
+              shutil.copyfile(origin, root / name)
+          PY
+          python tools/m9_stage2_executor.py \
+            --core-root "$HOME/.platformio/packages/framework-arduinoespressif8266" \
+            --platformio-builder "$HOME/.platformio/platforms/espressif8266/builder/main.py" \
+            --stub-audit-root "${{ runner.temp }}/m9-stage2-stub-audit" \
+            --mklittlefs-source reference-m9-mklittlefs/main.cpp > "${{ runner.temp }}/m9-stage2-source.json"
+          python tools/m9_stage2_fs_candidate.py --prepare-source "${{ runner.temp }}/m9-stage2-data"
+          pio pkg install -g -t 'platformio/tool-mklittlefs@1.203.210628'
+          "$HOME/.platformio/packages/tool-mklittlefs/mklittlefs" --version
+          "$HOME/.platformio/packages/tool-mklittlefs/mklittlefs" -c "${{ runner.temp }}/m9-stage2-data" \
+            -p 256 -b 8192 -s 2072576 "${{ runner.temp }}/m9-stage2-ephemeral.bin"
+          FS_SHA=$(python -c 'import hashlib,os; from pathlib import Path; print(hashlib.sha256((Path(os.environ["RUNNER_TEMP"])/"m9-stage2-ephemeral.bin").read_bytes()).hexdigest())')
+          python tools/m9_stage2_fs_candidate.py --image "${{ runner.temp }}/m9-stage2-ephemeral.bin" \
+            --expected-sha256 "$FS_SHA" > "${{ runner.temp }}/m9-stage2-package.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"])
+          audit = json.loads((root / "m9-stage2-source.json").read_text())
+          package = json.loads((root / "m9-stage2-package.json").read_text())
+          assert audit["STAGE2_EXECUTOR_MODEL_GATE"] == audit["STAGE2_RAW_WRITE_BOUNDS_GATE"] == "PASS"
+          assert package["geometry"]["image_bytes"] == 2072576 and package["image_file_count"] == 24
+          assert package["image_inventory_exact"] and package["parser_writes"] == 0
+          assert not audit["physical_authorization"] and not package["physical_authorization"]
+          assert audit["stage2_physical_write"] == package["stage2_physical_write"] == "HOLD"
+          assert package["stage2_runtime"] == "NOT_RUN"
+          PY
+
+      - name: Inspect both ESP8266 images and calculate exact OTA geometry
+        run: |
+          python -m esptool image-info "${{ runner.temp }}/m9-baseline-4m3m.bin"
+          python -m esptool image-info "${{ runner.temp }}/m9-candidate-4m2m.bin"
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          sys.path.insert(0, "tools")
+          from m9_flash_layout import LINKER_MAX_APP_BYTES, ota_geometry
+
+          root = Path(os.environ["RUNNER_TEMP"])
+          baseline = root / "m9-baseline-4m3m.bin"
+          candidate = root / "m9-candidate-4m2m.bin"
+          fs_image = Path("firmware/.pio/build/esp12e_m9_4m2m/littlefs.bin")
+          assert baseline.is_file() and candidate.is_file() and fs_image.is_file()
+
+          bsize = baseline.stat().st_size
+          csize = candidate.stat().st_size
+          assert fs_image.stat().st_size == 2_072_576
+          assert 0 < bsize <= LINKER_MAX_APP_BYTES
+          assert 0 < csize <= LINKER_MAX_APP_BYTES
+
+          self_update = ota_geometry(csize, csize)
+          baseline_to_candidate = ota_geometry(bsize, csize)
+          assert self_update["candidate_passes"]
+          assert baseline_to_candidate["candidate_passes"]
+
+          safe = {
+              "head": os.environ["SOURCE_HEAD"],
+              "device_contacts": 0,
+              "device_writes": 0,
+              "baseline_4m3m": {
+                  "bytes": bsize,
+                  "sha256": hashlib.sha256(baseline.read_bytes()).hexdigest(),
+              },
+              "candidate_4m2m": {
+                  "bytes": csize,
+                  "sha256": hashlib.sha256(candidate.read_bytes()).hexdigest(),
+              },
+              "littlefs_4m2m": {
+                  "bytes": fs_image.stat().st_size,
+                  "sha256": hashlib.sha256(fs_image.read_bytes()).hexdigest(),
+                  "published_as_artifact": False,
+              },
+              "baseline_to_candidate": baseline_to_candidate,
+              "candidate_self_update": self_update,
+              "linker_max_application_bytes": LINKER_MAX_APP_BYTES,
+              "physical_write_authorized": False,
+          }
+          out = root / "m9-build.json"
+          out.write_text(json.dumps(safe, indent=2, sort_keys=True), encoding="utf-8")
+          print(out.read_text(encoding="utf-8"))
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write(
+                  "### Mission 9 — offline 4m2m qualification\n\n"
+                  f"4m3m baseline: **{bsize:,} B**  \n"
+                  f"4m2m candidate: **{csize:,} B**  \n"
+                  f"4m2m LittleFS: **{fs_image.stat().st_size:,} B**  \n"
+                  f"4m2m self-update geometric gap: **{self_update['gap_between_current_and_staging_bytes']:,} B**  \n"
+                  "Device contacts: **0** · device writes: **0** · physical migration: **HOLD**\n"
+              )
+          PY
+        env:
+          SOURCE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Phase H application-only read-only mount probe (no device)
+        run: |
+          # Existing profile-0 reports are escrowed already. No probe buildfs,
+          # upload, owner image or private readback is used in this step.
+          pio run -d firmware -e esp12e_m9_4m2m_mount_probe
+          "$HOME/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-nm" -C -S firmware/.pio/build/esp12e_m9_4m2m_mount_probe/firmware.elf > "${{ runner.temp }}/m9-probe-symbols.txt"
+          "$HOME/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-size" -A firmware/.pio/build/esp12e_m9_4m2m_mount_probe/firmware.elf > "${{ runner.temp }}/m9-probe-sections.txt"
+          python tools/m9_mount_probe.py \
+            --core-root "$HOME/.platformio/packages/framework-arduinoespressif8266" \
+            --symbols "${{ runner.temp }}/m9-probe-symbols.txt" \
+            --sections "${{ runner.temp }}/m9-probe-sections.txt" \
+            --stack-usage firmware/.pio/build/esp12e_m9_4m2m_mount_probe/src/boot/M9LittleFsMountProbe.cpp.su \
+            --candidate firmware/.pio/build/esp12e_m9_4m2m_mount_probe/firmware.bin > "${{ runner.temp }}/m9-mount-probe.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = json.loads((Path(os.environ["RUNNER_TEMP"])/"m9-mount-probe.json").read_text())
+          assert report["status"] == "PASS_OFFLINE_MOUNT_PROBE_SOURCE"
+          assert report["build"]["status"] == "PASS_OFFLINE_MOUNT_PROBE_LINKED_IMAGE"
+          assert report["checked_file_count"] == 24 and report["profile"] == 2
+          assert not report["physical_authorization"] and report["device_contacts"] == 0
+          assert report["physical_gate"] == "HOLD / NOT_RUN"
+          PY
+          cp firmware/.pio/build/esp12e_m9_4m2m_mount_probe/firmware.bin "${{ runner.temp }}/m9-uninstrumented-probe.bin"
+          cp -R firmware/.pio/build/esp12e_m9_4m2m_mount_probe/src "${{ runner.temp }}/m9-uninstrumented-stack"
+
+      - name: Phase J separate instrumented probe and paired resource gate (no device)
+        run: |
+          pio run -d firmware -e esp12e_m9_4m2m_mount_probe_resources
+          "$HOME/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-nm" -C firmware/.pio/build/esp12e_m9_4m2m_mount_probe_resources/firmware.elf > "${{ runner.temp }}/m9-resource-symbols.txt"
+          "$HOME/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-size" -A firmware/.pio/build/esp12e_m9_4m2m_mount_probe_resources/firmware.elf > "${{ runner.temp }}/m9-resource-sections.txt"
+          python tools/m9_mount_probe_resources.py \
+            --core-root "$HOME/.platformio/packages/framework-arduinoespressif8266" \
+            --symbols "${{ runner.temp }}/m9-resource-symbols.txt" \
+            --candidate firmware/.pio/build/esp12e_m9_4m2m_mount_probe_resources/firmware.bin \
+            --baseline-sections "${{ runner.temp }}/m9-probe-sections.txt" \
+            --instrumented-sections "${{ runner.temp }}/m9-resource-sections.txt" \
+            --baseline-stack "${{ runner.temp }}/m9-uninstrumented-stack" \
+            --instrumented-stack firmware/.pio/build/esp12e_m9_4m2m_mount_probe_resources/src > "${{ runner.temp }}/m9-mount-probe-resources.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          r=json.loads((Path(os.environ["RUNNER_TEMP"])/"m9-mount-probe-resources.json").read_text())
+          assert r["PHASE_J_RESOURCE_INSTRUMENTATION_SOURCE_GATE"] == r["paired_build"]["PHASE_J_RESOURCE_INSTRUMENTATION_BUILD_GATE"] == "PASS/OFFLINE"
+          assert r["MOUNT_PROBE_PHYSICAL_GATE"] == "PARTIAL / HOLD"
+          assert r["MOUNT_PROBE_RESOURCE_PHYSICAL_GATE"] == "HOLD / NOT_RUN"
+          assert r["PHYSICAL_RESOURCE_THRESHOLD"] == "REVIEW_REQUIRED"
+          assert not r["physical_authorization"] and r["device_contacts"] == r["device_writes"] == 0
+          assert r["image"]["sector_rounded_write_extent"] < 0x100000
+          PY
+          "$HOME/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-nm" -C -S firmware/.pio/build/esp12e_m9_4m2m_mount_probe_resources/firmware.elf > "${{ runner.temp }}/m9-mount-stack-symbols.txt"
+          python tools/m9_mount_stack.py \
+            --stack firmware/.pio/build/esp12e_m9_4m2m_mount_probe_resources/src \
+            --symbols "${{ runner.temp }}/m9-mount-stack-symbols.txt" > "${{ runner.temp }}/m9-mount-stack.json"
+
+      - name: Phase N true profile1 StageA application qualification (no device)
+        run: |
+          pio run -d firmware -e esp12e_m9_4m2m_normal_qualification
+          python -m unittest discover -s tools -p 'test_m9_phase_n*.py' -v
+          python tools/m9_phase_n_http_runner.py > "${{ runner.temp }}/m9-normal-http.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          r=json.loads((Path(os.environ["RUNNER_TEMP"])/"m9-normal-http.json").read_text())
+          assert r["checks"] >= 233 and r["device_contacts"] == 0
+          assert r["owner_residual_404"] == "NOT_REPRODUCED_ROOT_CAUSE_UNRESOLVED"
+          assert not r["firmware_changed"] and r["normal_runtime_gate"] == "HOLD/PARTIAL"
+          for key, count in (("urllib_workload", 200), ("actual_stage_a_workload", 202)):
+              w=r[key]
+              assert w["accepted_post_count"] == count and w["stock_and_phase_p_cached_digest"]
+              assert len(w["final_gets"]) == 12 and all(g["code"] == 200 for g in w["final_gets"])
+              assert w["handler_counts"]["not_found"] == 0
+          assert r["actual_stage_a_workload"]["handler_counts"] == dict(posts=203, gets=15, not_found=0, policy404=3)
+          PY
+          python -m unittest discover -s companion -p 'test_push_fsless_metrics.py' -v
+          python -m unittest discover -s companion -p 'test_shino_link.py' -v
+          "$HOME/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-nm" -C -S firmware/.pio/build/esp12e_m9_4m2m_normal_qualification/firmware.elf > "${{ runner.temp }}/m9-normal-symbols.txt"
+          "$HOME/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-size" -A firmware/.pio/build/esp12e_m9_4m2m_normal_qualification/firmware.elf > "${{ runner.temp }}/m9-normal-sections.txt"
+          python tools/m9_phase_n_qualification.py \
+            --candidate firmware/.pio/build/esp12e_m9_4m2m_normal_qualification/firmware.bin \
+            --symbols "${{ runner.temp }}/m9-normal-symbols.txt" \
+            --sections "${{ runner.temp }}/m9-normal-sections.txt" \
+            --stack firmware/.pio/build/esp12e_m9_4m2m_normal_qualification/src > "${{ runner.temp }}/m9-normal-stage-a.json"
+
+      - name: Upload safe numeric evidence only
+        uses: actions/upload-artifact@v4
+        with:
+          name: m9-offline-layout-evidence-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            ${{ runner.temp }}/m9-normal-stage-a.json
+            ${{ runner.temp }}/m9-normal-http.json
+            ${{ runner.temp }}/m9-mount-stack.json
+            ${{ runner.temp }}/m9-layout.json
+            ${{ runner.temp }}/m9-fs.json
+            ${{ runner.temp }}/m9-build.json
+            ${{ runner.temp }}/m9-fsless.json
+            ${{ runner.temp }}/m9-first-migration.json
+            ${{ runner.temp }}/m9-stage2-source.json
+            ${{ runner.temp }}/m9-stage2-package.json
+            ${{ runner.temp }}/m9-mount-probe.json
+            ${{ runner.temp }}/m9-mount-probe-resources.json
+          if-no-files-found: error
+
+      - name: Delete disposable credentials, binaries, filesystem and OEM reference
+        if: always()
+        run: |
+          rm -f firmware/include/shino_private_policy.h
+          rm -f "${{ runner.temp }}/m9-baseline-4m3m.bin" "${{ runner.temp }}/m9-candidate-4m2m.bin"
+          rm -f "${{ runner.temp }}/m9-stage2-ephemeral.bin"
+          rm -f "${{ runner.temp }}/m9-uninstrumented-probe.bin"
+          rm -rf "${{ runner.temp }}/m9-uninstrumented-stack"
+          rm -rf "${{ runner.temp }}/m9-stage2-data" "${{ runner.temp }}/m9-stage2-stub-audit"
+          rm -rf firmware/private firmware/.pio reference-geekmagic
+          rm -rf reference-m9-stub reference-m9-stub-lib
+          rm -rf reference-m9-mklittlefs
