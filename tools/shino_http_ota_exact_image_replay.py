@@ -18,7 +18,7 @@ sys.path.insert(0, str(ROOT / "companion"))
 from shino_update import inspect, signature
 
 
-def replay(binary: Path, manifest: Path, expected_sha256: str):
+def replay(binary: Path, manifest: Path, expected_sha256: str, lab=None):
     # Offline image and exact 4m2m segment/tag validation occurs before any
     # host lab is started. The actual BIN is never copied into the repository.
     m, raw = inspect(binary, manifest)
@@ -33,7 +33,7 @@ def replay(binary: Path, manifest: Path, expected_sha256: str):
     nonce = "1" * 32
     with tempfile.TemporaryDirectory(prefix="shino-exact-core-replay-") as td:
         directory = Path(td)
-        exe, env = build(directory, ROOT / "tools/shino_http_ota_lab.cpp")
+        exe, env = lab if lab is not None else build(directory, ROOT / "tools/shino_http_ota_lab.cpp")
         io = IO(exe, dict(env, SHINO_TEST_DEVICE=m["device"]), secret)
         try:
             if io.command("ALIGN_PROBE") != "ALIGN_OK":
