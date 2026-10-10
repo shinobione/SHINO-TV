@@ -21,6 +21,12 @@ on:
       - 'tools/m9_phase_l_sources.json'
       - 'docs/M09_SINGLE_ATTEMPT_PHYSICAL_RUNNER.md'
       - '.github/workflows/m9-phase-l.yml'
+concurrency:
+  # Separate push and PR groups: a branch push cannot cancel a required PR check.
+  # Manual runs have their own group and cannot be cancelled by new commits.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || (github.event.pull_request.number || github.ref) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref != 'refs/heads/main') }}
+
 permissions:
   contents: read
 jobs:

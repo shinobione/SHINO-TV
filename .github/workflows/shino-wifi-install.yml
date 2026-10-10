@@ -4,10 +4,38 @@ on:
     branches: [feature/shino-tv-m9-flash-layout-liberation]
   pull_request:
   workflow_dispatch:
+concurrency:
+  # Separate push and PR groups: a branch push cannot cancel a required PR check.
+  # Manual runs have their own group and cannot be cancelled by new commits.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || (github.event.pull_request.number || github.ref) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref != 'refs/heads/main') }}
+
 permissions:
   contents: read
 jobs:
+  changes:
+    name: Changed-path scope (always reported)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      relevant: ${{ steps.filter.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify the path filter itself
+        run: python -m unittest discover -s tools -p 'test_ci_scope.py' -q
+      - name: Evaluate changed files (fail open)
+        id: filter
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python tools/ci_scope.py --group wifi
   offline-install:
+    needs: changes
+    if: needs.changes.outputs.relevant == 'true'
     name: Application-only receiver and Windows installer (NO-GO gate)
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -63,6 +91,8 @@ jobs:
           path: ${{ runner.temp }}/shino-wifi-*.json
           if-no-files-found: error
   offline-maintenance:
+    needs: changes
+    if: needs.changes.outputs.relevant == 'true'
     name: Callable StageA maintenance ownership and memory (NO-GO)
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -122,6 +152,8 @@ jobs:
           if-no-files-found: error
 
   offline-small-buffer:
+    needs: changes
+    if: needs.changes.outputs.relevant == 'true'
     name: Core 256-byte buffer; real StageA graph and interrupted transfer (HOLD)
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -214,6 +246,8 @@ jobs:
           if-no-files-found: error
 
   offline-transition-arm:
+    needs: changes
+    if: needs.changes.outputs.relevant == 'true'
     name: Third public StageA graph — challenge, dry run, dormant updater (NOT FLASHABLE)
     runs-on: ubuntu-latest
     timeout-minutes: 25
