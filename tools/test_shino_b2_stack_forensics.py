@@ -1,6 +1,8 @@
 """Offline B2 stack forensics tests; no SDK/firmware compile required."""
 import tempfile
 import unittest
+import shutil
+import subprocess
 from pathlib import Path
 from unittest.mock import patch
 
@@ -79,6 +81,58 @@ class TestForensics(unittest.TestCase):
             f.highwater_source_guard(
                 normal.replace("scratch_->~TelemetryScratch();", "/* lost destructor */"),
                 resources)
+
+    def test_b3_live_handler_heap_snapshot_has_no_stack_reset(self):
+        compiler = shutil.which("g++") or shutil.which("clang++")
+        if not compiler:
+            self.skipTest("C++ compiler unavailable in source-only environment")
+        code = r'''
+#include "boot/M9NormalResources.h"
+#include <cassert>
+using namespace M9NormalResources;
+struct Fake {
+  unsigned resets=0, stacks=0, heaps=0;
+  uint32_t tick=0, freeStack=3800;
+  Heap current{36000,34000,3};
+  void resetStack(){++resets;}
+  uint32_t stack(){++stacks;return freeStack;}
+  void heap(Heap& h){++heaps;h=current;}
+  uint32_t now(){return tick;}
+};
+int main(){
+  Fake f; Observer<Fake> o(f);
+  o.sampleHandlerHeap(); assert(f.heaps==0);
+  o.beforeSetup(); o.beforeFs(); o.afterFs(); o.afterSetup();
+  assert(f.resets==4);
+  const unsigned resets=f.resets, stackReads=f.stacks;
+  f.current={24576,17000,22}; o.sampleHandlerHeap();
+  assert(f.resets==resets && f.stacks==stackReads);
+  assert(o.status().min_heap==24576 && o.status().min_block==17000);
+  assert(o.status().max_frag==22 && o.status().samples==0);
+  assert(o.status().valid);
+  f.current={20100,16000,26}; o.sampleHandlerHeap();
+  assert(!floors(o.status()));
+  f.tick=1000; f.current={33000,31000,2}; o.poll();
+  assert(o.status().samples==1);
+  assert(o.status().min_heap==20100 && o.status().min_block==16000);
+  assert(o.status().max_frag==26 && f.resets==resets);
+  f.current={0,0,0}; o.sampleHandlerHeap();
+  assert(o.status().rejected==1 && !o.status().valid);
+  f.current={32000,30000,1}; o.sampleHandlerHeap();
+  assert(!o.status().valid && f.resets==resets);
+}
+'''
+        with tempfile.TemporaryDirectory() as tmp:
+            src=Path(tmp)/"sample.cpp"
+            exe=Path(tmp)/"sample"
+            src.write_text(code, encoding="utf-8")
+            root=Path(__file__).resolve().parents[1]
+            cp=subprocess.run([compiler,"-std=c++17","-Wall","-Wextra","-Werror",
+                               "-I"+str(root/"firmware/include"),
+                               str(src),"-o",str(exe)],capture_output=True,text=True)
+            self.assertEqual(cp.returncode,0,cp.stdout+cp.stderr)
+            run=subprocess.run([str(exe)],capture_output=True,text=True)
+            self.assertEqual(run.returncode,0,run.stdout+run.stderr)
 
     def test_audit_has_no_device_or_firmware_side_effect(self):
         framed={key:{"state":"MEASURED_STATIC","frame_bytes":64} for key in f.TARGETS}
