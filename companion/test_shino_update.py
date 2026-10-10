@@ -75,7 +75,7 @@ class UpdaterTests(unittest.TestCase):
         def checked_upload(headers,raw,progress):
             self.assertEqual(transport.gets,1)
             self.assertFalse(transport.posts)
-            self.assertEqual(marker.read_text(),"OTA_ONE_SHOT_STARTED_NO_AUTOMATIC_RETRY\\n")
+            self.assertEqual(marker.read_text(),"OTA_ONE_SHOT_STARTED_NO_AUTOMATIC_RETRY\n")
             return upload(headers,raw,progress)
         transport.upload=checked_upload
         result=update.install(
