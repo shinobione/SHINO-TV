@@ -20,12 +20,12 @@ import v08_m6a_socket_runner as inherited
 from test_m9_phase_n_routes import STUBS
 from test_shino_http_ota import fixture
 sys.path.insert(0,str(ROOT/"companion"))
-from shino_update import signature
+from shino_update import signature,inspect
 from push_fsless_metrics import NoRedirect
 
 PASSWORD="PUBLIC-INERT-HTTP-OTA-TEST-PASSWORD"
 
-def prepare_host(host):
+def prepare_host(host,device="0123456789abcdef",current_build="a"*64):
     directory=host.parent;headers=materialize_http(core_root(),directory/"http-input")
     file=headers/"ESP8266WebServer-impl.h";body=file.read_text()
     marker='template <typename ServerType>\nvoid ESP8266WebServerTemplate<ServerType>::handleClient()'
@@ -39,9 +39,11 @@ def prepare_host(host):
     native=(ROOT/"experiments/m9_signed_ota/host/Arduino.h").read_text()
     start=native.index("enum FlashMode_t");end=native.index("extern HostESP ESP;")
     hardware=native[start:end].replace("HostESP","EspFixture")
+    hardware=hardware.replace("std::memcpy(out,flash.data()+at,n);return true;",
+        "std::memcpy(out,flash.data()+at,n);if(hostReadHook)hostReadHook(at);return true;")
     hardware=hardware.replace("bool failWrite=false", "uint32_t restarts=0;void restart(){++restarts;}\n    bool failWrite=false")
     hardware=hardware.replace("bool checkFlashConfig", "void random(uint8_t* p,size_t n){for(size_t i=0;i<n;++i)p[i]=uint8_t(++lab_random);}\n    void resetFreeContStack(){}uint32_t getFreeContStack(){return 3248;}\n    void getHeapStats(uint32_t* h,uint32_t* b,uint8_t* f){*h=heap;*b=50000;*f=1;}\n    void wdtFeed(){}bool checkFlashConfig")
-    arduino=arduino[:arduino.index("struct EspFixture {")]+hardware+"\ninline EspFixture ESP;\n"
+    arduino=arduino[:arduino.index("struct EspFixture {")]+"inline void(*hostReadHook)(uint32_t)=nullptr;\n"+hardware+"\ninline EspFixture ESP;\n"
     arduino+='\n#define LOW 0\n#define OUTPUT 1\ninline uint32_t os_random(){return ++lab_random;}\ninline void delay(int n){std::this_thread::sleep_for(std::chrono::milliseconds(n));}\ninline void pinMode(int,int){}inline void digitalWrite(int,int){}\nstruct Print{template<class... A>void printf_P(const char*,A...) {}};\n'
     arduino+='\n#ifdef _MSC_VER\n#define strcasecmp _stricmp\n#endif\n'
     arduino=arduino.replace("#include <chrono>","#include <chrono>\n#include <thread>")
@@ -81,7 +83,7 @@ def prepare_host(host):
     target.write_text('#pragma once\nclass WiFiManager{public:WiFiManager(const char*,const char*,const char*,const char*){}bool startAccessPointMode(){return !WiFi.persisted;}};\n')
     shutil.copytree(ROOT/"firmware/include/boot",host/"boot",dirs_exist_ok=True)
     key=hashlib.sha256(PASSWORD.encode()).digest()
-    (host/"ShinoRelease.h").write_text('#pragma once\n#define SHINO_OTA_PRIVATE 1\n#define SHINO_OTA_DEVICE "0123456789abcdef"\n#define SHINO_OTA_BUILD "'+'a'*64+'"\nstatic constexpr uint8_t ShinoReleaseKey[32]={'+','.join(str(x) for x in key)+'};\n')
+    (host/"ShinoRelease.h").write_text('#pragma once\n#define SHINO_OTA_PRIVATE 1\n#define SHINO_OTA_DEVICE "'+device+'"\n#define SHINO_OTA_BUILD "'+current_build+'"\nstatic constexpr uint8_t ShinoReleaseKey[32]={'+','.join(str(x) for x in key)+'};\n')
     shutil.copyfile(ROOT/"ota/firmware/ShinoHttpOta.h",host/"ShinoHttpOta.h")
     aj=ROOT/"firmware/.pio/libdeps/esp12e/ArduinoJson/src"
     if not aj.is_dir():
@@ -91,9 +93,22 @@ def prepare_host(host):
     (host/"network_composition.inc").write_text(''.join(f'#include "{(ROOT/p).as_posix()}"\n' for p in ("ota/firmware/Normal.cpp","firmware/src/boot/M9NormalDashboard.cpp","firmware/src/boot/FslessMetrics.cpp")))
 
 
-def run():
+def run(binary=None,manifest=None,current_binary=None,current_manifest=None):
+    if binary is not None:
+        target,raw=inspect(binary,manifest)
+        device=target["device"]
+        current_build=("c" if target["build_id"]!="c"*64 else "d")*64
+        if current_binary is not None:
+            current,_=inspect(current_binary,current_manifest)
+            if current["device"]!=device or current["build_id"]==target["build_id"]:raise ValueError("Distinct same-device current release required")
+            current_build=current["build_id"]
+    else:
+        device="0123456789abcdef";current_build="a"*64;raw=fixture()
+        target=dict(device=device,bytes=len(raw),sha256=hashlib.sha256(raw).hexdigest(),build_id="b"*64)
     with tempfile.TemporaryDirectory(prefix="shino-http-network-") as td:
-        directory=Path(td);exe,env=build(directory,ROOT/"tools/shino_http_ota_network_lab.cpp",prepare_host,threaded=True)
+        directory=Path(td);exe,env=build(directory,ROOT/"tools/shino_http_ota_network_lab.cpp",
+            lambda h:prepare_host(h,device,current_build),threaded=True)
+        if current_binary is not None:env=dict(env,SHINO_TEST_CURRENT_BIN=str(Path(current_binary).resolve()))
         process=subprocess.Popen([str(exe)],cwd=directory,env=env,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
         requests=0
         try:
@@ -112,6 +127,13 @@ def run():
                 for path in ("/status","/api/v1/m9/normal/status","/api/v1/m9/maintenance/result","/api/v1/update/status"):
                     get(path);requests+=1
             before=get("/api/v1/update/status");assert before["metrics_fresh"]
+            process.stdin.write("upload busy\n");process.stdin.flush()
+            assert json.loads(process.stdout.readline())=={"upload_busy":True}
+            c=http.client.HTTPConnection("127.0.0.1",port,timeout=6)
+            c.request("POST","/api/v1/update",body=b"",headers={"Content-Type":"application/octet-stream","Content-Length":"64000"})
+            r=c.getresponse();assert r.status==503 and json.loads(r.read())["error"]=="UPDATE_BUSY";c.close()
+            process.stdin.write("upload free\n");process.stdin.flush()
+            assert json.loads(process.stdout.readline())=={"upload_busy":False}
             process.stdin.write("scratch busy\n");process.stdin.flush()
             assert json.loads(process.stdout.readline())=={"scratch_busy":True}
             # Shared scratch lease now protects ALL five JSON handlers,
@@ -136,23 +158,32 @@ def run():
             with reader.open(Request(base+"/api/v1/bridge/metrics",data=sample,headers={"Content-Type":"application/json"}),timeout=6) as response:
                 assert json.loads(response.read())["status"]=="RAM_SAMPLE_ACCEPTED"
             before=get("/api/v1/update/status");assert before["metrics_fresh"]
-            raw=fixture();m=dict(device="0123456789abcdef",bytes=len(raw),sha256=hashlib.sha256(raw).hexdigest(),build_id="b"*64)
+            m=target
             headers={"Content-Type":"application/octet-stream","Content-Length":str(len(raw)),"Connection":"close","X-Shino-SHA256":m["sha256"],"X-Shino-Build":m["build_id"],"X-Shino-Nonce":before["nonce"],"X-Shino-Proof":"0"*64}
             c=http.client.HTTPConnection("127.0.0.1",port,timeout=6);c.request("POST","/api/v1/update",body=b"",headers=headers);r=c.getresponse();assert r.status==503;r.read();c.close()
             assert get("/api/v1/update/status")["last_update"]=="REFUSED"
             # The real callback must abort safely and remain routable after a
             # disconnected partial body or a fully received invalid image.
             rejected=[]
-            for label in ("partial_disconnect","full_bad_hash","transfer_encoding"):
+            for label in ("partial_disconnect","full_bad_hash","transfer_encoding","readback_disconnect"):
                 before=get("/api/v1/update/status");headers["X-Shino-Nonce"]=before["nonce"]
                 headers["X-Shino-Proof"]=signature(dict(device=m["device"],maintenance_password=PASSWORD),before["nonce"],m)
                 outgoing=dict(headers);payload=raw
                 if label=="partial_disconnect":payload=raw[:8192]
                 elif label=="full_bad_hash":payload=raw[:-1]+bytes([raw[-1]^1])
                 else:outgoing["Transfer-Encoding"]="chunked";payload=b""
+                if label=="readback_disconnect":
+                    outgoing=dict(headers);payload=raw
+                    process.stdin.write("disconnect readback\n");process.stdin.flush()
+                    assert json.loads(process.stdout.readline())=={"readback_disconnect_armed":True}
                 c=http.client.HTTPConnection("127.0.0.1",port,timeout=15);c.request("POST","/api/v1/update",body=payload,headers=outgoing)
                 if label=="partial_disconnect":c.sock.shutdown(socket.SHUT_WR)
-                r=c.getresponse();assert r.status==(400 if label=="transfer_encoding" else 422);r.read();c.close()
+                if label=="readback_disconnect":
+                    try:c.getresponse();raise AssertionError("Closed receiver returned a response")
+                    except (OSError,http.client.HTTPException):pass
+                else:
+                    r=c.getresponse();assert r.status==(400 if label=="transfer_encoding" else 422);r.read()
+                c.close()
                 assert get("/api/v1/update/status")["last_update"]=="FAILED_NO_COMMIT"
                 rejected.append(label)
             before=get("/api/v1/update/status");headers["X-Shino-Nonce"]=before["nonce"]
@@ -161,7 +192,9 @@ def run():
             process.stdin.write("stop\n");process.stdin.flush();output,error=process.communicate(timeout=8)
             if process.returncode:raise RuntimeError(error)
             report=json.loads(output);assert report["commit"]==report["restarts"]==1 and report["fs_preserved"]
-            return dict(authenticated_post_get_requests=requests,scratch_guard_rejections=2,normal_status_guard_rejections=3,scratch_owner_preserved=True,ttl_stale_and_recovery=True,rejected_transfers_recovered=rejected,update=body,actual_normal_parser_digest_core=True,network="HOST_LOOPBACK",flash_rtc_radio="MOCKED",device_contacts=0,**report)
+            return dict(authenticated_post_get_requests=requests,scratch_guard_rejections=2,normal_status_guard_rejections=3,upload_guard_rejections=1,scratch_owner_preserved=True,ttl_stale_and_recovery=True,rejected_transfers_recovered=rejected,update=body,actual_normal_parser_digest_core=True,
+                        exact_compiled_bin=binary is not None,uploaded_bytes=len(raw),target_sha256=m["sha256"],
+                        exact_current_bin=current_binary is not None,network="HOST_LOOPBACK",flash_rtc_radio="MOCKED",device_contacts=0,**report)
         except Exception:
             diagnostic="process terminated"
             if process.poll() is None:
@@ -174,4 +207,9 @@ def run():
         finally:
             if process.poll() is None:process.kill();process.communicate()
 
-if __name__=="__main__":print(json.dumps(run(),indent=2))
+if __name__=="__main__":
+    import argparse
+    p=argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--bin",type=Path);p.add_argument("--manifest",type=Path)
+    p.add_argument("--current-bin",type=Path);p.add_argument("--current-manifest",type=Path)
+    a=p.parse_args();print(json.dumps(run(a.bin,a.manifest,a.current_bin,a.current_manifest),indent=2))

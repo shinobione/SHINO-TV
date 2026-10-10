@@ -1,5 +1,33 @@
 # SHINO // TV — Roadmap
 
+## Mandat courant — OTA Breakthrough, 10 octobre 2026
+
+La demande propriétaire de cette conversation autorise la correction et la
+qualification hors ligne du chemin HTTP/HMAC/Core Updater/eboot existant, puis
+une nouvelle paire privée A2/B2 sur la branche et la Draft PR42 actuelles.
+Conserver le serveur persistant, 4m2m, LittleFS, LINK, les quatre cartes,
+les seuils mémoire et les optimisations CI-OPT ; aucune nouvelle architecture.
+
+État propriétaire courant : A corrigé
+`5c1ce8a86766282d84547fe71e2f4bb19db5077442829e2c8526e376072aa964`
+reste actif après l'unique OTA B407376 octets
+`1effdaf7172f2ce7caebd44a64e840164c418ccde95477c88ea9a28b4166aa48`.
+Windows : UNKNOWN_NO_RETRY ; appareil : FAILED_NO_COMMIT, heap29376,
+stack historique2048, LittleFS OK, OTA enabled, LINK FRESH. Cette tentative
+est terminée et ne doit pas être répétée. Les anciens A/B et backups restent
+archivés sans modification ; les sections antérieures sont historiques.
+
+Livraison attendue : contrat flash Core3.1.2 vérifié, régression de l'ancien
+lecteur, octets exacts A2/B2 exécutés dans le receiver/Core et modèle flash/eboot,
+échecs sans commande de boot, analyse stack compilée avec limites explicites,
+paquet privé Windows prêt, commit et CI du HEAD exact. Le modèle RAM ne prouve
+ni la mémoire native simultanée ni une OTA physique réussie.
+
+Aucun contact SmallTV/COM8, readback, reset, flash, OTA réelle ou merge autorisé.
+L'installation A2 et l'OTA B2 nécessitent un nouvel accord propriétaire pour
+chaque opération et ses fichiers/hashes exacts. Ne pas promettre la fermeture
+du boîtier avant qualification physique A2→B2.
+
 ## Reprise propriétaire du 10 octobre 2026 — stack et diagnostics
 
 Lire intégralement [le dossier officiel du matin](SHINO_2026-10-10_MORNING_HANDOFF.md).

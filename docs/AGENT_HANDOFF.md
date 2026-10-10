@@ -1,7 +1,19 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last owner mandate update: **2026-10-10**; the **2026-10-01** square-scene product contract remains below. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
-**Current resume mandate — 10 October2026, after owner qualification:**
+**Current mandate — OTA Breakthrough, 10 October2026:**
+The owner reports corrected A still active after the single historical B upload:
+Windows UNKNOWN_NO_RETRY, device FAILED_NO_COMMIT, heap29376, historical free
+continuation2048, LittleFS OK, OTA enabled, LINK FRESH. That attempt is terminal.
+The current [roadmap mandate](ROADMAP.md) and [offline implementation receipt](SHINO_HTTP_OTA_BREAKTHROUGH.md)
+supersede the earlier morning stack1632/B-NOT_RUN state below, without changing
+those historical records. Audit/fix the existing HTTP/HMAC/Core3.1.2/eboot path,
+test exact newly compiled images and prepare a new private A2/B2 pair. Preserve
+CI-OPT, all memory floors, the persistent server, 4m2m, LINK and four cards.
+No SmallTV/COM8/readback/flash/reboot/real OTA/merge authorized. Every later
+physical operation needs fresh explicit owner approval for its exact file/hash.
+
+**Prior resume mandate — 10 October2026, after owner qualification:**
 Read the complete [official morning handoff](SHINO_2026-10-10_MORNING_HANDOFF.md)
 first. Installed A is owner-confirmed booted, four cards/LINK/FS and three HTTP200
 reads; stack1632 <2048 is HOLD, not a telemetry/404 diagnosis. B OTA NOT_RUN.

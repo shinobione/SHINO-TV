@@ -76,6 +76,23 @@ class BindingTests(unittest.TestCase):
         self.assertEqual(report["protected_bytes_compared"],0x400000-0x64000)
         self.assertFalse(report["serial_io_performed"])
 
+    def test_a2_launchers_bind_exact_book_and_candidate(self):
+        target=self.directory/"A2/.pio/build"/ENV/"firmware.bin"
+        target.parent.mkdir(parents=True);target.write_bytes(self.raw)
+        (self.directory/"A2/report.json").write_text(json.dumps(dict(private=True,bytes=len(self.raw),sha256=self.sha)))
+        commands=prepare_uart(self.directory,"A2")
+        book=self.directory/"uart-commands.json";book_sha=hashlib.sha256(book.read_bytes()).hexdigest()
+        self.assertEqual(commands["physical_control"]["candidate"],str(target))
+        for caption in ("PRE","WRITE","POST"):
+            command=(self.directory/(caption+"-A2.cmd")).read_text()
+            self.assertIn('--expected-sha256 '+book_sha,command)
+            self.assertIn('--execute --owner-go "'+commands["physical_control"]["owner_go"][caption.lower()]+ '"',command)
+            self.assertIn('if errorlevel 2 exit /b 1',command)
+        verify=(self.directory/"VERIFY-POST-A2.cmd").read_text()
+        self.assertNotIn("--execute",verify)
+        self.assertIn('"'+str(target)+'"',verify)
+        self.assertIn('"'+self.sha+'"',verify)
+
     def test_each_failure_is_terminal_without_second_attempt(self):
         # Inspect the unchanged fixture once; this matrix targets the writer's
         # command/exception boundary, not repeated CRC implementations.

@@ -46,6 +46,14 @@ ShinoHttpOta::Release incoming;
 // including SDK yields. Reject nested use before changing its contents.
 char responseBody[768];
 bool responseBusy=false;
+bool uploadBusy=false,uploadVerifying=false;
+class UploadLease {
+    bool held_;
+public:
+    UploadLease():held_(!uploadBusy){if(held_)uploadBusy=true;}
+    ~UploadLease(){if(held_){uploadBusy=false;uploadVerifying=false;}}
+    explicit operator bool()const{return held_;}
+};
 class ResponseLease {
     bool held_;
 public:
@@ -62,7 +70,8 @@ bool uploadHealthy(){
     ++uploadSamples;
     const auto b=budget();minima.heap=std::min(minima.heap,b.heap);minima.block=std::min(minima.block,b.block);
     minima.stack=std::min(minima.stack,b.stack);minima.frag=std::max(minima.frag,b.frag);
-    return b.safe()&&WiFi.getMode()==WIFI_AP&&uint32_t(millis()-uploadStart)<120000;
+    return b.safe()&&WiFi.getMode()==WIFI_AP&&uint32_t(millis()-uploadStart)<120000&&
+           server.client().connected()&&(!uploadVerifying||!server.client().available());
 }
 void respond(int code,const char* body){
     server.sendHeader(F("Cache-Control"),F("no-store"));server.sendHeader(F("X-Content-Type-Options"),F("nosniff"));
@@ -96,6 +105,7 @@ bool length(uint32_t& n){
 bool headerHex(const char* name,char* out,size_t n){const String s=server.header(name);if(!ShinoHttpOta::hex(s.c_str(),n))return false;std::memcpy(out,s.c_str(),n+1);return true;}
 bool localPeer(){const auto p=server.client().remoteIP();return WiFi.getMode()==WIFI_AP&&server.client().localIP()==WiFi.softAPIP()&&p[0]==192&&p[1]==168&&p[2]==4&&p[3]>1&&p[3]<255;}
 __attribute__((noinline)) void upload(uint32_t bytes){
+    UploadLease lease;if(!lease){respond(503,"{\"error\":\"UPDATE_BUSY\"}");return;}
     incoming={};incoming.bytes=bytes;
     char* signature=reinterpret_cast<char*>(transferBuffer);char* requestNonce=signature+65;
     if(!otaPermitted||!configReady||!localPeer()||server.header("Content-Type")!="application/octet-stream"||
@@ -123,6 +133,7 @@ __attribute__((noinline)) void upload(uint32_t bytes){
         }
         ESP.wdtFeed();yield();
     }
+    uploadVerifying=true;
     if(ok)ok=client.connected()&&!client.available()&&uploadHealthy()&&transfer->finish(budget());
     transfer->~Transfer();
     if(!ok){lastUpdate="FAILED_NO_COMMIT";respond(422,"{\"error\":\"UPDATE_FAILED_NO_COMMIT\"}");dirty=true;return;}

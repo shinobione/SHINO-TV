@@ -52,6 +52,8 @@ class Transfer {
 public:
     explicit Transfer(bool (*check)()=nullptr):check_(check){}
     ~Transfer(){abort();}
+    Transfer(const Transfer&)=delete;
+    Transfer& operator=(const Transfer&)=delete;
     __attribute__((noinline)) bool begin(const Release& r,const char* device,const char* current,const char* nonce,
                const char* signature,const uint8_t* key,uint32_t currentBytes,Budget b,bool permitted){
         if(active_ || committed_ || !key || !permitted || !b.safe() || b.heap<25600 ||
@@ -71,7 +73,7 @@ public:
         active_=true;br_sha256_init(&hash_);return (!check_||check_())?true:fail();
     }
     bool add(uint8_t* p,size_t n,Budget b){
-        if(!active_||!b.safe()||!n||n>512||n>release_.bytes-received_)return fail();
+        if(!active_||!p||!b.safe()||!n||n>512||n>release_.bytes-received_)return fail();
         if(received_==0 && (n<4||p[0]!=0xE9||p[2]!=2||p[3]!=0x40))return fail();
         if(core_.write(p,n)!=n||core_.hasError())return fail();
         br_sha256_update(&hash_,p,n);received_+=uint32_t(n);return true;
@@ -79,7 +81,10 @@ public:
     bool finish(Budget b){
         if(!active_||!b.safe()||received_!=release_.bytes||!core_.isFinished())return fail();
         uint8_t digest[32];char actual[65];br_sha256_out(&hash_,digest);encode(digest,32,actual);
-        if(!equal(actual,release_.sha,64)||!stagedImage()||!b.safe()||(check_&&!check_()))return fail();
+        // Return from each verifier before entering the next: keeping the
+        // SHA/CRC frame alive under both segment verifiers wastes cont stack.
+        if(!equal(actual,release_.sha,64)||!stagedImage()||!segments(0)||!segments(0x1000)||
+           (check_&&!check_()))return fail();
         // This is the ONLY committing call. Abort never calls end(), including
         // a fully received image whose authentication/CRC/readback failed.
         if(!core_.end(false))return fail();
@@ -91,9 +96,15 @@ public:
     bool committed()const{return committed_;}
     uint32_t stage()const{return stage_;}
 private:
+#ifdef HOST_MOCK
+    friend struct TransferProbe; // RAM-only alignment regression; no device API.
+#endif
     UpdaterClass core_;br_sha256_context hash_{};Release release_{};ProofWorkspace proof_{};
     uint32_t stage_=0,received_=0;bool active_=false,committed_=false;
     char tag_[128]{};
+    // One transfer owns both verifiers synchronously, including yields. Reuse
+    // its SHA context and one fixed block instead of nested local workspaces.
+    alignas(4) uint8_t verifyBuffer_[128];
     bool (*check_)()=nullptr;
     bool fail(){abort();return false;}
     __attribute__((noinline)) bool read(uint32_t at,void* out,size_t n){
@@ -103,7 +114,8 @@ private:
         // The former reinterpret_cast<uint32_t*>(out),n unconditionally
         // made that legitimate footer lookup fail on real hardware while
         // the old RAM mock wrongly accepted it.
-        if(!out||!n||at>release_.bytes||n>release_.bytes-at)return false;
+        if(!out||!n||at>release_.bytes||n>release_.bytes-at||
+           stage_>FsStart||rounded(release_.bytes)>FsStart-stage_)return false;
         const uint32_t limit=stage_+rounded(release_.bytes);
         uint32_t source=stage_+at;
         auto* target=static_cast<uint8_t*>(out);
@@ -137,17 +149,17 @@ private:
         }
         return true;
     }
-    bool stagedImage(){
+    __attribute__((noinline)) bool stagedImage(){
         // Retained StageA image-validation rules, executed against actual
         // staging: SHA256, Core CRC, both segment tables/checksums and identity.
-        alignas(4) uint8_t block[128];br_sha256_context h;br_sha256_init(&h);
+        auto& block=verifyBuffer_;br_sha256_init(&hash_);
         uint32_t crc=0xffffffff,stored[2];size_t matched=0;bool tagFound=false;
         if(!read(0x1010,stored,8)||stored[0]!=release_.bytes)return false;
         for(uint32_t at=0;at<release_.bytes;at+=sizeof(block)){
             if(check_&&!check_())return false;
             const uint32_t n=std::min(uint32_t(sizeof(block)),release_.bytes-at);
             if(!read(at,block,n))return false;
-            br_sha256_update(&h,block,n);
+            br_sha256_update(&hash_,block,n);
             for(uint32_t i=0;i<n;++i){
                 if(!tagFound){
                     if(block[i]==uint8_t(tag_[matched])){if(!tag_[++matched])tagFound=true;}
@@ -158,10 +170,10 @@ private:
             }
             yield();
         }
-        uint8_t digest[32];char actual[65];br_sha256_out(&h,digest);encode(digest,32,actual);
-        return tagFound&&equal(actual,release_.sha,64)&&crc==stored[1]&&segments(0)&&segments(0x1000);
+        uint8_t digest[32];char actual[65];br_sha256_out(&hash_,digest);encode(digest,32,actual);
+        return tagFound&&equal(actual,release_.sha,64)&&crc==stored[1];
     }
-    bool segments(uint32_t off){
+    __attribute__((noinline)) bool segments(uint32_t off){
         alignas(4) uint8_t hdr[8];if(!read(off,hdr,8)||hdr[0]!=0xE9||hdr[1]<1||hdr[1]>16||hdr[2]!=2||hdr[3]!=0x40)return false;
         uint32_t entry;std::memcpy(&entry,hdr+4,4);
         const uint32_t iramLo=off?0x40100000:0x4010f000,iramHi=off?0x4010c000:0x40110000;
@@ -176,7 +188,7 @@ private:
             if(!limit||address%4||!n||n>limit-address||at>release_.bytes||n>release_.bytes-at)return false;
             for(unsigned old=0;old<s;++old)if(address<ends[old]&&starts[old]<address+n)return false;
             starts[s]=address;ends[s]=address+n;
-            alignas(4) uint8_t chunk[128];
+            auto& chunk=verifyBuffer_;
             for(uint32_t used=0;used<n;used+=sizeof(chunk)){
                 if(check_&&!check_())return false;
                 const uint32_t count=std::min(uint32_t(sizeof(chunk)),n-used);if(!read(at+used,chunk,count))return false;

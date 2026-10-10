@@ -61,9 +61,9 @@ def stack_frames(directory):
     caps={"identity":("::identity()",160),"metrics":("::metrics()",112),
           "normal_status":("::status()",256),
           "hmac_proof":("ShinoHttpOta::proof(",128),"ota_begin":("Transfer::begin(",128),
-          "ota_upload":("::upload(uint32_t)",128),"ota_flash_read":("Transfer::read(",192),
-          "ota_staging":("Transfer::stagedImage()",416),
-          "ota_segments":("Transfer::segments(",352),"ota_finish":("Transfer::finish(",144),
+          "ota_upload":("::upload(uint32_t)",128),"ota_flash_read":("Transfer::read(",64),
+          "ota_staging":("Transfer::stagedImage()",176),
+          "ota_segments":("Transfer::segments(",224),"ota_finish":("Transfer::finish(",144),
           "core_end":("UpdaterClass::end(bool)",192)}
     measured={}
     for name,(marker,cap) in caps.items():
@@ -140,6 +140,9 @@ def build(directory,private=False):
     resources=one(directory)
     layout=elf_layout(binary.with_suffix(".elf"))
     frames=stack_frames(directory)
+    from shino_http_ota_stack import audit
+    stack=audit(directory)
+    (directory/"stack-paths.json").write_text(json.dumps(stack,indent=2)+"\n",encoding="utf-8")
     if resources["noinit"]!=56:raise ValueError("Unexpected RTC/noinit footprint")
     manifest=dict(schema=1,family="SHINO-StageA",layout="4m2m",protocol="shino-http-ota-1",device=device,
                   bytes=len(raw),sha256=hashlib.sha256(raw).hexdigest(),build_id=identity)
@@ -150,7 +153,9 @@ def build(directory,private=False):
                 layout_symbols=layout,stack_frames=frames,
                 private=private,core_buffer=4096,physical="NOT_RUN",device_contacts=0)
     (directory/"report.json").write_text(json.dumps(report,indent=2)+"\n",encoding="utf-8")
-    print(json.dumps(report,ensure_ascii=True))
+    # Private device/build identities belong only in the local manifest.
+    shown={k:v for k,v in report.items() if not private or k not in ("device","build_id")}
+    print(json.dumps(shown,ensure_ascii=True))
     return report
 
 

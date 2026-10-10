@@ -37,12 +37,17 @@ struct HostESP {
     uint32_t getFlashChipSize(){return 0x400000;}FlashMode_t getFlashChipMode(){return FlashMode_t(mode);}
     FlashMode_t magicFlashChipMode(uint8_t n){return FlashMode_t(n);}
     uint32_t magicFlashChipSize(uint8_t n){return n==4?0x400000:0x800000;}
-    bool flashRead(uint32_t at,void* out,size_t n){++readCalls;if(failRead || at+n>flash.size())return false;std::memcpy(out,flash.data()+at,n);return true;}
+    uint32_t readFirst=UINT32_MAX,readEnd=0,rejectedReads=0;
+    bool flashRead(uint32_t at,void* out,size_t n){
+        ++readCalls;if(failRead||!out||at>flash.size()||n>flash.size()-at)return false;
+        readFirst=std::min(readFirst,at);readEnd=std::max(readEnd,at+uint32_t(n));
+        std::memcpy(out,flash.data()+at,n);return true;
+    }
     // Model the REAL ESP8266 Core 3.1.2 typed flashRead overload:
     // a uint32_t* read rejects a non-multiple-of-four length or unaligned
     // buffer. The prior void* mock masked a deterministic failed footer read.
     bool flashRead(uint32_t at,uint32_t* out,size_t n){
-        if((at&3u)||(n&3u)||(reinterpret_cast<uintptr_t>(out)&3u))return false;
+        if((at&3u)||(n&3u)||(reinterpret_cast<uintptr_t>(out)&3u)){++rejectedReads;return false;}
         return flashRead(at,static_cast<void*>(out),n);
     }
     bool flashWrite(uint32_t at,uint8_t* data,size_t n){++writeCalls;if(failWrite || at<((current+4095)&~4095u) || at+n>0x200000)return false;std::memcpy(flash.data()+at,data,n);return true;}
