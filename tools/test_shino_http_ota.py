@@ -52,6 +52,7 @@ def run():
                 release=dict(m,bytes=size);assert begin(io,release)=="READY"
                 io.command("ABORT");assert io.report()["writes"]==io.report()["erase"]==io.report()["commit"]==0
         with trial("valid") as io:
+            assert io.command("ALIGN_PROBE")=="ALIGN_OK", "Mock must reject native unaligned uint32_t flash reads"
             assert begin(io)=="READY";upload(io);assert io.command("FINISH")=="STAGED";assert io.report()["commit"]==1
         for name in ("wrong_hmac","oversize","wrong_build","low_heap","low_block","low_stack","observed_stack_1632","fragmented","low_admission"):
             with trial(name) as io:
