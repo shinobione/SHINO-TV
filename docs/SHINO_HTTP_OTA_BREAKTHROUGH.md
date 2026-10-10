@@ -105,14 +105,33 @@ The unused first preparation at
 Its BINs and successful prior model receipts are retained; retirement markers
 block its UART/OTA launchers. No physical attempt occurred. Do not propose it.
 
-The definitive entry-safe pair will be built from a clean correction commit in
-the fresh `research-local/m9-owner/http-ota-breakthrough-20261010-a2-b2-final/`.
-Both images must use the same receiver/source/layout/owner credentials with
-distinct build IDs and hashes. Exact-byte qualification, aggregate resource
-numbers and final packet receipt will be recorded after this build. Historical
-packets and all4MiB backups remain retained:229 original artifacts rehashed
-unchanged. New device/COM8/readback/flash/OTA/reboot operations remain NOT_RUN;
-native simultaneous memory and physical acceptance remain HOLD.
+The definitive entry-safe pair is built from clean correction commit
+`7bd6275bc376c3c317e48c4872dda1a919642e73` in the fresh
+`research-local/m9-owner/http-ota-breakthrough-20261010-a2-b2-final/`.
+Both images have identical receiver/source/layout/owner credentials and distinct
+build IDs/hashes. Each BIN is407792 B, static RAM43548 including56 noinit,
+linked403635; staging176/segments240 and compiled known max1840 pass in both.
+Private exact identities are in their manifests and `README-OPERATEUR.md`.
+
+Each exact private BIN passes137 negative cases/122 cuts plus positive Core
+commit and pinned eboot copy/load, with the other exact BIN as current RAM image.
+Both independently re-signed boot/app entry gaps are rejected. B2 can receive
+a distinct valid image in this model. Actual Normal HTTP A2→B2 transfers407792 B,
+commits/restarts once, and passes150 authenticated requests plus ownership/
+disconnect/TTL regressions. Exact A2's inert UART transaction is one Begin,
+100 unique DATA, one Finish and one MD5; repeat denied, zero automatic retries.
+Independent model PRE/POST protects3784704 bytes. Generated UART AUDIT and Windows
+offline inspection pass without a port open or physical latch. Real PRE/POST
+names remain unused; model files are clearly labelled.
+
+Local `qualification-summary.json`, `evidence/`, `network-exact-A2-B2.json`,
+`uart-audit.json` and `offline-packet-audit.json` retain the private receipts.
+Historical packets/all4MiB backups remain retained:229 original artifacts
+rehashed unchanged. This final software packet is **READY_FOR_OWNER_AUTHORIZATION**.
+New device/COM8/readback/flash/OTA/reboot operations remain NOT_RUN; native
+simultaneous memory and physical acceptance remain HOLD. Final review HEAD only
+adds this receipt and CI assertions to the clean compiled receiver source;
+verify its exact-head checks in the existing unmerged Draft PR42.
 
 The bound UART wrapper checks its command-book/helper/candidate hashes and the
 fresh PRE's installed-A/private FS/SDK fingerprint before write. Each PRE/write/

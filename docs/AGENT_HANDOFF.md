@@ -15,10 +15,12 @@ physical operation needs fresh explicit owner approval for its exact file/hash.
 Final metadata probe demonstrated an entry-in-unloaded-IRAM gap; both boot/app
 entries now require membership in a loaded segment. Frames staging176/segments240,
 known compiled max1840, native bound unproven. The first unused6bb6e747 private
-pair is retired locally; definitive `http-ota-breakthrough-20261010-a2-b2-final/`
-will carry the new correction and exact-byte receipt.229 archived private
-artifacts unchanged. Physical NOT_RUN/HOLD. See the receipt for the short route
-and manual ROM re-entry required between PRE and write.
+pair is retired locally. Definitive `http-ota-breakthrough-20261010-a2-b2-final/`
+is READY_FOR_OWNER_AUTHORIZATION:407792 B each, clean receiver source7bd6275b,
+137 negative cases/122 cuts each, pinned eboot copy/load and actual HTTP A2→B2
+PASS in RAM. Static43548 incl.56 noinit;229 archived private artifacts unchanged.
+Physical NOT_RUN/HOLD. See the receipt for the short route and manual ROM
+re-entry required between PRE and write. Verify final review HEAD CI separately.
 
 **Prior resume mandate — 10 October2026, after owner qualification:**
 Read the complete [official morning handoff](SHINO_2026-10-10_MORNING_HANDOFF.md)

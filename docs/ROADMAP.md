@@ -31,8 +31,10 @@ du boîtier avant qualification physique A2→B2.
 Livraison logicielle : [OTA Breakthrough](SHINO_HTTP_OTA_BREAKTHROUGH.md).
 Le dernier contrôle a démontré puis corrigé l'entrée IRAM hors segment chargé ;
 la première préparation privée6bb6e747 est conservée et retirée de l'installation.
-La paire définitive utilisera cette précondition supplémentaire, avec nouvelle
-qualification exacte avant proposition.229 artefacts historiques inchangés ;
+Paire définitive source propre7bd6275b,407792 octets chaque :137 refus sûrs/
+122 coupures par image, receiver/Core/eboot et HTTP A2→B2 PASS hors ligne.
+Paquet `http-ota-breakthrough-20261010-a2-b2-final/` READY_FOR_OWNER_AUTHORIZATION.
+229 artefacts historiques inchangés ;
 mémoire native et preuve physique HOLD, toutes les nouvelles opérations appareil
 NOT_RUN. CI-OPT et Draft PR42 conservées.
 
