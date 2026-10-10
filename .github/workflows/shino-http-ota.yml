@@ -59,6 +59,7 @@ jobs:
       - name: Windows consent and actual Core interruption matrix
         run: |
           python -m unittest discover -s tools -p test_shino_b2_stack_forensics.py -v
+          python -m unittest discover -s tools -p test_shino_telemetry_stack_delta.py -v
           python -m unittest discover -s companion -p test_shino_update.py -v
           python -m unittest discover -s companion -p test_shino_link.py -v
           python -m unittest discover -s companion -p test_push_fsless_metrics.py -v
