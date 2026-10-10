@@ -68,6 +68,64 @@ class UpdaterTests(unittest.TestCase):
         self.before["heap"]=25599;io=self.io()
         with self.assertRaises(update.UpdateError):self.install(io)
         self.assertEqual(io.posts,0)
+    def test_one_shot_exact_current_A_one_status_then_one_post(self):
+        marker=self.binary.parent/"once.marker"
+        transport=self.io()
+        upload=transport.upload
+        def checked_upload(headers,raw,progress):
+            self.assertEqual(transport.gets,1)
+            self.assertFalse(transport.posts)
+            self.assertEqual(marker.read_text(),"OTA_ONE_SHOT_STARTED_NO_AUTOMATIC_RETRY\\n")
+            return upload(headers,raw,progress)
+        transport.upload=checked_upload
+        result=update.install(
+            self.binary,self.manifest,self.credentials,self.m["sha256"],
+            transport=transport,clock=lambda:self.ticks,sleep=self.sleep,
+            expected_current_sha256=self.before["sha256"],attempt_marker=marker)
+        self.assertEqual(result["status"],"BOOT_AND_TELEMETRY_CONFIRMED")
+        self.assertEqual(transport.posts,1)
+        again=self.io()
+        with self.assertRaisesRegex(update.UpdateError,"marker"):
+            update.install(self.binary,self.manifest,self.credentials,self.m["sha256"],
+                           transport=again,expected_current_sha256=self.before["sha256"],
+                           attempt_marker=marker)
+        self.assertEqual(again.gets+again.posts,0)
+
+    def test_one_shot_mismatched_A_never_creates_marker_or_uploads(self):
+        marker=self.binary.parent/"once.marker"
+        transport=self.io()
+        with self.assertRaisesRegex(update.UpdateError,"does not match"):
+            update.install(self.binary,self.manifest,self.credentials,self.m["sha256"],
+                           transport=transport,expected_current_sha256="c"*64,
+                           attempt_marker=marker)
+        self.assertEqual((transport.gets,transport.posts),(1,0))
+        self.assertFalse(marker.exists())
+
+    def test_one_shot_resource_floor_failure_does_not_reserve_attempt(self):
+        self.before["stack"]=1904
+        marker=self.binary.parent/"once.marker"
+        transport=self.io()
+        with self.assertRaisesRegex(update.UpdateError,"floors"):
+            update.install(self.binary,self.manifest,self.credentials,self.m["sha256"],
+                           transport=transport,expected_current_sha256=self.before["sha256"],
+                           attempt_marker=marker)
+        self.assertEqual((transport.gets,transport.posts),(1,0))
+        self.assertFalse(marker.exists())
+
+    def test_one_shot_lost_reply_blocks_all_repeat_uploads(self):
+        marker=self.binary.parent/"once.marker"
+        transport=self.io(self.before,True)
+        result=update.install(
+            self.binary,self.manifest,self.credentials,self.m["sha256"],
+            transport=transport,clock=lambda:self.ticks,sleep=self.sleep,
+            expected_current_sha256=self.before["sha256"],attempt_marker=marker)
+        self.assertEqual(result["status"],"UNKNOWN_NO_RETRY")
+        self.assertEqual(transport.posts,1)
+        with self.assertRaisesRegex(update.UpdateError,"marker"):
+            update.install(self.binary,self.manifest,self.credentials,self.m["sha256"],
+                           transport=self.io(),expected_current_sha256=self.before["sha256"],
+                           attempt_marker=marker)
+
     def test_changed_bin_before_install_prevents_network(self):
         self.binary.write_bytes(self.raw[:-1]+b"x");io=self.io()
         with self.assertRaises(update.UpdateError):self.install(io)
