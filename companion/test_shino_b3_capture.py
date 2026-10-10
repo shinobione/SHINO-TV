@@ -52,7 +52,7 @@ class Fake:
                     lowest_block=30000-250*cycle,
                     highest_fragmentation_percent=cycle,
                     setup_cont_stack_start=3800, setup_cont_stack_min=3500,
-                    fs_config_cont_stack_start=3800, fs_config_cont_stack_min=3450,
+                    fs_config_cont_stack_start=3800, fs_config_cont_stack_min=3452,
                     runtime_cont_stack_start=3800,
                     unexpected_private_field="must-not-be-written")
 
