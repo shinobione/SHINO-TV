@@ -96,7 +96,47 @@ private:
     char tag_[128]{};
     bool (*check_)()=nullptr;
     bool fail(){abort();return false;}
-    bool read(uint32_t at,void* out,size_t n){return at<=release_.bytes&&n<=release_.bytes-at&&ESP.flashRead(stage_+at,reinterpret_cast<uint32_t*>(out),n);}
+    bool read(uint32_t at,void* out,size_t n){
+        // ESP8266 Core 3.1.2: flashRead(uint32_t*, length) REJECTS
+        // lengths not divisible by 4, and underlying SPI needs word-
+        // aligned addresses. Checksum footers read one byte at addr % 4=3.
+        // The former reinterpret_cast<uint32_t*>(out),n unconditionally
+        // made that legitimate footer lookup fail on real hardware while
+        // the old RAM mock wrongly accepted it.
+        if(!out||!n||at>release_.bytes||n>release_.bytes-at)return false;
+        const uint32_t limit=stage_+rounded(release_.bytes);
+        uint32_t source=stage_+at;
+        auto* target=static_cast<uint8_t*>(out);
+        size_t left=n;
+        alignas(4) uint32_t word=0;
+        if(source&3u){
+            const uint32_t aligned=source&~uint32_t(3);
+            if(aligned>limit-4 || !ESP.flashRead(aligned,&word,4))return false;
+            const size_t skip=source&3u;
+            const size_t take=std::min(left,size_t(4)-skip);
+            std::memcpy(target,reinterpret_cast<const uint8_t*>(&word)+skip,take);
+            target+=take;source+=uint32_t(take);left-=take;
+        }
+        const size_t bulk=left&~size_t(3);
+        if(bulk){
+            if(uintptr_t(target)%4==0){
+                if(!ESP.flashRead(source,reinterpret_cast<uint32_t*>(target),bulk))return false;
+            }else{
+                // Rare unaligned destination: only a single aligned word on
+                // the continuation stack, never a 128+ byte temporary.
+                for(size_t i=0;i<bulk;i+=4){
+                    if(!ESP.flashRead(source+uint32_t(i),&word,4))return false;
+                    std::memcpy(target+i,&word,4);
+                }
+            }
+            target+=bulk;source+=uint32_t(bulk);left-=bulk;
+        }
+        if(left){
+            if(source>limit-4 || !ESP.flashRead(source,&word,4))return false;
+            std::memcpy(target,&word,left);
+        }
+        return true;
+    }
     bool stagedImage(){
         // Retained StageA image-validation rules, executed against actual
         // staging: SHA256, Core CRC, both segment tables/checksums and identity.
