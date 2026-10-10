@@ -12,6 +12,7 @@ concurrency:
 
 permissions:
   contents: read
+  pull-requests: read
 jobs:
   changes:
     name: Changed-path scope (always reported)
@@ -32,6 +33,7 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: python tools/ci_scope.py --group stagea
   stagea-single-owner:
     needs: changes

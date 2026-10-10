@@ -10,6 +10,9 @@ import fnmatch
 import os
 import re
 import subprocess
+import json
+from urllib.parse import quote
+from urllib.request import Request, urlopen
 
 SCOPE = {
     "signed": (
@@ -52,6 +55,52 @@ SCOPE = {
 }
 
 
+
+SCOPE.update({
+    "ci-core": (
+        "**"
+    ),
+    "ci-legacy": (),
+    "ci-home": (
+        "experiments/home_lan/**",
+        "tools/home_lan*",
+        "companion/provision_home_wifi.py",
+        "companion/test_provision_home_wifi.py",
+        "companion/shino_link.py",
+        "companion/test_shino_link.py"
+    ),
+    "ci-artwork": (
+        "experiments/artwork_pilot/**",
+        "tools/artwork_pilot*",
+        "simulator/**"
+    ),
+    "ci-v07": (
+        "experiments/v07*/**",
+        "tools/v07*"
+    ),
+    "ci-crypto": (
+        "tools/test_v08_crypto_lab.js",
+        "experiments/v08_protocol/**"
+    ),
+    "ci-preparse": (
+        "experiments/v08_preparse/**",
+        "tools/v08_source_executed_preparse.py",
+        "tools/v08_native_size_report.py"
+    ),
+    "ci-bridge": (
+        "experiments/v08_full_bridge/**",
+        "experiments/v08_m6a/**",
+        "tools/v08_m3*",
+        "tools/v08_m5*",
+        "tools/v08_m6a*"
+    ),
+    "ci-windows": (
+        "companion/**",
+        "tools/shino_link*",
+        "tools/test_media*"
+    )
+})
+
 def in_scope(group, changed):
     return any(
         fnmatch.fnmatchcase(path, pattern)
@@ -76,16 +125,53 @@ def changed_files(event, base, head):
         return None  # Missing parent/base? Never silently skip the check.
 
 
+def duplicate_open_pr_push(event):
+    """Skip duplicate push validation only after a positive GitHub PR lookup.
+
+    Fail open on missing permissions, network errors or unexpected API data.
+    """
+    if event != "push":
+        return False
+    repo = os.getenv("GITHUB_REPOSITORY", "")
+    branch = os.getenv("GITHUB_REF_NAME", "")
+    token = os.getenv("GITHUB_TOKEN", "")
+    if repo.count("/") != 1 or not branch or not token or branch == "main":
+        return False
+    owner = repo.split("/", 1)[0]
+    url = ("https://api.github.com/repos/" + quote(repo, safe="/")
+           + "/pulls?state=open&head=" + quote(owner + ":" + branch, safe="")
+           + "&per_page=100")
+    try:
+        req = Request(url, headers={
+            "Authorization": "Bearer " + token,
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "User-Agent": "SHINO-CI-readonly-scope"})
+        with urlopen(req, timeout=8) as response:
+            result = json.load(response)
+        return isinstance(result, list) and any(
+            item.get("state") == "open"
+            and item.get("head", {}).get("ref") == branch
+            and item.get("head", {}).get("repo", {}).get("full_name") == repo
+            for item in result if isinstance(item, dict))
+    except (OSError, ValueError, TypeError, KeyError):
+        return False
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--group", choices=sorted(SCOPE), required=True)
+    parser.add_argument("--skip-duplicate-check", action="store_true")
     args = parser.parse_args()
     event = os.getenv("GITHUB_EVENT_NAME", "")
     changed = changed_files(event, os.getenv("BASE_SHA"), os.getenv("HEAD_SHA"))
-    relevant = changed is None or in_scope(args.group, changed)
+    relevant = args.group == "ci-core" or changed is None or in_scope(args.group, changed)
+    duplicate = not args.skip_duplicate_check and duplicate_open_pr_push(event)
+    relevant = relevant and not duplicate
     value = "true" if relevant else "false"
     print(f"SHINO CI scope: {args.group}, event={event}, files="
-          f"{'UNKNOWN/RUN' if changed is None else len(changed)}, relevant={value}")
+          f"{'UNKNOWN/RUN' if changed is None else len(changed)}, "
+          f"duplicate_push={duplicate}, relevant={value}")
     output = os.getenv("GITHUB_OUTPUT")
     if output:
         with open(output, "a", encoding="utf-8") as stream:
