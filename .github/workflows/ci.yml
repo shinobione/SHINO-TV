@@ -574,6 +574,10 @@ jobs:
           python -m unittest discover -s companion -p 'test_shino_link.py' -v
           python -c "import pystray; from PIL import Image; print('Windows tray imports OK')"
           python companion/shino_link.py --autostart status
+      - name: Windows inter-process Digest coordinator regression (no network)
+        run: |
+          python -m unittest discover -s companion -p 'test_shino_digest_coord.py' -v
+          python -m unittest discover -s companion -p 'test_shino_coordinated_qualify.py' -v
       - name: Phase R one-GET diagnostic with in-memory Digest transport only
         run: |
           python -m compileall -q companion/m9_stagea_status_probe.py
