@@ -60,19 +60,6 @@ public:
         if (state_.samples != UINT32_MAX) ++state_.samples;
         state_.valid = valid_;
     }
-    // Sample transient JSON allocations while the synchronous HTTP handler
-    // still owns them. No watermark reset, no flash writes, no new counters:
-    // 'samples' continues to mean the historical 1-Hz poll count. This is
-    // only a heap snapshot (not a continuous peak/physical qualification).
-    void sampleHandlerHeap() {
-        if (phase_ != 4) return;
-        Heap heap;
-        source_.heap(heap);
-        if (!validHeap(heap)) { reject(); state_.valid = false; return; }
-        state_.latest = heap;
-        minima(heap);
-        state_.valid = valid_;
-    }
     const Observation& status() const { return state_; }
 private:
     void reject() { valid_ = false; state_.valid = false;
