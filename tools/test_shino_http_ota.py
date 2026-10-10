@@ -13,6 +13,7 @@ from m9_signed_fixture_image import inert_image
 from m9_first_migration import arduino_crc
 sys.path.insert(0,str(ROOT/"companion"))
 from shino_update import signature,inspect
+from shino_http_ota_exact_image_replay import replay
 
 
 def fixture(build_id="b"*64,device="0123456789abcdef"):
@@ -30,6 +31,8 @@ def run():
         raw=fixture();m=dict(schema=1,family="SHINO-StageA",layout="4m2m",protocol="shino-http-ota-1",device=identity["device"],bytes=len(raw),sha256=hashlib.sha256(raw).hexdigest(),build_id="b"*64)
         (directory/"firmware.bin").write_bytes(raw);(directory/"release.json").write_text(json.dumps(m),encoding="utf-8")
         assert inspect(directory/"firmware.bin",directory/"release.json")== (m,raw)
+        exact = replay(directory/"firmware.bin", directory/"release.json", m["sha256"], lab=(exe,env))
+        assert exact["status"] == "EXACT_IMAGE_CORE_REPLAY_PASS_OFFLINE_ONLY"
         rows=[]
         @contextlib.contextmanager
         def trial(name):
@@ -96,7 +99,7 @@ def run():
             with trial("interruption_"+str(cut)) as io:
                 assert begin(io)=="READY";upload(io,raw[:min(cut,len(raw))]);io.command("ABORT")
                 assert not io.report()["commit"] and not io.report()["running"];cuts+=1
-        return dict(cases=len(rows),interruption_boundaries=cuts,actual_pinned_core=True,actual_windows_hmac=True,
+        return dict(cases=len(rows),interruption_boundaries=cuts,exact_image_replay=exact["status"],actual_pinned_core=True,actual_windows_hmac=True,
                     core_buffer=4096,flash_and_rtc="RAM_MOCK",device_contacts=0,rows=rows)
 
 if __name__=="__main__":print(json.dumps(run(),indent=2))
