@@ -14,7 +14,11 @@ class TestCiScope(unittest.TestCase):
     def test_docs_only_skips_optional_jobs(self):
         for group in scope.SCOPE:
             with self.subTest(group=group):
-                self.assertFalse(scope.in_scope(group,["docs/README.md"]))
+                if group == "ci-core":
+                    # Mandatory core check is intentionally present on every PR.
+                    self.assertTrue(scope.in_scope(group,["docs/README.md"]))
+                else:
+                    self.assertFalse(scope.in_scope(group,["docs/README.md"]))
 
     def test_corresponding_workflow_always_runs(self):
         for group,file in (("signed","m9-signed-ota.yml"),
@@ -30,6 +34,12 @@ class TestCiScope(unittest.TestCase):
         self.assertFalse(scope.in_scope("signed",paths))
         self.assertFalse(scope.in_scope("stagea",paths))
         self.assertFalse(scope.in_scope("wifi",paths))
+
+    def test_wifi_receiver_changes_trigger_wifi_gate(self):
+        self.assertTrue(scope.in_scope("wifi", [
+            "tools/shino_maintenance_native.py"]))
+        self.assertTrue(scope.in_scope("wifi", [
+            "experiments/shino_wifi_install/include/ShinoWifiUpdate.h"]))
 
     def test_ci_archival_only_runs_when_dispatched(self):
         self.assertFalse(scope.in_scope("ci-legacy", ["firmware/src/Normal.cpp"]))
