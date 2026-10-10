@@ -59,6 +59,7 @@ def stack_frames(directory):
     normal=(root/"src/boot/M9NormalStageA.cpp.su").read_text(encoding="utf-8")
     updater=(root/"FrameworkArduino/Updater.cpp.su").read_text(encoding="utf-8")
     caps={"identity":("::identity()",160),"metrics":("::metrics()",112),
+          "normal_status":("::status()",256),
           "hmac_proof":("ShinoHttpOta::proof(",128),"ota_begin":("Transfer::begin(",128),
           "ota_upload":("::upload(uint32_t)",128),"ota_staging":("Transfer::stagedImage()",416),
           "ota_segments":("Transfer::segments(",352),"ota_finish":("Transfer::finish(",144),
