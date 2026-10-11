@@ -149,14 +149,19 @@ bool intentStart(ESP8266WebServer& server,char out[33]) {
     HomeLan::wipe(random,sizeof(random));
     return true;
 }
-bool provision(ESP8266WebServer& server,const uint8_t* raw,size_t size,const char* proof) {
-    if(!apPeer(server)||pending||controller.state==HomeLan::State::Fault||
-       !challenge.consume(proof,word(server.client().remoteIP()),
-                          word(server.client().localIP()),millis()))return false;
+ProvisionCode provision(ESP8266WebServer& server,const uint8_t* raw,size_t size,const char* proof) {
+    if(!apPeer(server)||pending||controller.state==HomeLan::State::Fault)
+        return ProvisionCode::ApUnavailable;
+    if(!challenge.consume(proof,word(server.client().remoteIP()),
+                          word(server.client().localIP()),millis()))
+        return ProvisionCode::IntentInvalid;
     HomeLan::Credentials desired;bool forget=false;
-    if(!HomeLan::decode(raw,size,desired,forget)||forget)return false;
+    if(!HomeLan::decode(raw,size,desired,forget)||forget)
+        return ProvisionCode::PayloadInvalid;
     const auto result=store.change(desired);
-    if(result!=HomeLan::Save::Verified && result!=HomeLan::Save::Unchanged)return false;
-    pending=true;pendingSince=millis();return true;
+    if(result==HomeLan::Save::Denied)return ProvisionCode::StoreDenied;
+    if(result!=HomeLan::Save::Verified && result!=HomeLan::Save::Unchanged)
+        return ProvisionCode::StoreFailed;
+    pending=true;pendingSince=millis();return ProvisionCode::Verified;
 }
 } // namespace B5Lan
