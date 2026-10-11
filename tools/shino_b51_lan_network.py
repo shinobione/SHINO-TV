@@ -166,7 +166,7 @@ def run(binary=None,manifest=None,current_binary=None,current_manifest=None):
             if process.returncode:raise RuntimeError(err)
             final=json.loads(out);assert final["restarts"]==1 and final["flash_writes"]>0
             return dict(cases=len(rows),rows=rows,lan_hmac_ota=True,invalid_hmac_no_write=True,
-                        exact_public_bin=binary is not None,exact_current_public_bin=current_binary is not None,
+                        exact_compiled_bin=binary is not None,exact_current_bin=current_binary is not None,
                         uploaded_bytes=len(raw),ota=receipt,network="HOST_LOOPBACK",radio_sdk_flash_rtc="MOCKED",
                         device_contacts=0,physical="NOT_RUN")
         finally:

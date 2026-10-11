@@ -116,6 +116,8 @@ ArduinoJson7.4.3 et dépendances du dépôt conservés. Comparaison locale :
 | B5 public, source installée8de4d455 | 412784 B | 44084 B |
 | B5.1 public | 414112 B | 44904 B |
 | Delta public à paramètres identiques | +1328 B | +820 B |
+| B5.1 propriétaire local préparé | 414176 B | 44968 B |
+| Delta privé contre le B5 réellement installé | +1328 B | +836 B |
 
 Le SDK scratch112 B est statique et effacé après chaque opération. Frames
 GCC et prologues Xtensa concordent : handler144, provision256, lecture SDK48,
@@ -168,6 +170,22 @@ python tools/shino_b51_owner_packet.py `
 Le dossier doit être nouveau. Ne jamais effacer un `.attempt` ou un reçu pour
 relancer une opération. Le contrôle local est une preuve de fichiers ; la
 vérification de l'identité **exécutée** appartient au futur protocole autorisé.
+
+**Paquet effectivement préparé, hors ligne uniquement :**
+`research-local/m9-owner/b51-home-lan-owner-20261012/`, firmware dans `B5.1/`,
+source propre `50b732e084079b58e21e33f22ac2f5f4611047c1`. Son manifeste local
+et `B51-OFFLINE-REVIEW.json` donnent le SHA/build exacts calculés sur le BIN.
+Garde OTA contre le B5 retenu : **1265664 B**, staging `0x19A000..0x200000`.
+`EXACT-IMAGE-QUALIFICATION.json` conserve139 cas /124 frontières d'interruption
+Core/eboot sur ce BIN ; `LAN-CORE-LOOPBACK-QUALIFICATION.json` conserve les24 scénarios
+et l'OTA des octets exacts B5→B5.1 en RAM. Tous les identifiants d'authentification
+et Wi-Fi employés par les simulateurs sont fictifs. Ces reçus restent locaux.
+Le dernier commit documentaire/métadonnées ne reconstruit pas cette image ;
+ses trois entrées firmware LAN restent identiques au commit de compilation.
+**CANDIDATE_NOT_INSTALLED / HOLD_NATIVE_MEMORY** : ne pas relancer la commande
+de préparation sur ce dossier existant et ne pas utiliser le BIN public inerte
+comme image d'installation. L'unique prochaine intervention est la séance
+physique exacte décrite ci-dessous, après accord portant sur ce paquet.
 
 ## Unique prochaine séance propriétaire, après autorisations exactes
 
