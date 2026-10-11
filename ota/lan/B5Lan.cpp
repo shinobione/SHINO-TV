@@ -57,3 +57,29 @@ struct Sdk {
         return ok;
     }
 } sdk;
+HomeLan::Store<Sdk> store(sdk);
+HomeLan::Controller controller;
+HomeLan::Intent challenge;
+const char* recoveryName=nullptr;
+const char* recoverySecret=nullptr;
+bool started=false,pending=false;
+uint32_t previousIp=0;
+bool applyEffects(unsigned flags) {
+    if(flags&HomeLan::StartAp) {
+        WiFi.mode(controller.hasSaved()?WIFI_AP_STA:WIFI_AP);
+        if(!WiFi.softAP(recoveryName,recoverySecret,6,false,2)) {
+            controller.fault();started=false;return false;
+        }
+        started=true;
+    }
+    if(flags&HomeLan::StartSta) {
+        wifi_station_disconnect();
+        if(!sdk.connectSaved())return false;
+    }
+    if(flags&HomeLan::StopAp) {
+        WiFi.softAPdisconnect(false);
+        WiFi.mode(WIFI_STA);
+    }
+    return started;
+}
+} // anonymous namespace
