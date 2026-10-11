@@ -86,6 +86,8 @@ def main():
     p.add_argument("--change",action="store_true",required=True,
                    help="One explicit owner provisioning operation, after B5 installation")
     p.add_argument("--identity",type=Path,default=DEFAULT_IDENTITY)
+    p.add_argument("--paste-once",action="store_true",
+                   help="Paste the Wi-Fi key once in a hidden prompt (no confirmation repeat)")
     a=p.parse_args()
     import sys
     if not sys.stdin.isatty():
@@ -94,9 +96,10 @@ def main():
     try:
         identity=load_identity(a.identity)
         ssid=input("SSID Freebox 2.4 GHz : ")
-        password=getpass.getpass("Mot de passe Wi-Fi (masque) : ")
-        again=getpass.getpass("Confirmation (masquee) : ")
-        if password!=again:raise ProvisionHold("Mismatch")
+        password=getpass.getpass("Mot de passe Wi-Fi (masque, coller une fois) : ")
+        if not a.paste_once:
+            again=getpass.getpass("Confirmation (masquee) : ")
+            if password!=again:raise ProvisionHold("Password confirmation mismatch")
         if input("Taper PROVISION B5 pour envoyer UNE fois : ")!="PROVISION B5":
             raise ProvisionHold("Cancelled")
         result=provision(make_reader(identity),ssid,password)
