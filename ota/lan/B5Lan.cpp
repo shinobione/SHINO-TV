@@ -158,6 +158,14 @@ ProvisionCode provision(ESP8266WebServer& server,const uint8_t* raw,size_t size,
     HomeLan::Credentials desired;bool forget=false;
     if(!HomeLan::decode(raw,size,desired,forget)||forget)
         return ProvisionCode::PayloadInvalid;
+    // Espressif requires the station interface enabled for saved station
+    // configuration operations. Store::change reads existing SDK config
+    // BEFORE Sdk::write previously called enableSTA(true). With an AP-only
+    // first boot that ordering could fail before attempting persistence.
+    // Promote AP -> AP+STA only after a valid, authenticated, consumed intent
+    // and validated payload; do not drop the protected AP.
+    if(!sdk.safe() || !WiFi.enableSTA(true))
+        return ProvisionCode::StoreDenied;
     const auto result=store.change(desired);
     if(result==HomeLan::Save::Denied)return ProvisionCode::StoreDenied;
     if(result!=HomeLan::Save::Verified && result!=HomeLan::Save::Unchanged)
