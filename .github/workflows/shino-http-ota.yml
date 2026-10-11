@@ -64,6 +64,7 @@ jobs:
           python -m unittest discover -s companion -p test_shino_link.py -v
           python -m unittest discover -s companion -p test_push_fsless_metrics.py -v
           python -m unittest discover -s tools -p test_shino_prepare_ota_pair.py -v
+          python -m unittest discover -s tools -p test_shino_b4_owner_packet.py -v
           python -m unittest discover -s tools -p test_shino_http_ota_packet_control.py -v
           python tools/test_shino_http_ota.py > "${{ runner.temp }}/http-ota-native.json"
       - name: Core read contract and exact compiled BIN through commit and eboot RAM
