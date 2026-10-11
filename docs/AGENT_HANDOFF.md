@@ -1,6 +1,22 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last owner mandate update: **2026-10-11**; the **2026-10-01** square-scene product contract remains below. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+**Current owner mandate — B3 Windows HTTP Coordination Fix, 11 October2026:**
+Owner reports B3 installed/functional, boot/four cards PASS, LINK CONNECTED,
+203s memory stack2288/heap27696/block27120 B/frag10%;30-cycle qualification
+HOLD at cycle22 LINK_METRICS_NOT_FRESH; LINK alone122/122 accepted,0 failures.
+These are owner observations, not fresh agent/device readings. They supersede
+the B3 NOT_INSTALLED descriptions below without rewriting historical receipts.
+Only Windows coordination/instrumentation is authorized, same Draft PR47,
+starting verified26e1ace98dcd4713c4a227c3847bc4b5cf74dee5. Preserve Digest lock,
+timeouts/backoff/TTL6s, strict freshness, memory floors, all private artifacts
+and attempt markers. No device/serial/flash/OTA/reboot/Wi-Fi change/private
+firmware build/merge. Future read-only qualification needs fresh owner approval.
+[Windows delivery and command](SHINO_B3_WINDOWS_HTTP_COORDINATION.md): explicit
+B3 pacing, sanitized bounded diagnostics, real Windows lock with simulated HTTP.
+Physical cycle22 cause remains unproven. Old qualifier/capture/firmware source
+pins remain intact; only four exact Windows blobs are repinned for this mandate.
+
 **Current owner mandate — Break the Loop, 11 October 2026:**
 Consolidate a structural normal-firmware HTTP/memory improvement on existing
 Draft PR47, branch `feature/shino-tv-b3-telemetry-scratch-experiment`.

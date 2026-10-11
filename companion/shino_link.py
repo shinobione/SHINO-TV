@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 from collections import deque
+from contextlib import contextmanager
 import json
 import os
 from pathlib import Path
@@ -20,7 +21,7 @@ import time
 import webbrowser
 
 from metrics_server import collect_metrics, query_nvidia
-from shino_digest_coord import CoordinationBusy, digest_exchange
+from shino_digest_coord import CoordinationBusy, HttpDiagnostics, digest_exchange, exception_outcome
 from push_fsless_metrics import (
     SenderError, SendStatus, encode_sample, make_opener, read_credentials, send_sample, validate_host,
 )
@@ -33,6 +34,7 @@ CONFIG_SCHEMA = 1
 CONNECTED_INTERVAL_SECONDS = 2.0
 MAX_RETRY_SECONDS = 30.0
 MAX_CONFIG_BYTES = 2048
+METRICS_TTL_MS = 6000
 
 
 class LinkError(ValueError):
@@ -112,21 +114,52 @@ def save_config(path: Path, host: str, credentials: Path) -> None:
             temporary.unlink(missing_ok=True)
 
 
-def coordinated_link_sender(host, opener, sample, timeout=3.0):
+class ObservedOpener:
+    """Opt-in error types before send_sample sanitizes them; same Digest opener."""
+    def __init__(self, opener):
+        self.opener = opener
+        self.outcome = None
+        self.status = None
+
+    @contextmanager
+    def open(self, request, timeout):
+        try:
+            with self.opener.open(request, timeout=timeout) as response:
+                self.status = response.getcode()
+                yield response
+        except Exception as error:
+            self.outcome = exception_outcome(error)
+            self.status = getattr(error, "code", self.status)
+            raise
+
+
+def coordinated_link_sender(host, opener, sample, timeout=3.0, *, diagnostics=None):
     """Complete Digest POST serialized with other cooperating SHINO clients."""
+    timing = {}
+    outcome, status = "client_error", None
+    observed = ObservedOpener(opener) if diagnostics is not None else None
     try:
-        with digest_exchange(host):
-            return send_sample(host, opener, sample, timeout=timeout)
-    except (CoordinationBusy, OSError):
+        with digest_exchange(host, timing=timing):
+            result = send_sample(host, observed or opener, sample, timeout=timeout)
+            outcome = (observed.outcome if observed is not None else None) or result.value
+            status = observed.status if observed is not None else None
+            return result
+    except CoordinationBusy as error:
+        outcome = error.code
+        return SendStatus.CLIENT_ERROR
+    except OSError:
         # No unsafe send outside the lock. Preserve LINK's natural backoff.
         return SendStatus.CLIENT_ERROR
+    finally:
+        if diagnostics is not None:
+            diagnostics.record("POST_LINK_METRICS", outcome, timing, status)
 
 
 class LinkEngine:
     """Purely PC-side rate-limited state machine; no startup network side effects."""
 
     def __init__(self, host: str, opener, sampler, sender=send_sample,
-                 clock=time.monotonic, opener_factory=None):
+                 clock=time.monotonic, opener_factory=None, http_diagnostics=None):
         self.host = validate_host(host)
         self.opener = opener
         self.sampler = sampler
@@ -141,6 +174,13 @@ class LinkEngine:
         self.next_due = 0.0
         self.failures = 0
         self.state = "WAITING"
+        self.http_diagnostics = http_diagnostics
+        self.last_success = None
+        self.last_completed = None
+        self.live_clock = True
+        self.ttl_overruns = 0
+        self.ttl_episode_active = False
+        self.max_success_interval_ms = None
 
     def retarget(self, host: str) -> None:
         host=validate_host(host)
@@ -150,6 +190,15 @@ class LinkEngine:
         self.failures=0
         self.next_due=0
         self.state="WAITING"
+        self.last_success=None
+        self.ttl_episode_active=False
+
+    def observe_success_age(self, now):
+        age = None if self.last_success is None else max(0, now - self.last_success) * 1000
+        if age is not None and age > METRICS_TTL_MS and not self.ttl_episode_active:
+            self.ttl_overruns += 1
+            self.ttl_episode_active = True
+        return age
 
     def step(self, now: float | None = None) -> str:
         use_live_clock = now is None
@@ -162,7 +211,9 @@ class LinkEngine:
             encode_sample(sample)  # Do not send invalid, stale or unbounded readings.
         except Exception:
             result = SendStatus.INVALID_SAMPLE
+            collection_ms = max(0, self.clock() - started) * 1000
         else:
+            collection_ms = max(0, self.clock() - started) * 1000
             try:
                 if self.opener is None:
                     self.opener = self.opener_factory()
@@ -193,18 +244,39 @@ class LinkEngine:
         # Delay is measured AFTER collection/HTTP completes, so a 3s timeout
         # cannot accidentally turn a 2s retry into an immediate retry storm.
         completed = self.clock() if use_live_clock else now
+        self.live_clock = use_live_clock
+        self.last_completed = completed
+        age = self.observe_success_age(completed)
+        interval = age if accepted else None
+        if accepted:
+            if interval is not None:
+                self.max_success_interval_ms = max(self.max_success_interval_ms or 0, interval)
+            self.last_success = completed
+            self.ttl_episode_active = False
         self.next_due = completed + delay
         self.history.append({'attempt': self.attempts, 'result': result.value,
                              'http_status': 200 if accepted else 401 if result is SendStatus.HTTP_401 else 403 if result is SendStatus.HTTP_403 else None,
                              'generation': self.generation, 'failures': self.failures,
                              'completed_monotonic': completed, 'retry_seconds': delay,
+                             'success_interval_ms': None if interval is None else round(interval, 3),
+                             'success_age_ms': None if age is None else round(age, 3),
+                             'success_gap_exceeds_ttl': age is not None and age > METRICS_TTL_MS,
+                             'collection_ms': round(collection_ms, 3),
                              'duration_ms': round(max(0, self.clock() - started) * 1000, 3)})
         return self.state
 
     def diagnostics(self) -> dict:
-        return {'state': self.state, 'attempts': self.attempts, 'accepted': self.accepted,
+        age = self.observe_success_age(self.clock() if self.live_clock else self.last_completed or 0)
+        result = {'state': self.state, 'attempts': self.attempts, 'accepted': self.accepted,
                 'generation': self.generation, 'failures': self.failures,
+                'ttl_ms': METRICS_TTL_MS, 'ttl_overruns': self.ttl_overruns,
+                'success_age_ms': None if age is None else round(age, 3),
+                'max_success_interval_ms': self.max_success_interval_ms,
+                'freshness_source': 'WINDOWS_ACK_INTERVAL_ONLY',
                 'history': list(self.history)}
+        if self.http_diagnostics is not None:
+            result['http'] = self.http_diagnostics.snapshot()
+        return result
 
     def run(self, stop: threading.Event, report, observe=None, target_supplier=None) -> None:
         last_state = None
@@ -227,7 +299,7 @@ class LinkEngine:
             stop.wait(max(0.01, self.next_due - self.clock()))
 
 
-def make_engine(config: dict[str, str]) -> LinkEngine:
+def make_engine(config: dict[str, str], *, diagnostics=False) -> LinkEngine:
     # Lazy import: --dry-run/configure/autostart status never need to read secrets
     # or contact the device. The credentials file is never copied into link.json.
     user, password = read_credentials(Path(config["credentials_file"]))
@@ -235,15 +307,24 @@ def make_engine(config: dict[str, str]) -> LinkEngine:
     opener = factory()
     import psutil
     psutil.cpu_percent(interval=None)  # Prime nonblocking first CPU sample.
+    http = HttpDiagnostics() if diagnostics else None
     engine=LinkEngine(config["host"], opener,
                       lambda: collect_metrics(psutil, query_nvidia),
-                      sender=coordinated_link_sender, opener_factory=factory)
+                      sender=lambda *args, **kwargs: coordinated_link_sender(*args, **kwargs, diagnostics=http),
+                      opener_factory=factory, http_diagnostics=http)
     engine.opener_factory=lambda: make_opener(engine.host,user,password)
     return engine
 
 
 def diagnostics_writer(path: Path):
     """Opt-in bounded sanitized snapshot, never a raw HTTP/credential log."""
+    path = Path(path)
+    if path.is_symlink() or path.exists():
+        raise LinkError("Diagnostics require a new local file; existing evidence is immutable")
+    # Reserve this run's destination before credentials/network. Subsequent
+    # snapshots replace only the file created by this invocation.
+    with path.open("x", encoding="utf-8") as stream:
+        json.dump(dict(status="WINDOWS_DIAGNOSTICS_RESERVED"), stream)
     def write(data):
         temporary = None
         try:
@@ -265,7 +346,7 @@ def run_tray(config: dict[str, str], observe=None) -> int:
         from PIL import Image, ImageDraw
     except ImportError as exc:
         raise LinkError("Tray dependencies missing. Install companion/requirements-link.txt") from exc
-    engine = make_engine(config)
+    engine = make_engine(config, diagnostics=observe is not None)
     stop = threading.Event()
     status = {"value": "WAITING"}
     picture = Image.new("RGB", (64, 64), "#141820")
@@ -415,7 +496,7 @@ def main(argv: list[str] | None = None) -> int:
         observe = diagnostics_writer(args.diagnostics_file) if args.diagnostics_file else None
         if args.tray:
             return run_tray(config, observe)
-        engine = make_engine(config)
+        engine = make_engine(config, diagnostics=observe is not None)
         if args.once:
             state = engine.step()
             print("One RAM-only sample:", state)

@@ -22,7 +22,12 @@ def run():
         'companion/test_shino_update.py': 'd1afe393073c1baaad60c36093f20a33375a46a9',
         'companion/SHINO-ONE-SHOT-B.ps1': '197ab9b8f71133fb27d8931a849eb6f5aff10d3a',
         # Deliberate PC-only LINK update, exact Git blob; no wildcard exemption.
-        'companion/shino_link.py': '9c7826702bc8475a6287024ac7128942701fe4ec',
+        'companion/shino_link.py': '3d09d7593d13a7ab52d4efc51e24e00e909810a9',
+        # Explicit 11 October owner mandate: Windows coordination only.
+        # Exact blobs; historical qualifier/capture/firmware pins stay frozen.
+        'companion/shino_digest_coord.py': '494a7ed15c6150ed43adc292d9a7c79386917123',
+        'companion/shino_coordinated_qualify.py': 'fd148d081813cb1a66447e18f362a888f2b3aedb',
+        'companion/test_shino_http_coordination.py': '046261f647b901d36ad97b57baea692f8bb78c22',
         # Exact Git blob pins for B3 owner-only read-only evidence files.
         'companion/shino_b3_capture.py': '98a7e39f19d7917b2029f2b8ab393615f1478cf1',
         'companion/test_shino_b3_capture.py': 'de17954a836e566e51c5ee18c1b1bf7fc185facd',

@@ -1,5 +1,25 @@
 # SHINO // TV — Roadmap
 
+## Mandat courant — B3 Windows HTTP Coordination Fix, 11 octobre 2026
+
+Décision propriétaire de cette conversation : corriger et instrumenter uniquement
+les clients Windows, sur la branche existante de la Draft PR #47. Départ vérifié
+`26e1ace98dcd4713c4a227c3847bc4b5cf74dee5`, identique au HEAD GitHub.
+B3 est **installé et fonctionnel selon le propriétaire** : boot/quatre cartes
+PASS, LINK CONNECTED ; capture203 s stack2288/heap27696/bloc27120 B, frag10 %.
+Qualification30 cycles HOLD au cycle22 (`LINK_METRICS_NOT_FRESH`) ; LINK seul
+122 tentatives/122 acceptées/0 échec. Ces faits sont des observations propriétaire,
+pas une nouvelle lecture de l'agent. La concurrence n'est pas une cause prouvée.
+
+Livrer une cadence B3 explicitement opt-in, des diagnostics bornés et expurgés,
+des tests Windows sans réseau/matériel et la CI du HEAD exact. Conserver le verrou
+Digest, les timeouts, backoff, TTL6000 ms, `metrics_fresh`, seuils mémoire et OTA.
+Conserver les comportements B2 et tous les anciens reçus, fichiers privés,
+backups et marqueurs. Aucune compilation privée, lecture live, flash/UART/OTA,
+reboot, manipulation Wi-Fi, suppression de marqueur ou merge autorisé. Une
+future qualification en lecture seule exige une nouvelle autorisation explicite.
+Les mandats et reçus ci-dessous restent des preuves historiques inchangées.
+
 ## Mandat courant — Break the Loop, 11 octobre 2026
 
 Le propriétaire autorise une amélioration structurelle hors ligne du firmware

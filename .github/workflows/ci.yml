@@ -576,8 +576,12 @@ jobs:
           python companion/shino_link.py --autostart status
       - name: Windows inter-process Digest coordinator regression (no network)
         run: |
+          python -m unittest discover -s companion -p 'test_push_fsless_metrics.py' -v
+          python -m unittest discover -s companion -p 'test_shino_update.py' -v
           python -m unittest discover -s companion -p 'test_shino_digest_coord.py' -v
           python -m unittest discover -s companion -p 'test_shino_coordinated_qualify.py' -v
+          python -m unittest discover -s companion -p 'test_shino_http_coordination.py' -v
+          python -m unittest discover -s companion -p 'test_shino_b3_capture.py' -v
       - name: Phase R one-GET diagnostic with in-memory Digest transport only
         run: |
           python -m compileall -q companion/m9_stagea_status_probe.py
