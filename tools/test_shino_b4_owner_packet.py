@@ -32,17 +32,17 @@ class TestB4OwnerPacket(unittest.TestCase):
                                           _EEPROM_start=0x405FB000),
                       json_arena_bytes=768, json_document_heap_fallback=False,
                       physical="NOT_RUN", native_heap_peak_measured=False)
-        with self.assertRaisesRegex(b4.B4Hold, "B4 staging"):
+        with self.assertRaisesRegex(b4.B4Hold, "B4 private build"):
             b4.check_b4(m, b"x" * 0xFF000, report, old, "a" * 40)
-        b4.check_b4(m, raw * 10000, report, old, "a" * 40)
+        b4.check_b4(m, raw * 11000, report, old, "a" * 40)
         for override in ({"private": False}, {"source_dirty": True},
                          {"source_commit": "b" * 40},
                          {"native_heap_peak_measured": True}):
             with self.subTest(override=override), self.assertRaises(b4.B4Hold):
-                b4.check_b4(m, raw * 10000, dict(report, **override), old, "a" * 40)
+                b4.check_b4(m, raw * 11000, dict(report, **override), old, "a" * 40)
         with self.assertRaises(b4.B4Hold):
             b4.check_b4(dict(m, sha256=b4.B3_SHA256),
-                        raw * 10000, report, old, "a" * 40)
+                        raw * 11000, report, old, "a" * 40)
 
     def test_source_gate_rejects_modified_firmware(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -118,9 +118,9 @@ class TestB4OwnerPacket(unittest.TestCase):
                 self.assertFalse(target.exists())
                 target.mkdir()
                 return {"private": True}
-            with patch.object(b4, "check_b3") as guard_b3, \\
-                 patch.object(b4, "check_b4") as guard_b4, \\
-                 patch("socket.socket", side_effect=AssertionError("NETWORK")) as network:
+            with (patch.object(b4, "check_b3") as guard_b3,
+                  patch.object(b4, "check_b4") as guard_b4,
+                  patch("socket.socket", side_effect=AssertionError("NETWORK")) as network):
                 result = b4.prepare(root, owner, out,
                                     inspect=inspect, load=lambda: secret,
                                     build=fake_build, checker=lambda _: "a" * 40)
