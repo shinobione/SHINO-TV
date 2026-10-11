@@ -260,11 +260,11 @@ def prepare_installed_b3(directory, installed_bin, installed_manifest, reference
     commands=prepare_uart(directory,"B3",reference)
     receipt=directory/"B3-readonly-receipt.json"
     qualifier=ROOT/"companion/shino_coordinated_qualify.py"
-    launcher=(f'@echo off\\ncd /d "{ROOT}"\\n'
-              f'echo B3 readonly qualification of SHA256 {new["sha256"]}\\n'
-              'choice /C ON /N /M "Authorize read-only B3 GETs (O/N) ? "\\nif errorlevel 2 exit /b 1\\n'
-              f'python "{qualifier}" --bin "{binary}" --manifest "{directory/"B3/release.json"}" --authorize-read --receipt "{receipt}"\\n'
-              'set "SHINO_QUALIFY_EXIT=%ERRORLEVEL%"\\npause\\nexit /b %SHINO_QUALIFY_EXIT%\\n')
+    launcher=(f'@echo off\ncd /d "{ROOT}"\n'
+              f'echo B3 readonly qualification of SHA256 {new["sha256"]}\n'
+              'choice /C ON /N /M "Authorize read-only B3 GETs (O/N) ? "\nif errorlevel 2 exit /b 1\n'
+              f'python "{qualifier}" --bin "{binary}" --manifest "{directory/"B3/release.json"}" --authorize-read --receipt "{receipt}"\n'
+              'set "SHINO_QUALIFY_EXIT=%ERRORLEVEL%"\npause\nexit /b %SHINO_QUALIFY_EXIT%\n')
     (directory/"QUALIFY-B3.cmd").write_text(launcher,encoding="utf-8")
     guidance=[
         "# SHINO // TV — B2 installed -> B3 UART migration (owner only)",
@@ -295,7 +295,7 @@ def prepare_installed_b3(directory, installed_bin, installed_manifest, reference
         "Do NOT run an OTA B2->B3 or use historical UPDATE-B.cmd for this transition.",
         "No operation above has been executed by the packet generator.",
     ]
-    (directory/"B3-OWNER-OPERATIONS.md").write_text("\\n".join(guidance)+"\\n",encoding="utf-8")
+    (directory/"B3-OWNER-OPERATIONS.md").write_text("\n".join(guidance)+"\n",encoding="utf-8")
     packet=dict(status="B3_OWNER_PACKET_OFFLINE_ONLY",source_commit=head,
                 installed_B2_sha256=old["sha256"],candidate_B3_sha256=new["sha256"],
                 archived_FS_reference_sha256=reference["sha256"],
@@ -303,7 +303,7 @@ def prepare_installed_b3(directory, installed_bin, installed_manifest, reference
                 device_contacts=0,serial_io=0,flash_writes=0,ota_writes=0,
                 commands=["PRE-B3.cmd","WRITE-B3.cmd","POST-B3.cmd",
                           "VERIFY-POST-B3.cmd","QUALIFY-B3.cmd"])
-    (directory/"B3-owner-packet.json").write_text(json.dumps(packet,indent=2)+"\\n",encoding="utf-8")
+    (directory/"B3-owner-packet.json").write_text(json.dumps(packet,indent=2)+"\n",encoding="utf-8")
     print("B3_OWNER_PACKET_OFFLINE_ONLY — NO DEVICE, NO UART, NO OTA")
     return packet
 
