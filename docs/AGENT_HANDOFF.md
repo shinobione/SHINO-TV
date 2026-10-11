@@ -16,6 +16,19 @@ no private inputs, device/AP/serial contact, flash/OTA, reboot, merge or force
 push. Do not repaint runtime stack or infer whole-native reserve from frames.
 Full current mandate is recorded at the top of ROADMAP.md.
 
+**Consolidated B3 offline delivery:** [HTTP/memory receipt](SHINO_B3_HTTP_MEMORY.md),
+code b16d126. One pinned persistent parser hands off only after unwind; guarded
+loop dispatch and close grace retain pre-body auth, bounded body deadlines and
+no reparsing refused POST bytes. JSON arena reuses existing768 B, no fallback;
+Core body String and route objects removed. Clean public43572 static/407488 BIN,
+telemetry160/metrics80, known HMAC path1616 (was1840); native bound remains unknown.
+52 tools/95 companion tests,227 Core cases/197 interruptions,137 exact-image
+negatives/122 cuts,150 HTTP exchanges plus8 coordinated pairs PASS_OFFLINE.
+No private inputs/device contact/real write/reboot/merge. B2 watermark1968 still
+fails OTA admission2048; no implied B3 OTA or repaint. Private build/install and
+native memory qualification require separate owner decisions. Final HEAD CI
+must be checked separately; software review and physical HOLD stay distinct.
+
 **Current mandate — OTA Breakthrough, 10 October2026:**
 The owner reports corrected A still active after the single historical B upload:
 Windows UNKNOWN_NO_RETRY, device FAILED_NO_COMMIT, heap29376, historical free

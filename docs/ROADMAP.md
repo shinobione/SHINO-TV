@@ -27,6 +27,14 @@ Objectif utilisateur : des échanges HTTP fiables avec une réserve mémoire
 défendable avant d'ajouter horloge, météo ou musique. Livraison finale courte
 en français : **READY FOR OWNER REVIEW** ou **HOLD**, portée physique explicite.
 
+Livraison consolidée : [B3 HTTP/mémoire](SHINO_B3_HTTP_MEMORY.md), code `b16d126`.
+Parser et dispatch deviennent frères ; JSON borné dans les buffers existants.
+Build public propre :43572 B statiques,407488 B BIN, télémétrie160 B,
+métriques80 B, chemin HMAC connu1616 B (avant1840).52 tests outils/95 Windows,
+227 cas Core/197 interruptions,137 refus exact-BIN/122 frontières,150 échanges
+HTTP et8 paires Digest coordonnées PASS hors ligne. Aucun appareil contacté ;
+mémoire native/installation B3 HOLD. Revoir la CI du HEAD final séparément.
+
 ## Mandat courant — OTA Breakthrough, 10 octobre 2026
 
 La demande propriétaire de cette conversation autorise la correction et la
