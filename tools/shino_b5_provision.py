@@ -102,7 +102,13 @@ def main():
             if password!=again:raise ProvisionHold("Password confirmation mismatch")
         if input("Taper PROVISION B5 pour envoyer UNE fois : ")!="PROVISION B5":
             raise ProvisionHold("Cancelled")
-        result=provision(make_reader(identity),ssid,password)
+        reader=make_reader(identity)
+        # Do not re-submit credentials when a previous reply was lost but
+        # the device may already have entered STA connect/recovery/online.
+        status=request(reader,"/status")
+        if not isinstance(status,dict) or status.get("state")!="NO_SAVED_WIFI":
+            raise ProvisionHold("Existing or unknown LAN state: STOP before POST")
+        result=provision(reader,ssid,password)
         print(result)
         print("B5 can now attempt DHCP; check LAN IP separately. No automatic retry.")
         return 0
