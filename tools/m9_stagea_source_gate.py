@@ -23,6 +23,10 @@ def run():
         'companion/SHINO-ONE-SHOT-B.ps1': '197ab9b8f71133fb27d8931a849eb6f5aff10d3a',
         # Deliberate PC-only LINK update, exact Git blob; no wildcard exemption.
         'companion/shino_link.py': '9c7826702bc8475a6287024ac7128942701fe4ec',
+        # Exact Git blob pins for B3 owner-only read-only evidence files.
+        'companion/shino_b3_capture.py': '98a7e39f19d7917b2029f2b8ab393615f1478cf1',
+        'companion/test_shino_b3_capture.py': 'de17954a836e566e51c5ee18c1b1bf7fc185facd',
+        'companion/SHINO_B3_READONLY_CAPTURE.md': 'f0a17dcad31872ab0f90286871aa1b04df35fdb6',
     }
     for name in subprocess.check_output(['git','ls-files','firmware','companion','tools/m9_single_attempt*'],cwd=ROOT,text=True).splitlines():
         if name in new_offline_script_pins:
