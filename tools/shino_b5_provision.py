@@ -7,6 +7,8 @@ from __future__ import annotations
 import argparse
 import getpass
 import json
+import re
+from urllib.error import HTTPError
 from pathlib import Path
 import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'companion'))
@@ -40,10 +42,28 @@ def request(reader,route,body=None,token=None):
     try:
         with reader.open(req,timeout=5) as response:
             raw=response.read(513)
-            if response.status!=200 or len(raw)>512:raise ProvisionHold("Response boundedness")
+            if response.status!=200 or len(raw)>512:
+                raise ProvisionHold(route+": unexpected HTTP status/response bound — no retry")
         return json.loads(raw)
-    except Exception:
-        raise ProvisionHold("LAN provision rejected/unknown; do not retry a lost response") from None
+    except HTTPError as error:
+        # Diagnostic contains only status and a whitelisted DEVICE ERROR CODE.
+        # Never display the request body, Wi-Fi credentials, token or Digest data.
+        status=error.code
+        try:
+            packet=json.loads(error.read(257))
+            code=packet.get("error","") if isinstance(packet,dict) else ""
+            code=code if isinstance(code,str) and re.fullmatch(r"[A-Z0-9_]{1,64}",code) else "NO_DEVICE_ERROR_CODE"
+        except (ValueError,UnicodeError,TypeError):
+            code="NO_DEVICE_ERROR_CODE"
+        finally:
+            error.close()
+        raise ProvisionHold(f"{route}: HTTP {status} / {code} — no retry") from None
+    except ProvisionHold:
+        raise
+    except Exception as error:
+        # A lost POST response is AMBIGUOUS even if the server saved Wi-Fi.
+        # Do not silently retry it, regardless of the exception class.
+        raise ProvisionHold(f"{route}: {type(error).__name__} / UNKNOWN_NO_RETRY") from None
 
 
 def provision(reader,ssid,password):
@@ -83,8 +103,11 @@ def main():
         print(result)
         print("B5 can now attempt DHCP; check LAN IP separately. No automatic retry.")
         return 0
+    except ProvisionHold as error:
+        print("B5_PROVISION_HOLD:",str(error),file=sys.stderr)
+        return 2
     except Exception:
-        print("B5_PROVISION_HOLD: input, authentication or device response rejected; no retry")
+        print("B5_PROVISION_HOLD: local validation error (details redacted)",file=sys.stderr)
         return 2
 
 
