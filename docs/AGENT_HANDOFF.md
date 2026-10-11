@@ -1,5 +1,20 @@
 # SHINO // TV — Agent handoff / operational source of truth
-Last owner mandate update: **2026-10-10**; the **2026-10-01** square-scene product contract remains below. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
+Last owner mandate update: **2026-10-11**; the **2026-10-01** square-scene product contract remains below. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
+
+**Current owner mandate — Break the Loop, 11 October 2026:**
+Consolidate a structural normal-firmware HTTP/memory improvement on existing
+Draft PR47, branch `feature/shino-tv-b3-telemetry-scratch-experiment`.
+Dependencies PR42/44/45/46 inspected; initial exact head d25fc1ae.
+Owner confirms installed B2 and successful physical A2→B2 Wi-Fi OTA, while
+long qualification remains HOLD: earlier unclassified HTTP timeout and later
+historical continuation minimum1968 <2048. B3 telemetry frame224→176/static+80
+is compiled evidence only; B3 NOT_INSTALLED / NOT_PHYSICALLY_QUALIFIED.
+The A/A2 status below is historical. Preserve all original receipts/markers,
+4m2m, LittleFS, authentication/integrity, four metrics, TTL6s and memory floors.
+Public inert offline builds/tests, commits/push and exact-head CI authorized;
+no private inputs, device/AP/serial contact, flash/OTA, reboot, merge or force
+push. Do not repaint runtime stack or infer whole-native reserve from frames.
+Full current mandate is recorded at the top of ROADMAP.md.
 
 **Current mandate — OTA Breakthrough, 10 October2026:**
 The owner reports corrected A still active after the single historical B upload:

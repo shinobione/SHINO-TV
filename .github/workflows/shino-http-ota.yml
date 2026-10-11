@@ -113,20 +113,31 @@ jobs:
           assert network['fs_preserved'] and network['device_contacts']==0
           assert network['scratch_guard_rejections']==2 and network['scratch_owner_preserved']
           assert network['upload_guard_rejections']==1 and 'readback_disconnect' in network['rejected_transfers_recovered']
+          assert network['coordinated_digest_pairs']==8 and network['coordinated_max_latency_ms']<1500
+          assert network['interrupted_telemetry_recovered']==['disconnect','body_timeout']
+          assert network['bounded_json_failures']==5 and network['payload_boundary_cases']==4
+          assert network['host_json_arena_peak']<=network['json_arena_capacity']==768
+          assert network['arena_reuse_cycles']==256 and network['retained_request_bytes']==0
+          assert network['yield_reentry_checks']>0
           build=json.loads((root/'http-ota-build.json').read_text())
           assert build['stack_frames']['identity']<=160 and build['stack_frames']['metrics']<=112
           assert build['stack_frames']['hmac_proof']<=128 and build['noinit']==56
           assert build['stack_frames']['ota_staging']<=176 and build['stack_frames']['ota_segments']<=240
           assert build['physical']=='NOT_RUN' and not build['private']
+          assert build['json_arena_bytes']==768 and not build['json_document_heap_fallback']
+          assert not build['native_heap_peak_measured']
           stack=json.loads((root/'http-ota-stack.json').read_text())
           assert stack['required_free_bytes']==2048 and not stack['whole_native_upper_bound']
           assert stack['core_commit_reachable'] and not stack['nested_verification']
+          assert stack['parser_unwinds_before_dispatch']
           b2=json.loads((root/'http-ota-normal-stack.json').read_text())
           assert b2['stack_free_floor']==2048 and b2['native_highwater_is_historical']
           assert not b2['reset_during_poll'] and not b2['complete_normal_native_upper_bound']
           assert b2['handler_frames']['identity_get']['state']=='MEASURED_STATIC'
           assert b2['handler_frames']['normal_status_get']['state']=='MEASURED_STATIC'
           assert b2['physical']=='NOT_RUN' and b2['device_contacts']==0
+          assert b2['source_provenance']=='COPIED_BUILD_INPUT'
+          assert b2['source_sha256']==build['normal_source_sha256']
           assert max(p['compiled_bytes'] for p in stack['paths'].values())<=2048
           source=json.loads((root/'http-ota-source.json').read_text())
           assert source['PHASE_T_SOURCE']=='PASS_OFFLINE' and source['device_contacts']==0

@@ -82,15 +82,31 @@ class TestForensics(unittest.TestCase):
 
     def test_audit_has_no_device_or_firmware_side_effect(self):
         framed={key:{"state":"MEASURED_STATIC","frame_bytes":64} for key in f.TARGETS}
-        with patch.object(f,"collect_frames",return_value=(framed,[])), \
+        with tempfile.TemporaryDirectory() as tmp, \
+             patch.object(f,"collect_frames",return_value=(framed,[])), \
              patch.object(f,"ota_audit",return_value={"whole_native_upper_bound":False,"paths":{"a":{"compiled_bytes":1400}}}):
-            report=f.audit(Path("nonexistent"))
+            folder=Path(tmp);source=folder/"src/boot/M9NormalStageA.cpp";source.parent.mkdir(parents=True)
+            source.write_text(f.TRACKED_NORMAL.read_text(encoding="utf-8"),encoding="utf-8")
+            report=f.audit(folder)
         self.assertEqual(report["status"],"COMPILED_NORMAL_HANDLER_FRAMES_NOT_NATIVE_STACK_BOUND")
         self.assertEqual(report["stack_free_floor"],2048)
         self.assertFalse(report["complete_normal_native_upper_bound"])
         self.assertFalse(report["firmware_changed"])
         self.assertEqual(report["device_contacts"],0)
         self.assertEqual(report["ota_posts"],0)
+        self.assertEqual(report["source_provenance"],"COPIED_BUILD_INPUT")
+
+    def test_pending_dispatch_and_bounded_allocator_cannot_be_removed(self):
+        normal=f.TRACKED_NORMAL.read_text(encoding="utf-8")
+        resources=f.TRACKED_RESOURCES.read_text(encoding="utf-8")
+        for part in ("if(httpBusy)return;","if(requestPending)serviceRequest();",
+                     "JsonDocument doc{&arena}","DeserializationOption::NestingLimit(1)"):
+            with self.subTest(part=part),self.assertRaises(AssertionError):
+                f.highwater_source_guard(normal.replace(part,"/* missing */"),resources)
+
+    def test_old_elf_cannot_claim_current_workspace_source(self):
+        with self.assertRaisesRegex(ValueError,"compiled normal source"):
+            f.audit(Path("nonexistent"))
 
 
 if __name__=="__main__":

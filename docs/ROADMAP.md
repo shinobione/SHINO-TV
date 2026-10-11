@@ -1,5 +1,32 @@
 # SHINO // TV — Roadmap
 
+## Mandat courant — Break the Loop, 11 octobre 2026
+
+Le propriétaire autorise une amélioration structurelle hors ligne du firmware
+normal et de sa stabilité HTTP sur la branche existante
+`feature/shino-tv-b3-telemetry-scratch-experiment`, Draft PR #47, sans nouvelle
+PR par sous-problème. Lire les dépendances #42/#44/#45/#46, préserver leurs
+preuves, compiler avant/après, tester les chemins réels Core 3.1.2 et livrer
+code, diagnostic consolidé, ressources mesurées et CI du HEAD exact.
+
+Dernier état physique confirmé par le propriétaire : **B2 installé**, première
+OTA Wi-Fi A2→B2 réussie ; qualification prolongée **HOLD** (timeout HTTP
+antérieur non attribué, puis minimum historique de continuation **1968 B**
+contre **2048 B** requis). B3 n'est ni installé ni qualifié. Le gain de frame
+télémétrie 224→176 B avec +80 B statiques ne prouve aucun gain natif global.
+Les descriptions A/A2 ci-dessous sont des états historiques.
+
+Conserver 4m2m, LittleFS, Digest/HMAC/intégrité OTA, les quatre mesures, TTL6s,
+les planchers mémoire et le watermark sans repaint runtime. Aucun accès SmallTV,
+AP privé, COM8/UART, flash/OTA réelle, reboot, secret/BIN/dump privé, merge,
+push forcé ou effacement d'anciennes preuves autorisé. Les builds utilisent
+uniquement des entrées publiques inertes. Une future installation nécessite
+une approbation propriétaire distincte pour l'opération et le fichier/hash exacts.
+
+Objectif utilisateur : des échanges HTTP fiables avec une réserve mémoire
+défendable avant d'ajouter horloge, météo ou musique. Livraison finale courte
+en français : **READY FOR OWNER REVIEW** ou **HOLD**, portée physique explicite.
+
 ## Mandat courant — OTA Breakthrough, 10 octobre 2026
 
 La demande propriétaire de cette conversation autorise la correction et la
