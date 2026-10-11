@@ -133,7 +133,7 @@ class B3InstalledTransitionTests(unittest.TestCase):
                       bytes=len(self.raw),sha256=self.old_sha,build_id="b"*64)
         self.manifest.write_text(json.dumps(self.old))
         self.reference=self.owner/"archived-before-B2-full-flash.bin"
-        self.reference.write_bytes(b"\\xff"*0x400000)
+        self.reference.write_bytes(b"\xff"*0x400000)
         for f in ("transition-build/.pio/build/"+ENV+"/firmware.bin",
                   "owner-credentials.json","transition-report.json",
                   "transition-manifest.json"):
@@ -143,9 +143,9 @@ class B3InstalledTransitionTests(unittest.TestCase):
         self.head="c"*40
         self.build_calls=0;self.uart_calls=[]
     def git(self,args,**kwargs):
-        if args==["git","branch","--show-current"]:return "feature/shino-tv-b3-telemetry-scratch-experiment\\n"
+        if args==["git","branch","--show-current"]:return "feature/shino-tv-b3-telemetry-scratch-experiment\n"
         if args==["git","status","--porcelain"]:return ""
-        if args==["git","rev-parse","HEAD"]:return self.head+"\\n"
+        if args==["git","rev-parse","HEAD"]:return self.head+"\n"
         raise AssertionError("Unexpected Git command")
     def fake_build(self,output,private):
         self.assertTrue(private);self.build_calls+=1
@@ -187,10 +187,10 @@ class B3InstalledTransitionTests(unittest.TestCase):
         self.assertIn("PRE-B3.cmd",guide)
         self.assertIn("B2",guide)
         self.assertIn("0x200000",guide)
-        self.assertIn("\\n",guide)
+        self.assertIn("\n",guide)
         qualify=(self.output/"QUALIFY-B3.cmd").read_text()
         self.assertIn("--authorize-read",qualify)
-        self.assertIn("\\ncd /d",qualify)
+        self.assertIn("\ncd /d",qualify)
         self.assertNotIn("--install",qualify)
         self.assertNotIn("--execute",qualify)
 
@@ -215,7 +215,7 @@ class B3InstalledTransitionTests(unittest.TestCase):
         self.assertEqual(self.build_calls,0)
 
     def test_b3_rejects_wrong_branch_or_dirty_tree(self):
-        with patch.object(self.packet,"OWNER",self.owner),patch.object(self.packet.subprocess,"check_output",return_value="main\\n"),patch.object(self.packet,"build",side_effect=AssertionError("no build")):
+        with patch.object(self.packet,"OWNER",self.owner),patch.object(self.packet.subprocess,"check_output",return_value="main\n"),patch.object(self.packet,"build",side_effect=AssertionError("no build")):
             with self.assertRaisesRegex(ValueError,"reviewed PR #47 branch"):
                 self.packet.prepare_installed_b3(self.output,self.installed_bin,self.manifest,self.reference)
         self.assertFalse(self.output.exists())
