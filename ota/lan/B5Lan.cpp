@@ -83,3 +83,35 @@ bool applyEffects(unsigned flags) {
     return started;
 }
 } // anonymous namespace
+bool begin(const char* ssid,const char* psk) {
+    recoveryName=ssid;recoverySecret=psk;
+    WiFi.persistent(false);WiFi.setAutoReconnect(false);
+    HomeLan::Credentials saved;
+    const bool present=sdk.safe()&&store.load(saved)&&sdk.wpa2();
+    return applyEffects(controller.begin(millis(),present));
+}
+void poll(bool otaActive) {
+    if(otaActive)return;
+    if(pending) {
+        pending=false;challenge.clear();
+        HomeLan::Credentials saved;
+        const bool present=sdk.safe()&&store.load(saved)&&sdk.wpa2();
+        applyEffects(controller.begin(millis(),present));
+    }
+    const uint32_t now=millis(),current=word(WiFi.localIP());
+    if(current!=previousIp){previousIp=current;challenge.clear();}
+    const bool connected=WiFi.status()==WL_CONNECTED&&current!=0;
+    applyEffects(controller.tick(now,connected,WiFi.softAPgetStationNum()!=0||challenge.live(now)));
+}
+bool active(){return started;}
+bool online(){return WiFi.status()==WL_CONNECTED&&word(WiFi.localIP())!=0;}
+IPAddress address(){return online()?WiFi.localIP():IPAddress(0,0,0,0);}
+const char* state() {
+    switch(controller.state) {
+      case HomeLan::State::NoCredentials:return "NO_SAVED_WIFI";
+      case HomeLan::State::Connecting:return "STA_CONNECTING";
+      case HomeLan::State::Recovery:return "AP_RECOVERY_RETRY";
+      case HomeLan::State::Online:return "STA_ONLINE";
+      default:return "LAN_FAULT_HOLD";
+    }
+}
