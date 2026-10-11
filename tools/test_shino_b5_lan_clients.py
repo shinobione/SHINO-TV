@@ -3,9 +3,9 @@ import io
 import json
 import unittest
 from unittest.mock import patch
-from urllib.error import URLError
+from urllib.error import URLError,HTTPError
 from shino_b5_lan_update import LanTransport,UpdateError
-from shino_b5_provision import provision,ProvisionHold
+from shino_b5_provision import provision,ProvisionHold,ROOT,API
 
 
 class Response:
@@ -68,6 +68,35 @@ class LanClientTests(unittest.TestCase):
         self.assertTrue(reader.requests[0].full_url.endswith("/api/v1/lan/intent"))
         self.assertTrue(reader.requests[1].full_url.endswith("/api/v1/lan/provision"))
         self.assertEqual(reader.requests[1].get_header("X-shino-lan-intent"),"a"*32)
+
+    def test_rejected_provision_reports_only_http_and_device_code(self):
+        # This is the failure the owner saw previously as a generic HOLD.
+        detail=b'{"error":"PROVISION_HOLD"}'
+        rejected=HTTPError(ROOT+API+"/provision",409,"rejected",{},io.BytesIO(detail))
+        reader=Reader({"intent":"a"*32},rejected)
+        with self.assertRaisesRegex(ProvisionHold,
+              r"/provision: HTTP 409 / PROVISION_HOLD") as raised:
+            provision(reader,"Freebox-Test","SensitiveTestPassword123")
+        self.assertNotIn("SensitiveTestPassword123",str(raised.exception))
+        self.assertEqual(len(reader.requests),2)
+
+    def test_digest_rejection_is_distinguished_from_wifi_password(self):
+        rejected=HTTPError(ROOT+API+"/intent",401,"auth",{},io.BytesIO(b""))
+        reader=Reader(rejected)
+        with self.assertRaisesRegex(ProvisionHold,
+              r"/intent: HTTP 401 / NO_DEVICE_ERROR_CODE"):
+            provision(reader,"TestSSID","SensitiveTestPassword123")
+        self.assertEqual(len(reader.requests),1)
+
+    def test_device_body_cannot_inject_secrets_into_diagnostic(self):
+        rejected=HTTPError(ROOT+API+"/provision",403,"auth",{},
+              io.BytesIO(b'{"error":"SECRET=SensitiveTestPassword123"}'))
+        reader=Reader({"intent":"a"*32},rejected)
+        with self.assertRaises(ProvisionHold) as raised:
+            provision(reader,"Freebox-Test","SensitiveTestPassword123")
+        self.assertIn("HTTP 403 / NO_DEVICE_ERROR_CODE",str(raised.exception))
+        self.assertNotIn("SensitiveTestPassword123",str(raised.exception))
+        self.assertEqual(len(reader.requests),2)
 
     def test_lost_provision_reply_does_not_retry(self):
         reader=Reader({"intent":"a"*32},URLError("lost"))
