@@ -66,6 +66,21 @@ class B5LanComposition(unittest.TestCase):
         self.assertIn("return started;",effects)
         self.assertIn("if(!WiFi.softAP",effects)
 
+    def test_initial_config_store_activates_sta_before_sdk_read(self):
+        # Critical for first provisioning from AP-only mode. The earlier
+        # Store::change read preceded Sdk::write's enableSTA(true).
+        source=(ROOT/"ota/lan/B5Lan.cpp").read_text(encoding="utf-8")
+        start=source.index("ProvisionCode provision(")
+        body=source[start:source.index("} // namespace B5Lan",start)]
+        self.assertLess(body.index("HomeLan::decode("),
+                        body.index("WiFi.enableSTA(true)"))
+        self.assertLess(body.index("WiFi.enableSTA(true)"),
+                        body.index("store.change(desired)"))
+        self.assertIn("if(!sdk.safe() || !WiFi.enableSTA(true))",body)
+        # AP persists; no disconnect, reboot or Wi-Fi mode STA-only here.
+        self.assertNotIn("WiFi.softAPdisconnect",body)
+        self.assertNotIn("WIFI_STA)",body)
+
     def test_provision_failures_identifiable_without_secrets(self):
         generated=self.b5
         header=(ROOT/"ota/lan/B5Lan.h").read_text(encoding="utf-8")
