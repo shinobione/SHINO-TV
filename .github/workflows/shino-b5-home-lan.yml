@@ -8,6 +8,9 @@ on:
       - 'tools/shino_b5_provision.py'
       - 'tools/shino_b5_lan_update.py'
       - 'tools/test_shino_b5_lan_clients.py'
+      - 'tools/shino_b51_*.py'
+      - 'tools/shino_b51_*.cpp'
+      - 'tools/test_shino_b51_*.py'
       - '.github/workflows/shino-b5-home-lan.yml'
   workflow_dispatch:
 permissions:
@@ -30,10 +33,23 @@ jobs:
         run: |
           python -m unittest discover -s tools -p test_shino_b5_lan_build.py -v
           python -m unittest discover -s tools -p test_shino_b5_lan_clients.py -v
+          python -m unittest discover -s tools -p test_shino_b51_owner_packet.py -v
       - name: Build public inert 4m2m B5 LAN using the pinned Core
         run: |
           python -m pip install 'platformio==6.1.18' 'littlefs-python==0.15.0'
           python tools/shino_b5_lan_build.py research-local/b5-home-lan-public
+      - name: SDK machine evidence and executable B5 vs B5.1 regressions
+        env:
+          SHINO_ARDUINOJSON_SRC: ${{ github.workspace }}/research-local/b5-home-lan-public/.pio/libdeps/esp12e_m9_4m2m_normal_qualification/ArduinoJson/src
+        run: |
+          python tools/shino_b51_sdk_audit.py
+          python tools/shino_b51_lan_runner.py
+          python tools/shino_b51_baseline.py research-local/b51-public-baseline
+          python tools/shino_b51_lan_network.py \
+            --bin research-local/b5-home-lan-public/.pio/build/esp12e_m9_4m2m_normal_qualification/firmware.bin \
+            --manifest research-local/b5-home-lan-public/release.json \
+            --current-bin research-local/b51-public-baseline/.pio/build/esp12e_m9_4m2m_normal_qualification/firmware.bin \
+            --current-manifest research-local/b51-public-baseline/release.json
       - name: Enforce distinct LAN code and no physical promotion
         run: |
           python - <<'PY'
@@ -47,6 +63,9 @@ jobs:
           assert r['layout_symbols']=={'_FS_start':0x40400000,'_FS_end':0x405FA000,'_EEPROM_start':0x405FB000}
           assert 64000<=r['bytes']<=0xFEFF0
           assert r['source_commit']==__import__('subprocess').check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert not r['source_dirty'] and r['firmware']=='B5.1'
+          assert not r['lan_stack']['whole_native_upper_bound']
+          assert r['lan_stack']['required_stack']==2048
           print('B5_HOME_LAN_PUBLIC_COMPILE_PASS — PHYSICAL_HOLD')
           PY
           git diff --exit-code

@@ -79,8 +79,10 @@ __attribute__((noinline)) void lanStatus() {
     ResponseLease lease;if(!lease){respond(503,"{\"error\":\"RESPONSE_BUSY\"}");return;}
     const String ip=B5Lan::address().toString();
     const int n=std::snprintf(responseBody,sizeof(responseBody),
-       "{\"state\":\"%s\",\"lan_ip\":\"%s\",\"sta_online\":%s,\"ota_protocol\":\"shino-http-ota-1\"}",
-       B5Lan::state(),ip.c_str(),B5Lan::online()?"true":"false");
+       "{\"state\":\"%s\",\"lan_ip\":\"%s\",\"sta_online\":%s,\"ota_protocol\":\"shino-http-ota-1\","
+       "\"credential_state\":\"%s\",\"connection\":\"%s\",\"provision\":\"%s\",\"firmware\":\"B5.1\"}",
+       B5Lan::state(),ip.c_str(),B5Lan::online()?"true":"false",
+       B5Lan::storageState(),B5Lan::connectionState(),B5Lan::provisionState());
     if(n<0||size_t(n)>=sizeof(responseBody)){respond(500,"{\"error\":\"LAN_BOUND\"}");return;}
     respond(200,responseBody);
 }
@@ -91,6 +93,7 @@ __attribute__((noinline)) void lanIntent() {
     std::snprintf(reply,sizeof(reply),"{\"intent\":\"%s\"}",token);
     respond(200,reply);
     HomeLan::wipe(token,sizeof(token));
+    HomeLan::wipe(reply,sizeof(reply));
 }
 __attribute__((noinline)) void lanProvision() {
     if(!B5Lan::apPeer(server)){respond(403,"{\"error\":\"AP_ONLY\"}");return;}
@@ -108,25 +111,23 @@ __attribute__((noinline)) void lanProvision() {
     if(at!=n || uint32_t(millis()-server.requestStarted())>=2000 ||
        !peer.connected()) {
         HomeLan::wipe(transferBuffer,sizeof(transferBuffer));
+        B5Lan::cancelIntent();
         respond(409,"{\"error\":\"PROVISION_BODY_INCOMPLETE\"}");
         return;
+    }
+    if(peer.available()) {
+        HomeLan::wipe(transferBuffer,sizeof(transferBuffer));B5Lan::cancelIntent();
+        respond(409,"{\"error\":\"PROVISION_BODY_EXTRA\"}");return;
     }
     const auto result=B5Lan::provision(server,transferBuffer,n,
                                      server.header("X-Shino-Lan-Intent").c_str());
     HomeLan::wipe(transferBuffer,sizeof(transferBuffer));
-    switch(result) {
-      case B5Lan::ProvisionCode::Verified:
-        respond(200,"{\"saved\":true,\"readback_verified\":true}");break;
-      case B5Lan::ProvisionCode::ApUnavailable:
-        respond(409,"{\"error\":\"PROVISION_AP_STATE\"}");break;
-      case B5Lan::ProvisionCode::IntentInvalid:
-        respond(409,"{\"error\":\"PROVISION_INTENT_INVALID\"}");break;
-      case B5Lan::ProvisionCode::PayloadInvalid:
-        respond(409,"{\"error\":\"PROVISION_PAYLOAD_INVALID\"}");break;
-      case B5Lan::ProvisionCode::StoreDenied:
-        respond(409,"{\"error\":\"PROVISION_STORE_DENIED\"}");break;
-      case B5Lan::ProvisionCode::StoreFailed:
-        respond(409,"{\"error\":\"PROVISION_STORE_FAILED\"}");break;
+    if(result==B5Lan::ProvisionCode::Verified) {
+        respond(200,"{\"saved\":true,\"readback_verified\":true}");
+    } else {
+        char error[96]{};
+        std::snprintf(error,sizeof(error),"{\"error\":\"%s\"}",B5Lan::codeName(result));
+        respond(409,error);
     }
 }
 """
@@ -157,6 +158,13 @@ def prepare(directory,private=False):
     if private and OWNER.resolve() not in directory.parents:
         raise ValueError("B5 private graph must remain owner-local")
     directory,device,build_id=prepare_b4(directory,load() if private else None)
+    if not private:
+        # Distinct public successor identity for exact B5 -> B5.1 RAM OTA tests.
+        release=directory/"include/ShinoRelease.h"
+        release.write_text(once(release.read_text(encoding="utf-8"),
+            '#define SHINO_OTA_BUILD "'+build_id+'"',
+            '#define SHINO_OTA_BUILD "'+'b'*64+'"'),encoding="utf-8")
+        build_id="b"*64
     normal=directory/"src/boot/M9NormalStageA.cpp"
     normal.write_text(add_b5_routes(patch_normal(normal.read_text(encoding="utf-8"))),
                       encoding="utf-8")
@@ -186,6 +194,12 @@ def build(directory,private=False):
                cwd=ROOT,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,timeout=1200)
     if run.returncode:
         raise RuntimeError("B5 public compile failed; inspect ignored build.log")
+    return inspect_build(directory,device,build_id,private)
+
+
+def inspect_build(directory,device,build_id,private=False):
+    """Verify an already-compiled graph without rebuilding any old artifact."""
+    directory=Path(directory)
     bin_path=directory/".pio/build"/ENV/"firmware.bin"
     raw=bin_path.read_bytes()
     validate_image(raw)
@@ -204,7 +218,7 @@ def build(directory,private=False):
         protocol="shino-http-ota-1",device=device,bytes=len(raw),
         sha256=hashlib.sha256(raw).hexdigest(),build_id=build_id)
     (directory/"release.json").write_text(json.dumps(manifest,indent=2)+"\n")
-    result=dict(manifest,source_commit=subprocess.check_output(
+    result=dict(manifest,firmware="B5.1",source_commit=subprocess.check_output(
         ["git","rev-parse","HEAD"],cwd=ROOT,text=True).strip(),
         private=private,static_ram=resource["static_ram"],noinit=resource["noinit"],
         layout_symbols=layout,stack_frames=frames,
@@ -212,8 +226,13 @@ def build(directory,private=False):
         device_contacts=0,ota_posts=0,
         b4_source_unchanged=True,sta_dhcp=True,protected_ap_recovery=True,
         lan_ota_source_present=True,lan_ota_physical_verified=False)
+    result["source_dirty"]=bool(subprocess.check_output(["git","status","--porcelain"],cwd=ROOT,text=True).strip())
+    result["lan_inputs_sha256"]={p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in
+        ("ota/lan/B5Lan.cpp","ota/lan/B5Lan.h","tools/shino_b5_lan_build.py")}
+    from shino_b51_lan_resources import audit as audit_lan
+    result["lan_stack"]=audit_lan(directory)
     (directory/"report.json").write_text(json.dumps(result,indent=2)+"\n")
-    print(json.dumps(result))
+    if not private:print(json.dumps(result))
     return result
 
 

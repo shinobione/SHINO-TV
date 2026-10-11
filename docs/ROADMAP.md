@@ -1,5 +1,31 @@
 # SHINO // TV — Roadmap
 
+## Mandat courant — B5.1 Home LAN Recovery & Permanent Fix, 12 octobre 2026
+
+Décision propriétaire : diagnostiquer et corriger le provisionnement domestique
+B5, livrer B5.1 avec tests exécutables, build public inerte, ressources, paquet
+propriétaire préparable et CI du SHA exact sur la branche existante de la
+Draft PR #47. Préparation effectuée : working tree propre, branche correcte,
+`git pull --ff-only` de `67a94c1` à `6697b5b007b9e1358882cbb461a27e402f0552d8` ;
+HEAD distant identique et CI concernées SUCCESS. Vérifier le correctif STA déjà
+présent et le chemin HTTP réel sans présumer la cause du HTTP 409.
+
+État physique fourni par le propriétaire : **B5 installé par OTA depuis B4**,
+boot/quatre cartes/LINK/identité/LittleFS/AP protégée PASS ; GET LAN status et
+intent HTTP200 ; POST provision HTTP409 `PROVISION_HOLD`, puis après coupure
+`NO_SAVED_WIFI`, STA hors ligne, IP absente. Ce sont des observations
+propriétaire, pas de nouvelles lectures appareil de l'agent. Aucun nouveau
+provisionnement n'est autorisé pendant ce travail hors ligne.
+
+Préserver 4m2m, staging, LittleFS, secteurs SDK, Digest/HMAC, seuils mémoire,
+télémétrie et récupération AP. Tests uniquement avec identifiants fictifs.
+Code/tests/builds publics/simulations/commits/push/PR Draft et protocole de
+qualification autorisés. Aucun contact SmallTV, secret ou BIN privé publié,
+OTA/flash/écriture SDK-RTC-FS/reboot/provisionnement, suppression de sauvegarde,
+reçu ou `.attempt`, ni merge. Toute intervention physique exige une nouvelle
+autorisation pour l'opération et l'image/hash exacts. B5 installé et B5.1
+candidat restent distincts ; PASS hôte/CI ne vaut jamais PASS physique.
+
 ## Backlog UI prioritaire — lisibilité des quatre cartes (rappel propriétaire, 11 octobre 2026)
 
 **Constat terrain, photo fournie :** sur le SmallTV-Ultra réel (**LCD 240 × 240**),

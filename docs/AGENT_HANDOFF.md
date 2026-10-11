@@ -1,5 +1,31 @@
 # SHINO // TV — Agent handoff / operational source of truth
-Last owner mandate update: **2026-10-11**; the **2026-10-01** square-scene product contract remains below. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
+Last owner mandate update: **2026-10-12**; the **2026-10-01** square-scene product contract remains below. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
+
+**Current owner mandate — B5.1 Home LAN Recovery & Permanent Fix, 12 October2026:**
+Same branch/Draft PR47, clean FF-synchronized starting HEAD6697b5b007b9e1358882cbb461a27e402f0552d8,
+matching GitHub with relevant CI SUCCESS. Owner confirms installed B5 via B4 OTA,
+boot/four cards/LINK/identity/LittleFS/protected AP and LAN GET status/intent PASS;
+provision POST409 PROVISION_HOLD, after power cycle NO_SAVED_WIFI/no STA/IP.
+Owner observations only. Diagnose the real Core3.1.2 SDK and bounded parser,
+verify the existing STA-order candidate, implement B5.1, executable fault tests,
+public inert builds/resource analysis, owner packet preparer and single-attempt
+physical protocol; commit/push/exact-head CI authorized. Synthetic Wi-Fi only.
+Preserve4m2m/staging/FS/SDK boundaries, Digest/HMAC, metrics and protected recovery.
+No device/network/serial/OTA/flash/SDK-RTC-FS write/reboot/provisioning, private
+firmware publication, receipt/backup/attempt deletion or merge. New exact-image
+and exact-operation owner approval required for physical work. Installed B5
+and candidate B5.1 remain separate; physical acceptance stays HOLD/NOT_RUN.
+
+[B5.1 delivery and single-session protocol](SHINO_B51_HOME_LAN_RECOVERY.md):
+SDK22x getter does not populate threshold/authmode; actual old B5 source
+reproduces successful storage followed by refusal/ignored reboot credentials.
+Candidate verifies persistent credential bytes, reapplies WPA2 to current STA,
+keeps protected AP and rejects UNKNOWN/replayed/ambiguous writes.32 native
+cases/122 checks,24 HTTP cases,16 Windows/9 composition/6 packet tests and
+227 Core cases/197 interruptions. Public matched delta+1328 BIN/+820 static B;
+application provision frames576 B, whole-native memory still unmeasured.
+Owner-local packet preparer verifies installed BIN/source and fresh candidate;
+no physical operation or merge is authorized by these software results.
 
 **Current owner mandate — Mission 9 / B3 OTA Safety Gate, 11 October2026:**
 Existing Draft PR47, verified latest starting HEAD f2a831d. Owner 30-cycle B3

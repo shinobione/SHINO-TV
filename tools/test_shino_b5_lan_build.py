@@ -48,7 +48,7 @@ class B5LanComposition(unittest.TestCase):
         for phrase in ("wifi_station_get_config_default", "wifi_station_set_config",
                        "wifi_station_set_config_current", "wifi_station_dhcpc_start",
                        "wifi_station_connect", "HomeLan::Controller",
-                       "WiFi.softAPdisconnect(false)", "WIFI_AP_STA", "WIFI_STA",
+                       "WiFi.softAPdisconnect(false)", "WiFi.enableSTA(true)", "WIFI_STA",
                        "HomeLan::peerOnSubnet", "HomeLan::authority",
                        "challenge.consume", "sdk.safe()", "pendingSince"):
             self.assertIn(phrase,b5)
@@ -61,7 +61,7 @@ class B5LanComposition(unittest.TestCase):
         end=cpp.index("} // anonymous namespace",start)
         effects=cpp[start:end]
         self.assertIn("WiFi.softAP(recoveryName,recoverySecret",effects)
-        self.assertIn("(void)sdk.connectSaved();",effects)
+        self.assertIn("(void)connectSaved();",effects)
         self.assertNotIn("if(!sdk.connectSaved())return false;",effects)
         self.assertIn("return started;",effects)
         self.assertIn("if(!WiFi.softAP",effects)
@@ -74,9 +74,8 @@ class B5LanComposition(unittest.TestCase):
         body=source[start:source.index("} // namespace B5Lan",start)]
         self.assertLess(body.index("HomeLan::decode("),
                         body.index("WiFi.enableSTA(true)"))
-        self.assertLess(body.index("WiFi.enableSTA(true)"),
-                        body.index("store.change(desired)"))
-        self.assertIn("if(!sdk.safe() || !WiFi.enableSTA(true))",body)
+        self.assertLess(body.index("WiFi.enableSTA(true)"),body.index("sdk.read(check)"))
+        self.assertIn("if(!WiFi.enableSTA(true))",body)
         # AP persists; no disconnect, reboot or Wi-Fi mode STA-only here.
         self.assertNotIn("WiFi.softAPdisconnect",body)
         self.assertNotIn("WIFI_STA)",body)
@@ -87,14 +86,14 @@ class B5LanComposition(unittest.TestCase):
         cpp=(ROOT/"ota/lan/B5Lan.cpp").read_text(encoding="utf-8")
         codes=("PROVISION_BODY_INCOMPLETE","PROVISION_AP_STATE",
                "PROVISION_INTENT_INVALID","PROVISION_PAYLOAD_INVALID",
-               "PROVISION_STORE_DENIED","PROVISION_STORE_FAILED")
+               "PROVISION_SDK_READ_FAILED","PROVISION_SDK_WRITE_FAILED_UNKNOWN")
         for code in codes:
             with self.subTest(code=code):
-                self.assertIn(code,generated)
+                self.assertIn(code,generated+cpp)
         self.assertNotIn("PROVISION_HOLD",generated)
         self.assertIn("enum class ProvisionCode",header)
         self.assertIn("HomeLan::decode(raw,size,desired,forget)",cpp)
-        self.assertIn("store.change(desired)",cpp)
+        self.assertIn("check.same(desired)",cpp)
         self.assertIn("HomeLan::wipe(transferBuffer,sizeof(transferBuffer))",generated)
         self.assertNotIn("printf(ssid",generated)
         self.assertNotIn("printf(password",generated)

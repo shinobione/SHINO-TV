@@ -13,11 +13,18 @@ bool apPeer(ESP8266WebServer& server);
 bool online();
 bool active();
 const char* state();
+const char* storageState();
+const char* connectionState();
+const char* provisionState();
 IPAddress address();
 bool intentStart(ESP8266WebServer& server,char out[33]);
+void cancelIntent();
 // Non-secret, fixed error codes. No SSID/password/token in the response.
 enum class ProvisionCode : uint8_t {
-    Verified, ApUnavailable, IntentInvalid, PayloadInvalid, StoreDenied, StoreFailed
+    NotAttempted, Verified, ApUnavailable, IntentInvalid, PayloadInvalid,
+    LayoutUnsafe, StaEnableFailed, MemoryHold, SdkReadFailed, SdkWriteFailed,
+    ReadbackFailed, ReadbackMismatch
 };
+const char* codeName(ProvisionCode code);
 ProvisionCode provision(ESP8266WebServer& server,const uint8_t* bytes,size_t length,const char* proof);
 } // namespace B5Lan

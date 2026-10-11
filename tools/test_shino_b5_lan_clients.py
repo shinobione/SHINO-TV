@@ -2,10 +2,12 @@
 import io
 import json
 import unittest
+import tempfile
+from pathlib import Path
 from unittest.mock import patch
 from urllib.error import URLError,HTTPError
 from shino_b5_lan_update import LanTransport,UpdateError
-from shino_b5_provision import provision,ProvisionHold,ROOT,API
+from shino_b5_provision import provision as send_provision,ProvisionHold,ROOT,API,preflight,ProvisionDigest
 
 
 class Response:
@@ -31,6 +33,12 @@ class Reader:
 class LanClientTests(unittest.TestCase):
     def setUp(self):
         self.identity={"digest_password":"offline-fake-digest"}
+        self.directory=tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.marker=Path(self.directory.name)/"operation.attempt"
+
+    def provision(self,reader,ssid,password):
+        return send_provision(reader,ssid,password,attempt_marker=self.marker)
 
     def test_offline_numeric_private_host_only(self):
         with patch("socket.socket",side_effect=AssertionError("network")) as socket:
@@ -61,7 +69,7 @@ class LanClientTests(unittest.TestCase):
     def test_provision_uses_exact_one_intent_then_one_post(self):
         reader=Reader({"intent":"a"*32},{"saved":True,"readback_verified":True})
         with patch("socket.socket",side_effect=AssertionError("network")) as sock:
-            value=provision(reader,"MyHome24","ExamplePass123")
+            value=self.provision(reader,"MyHome24","ExamplePass123")
             self.assertEqual(value,"SDK_CREDENTIALS_VERIFIED_STA_CONNECTION_NOT_YET_PROVEN")
             sock.assert_not_called()
         self.assertEqual(len(reader.requests),2)
@@ -76,7 +84,7 @@ class LanClientTests(unittest.TestCase):
         reader=Reader({"intent":"a"*32},rejected)
         with self.assertRaisesRegex(ProvisionHold,
               r"/provision: HTTP 409 / PROVISION_HOLD") as raised:
-            provision(reader,"Freebox-Test","SensitiveTestPassword123")
+            self.provision(reader,"Freebox-Test","SensitiveTestPassword123")
         self.assertNotIn("SensitiveTestPassword123",str(raised.exception))
         self.assertEqual(len(reader.requests),2)
 
@@ -85,7 +93,7 @@ class LanClientTests(unittest.TestCase):
         reader=Reader(rejected)
         with self.assertRaisesRegex(ProvisionHold,
               r"/intent: HTTP 401 / NO_DEVICE_ERROR_CODE"):
-            provision(reader,"TestSSID","SensitiveTestPassword123")
+            self.provision(reader,"TestSSID","SensitiveTestPassword123")
         self.assertEqual(len(reader.requests),1)
 
     def test_device_body_cannot_inject_secrets_into_diagnostic(self):
@@ -93,7 +101,7 @@ class LanClientTests(unittest.TestCase):
               io.BytesIO(b'{"error":"SECRET=SensitiveTestPassword123"}'))
         reader=Reader({"intent":"a"*32},rejected)
         with self.assertRaises(ProvisionHold) as raised:
-            provision(reader,"Freebox-Test","SensitiveTestPassword123")
+            self.provision(reader,"Freebox-Test","SensitiveTestPassword123")
         self.assertIn("HTTP 403 / NO_DEVICE_ERROR_CODE",str(raised.exception))
         self.assertNotIn("SensitiveTestPassword123",str(raised.exception))
         self.assertEqual(len(reader.requests),2)
@@ -101,8 +109,59 @@ class LanClientTests(unittest.TestCase):
     def test_lost_provision_reply_does_not_retry(self):
         reader=Reader({"intent":"a"*32},URLError("lost"))
         with self.assertRaises(ProvisionHold):
-            provision(reader,"MyHome24","ExamplePass123")
+            self.provision(reader,"MyHome24","ExamplePass123")
         self.assertEqual(len(reader.requests),2)
+
+    def test_marker_blocks_restart_after_lost_reply(self):
+        reader=Reader({"intent":"a"*32},URLError("lost"))
+        with self.assertRaises(ProvisionHold):self.provision(reader,"TestSSID","FakePassword123")
+        self.assertTrue(self.marker.exists())
+        with self.assertRaises(ProvisionHold):self.provision(reader,"TestSSID","FakePassword123")
+        self.assertEqual(len(reader.requests),2)
+        self.assertNotIn("FakePassword123",self.marker.read_text())
+        self.assertNotIn("TestSSID",self.marker.read_text())
+
+    def test_uppercase_secret_shaped_device_code_is_not_disclosed(self):
+        rejected=HTTPError(ROOT+API+"/provision",409,"hold",{},io.BytesIO(b'{"error":"FAKEPRIVATEPASSWORD"}'))
+        with self.assertRaisesRegex(ProvisionHold,"NO_DEVICE_ERROR_CODE"):
+            self.provision(Reader({"intent":"a"*32},rejected),"TestSSID","FakePassword123")
+
+    def test_old_b5_or_unknown_storage_cannot_start_another_write(self):
+        for status in ({"state":"NO_SAVED_WIFI"},
+                       {"firmware":"B5.1","state":"NO_SAVED_WIFI","credential_state":"UNKNOWN"}):
+            reader=Reader({"sha256":"a"*64,"build_id":"b"*64},status)
+            with self.assertRaises(ProvisionHold):preflight(reader,"a"*64,"b"*64)
+            self.assertEqual(len(reader.requests),2)
+
+    def test_preflight_reuses_already_saved_without_password_or_post(self):
+        reader=Reader({"sha256":"a"*64,"build_id":"b"*64},
+                      {"firmware":"B5.1","credential_state":"VERIFIED","state":"STA_CONNECTING"})
+        self.assertEqual(preflight(reader,"a"*64,"b"*64),"ALREADY_SAVED_NO_POST")
+        self.assertTrue(all(x.get_method()=="GET" for x in reader.requests))
+
+    def test_exact_running_identity_required_before_intent(self):
+        reader=Reader({"sha256":"c"*64,"build_id":"b"*64})
+        with self.assertRaises(ProvisionHold):preflight(reader,"a"*64,"b"*64)
+        self.assertEqual(len(reader.requests),1)
+
+    def test_digest_never_retries_a_post_on_401(self):
+        from urllib.request import Request,HTTPPasswordMgrWithDefaultRealm
+        handler=ProvisionDigest(HTTPPasswordMgrWithDefaultRealm(),ROOT)
+        req=Request(ROOT+API+"/provision",data=b"public fake",method="POST")
+        with patch.object(handler,"retry_http_digest_auth",side_effect=AssertionError("POST replay")) as retry:
+            with self.assertRaises(HTTPError):handler.http_error_401(req,io.BytesIO(),401,"auth",{})
+            retry.assert_not_called()
+
+    def test_numeric_flags_cannot_claim_verified_storage(self):
+        reader=Reader({"intent":"a"*32},{"saved":1,"readback_verified":1})
+        with self.assertRaises(ProvisionHold):self.provision(reader,"TestSSID","FakePassword123")
+        self.assertTrue(self.marker.exists())
+
+    def test_marker_reservation_failure_blocks_the_post(self):
+        reader=Reader({"intent":"a"*32})
+        with patch("shino_b5_provision.reserve",side_effect=OSError("public simulated disk fault")):
+            with self.assertRaises(OSError):self.provision(reader,"TestSSID","FakePassword123")
+        self.assertEqual(len(reader.requests),1)
 
 
 if __name__=="__main__":
