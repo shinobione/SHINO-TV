@@ -157,3 +157,53 @@ def prepare(directory,private=False):
                    "from shino_b5_lan_build import materialize_http as materialize")
     script.write_text(code,encoding="utf-8")
     return directory,device,build_id
+
+
+def build(directory,private=False):
+    import shutil as _shutil
+    pio=_shutil.which("pio") or _shutil.which("platformio")
+    if not pio:raise ValueError("PlatformIO unavailable")
+    directory,device,build_id=prepare(directory,private)
+    with (directory/"build.log").open("x",encoding="utf-8") as log:
+        run=subprocess.run([pio,"run","-d",str(directory),"-e",ENV],
+               cwd=ROOT,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,timeout=1200)
+    if run.returncode:
+        raise RuntimeError("B5 public compile failed; inspect ignored build.log")
+    bin_path=directory/".pio/build"/ENV/"firmware.bin"
+    raw=bin_path.read_bytes()
+    validate_image(raw)
+    if raw.count(descriptor(device,build_id).encode())!=1:
+        raise ValueError("Missing B5 descriptor")
+    resource=one(directory)
+    layout=elf_layout(bin_path.with_suffix(".elf"))
+    frames=stack_frames(directory)
+    if resource["noinit"]!=56:raise ValueError("Unexpected B5 RTC/noinit")
+    from shino_http_ota_stack import audit
+    stack=audit(directory)
+    (directory/"stack-paths.json").write_text(json.dumps(stack,indent=2)+"\n")
+    if not 64000<=len(raw)<=0xFEFF0:
+        raise ValueError("B5 OTA image exceeds capacity")
+    manifest=dict(schema=1,family="SHINO-StageA",layout="4m2m",
+        protocol="shino-http-ota-1",device=device,bytes=len(raw),
+        sha256=hashlib.sha256(raw).hexdigest(),build_id=build_id)
+    (directory/"release.json").write_text(json.dumps(manifest,indent=2)+"\n")
+    result=dict(manifest,source_commit=subprocess.check_output(
+        ["git","rev-parse","HEAD"],cwd=ROOT,text=True).strip(),
+        private=private,static_ram=resource["static_ram"],noinit=resource["noinit"],
+        layout_symbols=layout,stack_frames=frames,
+        ota_memory_native_measured=False,physical="NOT_RUN",
+        device_contacts=0,ota_posts=0,
+        b4_source_unchanged=True,sta_dhcp=True,protected_ap_recovery=True,
+        lan_ota_source_present=True,lan_ota_physical_verified=False)
+    (directory/"report.json").write_text(json.dumps(result,indent=2)+"\n")
+    print(json.dumps(result))
+    return result
+
+
+if __name__=="__main__":
+    p=argparse.ArgumentParser(description=__doc__)
+    p.add_argument("directory",type=Path)
+    p.add_argument("--private",action="store_true",
+                   help="PRIVATE ignored owner-local build ONLY. Never install.")
+    a=p.parse_args()
+    build(a.directory,a.private)
