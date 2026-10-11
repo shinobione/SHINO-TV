@@ -1,5 +1,40 @@
 # SHINO // TV — Roadmap
 
+## Backlog UI prioritaire — lisibilité des quatre cartes (rappel propriétaire, 11 octobre 2026)
+
+**Constat terrain, photo fournie :** sur le SmallTV-Ultra réel (**LCD 240 × 240**),
+les libellés actuels `CPU usage`, `GPU usage`, `RAM in use` et
+`GPU temperature` sont trop petits et difficiles à lire. Les mentions longues
+prennent une place inutile dans les cartes. Demande déjà exprimée par le
+propriétaire : **ne pas perdre cette correction de vue dans la roadmap**.
+
+**Libellés exacts à utiliser :**
+- `CPU usage` → **`CPU`**
+- `GPU usage` → **`GPU`**
+- `RAM in use` → **`RAM`**
+- `GPU temperature` → **`GPU temp`**
+
+**Critères d'acceptation visuelle :**
+- Police de chaque libellé **plus grande, plus nette et plus contrastée**
+  que sur le B5 actuel, mais **strictement plus petite que la police
+  des valeurs chiffrées** dans sa carte respective.
+- Chaque libellé doit tenir **sur une seule ligne**, notamment `GPU temp`.
+  Éviter coupures, clipping, textes minuscules ou débordements.
+- Préserver **les quatre cartes simultanément**, les valeurs CPU/GPU/RAM/GPU TEMP,
+  les unités et barres dynamiques déjà validées ; ne pas réduire les valeurs
+  ni sacrifier la surface utile du LCD.
+- Valider le rendu à **résolution native 240 × 240** et sur **photo de
+  l'écran physique**, pas uniquement sur une maquette navigateur ou un SVG agrandi.
+- Intervention exclusivement UI/typographie : **ne pas la confondre avec
+  la correction du provisionnement Wi-Fi Freebox (B5/B5.1)**.
+  Planifier après stabilisation de la connexion Home LAN ; aucune OTA
+  supplémentaire ni modification matérielle n'est autorisée par cette note.
+
+**État : À FAIRE — demande confirmée et non encore implémentée/testée.**
+
+---
+
+
 ## Mandat courant — Mission 9 / B3 OTA Safety Gate, 11 octobre 2026
 
 Décision propriétaire de cette conversation : implémenter et exécuter la
