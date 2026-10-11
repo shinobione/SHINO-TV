@@ -56,7 +56,8 @@ def _identity_matches(first, second, release):
     for key in ("device", "build_id", "sha256", "bytes", "protocol"):
         if first.get(key) != release.get(key):
             raise CaptureHold("RELEASE_OR_PROTOCOL_MISMATCH")
-    if first.get("ota_enabled") is not True or first.get("fs_ok") is not True:
+    if any(status.get("ota_enabled") is not True or status.get("fs_ok") is not True
+           for status in (first, second)):
         raise CaptureHold("EXPECTED_PRIVATE_NORMAL_NOT_RUNNING")
     if first.get("boot_id") != second.get("boot_id"):
         raise CaptureHold("UNEXPECTED_REBOOT")
@@ -73,6 +74,10 @@ def collect(io, release, *, reader=read_json, sleep=time.sleep,
     observations = []
     for cycle in range(1, cycles + 1):
         before = reader(io, IDENTITY, cycle)
+        # Stop immediately on a changed boot/build; never combine two
+        # different firmware lifetimes in a single resource transcript.
+        if observations:
+            _identity_matches(observations[-1]["identity"], before, release)
         normal = reader(io, NORMAL, cycle)
         after = reader(io, IDENTITY, cycle)
         _identity_matches(before, after, release)
