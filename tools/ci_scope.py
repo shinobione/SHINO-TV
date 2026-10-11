@@ -106,7 +106,9 @@ SCOPE.update({
     "ci-windows": (
         "companion/**",
         "tools/shino_link*",
-        "tools/test_media*"
+        "tools/test_media*",
+        "tools/shino_http_ota*", "tools/test_shino_http_ota*",
+        "tools/shino_wifi_runner.py"
     )
 })
 

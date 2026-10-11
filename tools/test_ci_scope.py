@@ -55,6 +55,12 @@ class TestCiScope(unittest.TestCase):
         self.assertTrue(scope.in_scope("ci-windows", ["companion/shino_link.py"]))
         self.assertFalse(scope.in_scope("ci-windows", ["docs/README.md"]))
 
+    def test_ota_safety_lab_runs_windows_native_gate(self):
+        for path in ("tools/test_shino_http_ota.py","tools/shino_http_ota_lab.cpp",
+                     "tools/shino_http_ota_eboot.py","tools/shino_wifi_runner.py"):
+            with self.subTest(path=path):
+                self.assertTrue(scope.in_scope("ci-windows",[path]))
+
     def test_non_push_events_not_duplicate(self):
         self.assertFalse(scope.duplicate_open_pr_push("pull_request"))
         self.assertFalse(scope.duplicate_open_pr_push("workflow_dispatch"))

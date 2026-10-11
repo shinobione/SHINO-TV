@@ -1,7 +1,22 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last owner mandate update: **2026-10-11**; the **2026-10-01** square-scene product contract remains below. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
-**Current owner mandate — B3 Windows HTTP Coordination Fix, 11 October2026:**
+**Current owner mandate — Mission 9 / B3 OTA Safety Gate, 11 October2026:**
+Existing Draft PR47, verified latest starting HEAD f2a831d. Owner 30-cycle B3
+read-only PASS is recorded in [the physical report](SHINO_B3_PHYSICAL_PASS_OTA_READINESS_2026-10-11.md),
+not an OTA transaction PASS. Extend/run existing offline Core3.1.2 simulators
+for allocations4096/256, memory floors, exact4m2m/staging/header/FS boundaries,
+Updater/RTC/eboot interruptions, response loss and UNKNOWN without retry.
+Windows/public-inert native tests, focused commits/push and exact-head CI are
+authorized. Preserve installed B3, firmware/production clients, all private
+artifacts/receipts/attempt markers and historical thresholds. No SmallTV,
+private B4 build, OTA/flash/reboot, production LINK change or PR merge.
+Offline gate verdict and simulated guarantees must not imply physical consent.
+[Offline receipt](SHINO_B3_OTA_OFFLINE_GATE_2026-10-11.md): assertions PASS,
+OTA_OFFLINE_GATE=HOLD; native OTA memory is unmeasured, transient observation
+windows remain and eboot has no rollback. Production sources remain unchanged.
+
+**Prior owner mandate — B3 Windows HTTP Coordination Fix, 11 October2026:**
 Owner reports B3 installed/functional, boot/four cards PASS, LINK CONNECTED,
 203s memory stack2288/heap27696/block27120 B/frag10%;30-cycle qualification
 HOLD at cycle22 LINK_METRICS_NOT_FRESH; LINK alone122/122 accepted,0 failures.

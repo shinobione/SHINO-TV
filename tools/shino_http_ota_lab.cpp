@@ -4,7 +4,9 @@
 #include <cstdlib>
 #include <fstream>
 #include <map>
-#ifdef SHINO_TEST_LEGACY_FLASH_READER
+#ifdef SHINO_TEST_OTA_SAFETY
+#include "safety_receiver.h"
+#elif defined(SHINO_TEST_LEGACY_FLASH_READER)
 #include "legacy_receiver.h"
 #else
 #include "../ota/firmware/ShinoHttpOta.h"
@@ -14,12 +16,83 @@ HostESP ESP;
 extern "C" {volatile uint32_t m9_host_rtc[32]{};}
 bool healthy=true;
 uint32_t unhealthyAfter=UINT32_MAX;
+#ifdef SHINO_TEST_OTA_SAFETY
+// Logical budgets include only explicit test pressure and the real Core buffer
+// allocation request. They do not model ROM/SDK/IRQ or an actual allocator.
+struct SafetyCut {};
+struct SafetyResources {uint32_t heap=60000,block=50000,stack=3248;uint8_t frag=1;};
+static SafetyResources resources,minimum;
+static uint32_t stackWatermark=3248;
+static std::string phase="admission",pressurePhase,cutKind,cutMode;
+static uint32_t pressureHeap=0,pressureBlock=0,pressureStack=0,cutAt=0;
+static unsigned pressureFrag=0;
+static size_t liveAllocation=0,allocationRequested=0,allocationOverhead=16;
+static bool allocationFail=false,cutSeen=false,unsafeSeen=false;
+static std::map<std::string,unsigned> observations,samples;
+uint32_t safety_fs_start=0x40400000;
+static ShinoHttpOta::Budget safety_budget(){
+    const bool inject=phase==pressurePhase;
+    auto subtract=[](uint32_t value,size_t cost){return uint32_t(value>cost?value-cost:0);};
+    const size_t allocation=liveAllocation?liveAllocation+allocationOverhead:0;
+    // ESP.getFreeContStack() reports historical high water: a released frame
+    // must NEVER repaint a prior low stack watermark as fresh headroom.
+    stackWatermark=std::min(stackWatermark,subtract(resources.stack,inject?pressureStack:0));
+    const uint32_t heap=subtract(resources.heap,allocation+(inject?pressureHeap:0));
+    return {heap,std::min(heap,subtract(resources.block,allocation+(inject?pressureBlock:0))),
+        stackWatermark,uint8_t(inject&&pressureFrag?pressureFrag:resources.frag)};
+}
+static void observe(){
+    const auto b=safety_budget();++observations[phase];unsafeSeen|=!b.safe();
+    minimum.heap=std::min(minimum.heap,b.heap);minimum.block=std::min(minimum.block,b.block);
+    minimum.stack=std::min(minimum.stack,b.stack);minimum.frag=std::max(minimum.frag,b.frag);
+}
+void safety_phase(const char* next){phase=next;observe();}
+uint32_t safety_heap(){observe();return safety_budget().heap;}
+bool safety_before(const char* kind,uint32_t at,size_t n){
+    std::string event=kind;
+    if(event=="stage_read"&&phase=="commit")event="commit_read";
+    if(event!=cutKind||at!=cutAt)return true;
+    if(cutMode=="fail")return false;
+    if(cutMode=="partial"){
+        // An arbitrary torn flash operation; physical bit-level behaviour is
+        // unknown. No rollback or valid image is inferred from this model.
+        if(event.find("write")!=std::string::npos||event.find("erase")!=std::string::npos){
+            if(at>ESP.flash.size()||n>ESP.flash.size()-at)throw std::runtime_error("Invalid fault extent");
+            std::fill(ESP.flash.begin()+at,ESP.flash.begin()+at+std::min(size_t(128),n),0x55);
+        }
+        cutSeen=true;throw SafetyCut{};
+    }
+    if(cutMode=="before"){cutSeen=true;throw SafetyCut{};}
+    return true;
+}
+void safety_after(const char* kind,uint32_t at){
+    std::string event=kind;if(event=="stage_read"&&phase=="commit")event="commit_read";
+    if(event==cutKind&&at==cutAt&&cutMode=="after"){cutSeen=true;throw SafetyCut{};}
+}
+uint8_t* safety_alloc(size_t n){
+    allocationRequested=n;safety_phase("allocation");
+    if(!safety_before("allocation",0,n)||allocationFail)return nullptr;
+    auto* buffer=static_cast<uint8_t*>(std::malloc(n));
+    if(buffer){liveAllocation=n;observe();safety_after("allocation",0);}return buffer;
+}
+void safety_free(uint8_t* buffer){std::free(buffer);liveAllocation=0;}
+extern "C" void shino_test_rtc_write(unsigned at,unsigned value){
+    if(!safety_before("rtc_word",at,4))return;
+    m9_host_rtc[at]=value;safety_after("rtc_word",at);
+}
+struct SafetyProbe {static uint32_t stage(const UpdaterClass& c){return uint32_t(c._startAddress);}};
+namespace ShinoHttpOta {struct TransferProbe {static uint32_t coreStage(const Transfer& t){return SafetyProbe::stage(t.core_);}};}
+bool check(){++samples[phase];observe();return healthy&&ESP.readCalls<unhealthyAfter&&safety_budget().safe();}
+#else
 bool check(){return healthy&&ESP.readCalls<unhealthyAfter;}
+#endif
 std::vector<uint8_t> decode(const std::string& s){std::vector<uint8_t> out;for(size_t i=0;i+1<s.size();i+=2)out.push_back(uint8_t(std::stoul(s.substr(i,2),nullptr,16)));return out;}
 #ifdef SHINO_TEST_EBOOT
 #include "pinned_boot_flash.h"
 static uint32_t modelEntry=0,modelBytes=0,bootErases=0,bootWrites=0;
 static bool booted=false,copyPhase=false;
+static int copyResult=-1;
+static bool destinationShaMatches=false;
 static std::map<uint32_t,std::vector<uint8_t>> loaded;
 int SPIRead(uint32_t at,void* out,size_t n){
     const auto address=uintptr_t(out);
@@ -30,16 +103,37 @@ int SPIRead(uint32_t at,void* out,size_t n){
         loaded[uint32_t(address)]={ESP.flash.begin()+at,ESP.flash.begin()+at+n};return 0;
     }
     if(copyPhase&&((at&3u)||(n&3u)||(address&3u)))return 1;
+#ifdef SHINO_TEST_OTA_SAFETY
+    if(copyPhase&&n==4096){
+        if(!safety_before(at<ShinoHttpOta::rounded(modelBytes)?"copy_destination_read":"copy_read",at,n))return 1;
+        std::memcpy(out,ESP.flash.data()+at,n);
+        safety_after(at<ShinoHttpOta::rounded(modelBytes)?"copy_destination_read":"copy_read",at);return 0;
+    }
+#endif
     return ESP.flashRead(at,out,n)?0:1;
 }
 int SPIEraseSector(uint32_t sector){
     if(sector>=ShinoHttpOta::rounded(modelBytes)/4096||ESP.failErase)return 1;
-    ++bootErases;std::fill(ESP.flash.begin()+sector*4096,ESP.flash.begin()+(sector+1)*4096,255);return 0;
+#ifdef SHINO_TEST_OTA_SAFETY
+    if(!safety_before("copy_erase",sector*4096,4096))return 1;
+#endif
+    ++bootErases;std::fill(ESP.flash.begin()+sector*4096,ESP.flash.begin()+(sector+1)*4096,255);
+#ifdef SHINO_TEST_OTA_SAFETY
+    safety_after("copy_erase",sector*4096);
+#endif
+    return 0;
 }
 int SPIWrite(uint32_t at,void* data,size_t n){
     if((at&3u)||(n&3u)||(uintptr_t(data)&3u)||at>ShinoHttpOta::rounded(modelBytes)||
        n>ShinoHttpOta::rounded(modelBytes)-at||ESP.failWrite)return 1;
-    ++bootWrites;std::memcpy(ESP.flash.data()+at,data,n);return 0;
+#ifdef SHINO_TEST_OTA_SAFETY
+    if(!safety_before("copy_write",at,n))return 1;
+#endif
+    ++bootWrites;std::memcpy(ESP.flash.data()+at,data,n);
+#ifdef SHINO_TEST_OTA_SAFETY
+    safety_after("copy_write",at);
+#endif
+    return 0;
 }
 static void ets_putc(char){}
 struct uzlib_uncomp {const uint8_t *source,*source_limit;uint8_t *dest_start,*dest,*dest_limit;int(*source_read_cb)(uzlib_uncomp*);};
@@ -62,6 +156,10 @@ int main(){
     ShinoHttpOta::Transfer transfer(check);ShinoHttpOta::Budget budget{60000,50000,3248,1};
     std::string currentBuild(64,'a'),expectedSha;
     uint32_t expectedBytes=0;
+#ifdef SHINO_TEST_OTA_SAFETY
+    uint32_t coreStage=0;
+    UpdaterClass directCore;
+#endif
     // Non-erased sentinel data catches unwanted FS/reserved writes, rather
     // than comparing an all-ff filesystem with another all-ff filesystem.
     for(size_t i=0x200000;i<ESP.flash.size();++i)ESP.flash[i]=uint8_t((i*37+(i>>8))&255);
@@ -69,13 +167,21 @@ int main(){
     eboot_command_clear();std::string line;
     while(std::getline(std::cin,line)){
         std::istringstream in(line);std::string op;in>>op;
+#ifdef SHINO_TEST_OTA_SAFETY
+        try{
+        budget=safety_budget();
+#endif
         if(op=="BEGIN"){
             unsigned size;std::string sha,build,proof;in>>size>>sha>>build>>proof;
             ShinoHttpOta::Release r{};r.bytes=size;
             if(sha.size()!=64||build.size()!=64||proof.size()!=64){std::cout<<"ERR\n";continue;}
             std::strcpy(r.sha,sha.c_str());std::strcpy(r.build,build.c_str());
             expectedSha=sha;expectedBytes=size;
-            std::cout<<(transfer.begin(r,device,currentBuild.c_str(),std::string(32,'1').c_str(),proof.c_str(),key,ESP.current,budget,true)?"READY\n":"ERR\n");
+            const bool ready=transfer.begin(r,device,currentBuild.c_str(),std::string(32,'1').c_str(),proof.c_str(),key,ESP.current,budget,true);
+#ifdef SHINO_TEST_OTA_SAFETY
+            coreStage=ShinoHttpOta::TransferProbe::coreStage(transfer);
+#endif
+            std::cout<<(ready?"READY\n":"ERR\n");
 #ifdef SHINO_TEST_EBOOT
         }else if(op=="LOAD_CURRENT"){
             std::string path;std::getline(in,path);path.erase(0,1);
@@ -93,14 +199,49 @@ int main(){
                cmd.args[1]!=0||cmd.args[2]!=expectedBytes){std::cout<<"ERR\n";}
             else{
                 modelBytes=expectedBytes;copyPhase=true;
-                const int result=copy_raw(cmd.args[0],cmd.args[1],cmd.args[2],false);copyPhase=false;
+                copyResult=copy_raw(cmd.args[0],cmd.args[1],cmd.args[2],false);copyPhase=false;
                 eboot_command_clear();
                 uint8_t digest[32];char sha[65];br_sha256_context h;br_sha256_init(&h);
                 br_sha256_update(&h,ESP.flash.data(),expectedBytes);br_sha256_out(&h,digest);ShinoHttpOta::encode(digest,32,sha);
-                booted=result==0&&expectedSha==sha&&load_app_from_flash_raw(0)==0&&
+                destinationShaMatches=expectedSha==sha;
+                booted=copyResult==0&&destinationShaMatches&&load_app_from_flash_raw(0)==0&&
                     modelEntry>=0x40100000&&modelEntry<0x4010c000;
                 std::cout<<(booted?"BOOT_MODEL_OK\n":"ERR\n");
             }
+#ifdef SHINO_TEST_OTA_SAFETY
+        }else if(op=="RESOURCES"){
+            unsigned frag;in>>resources.heap>>resources.block>>resources.stack>>frag;resources.frag=uint8_t(frag);
+            stackWatermark=std::min(stackWatermark,resources.stack);
+            minimum=resources;safety_phase("admission");std::cout<<"RESOURCES\n";
+        }else if(op=="PRESSURE"){
+            in>>pressurePhase>>pressureHeap>>pressureBlock>>pressureStack>>pressureFrag;std::cout<<"PRESSURE\n";
+        }else if(op=="CUT"){
+            in>>cutKind>>cutAt>>cutMode;std::cout<<"ARMED\n";
+        }else if(op=="ALLOC_FAIL"){
+            allocationFail=true;std::cout<<"FAULT\n";
+        }else if(op=="LAYOUT"){
+            in>>safety_fs_start;std::cout<<"LAYOUT\n";
+        }else if(op=="MODE"){
+            in>>ESP.mode;std::cout<<"MODE\n";
+        }else if(op=="LOAD_FS"){
+            std::string path;std::getline(in,path);path.erase(0,1);
+            std::ifstream input(path,std::ios::binary);std::vector<uint8_t> fs{std::istreambuf_iterator<char>(input),{}};
+            if(fs.size()!=0x1fa000)std::cout<<"ERR\n";
+            else{std::copy(fs.begin(),fs.end(),ESP.flash.begin()+0x200000);original=ESP.flash;std::cout<<"FS_LOADED\n";}
+        }else if(op=="DUMP_FS"){
+            std::string path;std::getline(in,path);path.erase(0,1);std::ofstream output(path,std::ios::binary);
+            output.write(reinterpret_cast<const char*>(ESP.flash.data()+0x200000),0x1fa000);
+            std::cout<<(output?"FS_DUMPED\n":"ERR\n");
+        }else if(op=="CORE_BEGIN"){
+            unsigned size;in>>size;const bool ok=directCore.begin(size,U_FLASH);
+            coreStage=SafetyProbe::stage(directCore);std::cout<<(ok?"READY\n":"ERR\n");
+        }else if(op=="CORE_ABORT"){
+            directCore.shinoAbort();std::cout<<"ABORTED\n";
+        }else if(op=="BOOT_SKIP_PROBE"){
+            modelBytes=expectedBytes;copyPhase=true;const unsigned before=bootErases;
+            const int result=copy_raw(transfer.stage(),0,4096,false);copyPhase=false;
+            std::cout<<(result==0&&bootErases==before?"SKIPPED\n":"ERR\n");
+#endif
 #endif
         }else if(op=="ALIGN_PROBE"){
             alignas(4) uint32_t word=0;
@@ -126,6 +267,12 @@ int main(){
             std::cout<<(intact?"GUARD_OK\n":"ERR\n");
         }else if(op=="DATA"){
             std::string bytes;in>>bytes;auto data=decode(bytes);
+#ifdef SHINO_TEST_OTA_SAFETY
+            // The actual Normal.cpp loop samples before each delivery. Preserve
+            // that external check as well as Transfer's budget argument.
+            if(!check()){transfer.abort();std::cout<<"ERR\n";}
+            else
+#endif
             if(transfer.add(data.data(),data.size(),budget))std::cout<<"ACK "<<transfer.received()<<"\n";else std::cout<<"ERR\n";
         }else if(op=="FINISH")std::cout<<(transfer.finish(budget)?"STAGED\n":"ERR\n");
         else if(op=="ABORT"){transfer.abort();std::cout<<"ABORTED\n";}
@@ -144,10 +291,27 @@ int main(){
                 <<",\"rejected_word_reads\":"<<ESP.rejectedReads;
 #ifdef SHINO_TEST_EBOOT
             std::cout<<",\"boot_model\":"<<booted<<",\"boot_erase\":"<<bootErases<<",\"boot_writes\":"<<bootWrites
-                <<",\"loaded_segments\":"<<loaded.size()<<",\"entry\":"<<modelEntry;
+                <<",\"loaded_segments\":"<<loaded.size()<<",\"entry\":"<<modelEntry
+                <<",\"boot_copy_result\":"<<copyResult<<",\"destination_sha_matches\":"<<destinationShaMatches;
+#endif
+#ifdef SHINO_TEST_OTA_SAFETY
+            const auto b=safety_budget();
+            std::cout<<",\"allocation_requested\":"<<allocationRequested<<",\"allocation_live\":"<<liveAllocation
+                <<",\"allocation_overhead_model\":"<<allocationOverhead<<",\"core_stage\":"<<coreStage
+                <<",\"receiver_stage\":"<<transfer.stage()<<",\"cut_seen\":"<<cutSeen<<",\"unsafe_seen\":"<<unsafeSeen
+                <<",\"heap\":"<<b.heap<<",\"heap_min_model\":"<<minimum.heap
+                <<",\"block_min_model\":"<<minimum.block<<",\"stack_min_model\":"<<minimum.stack
+                <<",\"observations\":{";
+            bool separator=false;for(const auto& item:observations){if(separator)std::cout<<",";separator=true;std::cout<<"\""<<item.first<<"\":"<<item.second;}
+            std::cout<<"},\"samples\":{";separator=false;
+            for(const auto& item:samples){if(separator)std::cout<<",";separator=true;std::cout<<"\""<<item.first<<"\":"<<item.second;}
+            std::cout<<"}";
 #endif
             std::cout<<"}\n";
         }else std::cout<<"ERR\n";
+#ifdef SHINO_TEST_OTA_SAFETY
+        }catch(const SafetyCut&){cutSeen=true;std::cout<<"CUT\n";}
+#endif
         std::cout.flush();
     }
 }

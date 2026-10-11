@@ -1,5 +1,28 @@
 # SHINO // TV — Roadmap
 
+## Mandat courant — Mission 9 / B3 OTA Safety Gate, 11 octobre 2026
+
+Décision propriétaire de cette conversation : implémenter et exécuter la
+qualification OTA **hors ligne** sur la PR #47 existante, à partir du HEAD
+vérifié `f2a831d15d01efa33277a7fd08428498c0e6c912`. Le
+[rapport B3 physique](SHINO_B3_PHYSICAL_PASS_OTA_READINESS_2026-10-11.md)
+confirme le PASS propriétaire de 30 cycles GET, pas un PASS OTA.
+Étendre les simulateurs existants avec Core ESP8266 3.1.2 exact : allocations
+4096/256, planchers mémoire pendant toutes les étapes, géométrie 4m2m,
+en-têtes, LittleFS, coupures Updater/RTC/eboot secteur par secteur, réponse
+perdue et état inconnu sans retry. Tests Windows, natifs publics inertes,
+commit consolidé et CI au HEAD final autorisés. Préserver les seuils, toutes
+les sources firmware/clients de production, fichiers privés et marqueurs.
+Aucun contact SmallTV, firmware privé B4, OTA, flash, reboot, changement LINK
+en production ou merge. Le verdict `OTA_OFFLINE_GATE=PASS/HOLD` doit séparer
+preuves sources/simulées et mesures physiques encore absentes ; il ne donne
+aucune autorisation d'OTA réelle.
+
+[Livraison hors ligne](SHINO_B3_OTA_OFFLINE_GATE_2026-10-11.md) : matrices
+Core/RTC/eboot, LittleFS public et client Windows à tentative unique ; assertions
+PASS, `OTA_OFFLINE_GATE=HOLD`. Mémoire native OTA non mesurée, observation
+transitoire incomplète et copie eboot sans rollback. Aucun B4 privé créé.
+
 ## Mandat courant — B3 Windows HTTP Coordination Fix, 11 octobre 2026
 
 Décision propriétaire de cette conversation : corriger et instrumenter uniquement

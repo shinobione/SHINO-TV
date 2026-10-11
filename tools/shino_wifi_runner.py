@@ -15,7 +15,6 @@ def build(directory,lab=None,prepare_host=None,defines=(),small_buffer=False,thr
 #include <bearssl.h>
 struct MD5Builder {br_md5_context ctx;uint8_t digest[16]{};void begin(){br_md5_init(&ctx);}void add(uint8_t* p,size_t n){br_md5_update(&ctx,p,n);}void calculate(){br_md5_out(&ctx,digest);}void getBytes(uint8_t* p){std::memcpy(p,digest,16);}String toString()const{char out[33];for(unsigned i=0;i<16;++i)std::sprintf(out+2*i,"%02x",digest[i]);return out;}};
 ''')
-    if prepare_host:prepare_host(host)
     for name in ('c_types.h','spi_flash.h','user_interface.h'):(generated/name).write_text('#pragma once\n')
     header=(core/'bootloaders/eboot/eboot_command.h').read_text().replace('#define RTC_MEM ((volatile uint32_t*)0x60001200)','extern volatile uint32_t m9_host_rtc[32];\n#define RTC_MEM m9_host_rtc')
     (generated/'eboot_command.h').write_text('extern "C" {\n'+header+'\n}\n')
@@ -23,6 +22,7 @@ struct MD5Builder {br_md5_context ctx;uint8_t digest[16]{};void begin(){br_md5_i
     (generated/'eboot_plain.h').write_text(header)
     cbody=(core/'bootloaders/eboot/eboot_command.c').read_text().replace('"eboot_command.h"','"eboot_plain.h"')
     (generated/'eboot_command.c').write_text(cbody)
+    if prepare_host:prepare_host(host)
     includes=[generated,host,ROOT/'experiments/m9_signed_ota/host',ROOT/'experiments/shino_wifi_install/include',ROOT/'experiments/v08_m7/host_shims',bear/'inc',bear/'src']
     compiler,env=compiler_environment(directory);msvc=Path(compiler).name.lower()=='cl.exe'
     inc=[('/I' if msvc else '-I')+str(x) for x in includes]

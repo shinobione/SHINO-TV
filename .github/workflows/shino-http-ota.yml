@@ -50,7 +50,7 @@ jobs:
           python-version: '3.12'
       - name: Pinned public firmware and full native graph
         run: |
-          python -m pip install 'platformio==6.1.18'
+          python -m pip install 'platformio==6.1.18' 'littlefs-python==0.15.0'
           python tools/shino_http_ota_build.py research-local/http-ota-ci
           cp research-local/http-ota-ci/report.json "${{ runner.temp }}/http-ota-build.json"
           cp research-local/http-ota-ci/stack-paths.json "${{ runner.temp }}/http-ota-stack.json"
@@ -69,6 +69,7 @@ jobs:
       - name: Core read contract and exact compiled BIN through commit and eboot RAM
         run: |
           python tools/test_shino_http_ota_flash.py > "${{ runner.temp }}/http-ota-flash.json"
+          python tools/test_shino_http_ota.py --safety --bin research-local/http-ota-ci/.pio/build/esp12e_m9_4m2m_normal_qualification/firmware.bin --manifest research-local/http-ota-ci/release.json > "${{ runner.temp }}/http-ota-safety.json"
           python - <<'PY'
           import json,sys,os
           from pathlib import Path
@@ -96,6 +97,19 @@ jobs:
           assert all(not r['commit'] for r in native['rows'] if r['name']!='valid')
           flash=json.loads((root/'http-ota-flash.json').read_text())
           assert flash['valid_byte_reads']==320 and flash['legacy_footer_rejected']
+          safety=json.loads((root/'http-ota-safety.json').read_text())
+          assert safety['simulation_matrix']=='PASS' and safety['OTA_OFFLINE_GATE']=='HOLD'
+          assert safety['image_bytes']==json.loads((root/'http-ota-build.json').read_text())['bytes']
+          assert safety['buffer_branches']==[4096,256] and not safety['low_memory_256_shino_admitted']
+          assert safety['interruptions']['staging']==8*safety['sectors']
+          assert safety['interruptions']['eboot']==11*safety['sectors']+3 and safety['interruptions']['rtc']==64
+          assert safety['interruptions']['rtc_clear']==4
+          assert all(r['fs_preserved'] and r['reserved_preserved'] and not r['retry_allowed'] for r in safety['rows'])
+          assert not safety['rollback'] and not safety['native_memory_proven'] and safety['device_contacts']==0
+          assert safety['postcommit_corruption_copied'] and safety['unsampled_peak_phases']==['hmac','stage_begin','commit']
+          assert safety['littlefs_inventory_verified'] and safety['littlefs_files']==24 and safety['littlefs_parser_writes']==0
+          assert len(safety['windows_one_shot_cases'])==7 and all(r['posts']==1 and r['repeat_blocked_before_io'] for r in safety['windows_one_shot_cases'])
+          assert safety['historical_stack_watermark_retained']
           exact=json.loads((root/'http-ota-exact.json').read_text())
           assert exact['legacy_valid_image_rejected'] and exact['interruption_boundaries']>=100
           assert exact['positive']['pinned_eboot_copy_load_model']
