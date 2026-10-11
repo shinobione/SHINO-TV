@@ -175,6 +175,10 @@ vérification de l'identité **exécutée** appartient au futur protocole autori
 `research-local/m9-owner/b51-home-lan-owner-20261012/`, firmware dans `B5.1/`,
 source propre `50b732e084079b58e21e33f22ac2f5f4611047c1`. Son manifeste local
 et `B51-OFFLINE-REVIEW.json` donnent le SHA/build exacts calculés sur le BIN.
+Ce SHA est le commit local de compilation avant rebase : un seul ajout
+documentaire distant (`f9bc908`, backlog de lisibilité des cartes) a été intégré
+en conservant les deux travaux. Les sources firmware et l'image préparée
+restent identiques ; le paquet n'est ni reconstruit ni requalifié comme installé.
 Garde OTA contre le B5 retenu : **1265664 B**, staging `0x19A000..0x200000`.
 `EXACT-IMAGE-QUALIFICATION.json` conserve139 cas /124 frontières d'interruption
 Core/eboot sur ce BIN ; `LAN-CORE-LOOPBACK-QUALIFICATION.json` conserve les24 scénarios
