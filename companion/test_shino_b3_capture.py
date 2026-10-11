@@ -98,6 +98,26 @@ class CaptureTests(unittest.TestCase):
             cap.collect(object(),RELEASE,reader=fake.read,sleep=fake.sleep)
         self.assertEqual(len(fake.calls),6)
 
+    def test_cross_checkpoint_reboot_stops_on_first_new_get(self):
+        def changed(data,path,cycle,number):
+            if cycle==2 and path==cap.IDENTITY:
+                data["boot_id"]="d"*32
+            return data
+        fake=Fake(changed)
+        with self.assertRaisesRegex(cap.CaptureHold,"IDENTITY_CHANGED"):
+            cap.collect(object(),RELEASE,reader=fake.read,sleep=fake.sleep)
+        self.assertEqual(len(fake.calls),4)
+
+    def test_identity_bookend_cannot_drop_private_safety_flags(self):
+        def changed(data,path,cycle,number):
+            if path==cap.IDENTITY and number==3:
+                data["fs_ok"]=False
+            return data
+        fake=Fake(changed)
+        with self.assertRaisesRegex(cap.CaptureHold,"EXPECTED_PRIVATE_NORMAL"):
+            cap.collect(object(),RELEASE,reader=fake.read,sleep=fake.sleep)
+        self.assertEqual(len(fake.calls),3)
+
     def test_wrong_release_and_normal_mode_are_rejected(self):
         cases = (
             lambda data,path,cycle,num: (dict(data,bytes=1) if path==cap.IDENTITY else data),
