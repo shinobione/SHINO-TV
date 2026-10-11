@@ -64,3 +64,96 @@ def patch_normal(source):
           'const Route selected=route();uint32_t bytes=0;\n'
           '    if(!B5Lan::permitted(server)){respond(403,"{\\\"error\\\":\\\"NETWORK_POLICY\\\"}");return false;}')
     return source
+
+
+def add_b5_routes(source):
+    source=once(source,
+        'if(selected==Route::MetricsPost&&(bytes<16||bytes>384||server.header("Content-Type")!="application/json")){',
+        'if(selected==Route::LanProvision&&(!B5Lan::apPeer(server)||bytes<3||bytes>99||'
+        'server.header("Content-Type")!="application/octet-stream")){'
+        'respond(403,"{\\\"error\\\":\\\"PROVISION_AP_ONLY\\\"}");return false;}\n'
+        '    if(selected==Route::MetricsPost&&(bytes<16||bytes>384||server.header("Content-Type")!="application/json")){')
+    marker='bool deferRequest(){server.keepAlive(false);requestPending=true;return false;}'
+    handlers=r"""
+__attribute__((noinline)) void lanStatus() {
+    ResponseLease lease;if(!lease){respond(503,"{\"error\":\"RESPONSE_BUSY\"}");return;}
+    const String ip=B5Lan::address().toString();
+    const int n=std::snprintf(responseBody,sizeof(responseBody),
+       "{\"state\":\"%s\",\"lan_ip\":\"%s\",\"sta_online\":%s,\"ota_protocol\":\"shino-http-ota-1\"}",
+       B5Lan::state(),ip.c_str(),B5Lan::online()?"true":"false");
+    if(n<0||size_t(n)>=sizeof(responseBody)){respond(500,"{\"error\":\"LAN_BOUND\"}");return;}
+    respond(200,responseBody);
+}
+__attribute__((noinline)) void lanIntent() {
+    char token[33]{};
+    if(!B5Lan::intentStart(server,token)){respond(403,"{\"error\":\"INTENT_AP_ONLY\"}");return;}
+    char reply[64]{};
+    std::snprintf(reply,sizeof(reply),"{\"intent\":\"%s\"}",token);
+    respond(200,reply);
+    HomeLan::wipe(token,sizeof(token));
+}
+__attribute__((noinline)) void lanProvision() {
+    if(!B5Lan::apPeer(server)){respond(403,"{\"error\":\"AP_ONLY\"}");return;}
+    uint32_t n=0;if(!length(n)||n<3||n>99){respond(413,"{\"error\":\"FRAMING\"}");return;}
+    uint32_t at=0;
+    auto& peer=server.client();
+    while(at<n&&uint32_t(millis()-server.requestStarted())<2000&&peer.connected()) {
+        const size_t count=std::min(size_t(peer.available()),size_t(n-at));
+        if(count) {
+            const int got=peer.read(transferBuffer+at,count);
+            if(got<=0)break;
+            at+=uint32_t(got);
+        } else yield();
+    }
+    bool ok=at==n&&uint32_t(millis()-server.requestStarted())<2000&&
+        peer.connected()&&B5Lan::provision(server,transferBuffer,n,
+                                   server.header("X-Shino-Lan-Intent").c_str());
+    HomeLan::wipe(transferBuffer,sizeof(transferBuffer));
+    respond(ok?200:409,ok?"{\"saved\":true,\"readback_verified\":true}":
+                             "{\"error\":\"PROVISION_HOLD\"}");
+}
+"""
+    # Raw above is authored exactly as C++ output with quoted JSON.
+    source=once(source,marker,handlers+'\n'+marker)
+    source=once(source,
+        'case Route::Identity:identity();break;',
+        'case Route::Identity:identity();break;\n'
+        '        case Route::LanStatus:lanStatus();break;\n'
+        '        case Route::LanIntent:lanIntent();break;\n'
+        '        case Route::LanProvision:lanProvision();break;')
+    source=once(source,
+        'WiFi.persistent(false);apReady=network.startAccessPointMode();if(!apReady)return;',
+        'apReady=B5Lan::begin("SHINO-TV-StageA",SHINO_SETUP_AP_PSK);if(!apReady)return;')
+    source=once(source,
+        '"X-Shino-Build","X-Shino-Nonce","X-Shino-Proof");',
+        '"X-Shino-Build","X-Shino-Nonce","X-Shino-Proof","Origin","X-Shino-Lan-Intent");')
+    source=once(source,
+        'if(requestPending)serviceRequest();\n    const auto now=millis();',
+        'if(requestPending)serviceRequest();\n'
+        '    B5Lan::poll(uploadBusy);\n'
+        '    const auto now=millis();')
+    return source
+
+
+def prepare(directory,private=False):
+    directory=Path(directory).resolve()
+    if private and OWNER.resolve() not in directory.parents:
+        raise ValueError("B5 private graph must remain owner-local")
+    directory,device,build_id=prepare_b4(directory,load() if private else None)
+    normal=directory/"src/boot/M9NormalStageA.cpp"
+    normal.write_text(add_b5_routes(patch_normal(normal.read_text(encoding="utf-8"))),
+                      encoding="utf-8")
+    # Keep old prototype untouched. The generated copy alone uses 4m2m.
+    header=directory/"include/boot/HomeLanPolicy.h"
+    policy=header.read_text(encoding="utf-8")
+    policy=once(policy,"fsStart==0x100000","fsStart==0x200000")
+    header.write_text(policy,encoding="utf-8")
+    shutil.copyfile(ROOT/"ota/lan/B5Lan.h",directory/"include/B5Lan.h")
+    shutil.copyfile(ROOT/"ota/lan/B5Lan.cpp",directory/"src/boot/B5Lan.cpp")
+    # The build is the same pinned Core with an additional header pair.
+    script=directory/"scripts/phase_t_build.py"
+    code=script.read_text(encoding="utf-8")
+    code=once(code,"from shino_http_ota_build import materialize_http as materialize",
+                   "from shino_b5_lan_build import materialize_http as materialize")
+    script.write_text(code,encoding="utf-8")
+    return directory,device,build_id
