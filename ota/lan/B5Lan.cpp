@@ -115,3 +115,19 @@ const char* state() {
       default:return "LAN_FAULT_HOLD";
     }
 }
+bool apPeer(ESP8266WebServer& server) {
+    const auto local=server.client().localIP(),peer=server.client().remoteIP();
+    return controller.apActive()&&local==WiFi.softAPIP()&&
+        HomeLan::peerOnSubnet(word(peer),word(local),0xffffff00u);
+}
+bool permitted(ESP8266WebServer& server) {
+    const auto local=server.client().localIP(),peer=server.client().remoteIP();
+    if(!apPeer(server)) {
+        if(!online()||local!=WiFi.localIP()||
+           !HomeLan::peerOnSubnet(word(peer),word(local),word(WiFi.subnetMask())))return false;
+    }
+    const String origin=server.header("Origin");
+    const String host=server.hostHeader();
+    const String numeric=local.toString();
+    return HomeLan::authority(host.c_str(),origin.c_str(),numeric.c_str());
+}
