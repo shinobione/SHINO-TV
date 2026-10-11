@@ -75,7 +75,12 @@ bool applyEffects(unsigned flags) {
     }
     if(flags&HomeLan::StartSta) {
         wifi_station_disconnect();
-        if(!sdk.connectSaved())return false;
+        // A failed STA start must NEVER disable the already-started
+        // protected recovery AP / HTTP listener. Retry is governed by
+        // HomeLan::Controller, while the owner can still reach the AP.
+        // In particular, B5Lan::begin() must stay successful when StartAp
+        // succeeded but the station SDK rejected its initial connect.
+        (void)sdk.connectSaved();
     }
     if(flags&HomeLan::StopAp) {
         WiFi.softAPdisconnect(false);
