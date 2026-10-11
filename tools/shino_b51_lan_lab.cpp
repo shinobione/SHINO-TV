@@ -114,7 +114,8 @@ static int serve(){
         std::copy(raw.begin(),raw.end(),ESP.flash.begin());ESP.current=uint32_t(raw.size());
     }
     resetRadio();ConfigManager config;M9NormalStageA::beforeSetup();M9NormalStageA::begin(config);M9NormalStageA::afterSetup();
-    lab_real_clock=true;std::mutex mutex;std::deque<std::string> commands;bool stop=false;
+    lab_real_clock=true;std::mutex mutex;std::deque<std::string> commands;bool stop=false,waitingWrite=false;
+    uint32_t waitStarted=0;
     std::thread input([&](){std::string command;while(std::getline(std::cin,command)){
         std::lock_guard<std::mutex> lock(mutex);commands.push_back(command);if(command=="stop")break;
     }});
@@ -124,6 +125,8 @@ static int serve(){
         if(!command.empty()){
             if(command=="stats"){stats();continue;}
             if(command=="stop"){stop=true;continue;}
+            if(command=="wait write"){waitingWrite=true;waitStarted=millis();command.clear();}
+            else {
             if(command=="reset")resetRadio();
             if(command=="boot saved"){WiFi.modeValue=WIFI_OFF;WiFi.wifiStatus=0;WiFi.sta=IPAddress();B5Lan::begin("PUBLIC-RECOVERY","PUBLIC-FAKE-AP-KEY");}
             if(command=="fault read")testFailReadAt=testReads+1;
@@ -139,8 +142,13 @@ static int serve(){
             if(command=="network lost"){WiFi.wifiStatus=0;WiFi.sta=IPAddress();}
             if(command.rfind("advance ",0)==0)host_ms+=uint32_t(std::stoul(command.substr(8)));
             B5Lan::poll(false);std::cout<<"{\"ok\":true}"<<std::endl;
+            }
         }
-        M9NormalStageA::loop();std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        M9NormalStageA::loop();
+        if(waitingWrite&&(testWrites||uint32_t(millis()-waitStarted)>=3000)){
+            std::cout<<"{\"write_observed\":"<<(testWrites?"true":"false")<<"}"<<std::endl;waitingWrite=false;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     input.join();
     for(size_t at=0x200000;at<ESP.flash.size();++at)assert(ESP.flash[at]==0xff);

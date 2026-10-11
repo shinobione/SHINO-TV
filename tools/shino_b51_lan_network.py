@@ -80,8 +80,9 @@ def run(binary=None,manifest=None,current_binary=None,current_manifest=None):
                 else:connection.send(data)
                 if interrupt:connection.sock.shutdown(socket.SHUT_WR)
                 if drop_reply:
-                    # Main-thread stats is processed AFTER synchronous dispatch.
-                    assert control("stats")["sdk_writes"]==1
+                    # Wait for the already-sent request to finish dispatch.
+                    # A plain stats command may race TCP accept on fast Linux.
+                    assert control("wait write")=={"write_observed":True}
                     connection.close();return None,{}
                 try:
                     response=connection.getresponse();return response.status,json.loads(response.read() or b"{}")
