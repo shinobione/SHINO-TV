@@ -131,3 +131,26 @@ bool permitted(ESP8266WebServer& server) {
     const String numeric=local.toString();
     return HomeLan::authority(host.c_str(),origin.c_str(),numeric.c_str());
 }
+bool intentStart(ESP8266WebServer& server,char out[33]) {
+    if(!apPeer(server)||!sdk.safe()||pending||
+       controller.state==HomeLan::State::Fault)return false;
+    uint8_t random[16]{};
+    static constexpr char hex[]="0123456789abcdef";
+    ESP.random(random,sizeof(random));
+    for(size_t i=0;i<16;++i){out[i*2]=hex[random[i]>>4];out[i*2+1]=hex[random[i]&15];}
+    out[32]=0;
+    challenge.arm(out,word(server.client().remoteIP()),word(server.client().localIP()),millis());
+    HomeLan::wipe(random,sizeof(random));
+    return true;
+}
+bool provision(ESP8266WebServer& server,const uint8_t* raw,size_t size,const char* proof) {
+    if(!apPeer(server)||pending||controller.state==HomeLan::State::Fault||
+       !challenge.consume(proof,word(server.client().remoteIP()),
+                          word(server.client().localIP()),millis()))return false;
+    HomeLan::Credentials desired;bool forget=false;
+    if(!HomeLan::decode(raw,size,desired,forget)||forget)return false;
+    const auto result=store.change(desired);
+    if(result!=HomeLan::Save::Verified && result!=HomeLan::Save::Unchanged)return false;
+    pending=true;return true;
+}
+} // namespace B5Lan
