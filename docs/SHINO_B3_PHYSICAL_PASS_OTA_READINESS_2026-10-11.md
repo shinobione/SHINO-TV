@@ -61,3 +61,30 @@ Source inspected at the **installed B3 source commit** `26e1ace` and unchanged f
 One coherent review of the **actual Core 3.1.2 Updater/eboot copy path**, existing OTA host regression and source-level HMAC/verification stack geometry, plus a fail-closed owner-local candidate-pair preflight spec. Reuse current tools/tests and existing Draft PR, avoid new firmware or custom script proliferation unless a concrete gap is demonstrated. Report source-grounded open risks and exact-head CI.
 
 **NO DEVICE CONTACT in preparing this report.** No serial, AP/HTTP GET/POST, OTA, flash, reboot, RTC/FS write, LINK restart, local private artifact reading/upload, PR merge, or rollback was performed or authorized by this documentation change.
+
+## 5. Additional exact upstream Core 3.1.2 / eboot source audit (2026-10-11)
+
+Read the pinned public Arduino ESP8266 Core **3.1.2**, separate from the owner's firmware, from:
+- [`cores/esp8266/Updater.cpp`](https://github.com/esp8266/Arduino/blob/3.1.2/cores/esp8266/Updater.cpp) (notably `UpdaterClass::begin`, `_writeBuffer`, `end`);
+- [`bootloaders/eboot/eboot.c`](https://github.com/esp8266/Arduino/blob/3.1.2/bootloaders/eboot/eboot.c) (`copy_raw`, `main`);
+- [`bootloaders/eboot/eboot_command.c`](https://github.com/esp8266/Arduino/blob/3.1.2/bootloaders/eboot/eboot_command.c) (RTC magic+CRC command lifecycle).
+
+**Concrete findings, source-proven but not device-qualified:**
+
+1. `UpdaterClass::begin(size,U_FLASH)` calculates `updateEndAddress=FS_start-0x40200000`, then `start=updateEndAddress-rounded(size)`, refusing overlap with the current rounded sketch. This agrees with SHINO's `FsStart=0x200000` staging formula **if and only if** the actual linked `FS_start` is the expected 4m2m boundary on the target. An independent exact linked-layout assertion remains mandatory.
+2. At begin, Core dynamically allocates an **extra 4,096-byte buffer when free heap >8,192 bytes** (otherwise 256 bytes). With B3's read-only observed free heap minimum of 29,560 B, that is significant unmeasured *additional* OTA workload, **not** a guaranteed 4,096-B reduction in the runtime watermark: allocations and scheduling differ during the upload. The admission heap must therefore be sampled throughout the transfer, not inferred from GETs.
+3. `Updater::_writeBuffer` erases/writes staging sectors; when the new image flash mode byte differs from the current flash hardware mode, Core modifies the stored header byte for the physical flash and then restores its RAM buffer. SHINO subsequently SHA/CRC-checks the staged image. **Candidate first-sector flash-mode compatibility must be checked offline** to avoid an avoidable real mismatch. It is not proof of a mismatch in any existing B3/B4 image.
+4. `UpdaterClass::end(false)` writes the **RTC `ACTION_COPY_RAW` instruction** with source=staging, destination=0, size=image bytes. No application code swaps the images atomically in-place.
+5. On reboot, `eboot::copy_raw` performs 4-KiB sector reads and destination erases/writes. The code treats destination sector zero specially: it skips it only when the entire sector already matches. **The bootloader's post-copy compare is compiled out with `#if 0`** (source comment cites overlap issue #7458). Its copy operation therefore does not provide a full independent destination verification before boot.
+6. If eboot receives a valid RTC command, it attempts the copy and clears the command afterward; copy failure may lead to reset, but **does not restore a previous application**. Power loss during destructive destination writes may leave an unbootable partial application. The physically validated UART/PRE/POST custody is a rescue option, not automated rollback.
+
+**New specific offline acceptance tests before any successor OTA candidate:**
+
+- Inspect pinned linker variables `FS_start`, `FS_end`, current/pending image extents, and prove `[stage,stage+rounded(bytes))` never reaches `[0x200000,0x400000)` or the running sketch.
+- Assert target BIN header flash-mode compatibility with the owner's known working B3/flash mode; avoid silently rewriting candidate bytes or weakening image digest checks.
+- Replay official Core `Updater::begin`'s 4096/256-byte allocation branches and failure handling using exact linked build/host tests, including the RAM floor checks after allocation and after each 512-byte delivery.
+- Simulate interrupted staging, `end(false)` commit failure, lost success response, and **each 4-KiB eboot destination-sector interruption**; assert no implied recovery, no retry and correct `UNKNOWN/HOLD` classification.
+- Explicitly test preserved `[0x200000,0x400000)` sectors and no bootloader sector rewrite except as defined by the pinned Core; require fresh real PRE/POST review on any separately authorized physical transaction.
+- Keep the existing owner-private B3 installed until a new successor release is separately built, hash-pinned and approved. No physically executed OTA is implied by these source checks.
+
+**Source-level verdict:** `OTA_CORE_STAGING_REVIEW=SOURCE_INSPECTED`; `OTA_EBOOT_ATOMIC_ROLLBACK=NO`; `OTA_NATIVE_RAM_STACK_GATE=NOT_MEASURED`; `OTA_ONE_SHOT_TRANSACTION=HOLD`. New core-specific assertions should be integrated into the *existing* offline simulator; do not declare OTA PASS from any prior 30-cycle GET report.
