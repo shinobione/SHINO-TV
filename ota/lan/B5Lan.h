@@ -15,5 +15,9 @@ bool active();
 const char* state();
 IPAddress address();
 bool intentStart(ESP8266WebServer& server,char out[33]);
-bool provision(ESP8266WebServer& server,const uint8_t* bytes,size_t length,const char* proof);
+// Non-secret, fixed error codes. No SSID/password/token in the response.
+enum class ProvisionCode : uint8_t {
+    Verified, ApUnavailable, IntentInvalid, PayloadInvalid, StoreDenied, StoreFailed
+};
+ProvisionCode provision(ESP8266WebServer& server,const uint8_t* bytes,size_t length,const char* proof);
 } // namespace B5Lan
