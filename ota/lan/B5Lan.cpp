@@ -63,6 +63,7 @@ HomeLan::Intent challenge;
 const char* recoveryName=nullptr;
 const char* recoverySecret=nullptr;
 bool started=false,pending=false;
+uint32_t pendingSince=0;
 uint32_t previousIp=0;
 bool applyEffects(unsigned flags) {
     if(flags&HomeLan::StartAp) {
@@ -92,7 +93,7 @@ bool begin(const char* ssid,const char* psk) {
 }
 void poll(bool otaActive) {
     if(otaActive)return;
-    if(pending) {
+    if(pending && uint32_t(millis()-pendingSince)>=2000) {
         pending=false;challenge.clear();
         HomeLan::Credentials saved;
         const bool present=sdk.safe()&&store.load(saved)&&sdk.wpa2();
@@ -151,6 +152,6 @@ bool provision(ESP8266WebServer& server,const uint8_t* raw,size_t size,const cha
     if(!HomeLan::decode(raw,size,desired,forget)||forget)return false;
     const auto result=store.change(desired);
     if(result!=HomeLan::Save::Verified && result!=HomeLan::Save::Unchanged)return false;
-    pending=true;return true;
+    pending=true;pendingSince=millis();return true;
 }
 } // namespace B5Lan
