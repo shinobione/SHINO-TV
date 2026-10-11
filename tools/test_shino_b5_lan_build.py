@@ -66,6 +66,27 @@ class B5LanComposition(unittest.TestCase):
         self.assertIn("return started;",effects)
         self.assertIn("if(!WiFi.softAP",effects)
 
+    def test_provision_failures_identifiable_without_secrets(self):
+        generated=self.b5
+        header=(ROOT/"ota/lan/B5Lan.h").read_text(encoding="utf-8")
+        cpp=(ROOT/"ota/lan/B5Lan.cpp").read_text(encoding="utf-8")
+        codes=("PROVISION_BODY_INCOMPLETE","PROVISION_AP_STATE",
+               "PROVISION_INTENT_INVALID","PROVISION_PAYLOAD_INVALID",
+               "PROVISION_STORE_DENIED","PROVISION_STORE_FAILED")
+        for code in codes:
+            with self.subTest(code=code):
+                self.assertIn(code,generated)
+        self.assertNotIn("PROVISION_HOLD",generated)
+        self.assertIn("enum class ProvisionCode",header)
+        self.assertIn("HomeLan::decode(raw,size,desired,forget)",cpp)
+        self.assertIn("store.change(desired)",cpp)
+        self.assertIn("HomeLan::wipe(transferBuffer,sizeof(transferBuffer))",generated)
+        self.assertNotIn("printf(ssid",generated)
+        self.assertNotIn("printf(password",generated)
+        # When the parser has not supplied the entire body, NO SDK write.
+        self.assertLess(generated.index('PROVISION_BODY_INCOMPLETE'),
+                        generated.index('B5Lan::provision(server,transferBuffer'))
+
     def test_no_implicit_ota_or_source_mutation(self):
         builder=(ROOT/"tools/shino_b5_lan_build.py").read_text(encoding="utf-8")
         self.assertIn("validate_image(raw)",builder)
