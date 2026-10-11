@@ -53,6 +53,19 @@ class B5LanComposition(unittest.TestCase):
                        "challenge.consume", "sdk.safe()", "pendingSince"):
             self.assertIn(phrase,b5)
 
+    def test_failed_sta_start_keeps_protected_recovery_http(self):
+        cpp=(ROOT/"ota/lan/B5Lan.cpp").read_text(encoding="utf-8")
+        # AP listener success must not be cancelled by a failed SDK STA
+        # connection, even on reboot with stored but invalid credentials.
+        start=cpp.index("bool applyEffects(unsigned flags)")
+        end=cpp.index("} // anonymous namespace",start)
+        effects=cpp[start:end]
+        self.assertIn("WiFi.softAP(recoveryName,recoverySecret",effects)
+        self.assertIn("(void)sdk.connectSaved();",effects)
+        self.assertNotIn("if(!sdk.connectSaved())return false;",effects)
+        self.assertIn("return started;",effects)
+        self.assertIn("if(!WiFi.softAP",effects)
+
     def test_no_implicit_ota_or_source_mutation(self):
         builder=(ROOT/"tools/shino_b5_lan_build.py").read_text(encoding="utf-8")
         self.assertIn("validate_image(raw)",builder)
