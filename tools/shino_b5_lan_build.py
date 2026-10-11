@@ -105,12 +105,29 @@ __attribute__((noinline)) void lanProvision() {
             at+=uint32_t(got);
         } else yield();
     }
-    bool ok=at==n&&uint32_t(millis()-server.requestStarted())<2000&&
-        peer.connected()&&B5Lan::provision(server,transferBuffer,n,
-                                   server.header("X-Shino-Lan-Intent").c_str());
+    if(at!=n || uint32_t(millis()-server.requestStarted())>=2000 ||
+       !peer.connected()) {
+        HomeLan::wipe(transferBuffer,sizeof(transferBuffer));
+        respond(409,"{\"error\":\"PROVISION_BODY_INCOMPLETE\"}");
+        return;
+    }
+    const auto result=B5Lan::provision(server,transferBuffer,n,
+                                     server.header("X-Shino-Lan-Intent").c_str());
     HomeLan::wipe(transferBuffer,sizeof(transferBuffer));
-    respond(ok?200:409,ok?"{\"saved\":true,\"readback_verified\":true}":
-                             "{\"error\":\"PROVISION_HOLD\"}");
+    switch(result) {
+      case B5Lan::ProvisionCode::Verified:
+        respond(200,"{\"saved\":true,\"readback_verified\":true}");break;
+      case B5Lan::ProvisionCode::ApUnavailable:
+        respond(409,"{\"error\":\"PROVISION_AP_STATE\"}");break;
+      case B5Lan::ProvisionCode::IntentInvalid:
+        respond(409,"{\"error\":\"PROVISION_INTENT_INVALID\"}");break;
+      case B5Lan::ProvisionCode::PayloadInvalid:
+        respond(409,"{\"error\":\"PROVISION_PAYLOAD_INVALID\"}");break;
+      case B5Lan::ProvisionCode::StoreDenied:
+        respond(409,"{\"error\":\"PROVISION_STORE_DENIED\"}");break;
+      case B5Lan::ProvisionCode::StoreFailed:
+        respond(409,"{\"error\":\"PROVISION_STORE_FAILED\"}");break;
+    }
 }
 """
     # Raw above is authored exactly as C++ output with quoted JSON.
