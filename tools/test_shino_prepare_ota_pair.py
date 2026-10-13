@@ -108,4 +108,117 @@ class BindingTests(unittest.TestCase):
                     self.assertEqual(t.calls[-1],command)
 
 
+
+class B3InstalledTransitionTests(unittest.TestCase):
+    """Offline-only B2-image/archived-FS binding, never serial or sockets."""
+    def setUp(self):
+        import shino_prepare_ota_pair as packet
+        self.packet=packet
+        self.td=tempfile.TemporaryDirectory(prefix="b3-owner-offline-")
+        self.addCleanup(self.td.cleanup)
+        self.owner=Path(self.td.name)/"m9-owner"
+        self.owner.mkdir()
+        self.raw=inert_image(407008)
+        self.old_sha=hashlib.sha256(self.raw).hexdigest()
+        self.device="0123456789abcdef"
+        self.config=dict(device=self.device,ap_psk="B3TestSecretAP",
+                         api_token="B3TestSecretToken",
+                         digest_password="B3TestDigest",
+                         maintenance_password="B3TestMaintenance")
+        self.installed_bin=self.owner/"installed-B2.bin"
+        self.installed_bin.write_bytes(self.raw)
+        self.manifest=self.owner/"installed-B2-release.json"
+        self.old=dict(schema=1,family="SHINO-StageA",layout="4m2m",
+                      protocol="shino-http-ota-1",device=self.device,
+                      bytes=len(self.raw),sha256=self.old_sha,build_id="b"*64)
+        self.manifest.write_text(json.dumps(self.old))
+        self.reference=self.owner/"archived-before-B2-full-flash.bin"
+        self.reference.write_bytes(b"\xff"*0x400000)
+        for f in ("transition-build/.pio/build/"+ENV+"/firmware.bin",
+                  "owner-credentials.json","transition-report.json",
+                  "transition-manifest.json"):
+            p=self.owner/f;p.parent.mkdir(parents=True,exist_ok=True)
+            p.write_bytes(b"Protected owner artifact")
+        self.output=self.owner/"b3-new-owner-packet"
+        self.head="c"*40
+        self.build_calls=0;self.uart_calls=[]
+    def git(self,args,**kwargs):
+        if args==["git","branch","--show-current"]:return "feature/shino-tv-b3-telemetry-scratch-experiment\n"
+        if args==["git","status","--porcelain"]:return ""
+        if args==["git","rev-parse","HEAD"]:return self.head+"\n"
+        raise AssertionError("Unexpected Git command")
+    def fake_build(self,output,private):
+        self.assertTrue(private);self.build_calls+=1
+        body=b"fake B3 content"+b"".join(self.config[k].encode() for k in ("ap_psk","api_token","digest_password"))
+        body+=hashlib.sha256(self.config["maintenance_password"].encode()).digest()
+        body=body.ljust(407488,b"X")
+        sha=hashlib.sha256(body).hexdigest()
+        target=output/".pio/build"/ENV/"firmware.bin"
+        target.parent.mkdir(parents=True)
+        target.write_bytes(body)
+        report=dict(private=True,source_dirty=False,source_commit=self.head,
+                    device=self.device,sha256=sha,bytes=len(body),
+                    build_id="a"*64,layout="4m2m")
+        (output/"report.json").write_text(json.dumps(report))
+        return report
+    def fake_uart(self,output,label,reference):
+        self.uart_calls.append((output,label,reference))
+        return dict(status="OFFLINE")
+    def exercise(self):
+        p=self.packet
+        with patch.object(p,"OWNER",self.owner),patch.object(p.subprocess,"check_output",side_effect=self.git),patch.object(p,"load",return_value=self.config),patch.object(p,"build",side_effect=self.fake_build),patch.object(p,"prepare_uart",side_effect=self.fake_uart):
+            return p.prepare_installed_b3(self.output,self.installed_bin,self.manifest,self.reference)
+
+    def test_b3_packet_is_offline_and_ties_precheck_to_installed_b2_and_archived_tail(self):
+        result=self.exercise()
+        self.assertEqual(self.build_calls,1)
+        self.assertEqual(len(self.uart_calls),1)
+        _,label,reference=self.uart_calls[0]
+        self.assertEqual(label,"B3")
+        self.assertEqual(reference["installed_sha256"],self.old_sha)
+        self.assertEqual(reference["installed_bytes"],len(self.raw))
+        self.assertEqual(reference["path"],str(self.reference))
+        self.assertFalse(result["physical_authorized"])
+        self.assertEqual(result["device_contacts"],0)
+        self.assertEqual(result["flash_writes"],0)
+        self.assertIn("WRITE-B3.cmd",result["commands"])
+        self.assertNotIn("UPDATE-B.cmd",result["commands"])
+        guide=(self.output/"B3-OWNER-OPERATIONS.md").read_text()
+        self.assertIn("PRE-B3.cmd",guide)
+        self.assertIn("B2",guide)
+        self.assertIn("0x200000",guide)
+        self.assertIn("\n",guide)
+        qualify=(self.output/"QUALIFY-B3.cmd").read_text()
+        self.assertIn("--authorize-read",qualify)
+        self.assertIn("\ncd /d",qualify)
+        self.assertNotIn("--install",qualify)
+        self.assertNotIn("--execute",qualify)
+
+    def test_b3_rejects_installed_image_mismatch_before_build_or_device_contact(self):
+        self.installed_bin.write_bytes(self.raw+b"x")
+        with self.assertRaisesRegex(ValueError,"BIN and manifest do not match"):
+            self.exercise()
+        self.assertEqual(self.build_calls,0)
+        self.assertFalse(self.output.exists())
+
+    def test_b3_rejects_non_4mib_reference_before_build(self):
+        self.reference.write_bytes(b"x"*4096)
+        with self.assertRaisesRegex(ValueError,"exactly 4MiB"):
+            self.exercise()
+        self.assertEqual(self.build_calls,0)
+
+    def test_b3_rejects_installed_device_mismatch_before_build(self):
+        self.old["device"]="ffffffffffffffff"
+        self.manifest.write_text(json.dumps(self.old))
+        with self.assertRaisesRegex(ValueError,"compatible private 4m2m"):
+            self.exercise()
+        self.assertEqual(self.build_calls,0)
+
+    def test_b3_rejects_wrong_branch_or_dirty_tree(self):
+        with patch.object(self.packet,"OWNER",self.owner),patch.object(self.packet.subprocess,"check_output",return_value="main\n"),patch.object(self.packet,"build",side_effect=AssertionError("no build")):
+            with self.assertRaisesRegex(ValueError,"reviewed PR #47 branch"):
+                self.packet.prepare_installed_b3(self.output,self.installed_bin,self.manifest,self.reference)
+        self.assertFalse(self.output.exists())
+
+
 if __name__=="__main__":unittest.main()

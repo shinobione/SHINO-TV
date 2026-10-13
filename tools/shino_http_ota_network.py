@@ -9,6 +9,8 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from unittest.mock import patch
 from urllib.request import Request,build_opener,ProxyHandler,HTTPPasswordMgrWithDefaultRealm,HTTPDigestAuthHandler,parse_http_list,parse_keqv_list
@@ -22,6 +24,7 @@ from test_shino_http_ota import fixture
 sys.path.insert(0,str(ROOT/"companion"))
 from shino_update import signature,inspect
 from push_fsless_metrics import NoRedirect
+from shino_digest_coord import digest_exchange
 
 PASSWORD="PUBLIC-INERT-HTTP-OTA-TEST-PASSWORD"
 
@@ -90,7 +93,12 @@ def prepare_host(host,device="0123456789abcdef",current_build="a"*64):
         import os
         aj=Path(os.environ["SHINO_ARDUINOJSON_SRC"])
     shutil.copytree(aj,host,dirs_exist_ok=True)
-    (host/"network_composition.inc").write_text(''.join(f'#include "{(ROOT/p).as_posix()}"\n' for p in ("ota/firmware/Normal.cpp","firmware/src/boot/M9NormalDashboard.cpp","firmware/src/boot/FslessMetrics.cpp")))
+    # Instrument only the generated HOST copy, never the tracked firmware.
+    normal=(ROOT/"ota/firmware/Normal.cpp").read_text()
+    assert normal.count("return b+1;")==1
+    normal=normal.replace("return b+1;","hostJsonArenaPeak=std::max(hostJsonArenaPeak,bytesUsed());return b+1;")
+    (host/"normal_host.inc").write_text(normal)
+    (host/"network_composition.inc").write_text('#include "normal_host.inc"\n'+''.join(f'#include "{(ROOT/p).as_posix()}"\n' for p in ("firmware/src/boot/M9NormalDashboard.cpp","firmware/src/boot/FslessMetrics.cpp")))
 
 
 def exercise_digest_nonce_invalidation(base):
@@ -180,7 +188,7 @@ def run(binary=None,manifest=None,current_binary=None,current_manifest=None):
         target=dict(device=device,bytes=len(raw),sha256=hashlib.sha256(raw).hexdigest(),build_id="b"*64)
     with tempfile.TemporaryDirectory(prefix="shino-http-network-") as td:
         directory=Path(td);exe,env=build(directory,ROOT/"tools/shino_http_ota_network_lab.cpp",
-            lambda h:prepare_host(h,device,current_build),threaded=True)
+            lambda h:prepare_host(h,device,current_build),defines=("ARDUINOJSON_POOL_CAPACITY=8",),threaded=True)
         if current_binary is not None:env=dict(env,SHINO_TEST_CURRENT_BIN=str(Path(current_binary).resolve()))
         process=subprocess.Popen([str(exe)],cwd=directory,env=env,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
         requests=0
@@ -201,6 +209,25 @@ def run(binary=None,manifest=None,current_binary=None,current_manifest=None):
                     get(path);requests+=1
             before=get("/api/v1/update/status");assert before["metrics_fresh"]
             digest_proof=exercise_digest_nonce_invalidation(base)
+            # Two independent PC clients, coordinated across the COMPLETE
+            # challenge/request/response. This private address is only a local
+            # lock identity; every socket still targets 127.0.0.1.
+            pair_latencies=[]
+            for _ in range(8):
+                barrier=threading.Barrier(2)
+                def coordinated(path,data=None):
+                    independent=build_opener(ProxyHandler({}),NoRedirect(),HTTPDigestAuthHandler(mgr))
+                    barrier.wait();started=time.monotonic()
+                    with digest_exchange("192.168.4.2",directory=directory/"digest-locks"):
+                        with independent.open(Request(base+path,data=data,headers={"Content-Type":"application/json"}),timeout=6) as response:
+                            result=json.loads(response.read());assert response.status==200
+                    return result,time.monotonic()-started
+                with ThreadPoolExecutor(max_workers=2) as pool:
+                    read=pool.submit(coordinated,"/api/v1/update/status")
+                    post=pool.submit(coordinated,"/api/v1/bridge/metrics",sample)
+                    got,read_latency=read.result();sent,post_latency=post.result()
+                    assert got["metrics_fresh"] and sent["status"]=="RAM_SAMPLE_ACCEPTED"
+                    pair_latencies.append(max(read_latency,post_latency))
             process.stdin.write("upload busy\n");process.stdin.flush()
             assert json.loads(process.stdout.readline())=={"upload_busy":True}
             c=http.client.HTTPConnection("127.0.0.1",port,timeout=6)
@@ -218,10 +245,74 @@ def run(binary=None,manifest=None,current_binary=None,current_manifest=None):
                 try:get(path);raise AssertionError("Nested scratch use was accepted: "+path)
                 except HTTPError as error:
                     assert error.code==503 and json.loads(error.read())["error"]=="RESPONSE_BUSY";error.close()
+            # B3 telemetry POST must obey the SAME scratch lease as GET.
+            # Isolate the rejected POST's urllib Digest negotiation from the
+            # long-lived read client. An interrupted/error HTTP auth exchange
+            # can poison urllib's retained challenge state, independently of
+            # device handling. Both clients still use REAL Digest credentials.
+            rejected_post_reader=build_opener(
+                ProxyHandler({}),NoRedirect(),HTTPDigestAuthHandler(mgr))
+            try:
+                rejected_post_reader.open(Request(base+"/api/v1/bridge/metrics",data=sample,
+                                                 headers={"Content-Type":"application/json"}),timeout=6)
+                raise AssertionError("Nested telemetry POST bypassed scratch lease")
+            except HTTPError as error:
+                assert error.code==503 and json.loads(error.read())["error"]=="RESPONSE_BUSY"
+                error.close()
             process.stdin.write("scratch free\n");process.stdin.flush()
             assert json.loads(process.stdout.readline())=={"scratch_busy":False}
             assert get("/api/v1/update/status")["metrics_fresh"]
             assert get("/api/v1/bridge/metrics")["cpu_usage"]==22.5
+            # Failure paths must destruct the placed JsonDocument / String,
+            # keep last valid RAM sample, and leave the next request routable.
+            for body,reason in ((b'{"ok":true,"broken"', "JSON"),
+                                (b'{"ok":true,"gpu_available":true}',"TELEMETRY"),
+                                (sample[:-1]+b',"extra":{"nested":1}}',"JSON"),
+                                (sample.replace(b'22.5',b'101.5'),"TELEMETRY"),
+                                (b'{'+b','.join(('"field%02d":1'%i).encode() for i in range(24))+b'}',"JSON")):
+                try:
+                    reader.open(Request(base+"/api/v1/bridge/metrics",data=body,
+                                        headers={"Content-Type":"application/json"}),timeout=6)
+                    raise AssertionError("Invalid B3 telemetry payload accepted")
+                except HTTPError as error:
+                    assert error.code==422 and json.loads(error.read())["error"]==reason
+                    error.close()
+                assert get("/api/v1/bridge/metrics")["cpu_usage"]==22.5
+            # Repeated allocator pressure must not poison the next good sample.
+            for _ in range(32):
+                with reader.open(Request(base+"/api/v1/bridge/metrics",data=sample,headers={"Content-Type":"application/json"}),timeout=6) as response:
+                    assert json.loads(response.read())["status"]=="RAM_SAMPLE_ACCEPTED"
+                assert get("/api/v1/bridge/metrics")["gpu_temp_c"]==56
+            interrupted=[]
+            for label in ("disconnect","body_timeout"):
+                url=base+"/api/v1/bridge/metrics"
+                unauth=build_opener(ProxyHandler({}),NoRedirect())
+                try:unauth.open(Request(url),timeout=6);raise AssertionError("Missing Digest challenge")
+                except HTTPError as challenge:
+                    assert challenge.code==401
+                    fields=parse_keqv_list(parse_http_list(challenge.headers["WWW-Authenticate"][7:]))
+                    challenge.read();challenge.close()
+                digest=HTTPDigestAuthHandler(mgr)
+                authorization=digest.get_authorization(Request(url,data=sample),fields)
+                sock=socket.create_connection(("127.0.0.1",port),timeout=6)
+                request=("POST /api/v1/bridge/metrics HTTP/1.1\r\nHost: loopback\r\nAuthorization: Digest "+authorization+
+                         "\r\nContent-Type: application/json\r\nContent-Length: "+str(len(sample))+"\r\nConnection: close\r\n\r\n").encode()
+                started=time.monotonic();sock.sendall(request+sample[:16])
+                if label=="disconnect":sock.shutdown(socket.SHUT_WR)
+                try:assert not sock.recv(1024),"Incomplete sample returned success"
+                except ConnectionResetError:pass
+                elapsed=time.monotonic()-started;sock.close()
+                assert elapsed<3,"Bounded body handling stalled"
+                if label=="body_timeout":assert elapsed>=1.8
+                assert get("/api/v1/bridge/metrics")["cpu_usage"]==22.5
+                interrupted.append(label)
+            # LINK payload boundaries, unavailable GPU and honest RAM unknown.
+            for body in (sample.replace(b'22.5',b'0').replace(b'34.5',b'100'),
+                         sample.replace(b'"gpu_available":true',b'"gpu_available":false'),
+                         sample.replace(b',"memory_total_gb":16',b''),
+                         sample.replace(b'56',b'130').replace(b'120}',b'1200}')):
+                with reader.open(Request(base+"/api/v1/bridge/metrics",data=body,headers={"Content-Type":"application/json"}),timeout=6) as response:assert response.status==200
+            with reader.open(Request(base+"/api/v1/bridge/metrics",data=sample,headers={"Content-Type":"application/json"}),timeout=6) as response:assert response.status==200
             for path in ("/status","/api/v1/m9/normal/status","/api/v1/m9/normal/resources"):
                 normal=get(path)
                 assert normal["mode"]=="M9_NORMAL_STAGE_A" and normal["config_loaded_readonly"]
@@ -266,7 +357,15 @@ def run(binary=None,manifest=None,current_binary=None,current_manifest=None):
             process.stdin.write("stop\n");process.stdin.flush();output,error=process.communicate(timeout=8)
             if process.returncode:raise RuntimeError(error)
             report=json.loads(output);assert report["commit"]==report["restarts"]==1 and report["fs_preserved"]
-            return dict(**digest_proof,authenticated_post_get_requests=requests,scratch_guard_rejections=2,normal_status_guard_rejections=3,upload_guard_rejections=1,scratch_owner_preserved=True,ttl_stale_and_recovery=True,rejected_transfers_recovered=rejected,update=body,actual_normal_parser_digest_core=True,
+            assert report["host_json_arena_peak"]<=768 and report["retained_request_bytes"]==0
+            assert report["arena_reuse_cycles"]==256
+            assert report["yield_reentry_checks"]>0
+            digest_proof.update(coordinated_digest_pairs=len(pair_latencies),
+                                coordinated_max_latency_ms=round(max(pair_latencies)*1000,2),
+                                interrupted_telemetry_recovered=interrupted,
+                                repeated_json_reuse_samples=32,bounded_json_failures=5,
+                                payload_boundary_cases=4)
+            return dict(**digest_proof,authenticated_post_get_requests=requests,scratch_guard_rejections=2,b3_telemetry_scratch_busy_rejected=True,b3_telemetry_error_paths_recover=True,normal_status_guard_rejections=3,upload_guard_rejections=1,scratch_owner_preserved=True,ttl_stale_and_recovery=True,rejected_transfers_recovered=rejected,update=body,actual_normal_parser_digest_core=True,
                         exact_compiled_bin=binary is not None,uploaded_bytes=len(raw),target_sha256=m["sha256"],
                         exact_current_bin=current_binary is not None,network="HOST_LOOPBACK",flash_rtc_radio="MOCKED",device_contacts=0,**report)
         except Exception:

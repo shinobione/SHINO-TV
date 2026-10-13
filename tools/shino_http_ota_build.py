@@ -118,7 +118,7 @@ env.Append(CXXFLAGS=['-include',str(p/'Updater.h'),'-include',str(headers/'ESP82
     ini=configparser.ConfigParser(interpolation=None);ini.read(directory/"platformio.ini")
     flags=ini["env:"+ENV]["build_flags"]
     flags=flags[:flags.index("\n-DM9_SIGNED_OTA_UNWIRED=1")]
-    ini["env:"+ENV]["build_flags"]=flags+"\n-DSHINO_HTTP_OTA=1"
+    ini["env:"+ENV]["build_flags"]=flags+"\n-DSHINO_HTTP_OTA=1\n-DARDUINOJSON_POOL_CAPACITY=8"
     with (directory/"platformio.ini").open("w",encoding="utf-8") as out:ini.write(out)
     inputs=json.loads((directory/"public-inputs.json").read_text())
     inputs.update(http_ota=True,private_identity=private,stock_updater_buffer=4096,shared_server_abi=True)
@@ -152,6 +152,12 @@ def build(directory,private=False):
                 static_ram=resources["static_ram"],linked_flash=resources["linked_flash"],noinit=resources["noinit"],
                 layout_symbols=layout,stack_frames=frames,
                 private=private,core_buffer=4096,physical="NOT_RUN",device_contacts=0)
+    compiled_normal=(directory/"src/boot/M9NormalStageA.cpp").read_text(encoding="utf-8")
+    report.update(normal_source_sha256=hashlib.sha256(compiled_normal.encode()).hexdigest(),
+                  json_arena_bytes=768 if "JsonDocument doc{&arena}" in compiled_normal else 0,
+                  json_document_heap_fallback=False if "JsonDocument doc{&arena}" in compiled_normal else True,
+                  normal_response_body_string_copy='server.send(code,"application/json",body);' in compiled_normal,
+                  native_heap_peak_measured=False)
     (directory/"report.json").write_text(json.dumps(report,indent=2)+"\n",encoding="utf-8")
     # Private device/build identities belong only in the local manifest.
     shown={k:v for k,v in report.items() if not private or k not in ("device","build_id")}

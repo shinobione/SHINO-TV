@@ -90,10 +90,29 @@ def highwater_source_guard(normal: str, resources: str):
     # never be repainted during the whole boot. The observer resets in setup.
     assert "uint32_t stack(){return ESP.getFreeContStack();}" in normal
     assert "void resetStack(){ESP.resetFreeContStack();}" in normal
-    assert "if(apReady)server.handleClient();" in normal
+    assert "if(apReady)server.handleClient();" in normal or all(p in normal for p in (
+        "if(apReady)server.poll();","ESP8266WebServer::handleClient();",
+        "if(_currentStatus==HC_WAIT_CLOSE)",
+    ))
     assert "observer.poll();" in normal
     assert "server.requestAuthentication(DIGEST_AUTH," in normal
-    assert "const String payload=server.arg(\"plain\");JsonDocument doc;" in normal
+    # Either the pinned B2 locals or the B3 guarded, per-request placement
+    # workspace must be present; never silently accept a missing parser.
+    b2_local = "const String payload=server.arg(\"plain\");JsonDocument doc;" in normal
+    b3_scratch = all(part in normal for part in (
+        "TelemetryScratchLease scratch;",
+        "ResponseLease responseLease_;",
+        "scratch_->~TelemetryScratch();",
+        "FslessMetrics::apply(scratch->doc.as<JsonVariantConst>(),scratch->error)",
+    ))
+    b3_old_parser='deserializeJson(scratch->doc,server.arg("plain"))' in normal
+    b3_bounded_parser=all(part in normal for part in (
+        "JsonDocument doc{&arena}","DeserializationOption::NestingLimit(1)",
+        "reinterpret_cast<char*>(transferBuffer),bytes",
+        "server.setStageAPrebody(deferRequest)","if(httpBusy)return;",
+        "if(requestPending)serviceRequest();","server.finishRequest();",
+    ))
+    assert b2_local or (b3_scratch and (b3_old_parser or b3_bounded_parser))
     assert "void identity()" in normal and "void status()" in normal
     assert "void telemetry()" in normal and "void metrics()" in normal
     assert "void poll()" in resources
@@ -104,7 +123,11 @@ def highwater_source_guard(normal: str, resources: str):
 
 
 def audit(folder: Path):
-    normal = TRACKED_NORMAL.read_text(encoding="utf-8")
+    # Compare the source copied INTO this build, not a later workspace edit.
+    # Otherwise an old ELF could inherit new source/guard claims accidentally.
+    compiled_source=Path(folder)/"src/boot/M9NormalStageA.cpp"
+    if not compiled_source.is_file():raise ValueError("Missing compiled normal source")
+    normal = compiled_source.read_text(encoding="utf-8")
     observer = TRACKED_RESOURCES.read_text(encoding="utf-8")
     if not highwater_source_guard(normal, observer):
         raise ValueError("Unexpected continuation stack semantics")
@@ -127,6 +150,8 @@ def audit(folder: Path):
                                     "telemetry_POST", "digest_challenge_or_verify",
                                     "display_render_and_yield"],
         source_sha256=hashlib.sha256(normal.encode()).hexdigest(),
+        source_provenance="COPIED_BUILD_INPUT",
+        candidate_source_changed=hashlib.sha256(normal.encode()).hexdigest() != "bd20e294427a381a5833da52763b76b8e193a0bfd3625c917e2bf753430d83fd",
         handler_frames=handlers,
         top_normal_frames=normal_functions[:16],
         compiled_ota_max_path_bytes=max(p["compiled_bytes"] for p in ota["paths"].values()),

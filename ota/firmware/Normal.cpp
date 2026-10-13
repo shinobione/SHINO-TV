@@ -12,6 +12,8 @@
 #include <ESP8266WebServer.h>
 #include "ShinoHttpOta.h"
 #include "ShinoRelease.h"
+#include <new> // placement new for per-request telemetry scratch
+#include <cstddef>
 static_assert(SHINO_BOOT_PROFILE==1 && SHINO_M9_NORMAL_QUALIFICATION==1 &&
               SHINO_ENABLE_FACTORY_RESTORE==0 && SHINO_ENABLE_NATIVE_SIGNED_OTA==0 &&
               SHINO_ENABLE_FS_MIGRATION==0,"Dedicated application-only normal firmware");
@@ -21,7 +23,39 @@ static_assert(SHINO_BOOT_PROFILE==1 && SHINO_M9_NORMAL_QUALIFICATION==1 &&
 namespace M9NormalDashboard {void render();}
 namespace M9NormalStageA {
 namespace {
-ESP8266WebServer server(80);
+// The pinned parser owns header collection only. Its pre-body hook returns
+// CLIENT_REQUEST_IS_HANDLED; Core retains the client/headers until this loop's
+// synchronous dispatch completes. No Core source, second listener or task.
+class NormalHttpServer final:public ESP8266WebServer {
+public:
+    NormalHttpServer():ESP8266WebServer(80){}
+    uint32_t requestStarted()const{return _stageAStarted;}
+    size_t retainedRequestBytes()const{
+        size_t n=_currentUri.length()+_hostHeader.length()+_responseHeaders.length();
+        for(int i=0;i<_headerKeysCount;++i)n+=_currentHeaders[i].value.length();
+        return n;
+    }
+    void poll(){
+        // A refused POST may still have an unread body. Preserve Core's close
+        // grace instead of closing under a client reading its 401, and never
+        // reinterpret those body bytes as another request. A pending peer
+        // releases this slot immediately, as in the pinned Core.
+        if(_currentStatus==HC_WAIT_CLOSE){
+            if(_currentClient.connected()&&!_server.hasClient()&&uint32_t(millis()-_statusChange)<=HTTP_MAX_CLOSE_WAIT){yield();return;}
+            _currentClient.stop();_currentClient=ClientType();_currentStatus=HC_NONE;
+        }
+        ESP8266WebServer::handleClient();
+    }
+    void finishRequest(){
+        _finalizeResponse();
+        _currentStatus=HC_WAIT_CLOSE;_statusChange=millis();
+        _currentHandler=nullptr;_currentUpload.reset();
+        delete[] _currentArgs;_currentArgs=nullptr;_currentArgCount=_currentArgsHavePlain=0;
+        _currentUri=String();_hostHeader=String();_responseHeaders=String();
+        for(int i=0;i<_headerKeysCount;++i)_currentHeaders[i].value=String();
+    }
+};
+NormalHttpServer server;
 WiFiManager network("","","SHINO-TV-StageA",SHINO_SETUP_AP_PSK);
 struct CoreSource {
     void resetStack(){ESP.resetFreeContStack();}
@@ -44,9 +78,10 @@ alignas(4) uint8_t transferBuffer[512];
 ShinoHttpOta::Release incoming;
 // One synchronous HTTP handler owns this scratch until respond() returns,
 // including SDK yields. Reject nested use before changing its contents.
-char responseBody[768];
+alignas(std::max_align_t) char responseBody[768];
 bool responseBusy=false;
 bool uploadBusy=false,uploadVerifying=false;
+bool requestPending=false,httpBusy=false;
 class UploadLease {
     bool held_;
 public:
@@ -62,6 +97,82 @@ public:
     explicit operator bool()const{return held_;}
     ResponseLease(const ResponseLease&)=delete;
     ResponseLease& operator=(const ResponseLease&)=delete;
+};
+// ArduinoJson uses small pools in this entire, separately compiled graph.
+// The existing response buffer is its bounded arena; the existing transfer
+// buffer holds bounded JSON input or serialized metrics. ArduinoJson 7.4.3
+// copies strings even for mutable input; released string-builder blocks must
+// therefore be reused within the arena, not leaked by a bump allocator.
+// No allocator fallback and no extra arena BSS. All objects die before the
+// lease releases either buffer. OTA cannot run concurrently with dispatch.
+static_assert(ARDUINOJSON_POOL_CAPACITY==8,"Bounded normal JSON pool geometry");
+class JsonArena final:public ArduinoJson::Allocator {
+    static constexpr size_t Alignment=alignof(double)>alignof(void*)?alignof(double):alignof(void*);
+    struct alignas(Alignment) Block {size_t size;}; // low bit marks a free block
+    static size_t size(const Block* b){return b->size&~size_t(1);}
+    static Block* next(Block* b){return reinterpret_cast<Block*>(reinterpret_cast<char*>(b+1)+size(b));}
+    static bool inside(Block* b){return reinterpret_cast<char*>(b)<responseBody+sizeof(responseBody);}
+public:
+    JsonArena(){new(responseBody) Block{(sizeof(responseBody)-sizeof(Block))|1};}
+    size_t bytesUsed()const{
+        size_t n=0;
+        for(auto* b=reinterpret_cast<Block*>(responseBody);inside(b);b=next(b))if(!(b->size&1))n+=size(b)+sizeof(Block);
+        return n;
+    }
+    void* allocate(size_t n)override{
+        if(!n||n>sizeof(responseBody))return nullptr;
+        n=(n+Alignment-1)&~(Alignment-1);
+        for(auto* b=reinterpret_cast<Block*>(responseBody);inside(b);b=next(b)){
+            if(!(b->size&1)||size(b)<n)continue;
+            const size_t old=size(b);
+            if(old>=n+sizeof(Block)+Alignment){b->size=n;new(next(b)) Block{(old-n-sizeof(Block))|1};}
+            else b->size=old;
+            return b+1;
+        }
+        return nullptr; // NEVER fall back to heap
+    }
+    void deallocate(void* p)override{
+        if(!p)return;
+        (static_cast<Block*>(p)-1)->size|=1;
+        for(auto* b=reinterpret_cast<Block*>(responseBody);inside(b);){
+            auto* following=next(b);
+            if((b->size&1)&&inside(following)&&(following->size&1))b->size=(size(b)+sizeof(Block)+size(following))|1;
+            else b=following;
+        }
+    }
+    void* reallocate(void* p,size_t n)override{
+        if(!p)return allocate(n);
+        if(!n){deallocate(p);return nullptr;}
+        auto* b=static_cast<Block*>(p)-1;const size_t old=size(b);
+        if(n<=old){
+            n=(n+Alignment-1)&~(Alignment-1);
+            if(old>=n+sizeof(Block)+Alignment){
+                b->size=n;auto* tail=new(next(b)) Block{(old-n-sizeof(Block))|1};
+                deallocate(tail+1);
+            }
+            return p;
+        }
+        void* replacement=allocate(n);if(!replacement)return nullptr;
+        std::memcpy(replacement,p,old);deallocate(p);return replacement;
+    }
+};
+struct TelemetryScratch {
+    JsonArena arena;
+    JsonDocument doc{&arena};
+    String error;
+};
+alignas(TelemetryScratch) unsigned char telemetryScratchStorage[sizeof(TelemetryScratch)];
+class TelemetryScratchLease {
+    ResponseLease responseLease_;
+    TelemetryScratch* scratch_;
+public:
+    TelemetryScratchLease():responseLease_(),
+        scratch_(responseLease_?new(telemetryScratchStorage) TelemetryScratch():nullptr){}
+    ~TelemetryScratchLease(){if(scratch_)scratch_->~TelemetryScratch();}
+    explicit operator bool()const{return scratch_!=nullptr;}
+    TelemetryScratch* operator->(){return scratch_;}
+    TelemetryScratchLease(const TelemetryScratchLease&)=delete;
+    TelemetryScratchLease& operator=(const TelemetryScratchLease&)=delete;
 };
 constexpr char descriptor[]="SHINO-HTTP-OTA-1|" SHINO_OTA_DEVICE "|" SHINO_OTA_BUILD "|4m2m|APP_ONLY";
 void randomNonce(char* out){uint8_t bytes[16];for(unsigned i=0;i<4;++i){uint32_t r=os_random();std::memcpy(bytes+4*i,&r,4);}ShinoHttpOta::encode(bytes,16,out);}
@@ -83,8 +194,8 @@ bool auth(){
 }
 enum class Route:uint8_t{Closed,Normal,MetricsGet,MetricsPost,Identity,Upload};
 Route route(){
-    // String values stay owned by this function, before any authentication.
-    const String path=server.uri();const auto method=server.method();
+    // Borrow Core's URI only while this synchronous request owns its headers.
+    const String& path=server.uri();const auto method=server.method();
     if(method==HTTP_GET){
         if(path=="/status"||path=="/api/v1/m9/normal/status"||path=="/api/v1/m9/normal/resources")return Route::Normal;
         if(path=="/api/v1/bridge/metrics")return Route::MetricsGet;
@@ -144,7 +255,7 @@ __attribute__((noinline)) void upload(uint32_t bytes){
     respond(200,receipt);
     client.flush(1000);client.stop();delay(100);ESP.restart();
 }
-bool beforeBody(){
+__attribute__((noinline)) bool beforeBody(){
     server.keepAlive(false);
     const Route selected=route();uint32_t bytes=0;
     if(selected==Route::Upload){
@@ -170,7 +281,7 @@ struct HttpSink {
     void begin(size_t bytes){server.sendHeader(F("Cache-Control"),F("no-store"));server.setContentLength(bytes);server.send(200,"application/json","");}
     void write(const char* p,size_t n){server.sendContent(p,n);}
 };
-void status(){
+__attribute__((noinline)) void status(){
     // The legacy emit(s, sink) keeps a 512-byte JSON array on continuation
     // stack. This physical GET is part of the normal A qualification sequence
     // and its historical high-water survives into the next identity request.
@@ -197,7 +308,7 @@ void status(){
         sink.write(responseBody,size_t(n));
     }
 }
-void identity(){
+__attribute__((noinline)) void identity(){
     ResponseLease lease;if(!lease){respond(503,"{\"error\":\"RESPONSE_BUSY\"}");return;}
     const auto b=budget();const auto& f=M9LittleFsMountProbe::status();
     const int count=std::snprintf(responseBody,sizeof(responseBody),
@@ -215,17 +326,50 @@ void identity(){
     if(count<0||size_t(count)>=sizeof(responseBody)){respond(500,"{\"error\":\"IDENTITY_BOUND\"}");return;}
     respond(200,responseBody);
 }
-void telemetry(){
-    const String payload=server.arg("plain");JsonDocument doc;
-    if(deserializeJson(doc,payload)){respond(422,"{\"error\":\"JSON\"}");return;}
-    String error;if(!FslessMetrics::apply(doc.as<JsonVariantConst>(),error)){respond(422,"{\"error\":\"TELEMETRY\"}");return;}
+__attribute__((noinline)) void telemetry(){
+    TelemetryScratchLease scratch;
+    if(!scratch){respond(503,"{\"error\":\"RESPONSE_BUSY\"}");return;}
+    // Read only AFTER Digest/framing/config admission and AFTER parser unwind.
+    // Retain the original total 2s header+body deadline and 384-byte bound.
+    uint32_t bytes=0;if(!length(bytes)||bytes<16||bytes>384){respond(413,"{\"error\":\"TELEMETRY_BOUND\"}");return;}
+    size_t received=0;auto& client=server.client();
+    while(received<bytes){
+        if(uint32_t(millis()-server.requestStarted())>=2000||!client.connected()){client.stop();return;}
+        const size_t n=std::min(size_t(client.available()),size_t(bytes-received));
+        if(n){const int count=client.read(transferBuffer+received,n);if(count<=0){client.stop();return;}received+=size_t(count);}
+        else yield();
+    }
+    if(uint32_t(millis()-server.requestStarted())>=2000){client.stop();return;}
+    transferBuffer[bytes]=0;
+    if(deserializeJson(scratch->doc,reinterpret_cast<char*>(transferBuffer),bytes,
+                       DeserializationOption::NestingLimit(1))){
+        respond(422,"{\"error\":\"JSON\"}");return;
+    }
+    if(!FslessMetrics::apply(scratch->doc.as<JsonVariantConst>(),scratch->error)){
+        respond(422,"{\"error\":\"TELEMETRY\"}");return;
+    }
     dirty=true;respond(200,"{\"status\":\"RAM_SAMPLE_ACCEPTED\",\"persisted\":false}");
 }
-void metrics(){
-    ResponseLease lease;if(!lease){respond(503,"{\"error\":\"RESPONSE_BUSY\"}");return;}
-    JsonDocument doc;FslessMetrics::describe(doc);
-    if(measureJson(doc)>=sizeof(responseBody)){respond(500,"{\"error\":\"METRICS_BOUND\"}");return;}
-    serializeJson(doc,responseBody,sizeof(responseBody));respond(200,responseBody);
+__attribute__((noinline)) void metrics(){
+    TelemetryScratchLease scratch;if(!scratch){respond(503,"{\"error\":\"RESPONSE_BUSY\"}");return;}
+    FslessMetrics::describe(scratch->doc);
+    if(scratch->doc.overflowed()||measureJson(scratch->doc)>=sizeof(transferBuffer)){respond(500,"{\"error\":\"METRICS_BOUND\"}");return;}
+    serializeJson(scratch->doc,reinterpret_cast<char*>(transferBuffer),sizeof(transferBuffer));
+    respond(200,reinterpret_cast<char*>(transferBuffer));
+}
+bool deferRequest(){server.keepAlive(false);requestPending=true;return false;}
+__attribute__((noinline)) void serviceRequest(){
+    requestPending=false;
+    server.client().setTimeout(HTTP_MAX_SEND_WAIT);
+    server.setContentLength(CONTENT_LENGTH_NOT_SET);
+    if(beforeBody())switch(route()){
+        case Route::Normal:status();break;
+        case Route::MetricsGet:metrics();break;
+        case Route::MetricsPost:telemetry();break;
+        case Route::Identity:identity();break;
+        default:respond(404,"{\"error\":\"ROUTE_CLOSED\"}");break;
+    }
+    server.finishRequest();
 }
 bool hashRunning(){
     const uint32_t size=ESP.getSketchSize();if(size<64000||size>ShinoHttpOta::MaxImage)return false;
@@ -248,20 +392,23 @@ void begin(ConfigManager& config){
     randomNonce(boot);randomNonce(nonce);
     WiFi.persistent(false);apReady=network.startAccessPointMode();if(!apReady)return;
     server.collectHeaders("Authorization","Content-Length","Content-Type","Transfer-Encoding","Expect", "X-Shino-SHA256","X-Shino-Build","X-Shino-Nonce","X-Shino-Proof");
-    server.setStageAPrebody(beforeBody);
-    server.on("/status",HTTP_GET,status);server.on("/api/v1/m9/normal/status",HTTP_GET,status);server.on("/api/v1/m9/normal/resources",HTTP_GET,status);
-    server.on("/api/v1/bridge/metrics",HTTP_POST,telemetry);server.on("/api/v1/bridge/metrics",HTTP_GET,metrics);
-    server.on("/api/v1/update/status",HTTP_GET,identity);server.on("/api/v1/m9/maintenance/result",HTTP_GET,identity);
-    server.onNotFound([](){respond(404,"{\"error\":\"ROUTE_CLOSED\"}");});server.begin();
+    server.setStageAPrebody(deferRequest);server.begin();
     if(configReady)M9NormalDashboard::render();
 }
 void afterSetup(){observer.afterSetup();}
 void loop(){
-    if(apReady)server.handleClient();
+    // No yielding callback may reenter parsing/dispatch while a request owns
+    // headers, scratch or the Core Updater. Drain the pending request BEFORE
+    // the next handleClient(), including failures and disconnected peers.
+    if(httpBusy)return;
+    httpBusy=true;
+    if(apReady)server.poll();
+    if(requestPending)serviceRequest();
     const auto now=millis();const bool stale=FslessMetrics::stale();
     if(configReady&&apReady&&uint32_t(now-lastDraw)>=250&&(dirty||stale!=lastStale)){
         M9NormalDashboard::render();lastDraw=now;lastStale=stale;dirty=false;
     }
     ESP.wdtFeed();yield();observer.poll();
+    httpBusy=false;
 }
 } // namespace M9NormalStageA

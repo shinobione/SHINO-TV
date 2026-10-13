@@ -1,5 +1,160 @@
 # SHINO // TV — Agent handoff / operational source of truth
-Last owner mandate update: **2026-10-10**; the **2026-10-01** square-scene product contract remains below. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
+Last owner mandate update: **2026-10-13**; the **2026-10-01** square-scene product contract remains below. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
+
+**Current owner mandate — FREEZE B5.1 PHYSICAL LAN PASS, 13 October 2026:**
+Owner authorizes only this documentary/Git freeze, focused commits/push on the
+existing PR47 branch, Draft/unmerged. Local and actual GitHub starting HEAD
+a063c001d69ffaffb6beac8427e03941d371ac68 verified; stale local origin cache is not
+the current remote. Preserve all local changes/private artifacts and V2.2
+prototypes. No device contact, OTA, reboot, flash, Wi-Fi/provisioning, firmware
+rebuild or B5.1 BIN change is authorized.
+
+**Current physical state, OWNER-REPORTED:** B5.1 running,414176 B / SHA-256
+973cf725ab1d7a259d00d60e8af8a8e8e2da544af39578e06b649218588607cf.
+Windows full transfer and initial POSTBOOT_ACCEPTANCE_UNCONFIRMED receipt are
+separate from the later physical identity GET confirming the executed image.
+First boot/Freebox association PASS;192.168.1.70 is an observed DHCP lease,
+not a fixed address. LittleFS fs_ok=true,24 files/181402 B; ota_enabled=true.
+CPU/GPU/RAM/GPU temp cards work through LAN SHINO LINK from an Ethernet PC.
+These are owner observations, not new agent-performed device tests or CI proof.
+
+Reboot, automatic reconnect, fallback AP, full LAN OTA, RTC/eboot recovery and
+whole-native OTA memory high-water remain NOT VERIFIED/HOLD. V2.2 clock/cover
+is preserved as a separate offline PR40 pilot, not part of installed B5.1.
+[Canonical checkpoint](M09_B51_PHYSICAL_LAN_CHECKPOINT_2026-10-13.md) and
+[published owner report](https://github.com/shinobione/SHINO-TV/pull/47#issuecomment-6155556845).
+Verify new exact-head CI after push. Older mandates/results below retain their
+historical state; their earlier uninstalled/HOLD wording is not the new state.
+
+**Current owner mandate — B5 OTA Partial Transport Guard, 13 October 2026:**
+Offline-only owner tool/tests on unchanged branch HEAD a063c001. Existing
+firmware, normal updater, GET diagnostic and private packets are preserved.
+Latest targeted correction: strict normal-updater AP192.168.4.1 in all modes,
+before network; durable device/candidate-SHA reservation independent of marker,
+BIN paths and boot. Existing, incomplete or ambiguous state fails closed;
+exclusive creation precedes POST and is never undone on error. HOST8 new +18
+selected existing cases PASS on this correction; zero sockets/DNS. Reservation
+is local to the preserved Windows profile/state, not an on-device global lock.
+Separate default local inspection, future single bounded POST and independently
+authorized evidence GET. Full authentic414176 Content-Length, irreversible8192
+body cap, one socket/POST, durable exclusive attempt marker, no retries/tail/
+response polling/install/reboot. No device contact or commit/push authorized.
+
+[Local delivery and risks](SHINO_B5_PARTIAL_TRANSPORT_GUARD.md):
+`companion/shino_b5_partial_preflight.py` plus its matching test file. HOST
+Initial delivery before that correction: **33 focused cases PASS**, plus
+**11 existing regressions PASS**
+(7 Digest coordination,4 updater inspection). All33 use in-memory peers with
+socket/DNS guards asserting zero calls. Real retained BINs pass default local
+inspection under the same network/secret-read guards. Complete packet digests
+(1185/1186 files) unchanged; normal updater/firmware and GET diagnostic unchanged.
+READY_FOR_OWNER_REVIEW only; DEVICE NOT_RUN, native/physical execution HOLD.
+FAILED_NO_COMMIT/minima survive in a separate sanitized status read, including
+unsafe observations; reset/state/identity/FS uncertainty stays STOP, never OTA
+success. Physical prefix reception/sector count remain unknown. An independent
+future exact-operation/image owner decision is required; no physical command
+is supplied by this delivery. Mission stops after delivery.
+
+**Prior owner mandate — bounded GET Digest diagnostic, 13 October 2026:**
+Local diagnostic tool/tests only, starting clean at `a063c001` on the existing
+branch. Reuse pinned Digest and Windows coordination; at most one valid401
+challenge plus an authenticated GET per operation, full-body lock ownership,
+renewal between GETs, sanitized counters and STOP on a second401 or other error.
+No firmware/LINK change, B5/B5.1 private artifact modification, rebuild, device
+contact, POST, OTA, provisioning, network change, commit or push. Future physical
+reads need separate owner approval. Preserve historical401 and stack evidence.
+
+Local delivery: `companion/shino_b5_get_diagnostic.py` and its matching test file.
+Default CLI is offline; full-body shared lock, maximum two wire GETs, one valid
+challenge, second401 STOP, 6s network deadline and sanitized exchange counters.
+HOST **49 PASS** (32 new + 17 existing), including real TCP trickling-response
+timeout on loopback only. Full B5/B5.1 packet inventories (1185/1186 files) have
+identical before/after SHA-256 digests. No commit/push; DEVICE **NOT_RUN**.
+
+**Current owner mandate — B5.1 Home LAN Recovery & Permanent Fix, 12 October2026:**
+Same branch/Draft PR47, clean FF-synchronized starting HEAD6697b5b007b9e1358882cbb461a27e402f0552d8,
+matching GitHub with relevant CI SUCCESS. Owner confirms installed B5 via B4 OTA,
+boot/four cards/LINK/identity/LittleFS/protected AP and LAN GET status/intent PASS;
+provision POST409 PROVISION_HOLD, after power cycle NO_SAVED_WIFI/no STA/IP.
+Owner observations only. Diagnose the real Core3.1.2 SDK and bounded parser,
+verify the existing STA-order candidate, implement B5.1, executable fault tests,
+public inert builds/resource analysis, owner packet preparer and single-attempt
+physical protocol; commit/push/exact-head CI authorized. Synthetic Wi-Fi only.
+Preserve4m2m/staging/FS/SDK boundaries, Digest/HMAC, metrics and protected recovery.
+No device/network/serial/OTA/flash/SDK-RTC-FS write/reboot/provisioning, private
+firmware publication, receipt/backup/attempt deletion or merge. New exact-image
+and exact-operation owner approval required for physical work. Installed B5
+and candidate B5.1 remain separate; physical acceptance stays HOLD/NOT_RUN.
+
+[B5.1 delivery and single-session protocol](SHINO_B51_HOME_LAN_RECOVERY.md):
+SDK22x getter does not populate threshold/authmode; actual old B5 source
+reproduces successful storage followed by refusal/ignored reboot credentials.
+Candidate verifies persistent credential bytes, reapplies WPA2 to current STA,
+keeps protected AP and rejects UNKNOWN/replayed/ambiguous writes.32 native
+cases/122 checks,24 HTTP cases,16 Windows/9 composition/6 packet tests and
+227 Core cases/197 interruptions. Public matched delta+1328 BIN/+820 static B;
+application provision frames576 B, whole-native memory still unmeasured.
+Owner-local packet preparer verifies installed BIN/source and fresh candidate;
+no physical operation or merge is authorized by these software results.
+
+**Current owner mandate — Mission 9 / B3 OTA Safety Gate, 11 October2026:**
+Existing Draft PR47, verified latest starting HEAD f2a831d. Owner 30-cycle B3
+read-only PASS is recorded in [the physical report](SHINO_B3_PHYSICAL_PASS_OTA_READINESS_2026-10-11.md),
+not an OTA transaction PASS. Extend/run existing offline Core3.1.2 simulators
+for allocations4096/256, memory floors, exact4m2m/staging/header/FS boundaries,
+Updater/RTC/eboot interruptions, response loss and UNKNOWN without retry.
+Windows/public-inert native tests, focused commits/push and exact-head CI are
+authorized. Preserve installed B3, firmware/production clients, all private
+artifacts/receipts/attempt markers and historical thresholds. No SmallTV,
+private B4 build, OTA/flash/reboot, production LINK change or PR merge.
+Offline gate verdict and simulated guarantees must not imply physical consent.
+[Offline receipt](SHINO_B3_OTA_OFFLINE_GATE_2026-10-11.md): assertions PASS,
+OTA_OFFLINE_GATE=HOLD; native OTA memory is unmeasured, transient observation
+windows remain and eboot has no rollback. Production sources remain unchanged.
+
+**Prior owner mandate — B3 Windows HTTP Coordination Fix, 11 October2026:**
+Owner reports B3 installed/functional, boot/four cards PASS, LINK CONNECTED,
+203s memory stack2288/heap27696/block27120 B/frag10%;30-cycle qualification
+HOLD at cycle22 LINK_METRICS_NOT_FRESH; LINK alone122/122 accepted,0 failures.
+These are owner observations, not fresh agent/device readings. They supersede
+the B3 NOT_INSTALLED descriptions below without rewriting historical receipts.
+Only Windows coordination/instrumentation is authorized, same Draft PR47,
+starting verified26e1ace98dcd4713c4a227c3847bc4b5cf74dee5. Preserve Digest lock,
+timeouts/backoff/TTL6s, strict freshness, memory floors, all private artifacts
+and attempt markers. No device/serial/flash/OTA/reboot/Wi-Fi change/private
+firmware build/merge. Future read-only qualification needs fresh owner approval.
+[Windows delivery and command](SHINO_B3_WINDOWS_HTTP_COORDINATION.md): explicit
+B3 pacing, sanitized bounded diagnostics, real Windows lock with simulated HTTP.
+Physical cycle22 cause remains unproven. Old qualifier/capture/firmware source
+pins remain intact; only four exact Windows blobs are repinned for this mandate.
+
+**Current owner mandate — Break the Loop, 11 October 2026:**
+Consolidate a structural normal-firmware HTTP/memory improvement on existing
+Draft PR47, branch `feature/shino-tv-b3-telemetry-scratch-experiment`.
+Dependencies PR42/44/45/46 inspected; initial exact head d25fc1ae.
+Owner confirms installed B2 and successful physical A2→B2 Wi-Fi OTA, while
+long qualification remains HOLD: earlier unclassified HTTP timeout and later
+historical continuation minimum1968 <2048. B3 telemetry frame224→176/static+80
+is compiled evidence only; B3 NOT_INSTALLED / NOT_PHYSICALLY_QUALIFIED.
+The A/A2 status below is historical. Preserve all original receipts/markers,
+4m2m, LittleFS, authentication/integrity, four metrics, TTL6s and memory floors.
+Public inert offline builds/tests, commits/push and exact-head CI authorized;
+no private inputs, device/AP/serial contact, flash/OTA, reboot, merge or force
+push. Do not repaint runtime stack or infer whole-native reserve from frames.
+Full current mandate is recorded at the top of ROADMAP.md.
+
+**Consolidated B3 offline delivery:** [HTTP/memory receipt](SHINO_B3_HTTP_MEMORY.md),
+code b16d126. One pinned persistent parser hands off only after unwind; guarded
+loop dispatch and close grace retain pre-body auth, bounded body deadlines and
+no reparsing refused POST bytes. JSON arena reuses existing768 B, no fallback;
+Core body String and route objects removed. Clean public43572 static/407488 BIN,
+telemetry160/metrics80, known HMAC path1616 (was1840); native bound remains unknown.
+52 tools/95 companion tests,227 Core cases/197 interruptions,137 exact-image
+negatives/122 cuts,150 HTTP exchanges plus8 coordinated pairs PASS_OFFLINE.
+No private inputs/device contact/real write/reboot/merge. B2 watermark1968 still
+fails OTA admission2048; no implied B3 OTA or repaint. Private build/install and
+native memory qualification require separate owner decisions. Final HEAD CI
+must be checked separately; software review and physical HOLD stay distinct.
 
 **Current mandate — OTA Breakthrough, 10 October2026:**
 The owner reports corrected A still active after the single historical B upload:

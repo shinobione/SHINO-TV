@@ -179,9 +179,144 @@ def prepare(directory,labels=("A","B"),reference_post=None,installed_manifest=No
     return packet
 
 
+
+def prepare_installed_b3(directory, installed_bin, installed_manifest, reference_flash):
+    """OFFLINE B2 -> B3 single-app UART packet. Never opens a port or AP.
+
+    A full archived 4MiB dump is an FS/SDK-tail reference, NOT proof that B2
+    is installed. Only a separate fresh PRE read validates the running B2
+    application bytes and that protected tail before any UART write.
+    """
+    from m9_stage1_readback_verify import regular_file
+    from m9_signed_release import validate_image
+    directory=Path(directory).resolve()
+    if OWNER.resolve() not in directory.parents or directory.exists():
+        raise ValueError("Fresh owner-private B3 packet directory required")
+    def owner_file(value):
+        path=regular_file(Path(value))
+        if OWNER.resolve() not in path.resolve().parents:
+            raise ValueError("Installed B2 evidence must remain owner-private")
+        return path
+    installed_bin=owner_file(installed_bin)
+    installed_manifest=owner_file(installed_manifest)
+    reference_flash=owner_file(reference_flash)
+    if subprocess.check_output(["git","branch","--show-current"],cwd=ROOT,text=True).strip()!="feature/shino-tv-b3-telemetry-scratch-experiment":
+        raise ValueError("B3 packet must be built from the reviewed PR #47 branch")
+    if subprocess.check_output(["git","status","--porcelain"],cwd=ROOT,text=True).strip():
+        raise ValueError("Commit reviewed source before preparing private B3")
+    head=subprocess.check_output(["git","rev-parse","HEAD"],cwd=ROOT,text=True).strip()
+    if len(head)!=40:raise ValueError("Exact source commit required")
+    config=load()
+    def unique(pairs):
+        out={}
+        for key,value in pairs:
+            if key in out:raise ValueError("Duplicate installed B2 manifest field")
+            out[key]=value
+        return out
+    old=json.loads(installed_manifest.read_text(encoding="utf-8"),object_pairs_hook=unique)
+    if set(old)!={"schema","family","layout","protocol","device","bytes","sha256","build_id"} or (
+        type(old["schema"]) is not int or old["schema"]!=1 or
+        old["family"]!="SHINO-StageA" or old["layout"]!="4m2m" or
+        old["protocol"]!="shino-http-ota-1" or old["device"]!=config["device"] or
+        not isinstance(old["sha256"],str) or len(old["sha256"])!=64 or
+        not isinstance(old["build_id"],str) or len(old["build_id"])!=64 or
+        any(c not in "0123456789abcdef" for c in old["sha256"]+old["build_id"]) or
+        type(old["bytes"]) is not int or not 64000<=old["bytes"]<=0xFEFF0):
+        raise ValueError("Installed B2 manifest not an exact compatible private 4m2m release")
+    installed=installed_bin.read_bytes()
+    if len(installed)!=old["bytes"] or hashlib.sha256(installed).hexdigest()!=old["sha256"]:
+        raise ValueError("Local B2 BIN and manifest do not match")
+    validate_image(installed)
+    tail=reference_flash.read_bytes()
+    if len(tail)!=0x400000:raise ValueError("Archived private FS/SDK reference must be exactly 4MiB")
+    # No assumption that archived A2 application equals currently installed B2:
+    # the fresh PRE captured immediately before a future write must prove B2,
+    # while the archived reference protects LittleFS and the SDK tail.
+    reference=dict(path=str(reference_flash),sha256=hashlib.sha256(tail).hexdigest(),
+                   installed_bytes=old["bytes"],installed_sha256=old["sha256"])
+    protected={}
+    for path in (OWNER/"transition-build/.pio/build"/ENV/"firmware.bin",
+                 OWNER/"owner-credentials.json",OWNER/"transition-report.json",
+                 OWNER/"transition-manifest.json"):
+        local=owner_file(path)
+        protected[str(local)]=hashlib.sha256(local.read_bytes()).hexdigest()
+    directory.mkdir(parents=True)
+    new=build(directory/"B3",True)
+    if new.get("private") is not True or new.get("source_dirty") is not False or new.get("source_commit")!=head or (
+        new.get("device")!=old["device"] or new.get("sha256")==old["sha256"] or
+        new.get("build_id")==old["build_id"] or new.get("layout")!="4m2m"):
+        raise ValueError("B3 build provenance or device identity invalid")
+    binary=directory/"B3/.pio/build"/ENV/"firmware.bin"
+    raw=binary.read_bytes()
+    if len(raw)!=new["bytes"] or hashlib.sha256(raw).hexdigest()!=new["sha256"]:
+        raise ValueError("B3 BIN changed after private compilation")
+    for key in ("ap_psk","api_token","digest_password"):
+        if config[key].encode() not in raw:raise ValueError("B3 owner credential missing")
+    if hashlib.sha256(config["maintenance_password"].encode()).digest() not in raw:
+        raise ValueError("B3 maintenance key changed")
+    for name,sha in protected.items():
+        if hashlib.sha256(Path(name).read_bytes()).hexdigest()!=sha:
+            raise ValueError("Historical owner artifact changed")
+    commands=prepare_uart(directory,"B3",reference)
+    receipt=directory/"B3-readonly-receipt.json"
+    qualifier=ROOT/"companion/shino_coordinated_qualify.py"
+    launcher=(f'@echo off\ncd /d "{ROOT}"\n'
+              f'echo B3 readonly qualification of SHA256 {new["sha256"]}\n'
+              'choice /C ON /N /M "Authorize read-only B3 GETs (O/N) ? "\nif errorlevel 2 exit /b 1\n'
+              f'python "{qualifier}" --bin "{binary}" --manifest "{directory/"B3/release.json"}" --authorize-read --receipt "{receipt}"\n'
+              'set "SHINO_QUALIFY_EXIT=%ERRORLEVEL%"\npause\nexit /b %SHINO_QUALIFY_EXIT%\n')
+    (directory/"QUALIFY-B3.cmd").write_text(launcher,encoding="utf-8")
+    guidance=[
+        "# SHINO // TV — B2 installed -> B3 UART migration (owner only)",
+        "", "**Prepared offline. No physical permission granted. No device contacted.**",
+        "This is a single app-only UART path because installed B2 failed its immutable",
+        "2048-byte continuation-stack OTA admission (observed historical minimum 1968).",
+        "Never lower that floor, repaint its watermark, or retry the failed B2 qualification.",
+        "", "## Immutable identities",
+        "Source HEAD: "+head,
+        "Expected installed B2 SHA256: "+old["sha256"],
+        "Candidate B3 SHA256: "+new["sha256"],
+        "Candidate B3 bytes: "+str(new["bytes"]),
+        "Archived FS/SDK-tail reference SHA256: "+reference["sha256"],
+        "", "## Stop-gated owner sequence — requires fresh separate approval",
+        "1. Preserve the current working B2 and original private backups; do not reboot/flash automatically.",
+        "2. Verify UART clips, 3.3V logic/GND and a stable USB-C supply independently; no powered rewiring.",
+        "3. Manually enter ESP8266 ROM mode, then run PRE-B3.cmd once for a NEW full 4MiB backup.",
+        "4. The sealed WRITE-B3.cmd refuses to open COM8 unless fresh PRE proves installed",
+        "   B2 application bytes and equality of the full protected [0x200000,0x400000)",
+        "   LittleFS/SDK tail with the archived reference. No retry if ambiguous.",
+        "5. Only after an explicit distinct write approval, run WRITE-B3.cmd once.",
+        "6. Re-enter ROM mode manually for POST-B3.cmd once; run VERIFY-POST-B3.cmd",
+        "   to compare B3 payload AND all untouched flash against fresh PRE.",
+        "7. Remove GPIO0 bridge/CH340 for normal boot. Check four cards, LINK and exact",
+        "   B3 identity, then run QUALIFY-B3.cmd read-only once, with LINK coordinated.",
+        "", "Any identity, PRE/POST, memory floor, FS inventory or boot discrepancy: STOP.",
+        "Keep original 4MiB backup offline. There is no automatic eboot rollback.",
+        "Do NOT run an OTA B2->B3 or use historical UPDATE-B.cmd for this transition.",
+        "No operation above has been executed by the packet generator.",
+    ]
+    (directory/"B3-OWNER-OPERATIONS.md").write_text("\n".join(guidance)+"\n",encoding="utf-8")
+    packet=dict(status="B3_OWNER_PACKET_OFFLINE_ONLY",source_commit=head,
+                installed_B2_sha256=old["sha256"],candidate_B3_sha256=new["sha256"],
+                archived_FS_reference_sha256=reference["sha256"],
+                pre_write_b2_and_fs_crosscheck=True,physical_authorized=False,
+                device_contacts=0,serial_io=0,flash_writes=0,ota_writes=0,
+                commands=["PRE-B3.cmd","WRITE-B3.cmd","POST-B3.cmd",
+                          "VERIFY-POST-B3.cmd","QUALIFY-B3.cmd"])
+    (directory/"B3-owner-packet.json").write_text(json.dumps(packet,indent=2)+"\n",encoding="utf-8")
+    print("B3_OWNER_PACKET_OFFLINE_ONLY — NO DEVICE, NO UART, NO OTA")
+    return packet
+
+
 if __name__=="__main__":
     p=argparse.ArgumentParser(description=__doc__);p.add_argument("directory",type=Path);p.add_argument("--prepare-uart-only",action="store_true")
     p.add_argument("--a2-b2",action="store_true");p.add_argument("--reference-post",type=Path);p.add_argument("--installed-manifest",type=Path)
+    p.add_argument("--single-b3",action="store_true")
+    p.add_argument("--installed-bin",type=Path)
     a=p.parse_args()
-    if a.prepare_uart_only:prepare_uart(a.directory,"A2" if a.a2_b2 else "A");print("UART_COMMANDS_PREPARED_OFFLINE_NO_PORT_OPEN")
+    if a.single_b3:
+        if a.prepare_uart_only or a.a2_b2 or not a.installed_bin or not a.installed_manifest or not a.reference_post:
+            p.error("--single-b3 requires --installed-bin, --installed-manifest and --reference-post only")
+        prepare_installed_b3(a.directory,a.installed_bin,a.installed_manifest,a.reference_post)
+    elif a.prepare_uart_only:prepare_uart(a.directory,"A2" if a.a2_b2 else "A");print("UART_COMMANDS_PREPARED_OFFLINE_NO_PORT_OPEN")
     else:prepare(a.directory,("A2","B2") if a.a2_b2 else ("A","B"),a.reference_post,a.installed_manifest)

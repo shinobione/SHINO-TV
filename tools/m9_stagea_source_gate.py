@@ -22,7 +22,22 @@ def run():
         'companion/test_shino_update.py': 'd1afe393073c1baaad60c36093f20a33375a46a9',
         'companion/SHINO-ONE-SHOT-B.ps1': '197ab9b8f71133fb27d8931a849eb6f5aff10d3a',
         # Deliberate PC-only LINK update, exact Git blob; no wildcard exemption.
-        'companion/shino_link.py': '9c7826702bc8475a6287024ac7128942701fe4ec',
+        'companion/shino_link.py': '3d09d7593d13a7ab52d4efc51e24e00e909810a9',
+        # Explicit 11 October owner mandate: Windows coordination only.
+        # Exact blobs; historical qualifier/capture/firmware pins stay frozen.
+        'companion/shino_digest_coord.py': '494a7ed15c6150ed43adc292d9a7c79386917123',
+        'companion/shino_coordinated_qualify.py': 'fd148d081813cb1a66447e18f362a888f2b3aedb',
+        'companion/test_shino_http_coordination.py': '046261f647b901d36ad97b57baea692f8bb78c22',
+        # Exact Git blob pins for B3 owner-only read-only evidence files.
+        'companion/shino_b3_capture.py': '98a7e39f19d7917b2029f2b8ab393615f1478cf1',
+        'companion/test_shino_b3_capture.py': 'de17954a836e566e51c5ee18c1b1bf7fc185facd',
+        'companion/SHINO_B3_READONLY_CAPTURE.md': 'f0a17dcad31872ab0f90286871aa1b04df35fdb6',
+        # 13 October owner documentary/code freeze: new offline B5 tools only.
+        # Exact reviewed Git blobs; all historical deployed-source pins remain.
+        'companion/shino_b5_get_diagnostic.py': '16a036896fac1b676328888313c516e2c3507f8d',
+        'companion/test_shino_b5_get_diagnostic.py': '07bc1cfc28904206674389c896d1504cd90281d2',
+        'companion/shino_b5_partial_preflight.py': 'c4b950a08a6d498a01fa49d86e75f48e3e3c0cc6',
+        'companion/test_shino_b5_partial_preflight.py': '84adec2c7ce3ad49c9b0424afaa94af082019cb2',
     }
     for name in subprocess.check_output(['git','ls-files','firmware','companion','tools/m9_single_attempt*'],cwd=ROOT,text=True).splitlines():
         if name in new_offline_script_pins:

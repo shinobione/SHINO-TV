@@ -65,6 +65,16 @@ def audit(directory):
         "core_flush":"UpdaterClass::_writeBuffer()","observer":"::uploadHealthy()",
     }
     selected={key:select(marker) for key,marker in markers.items()}
+    normal_source=(directory/"src/boot/M9NormalStageA.cpp").read_text()
+    deferred="server.setStageAPrebody(deferRequest)" in normal_source
+    if deferred:
+        markers["dispatch"]="::serviceRequest()"
+        selected["dispatch"]=select(markers["dispatch"])
+        loop_body=nodes[selected["loop"][0]]["body"]
+        if not all(marker in loop_body for marker in ("::handleClient()","::serviceRequest()")):
+            raise ValueError("Parser and pending dispatch must be sibling loop calls")
+        if "::serviceRequest()" in nodes[selected["parser"][0]]["body"]:
+            raise ValueError("Pending dispatch reentered from parser")
     values=symbols_with_data(elf)
     vtable=values["br_sha256_vtable"]["data"]
     pointers=struct.unpack_from("<3I",vtable,8)
@@ -75,7 +85,7 @@ def audit(directory):
         name,value=matches[0];selected[label]=(name,frame(value["body"]));resolved[label]=name
     # Cross-check compiler metadata against independent machine prologues.
     su="\n".join(p.read_text(errors="replace") for p in root.rglob("*.su"))
-    for key in ("loop","before_body","upload","begin","proof","finish","readback","segments","read","end","core_write","core_flush"):
+    for key in ("loop","before_body","upload","begin","proof","finish","readback","segments","read","end","core_write","core_flush",*(("dispatch",) if deferred else ())):
         marker=("UpdaterClass::write(uint8_t*" if key=="core_write" else
                 "::upload(uint32_t)" if key=="upload" else markers[key])
         rows=[line.rsplit("\t",2) for line in su.splitlines() if marker in line]
@@ -87,7 +97,8 @@ def audit(directory):
     if len(re.findall(r"call0[^\n]*Transfer::segments\(",finish_body))!=2:
         raise ValueError("Two segment validations must be reached from finish")
     if "UpdaterClass::end(bool)" not in finish_body:raise ValueError("Missing real Core commit call")
-    root_path=["wrapper","loop","http","parser","before_body","upload"]
+    root_path=(["wrapper","loop","dispatch","before_body","upload"] if deferred else
+               ["wrapper","loop","http","parser","before_body","upload"])
     paths={
         "hmac_key_sha256":root_path+["begin","proof","key_init","process_key","sha_update","sha_round"],
         "staging_sha256":root_path+["finish","readback","sha_update","sha_round"],
@@ -102,6 +113,7 @@ def audit(directory):
     if max(v["compiled_bytes"] for v in costs.values())>2048:
         raise ValueError("Known compiled OTA path exceeds the unchanged 2048-byte reserve")
     return dict(status="COMPILED_PATHS_PASS_NOT_NATIVE_HIGH_WATER",paths=costs,
+        parser_unwinds_before_dispatch=deferred,
         sha256_vtable_targets=resolved,elf_sha256=hashlib.sha256(elf.read_bytes()).hexdigest(),
         nested_verification=False,core_commit_reachable=True,
         continuation_bytes=4096,required_free_bytes=2048,

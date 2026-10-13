@@ -1,5 +1,230 @@
 # SHINO // TV — Roadmap
 
+## Mandat courant — FREEZE B5.1 PHYSICAL LAN PASS, 13 octobre 2026
+
+Décision propriétaire : figer le jalon fonctionnel B5.1 par documentation et
+commits/push ciblés sur la branche existante de PR #47, Draft et non fusionnée.
+Départ local/GitHub vérifié à `a063c001d69ffaffb6beac8427e03941d371ac68`.
+Préserver les modifications locales, tous les artefacts privés et les pilotes
+V2.2 ; aucune nouvelle intervention matérielle, reconstruction ou modification
+du BIN B5.1 n'est autorisée.
+
+**État courant — PASS PHYSIQUE rapporté par le propriétaire :** B5.1 exécuté,
+414176 B / SHA-256 `973cf725ab1d7a259d00d60e8af8a8e8e2da544af39578e06b649218588607cf`.
+Le transfert complet Windows et son reçu initial
+`POSTBOOT_ACCEPTANCE_UNCONFIRMED` restent distincts du GET physique ultérieur
+confirmant l'image exécutée. Premier boot et connexion Freebox PASS ; adresse
+DHCP observée `192.168.1.70`, aucune configuration fixe déduite. LittleFS
+`fs_ok=true`,24 fichiers/181402 B ; `ota_enabled=true`. Quatre cartes CPU/GPU/
+RAM/GPU temp fonctionnelles via SHINO LINK sur LAN, PC Ethernet.
+
+**NON VÉRIFIÉS / HOLD :** redémarrage, reconnexion automatique, AP secours,
+OTA LAN complète, récupération RTC/eboot et maxima mémoire OTA natifs.
+V2.2 horloge/pochette reste un pilote séparé hors ligne ; il n'est pas installé
+dans B5.1. Ce PASS fonctionnel ne vaut pas autorisation d'un nouveau transfert.
+
+[Checkpoint et distinction des preuves](M09_B51_PHYSICAL_LAN_CHECKPOINT_2026-10-13.md)
+— [compte rendu propriétaire publié](https://github.com/shinobione/SHINO-TV/pull/47#issuecomment-6155556845).
+La CI doit être vérifiée sur le nouveau HEAD de gel ; celle de `a063c001`
+reste une preuve antérieure. Les mandats et rapports ci-dessous conservent
+leur état historique au moment de leur rédaction.
+
+## Mandat courant — B5 OTA Partial Transport Guard, 13 octobre 2026
+
+Dernière correction propriétaire : limiter strictement tous les modes du transport
+partiel à l'AP `192.168.4.1`, avant ouverture réseau. Lier la réservation durable
+à l'appareil et au candidat, indépendamment du chemin `.attempt` choisi ; préserver
+tous les marqueurs et refuser tout état ambigu. Corrections et tests HOST ciblés
+uniquement, garanties précédentes conservées. Aucun firmware, BIN ou transport OTA
+normal modifié ; aucun contact appareil, flash, OTA, reboot, Wi-Fi, commit/push.
+
+Décision propriétaire : préparer hors ligne un outil distinct du transport OTA
+normal, annonçant l'image B5.1 complète mais plafonnant définitivement son corps
+à 8192 octets. Réutiliser inspection, HMAC, Digest et coordination existants ;
+marqueur durable, un seul POST, aucune reprise, collecte du statut séparée même
+après FAILED_NO_COMMIT. Tests HOST ciblés avec données et serveur fictifs,
+aucun contact appareil. Préserver toutes les modifications et tous les paquets,
+secrets, reçus et marqueurs préexistants. Aucun changement firmware, rebuild,
+commit/push, réseau, OTA/flash/reboot/provisionnement physique. Toute future
+opération physique requiert une autorisation séparée pour son périmètre et son
+image/hash exacts. Livraison puis STOP ; les seuils et HOLD natifs restent inchangés.
+
+Livraison locale : [outil et revue des risques](SHINO_B5_PARTIAL_TRANSPORT_GUARD.md).
+Dernière correction : AP strict et réservation appareil/SHA indépendante du
+marqueur, conservée sur échec/état ambigu ;8 nouveaux tests +18 régressions
+ciblées PASS,26 cas uniques sur ce correctif, zéro socket/DNS. Registre local au
+profil Windows ; aucune qualification physique ni autorisation de transfert.
+Livraison initiale avant cette correction : HOST33 tests ciblés PASS
++11 régressions existantes PASS ; zéro
+socket/DNS dans les nouveaux tests. Inspection locale des vrais BIN PASS sans
+lecture de secrets. Inventaires complets B5/B5.1 inchangés (1185/1186 fichiers).
+READY_FOR_OWNER_REVIEW logiciel uniquement ; physique/native HOLD/NOT_RUN.
+Aucun transfert, firmware modifié, rebuild, commit ou push pendant cette mission.
+
+## Mandat courant — diagnostic GET Digest borné, 13 octobre 2026
+
+Précision propriétaire : correctif local minimal pour accepter exactement
+`(IP unset)` avec `sta_online=false`, le refuser avec `true`, et conserver un
+verdict HOLD lorsque STA est hors ligne. Régression fidèle au Core et tests
+ciblés uniquement ; aucun contact appareil, rebuild firmware, commit ou push.
+
+Décision propriétaire : remplacer le client ponctuel par un outil GET réutilisable,
+avec coordination Digest existante, un seul challenge valide par opération et
+STOP au second 401. Corrections locales et tests hors ligne limités au diagnostic.
+Départ propre sur la branche existante, HEAD `a063c001d69ffaffb6beac8427e03941d371ac68`.
+Ne modifier ni firmware, ni LINK, ni paquets privés B5/B5.1, manifestes, reçus ou
+marqueurs. Aucun rebuild, contact SmallTV, POST, OTA, provisionnement, changement
+réseau, commit ou push. Nouvelle qualification physique séparément autorisée.
+Le 401 du 12 octobre reste unattributé ; stack B5 observée 2128 B, marge 80 B sur
+2048, sans qualification du pire cas natif B5.1. Préserver les preuves antérieures.
+
+Livraison locale : `companion/shino_b5_get_diagnostic.py`, GET uniquement, mode
+hors ligne par défaut ; verrou partagé jusqu'à fermeture du corps, deux GET
+maximum par opération, délai réseau total 6 s, erreurs et événements sans secrets.
+Validation HOST : 32 nouveaux tests + 17 régressions existantes = **49 PASS**,
+dont réponse lente sur `127.0.0.1` interrompue au délai total. Les inventaires
+SHA-256 complets avant/après des paquets B5 (1185 fichiers) et B5.1 (1186 fichiers)
+sont identiques. `git diff --check` PASS. Aucun commit/push ; DEVICE **NOT_RUN**.
+
+## Mandat courant — B5.1 Home LAN Recovery & Permanent Fix, 12 octobre 2026
+
+Décision propriétaire : diagnostiquer et corriger le provisionnement domestique
+B5, livrer B5.1 avec tests exécutables, build public inerte, ressources, paquet
+propriétaire préparable et CI du SHA exact sur la branche existante de la
+Draft PR #47. Préparation effectuée : working tree propre, branche correcte,
+`git pull --ff-only` de `67a94c1` à `6697b5b007b9e1358882cbb461a27e402f0552d8` ;
+HEAD distant identique et CI concernées SUCCESS. Vérifier le correctif STA déjà
+présent et le chemin HTTP réel sans présumer la cause du HTTP 409.
+
+État physique fourni par le propriétaire : **B5 installé par OTA depuis B4**,
+boot/quatre cartes/LINK/identité/LittleFS/AP protégée PASS ; GET LAN status et
+intent HTTP200 ; POST provision HTTP409 `PROVISION_HOLD`, puis après coupure
+`NO_SAVED_WIFI`, STA hors ligne, IP absente. Ce sont des observations
+propriétaire, pas de nouvelles lectures appareil de l'agent. Aucun nouveau
+provisionnement n'est autorisé pendant ce travail hors ligne.
+
+Préserver 4m2m, staging, LittleFS, secteurs SDK, Digest/HMAC, seuils mémoire,
+télémétrie et récupération AP. Tests uniquement avec identifiants fictifs.
+Code/tests/builds publics/simulations/commits/push/PR Draft et protocole de
+qualification autorisés. Aucun contact SmallTV, secret ou BIN privé publié,
+OTA/flash/écriture SDK-RTC-FS/reboot/provisionnement, suppression de sauvegarde,
+reçu ou `.attempt`, ni merge. Toute intervention physique exige une nouvelle
+autorisation pour l'opération et l'image/hash exacts. B5 installé et B5.1
+candidat restent distincts ; PASS hôte/CI ne vaut jamais PASS physique.
+
+## Backlog UI prioritaire — lisibilité des quatre cartes (rappel propriétaire, 11 octobre 2026)
+
+**Constat terrain, photo fournie :** sur le SmallTV-Ultra réel (**LCD 240 × 240**),
+les libellés actuels `CPU usage`, `GPU usage`, `RAM in use` et
+`GPU temperature` sont trop petits et difficiles à lire. Les mentions longues
+prennent une place inutile dans les cartes. Demande déjà exprimée par le
+propriétaire : **ne pas perdre cette correction de vue dans la roadmap**.
+
+**Libellés exacts à utiliser :**
+- `CPU usage` → **`CPU`**
+- `GPU usage` → **`GPU`**
+- `RAM in use` → **`RAM`**
+- `GPU temperature` → **`GPU temp`**
+
+**Critères d'acceptation visuelle :**
+- Police de chaque libellé **plus grande, plus nette et plus contrastée**
+  que sur le B5 actuel, mais **strictement plus petite que la police
+  des valeurs chiffrées** dans sa carte respective.
+- Chaque libellé doit tenir **sur une seule ligne**, notamment `GPU temp`.
+  Éviter coupures, clipping, textes minuscules ou débordements.
+- Préserver **les quatre cartes simultanément**, les valeurs CPU/GPU/RAM/GPU TEMP,
+  les unités et barres dynamiques déjà validées ; ne pas réduire les valeurs
+  ni sacrifier la surface utile du LCD.
+- Valider le rendu à **résolution native 240 × 240** et sur **photo de
+  l'écran physique**, pas uniquement sur une maquette navigateur ou un SVG agrandi.
+- Intervention exclusivement UI/typographie : **ne pas la confondre avec
+  la correction du provisionnement Wi-Fi Freebox (B5/B5.1)**.
+  Planifier après stabilisation de la connexion Home LAN ; aucune OTA
+  supplémentaire ni modification matérielle n'est autorisée par cette note.
+
+**État : À FAIRE — demande confirmée et non encore implémentée/testée.**
+
+---
+
+
+## Mandat courant — Mission 9 / B3 OTA Safety Gate, 11 octobre 2026
+
+Décision propriétaire de cette conversation : implémenter et exécuter la
+qualification OTA **hors ligne** sur la PR #47 existante, à partir du HEAD
+vérifié `f2a831d15d01efa33277a7fd08428498c0e6c912`. Le
+[rapport B3 physique](SHINO_B3_PHYSICAL_PASS_OTA_READINESS_2026-10-11.md)
+confirme le PASS propriétaire de 30 cycles GET, pas un PASS OTA.
+Étendre les simulateurs existants avec Core ESP8266 3.1.2 exact : allocations
+4096/256, planchers mémoire pendant toutes les étapes, géométrie 4m2m,
+en-têtes, LittleFS, coupures Updater/RTC/eboot secteur par secteur, réponse
+perdue et état inconnu sans retry. Tests Windows, natifs publics inertes,
+commit consolidé et CI au HEAD final autorisés. Préserver les seuils, toutes
+les sources firmware/clients de production, fichiers privés et marqueurs.
+Aucun contact SmallTV, firmware privé B4, OTA, flash, reboot, changement LINK
+en production ou merge. Le verdict `OTA_OFFLINE_GATE=PASS/HOLD` doit séparer
+preuves sources/simulées et mesures physiques encore absentes ; il ne donne
+aucune autorisation d'OTA réelle.
+
+[Livraison hors ligne](SHINO_B3_OTA_OFFLINE_GATE_2026-10-11.md) : matrices
+Core/RTC/eboot, LittleFS public et client Windows à tentative unique ; assertions
+PASS, `OTA_OFFLINE_GATE=HOLD`. Mémoire native OTA non mesurée, observation
+transitoire incomplète et copie eboot sans rollback. Aucun B4 privé créé.
+
+## Mandat courant — B3 Windows HTTP Coordination Fix, 11 octobre 2026
+
+Décision propriétaire de cette conversation : corriger et instrumenter uniquement
+les clients Windows, sur la branche existante de la Draft PR #47. Départ vérifié
+`26e1ace98dcd4713c4a227c3847bc4b5cf74dee5`, identique au HEAD GitHub.
+B3 est **installé et fonctionnel selon le propriétaire** : boot/quatre cartes
+PASS, LINK CONNECTED ; capture203 s stack2288/heap27696/bloc27120 B, frag10 %.
+Qualification30 cycles HOLD au cycle22 (`LINK_METRICS_NOT_FRESH`) ; LINK seul
+122 tentatives/122 acceptées/0 échec. Ces faits sont des observations propriétaire,
+pas une nouvelle lecture de l'agent. La concurrence n'est pas une cause prouvée.
+
+Livrer une cadence B3 explicitement opt-in, des diagnostics bornés et expurgés,
+des tests Windows sans réseau/matériel et la CI du HEAD exact. Conserver le verrou
+Digest, les timeouts, backoff, TTL6000 ms, `metrics_fresh`, seuils mémoire et OTA.
+Conserver les comportements B2 et tous les anciens reçus, fichiers privés,
+backups et marqueurs. Aucune compilation privée, lecture live, flash/UART/OTA,
+reboot, manipulation Wi-Fi, suppression de marqueur ou merge autorisé. Une
+future qualification en lecture seule exige une nouvelle autorisation explicite.
+Les mandats et reçus ci-dessous restent des preuves historiques inchangées.
+
+## Mandat courant — Break the Loop, 11 octobre 2026
+
+Le propriétaire autorise une amélioration structurelle hors ligne du firmware
+normal et de sa stabilité HTTP sur la branche existante
+`feature/shino-tv-b3-telemetry-scratch-experiment`, Draft PR #47, sans nouvelle
+PR par sous-problème. Lire les dépendances #42/#44/#45/#46, préserver leurs
+preuves, compiler avant/après, tester les chemins réels Core 3.1.2 et livrer
+code, diagnostic consolidé, ressources mesurées et CI du HEAD exact.
+
+Dernier état physique confirmé par le propriétaire : **B2 installé**, première
+OTA Wi-Fi A2→B2 réussie ; qualification prolongée **HOLD** (timeout HTTP
+antérieur non attribué, puis minimum historique de continuation **1968 B**
+contre **2048 B** requis). B3 n'est ni installé ni qualifié. Le gain de frame
+télémétrie 224→176 B avec +80 B statiques ne prouve aucun gain natif global.
+Les descriptions A/A2 ci-dessous sont des états historiques.
+
+Conserver 4m2m, LittleFS, Digest/HMAC/intégrité OTA, les quatre mesures, TTL6s,
+les planchers mémoire et le watermark sans repaint runtime. Aucun accès SmallTV,
+AP privé, COM8/UART, flash/OTA réelle, reboot, secret/BIN/dump privé, merge,
+push forcé ou effacement d'anciennes preuves autorisé. Les builds utilisent
+uniquement des entrées publiques inertes. Une future installation nécessite
+une approbation propriétaire distincte pour l'opération et le fichier/hash exacts.
+
+Objectif utilisateur : des échanges HTTP fiables avec une réserve mémoire
+défendable avant d'ajouter horloge, météo ou musique. Livraison finale courte
+en français : **READY FOR OWNER REVIEW** ou **HOLD**, portée physique explicite.
+
+Livraison consolidée : [B3 HTTP/mémoire](SHINO_B3_HTTP_MEMORY.md), code `b16d126`.
+Parser et dispatch deviennent frères ; JSON borné dans les buffers existants.
+Build public propre :43572 B statiques,407488 B BIN, télémétrie160 B,
+métriques80 B, chemin HMAC connu1616 B (avant1840).52 tests outils/95 Windows,
+227 cas Core/197 interruptions,137 refus exact-BIN/122 frontières,150 échanges
+HTTP et8 paires Digest coordonnées PASS hors ligne. Aucun appareil contacté ;
+mémoire native/installation B3 HOLD. Revoir la CI du HEAD final séparément.
+
 ## Mandat courant — OTA Breakthrough, 10 octobre 2026
 
 La demande propriétaire de cette conversation autorise la correction et la
