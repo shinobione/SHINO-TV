@@ -95,3 +95,16 @@ les instances concurrentes, les échecs incertains/fsync, les secrets et la
 collecte séparée. Les suites complètes et leurs tests TCP loopback n'ont pas été
 relancés localement ; aucun firmware n'a été reconstruit. Les quatre éléments
 V2.2 demandés correspondent au HEAD de départ et leurs empreintes sont conservées.
+
+La première CI du commit `251be908d760ff3d61958dff851afd384a3f267b` a révélé
+un défaut de classification : les gardes signed/StageA cherchaient les nouveaux
+scripts dans leur baseline historique `7455f6b`. La maintenance ciblée inscrit
+uniquement les quatre blobs Git publics revus dans les listes d'empreintes
+exactes existantes de ces deux gardes. Aucune exemption globale, aucun ancien
+pin, seuil mémoire, firmware ou transport normal n'est changé.
+**5 régressions de garde source PASS** après reproduction de l'échec : clôture
+réelle des deux gardes, empreintes revues, refus de chacun des quatre scripts
+altérés, refus d'un script inconnu et maintien du gel d'un ancien companion.
+Ces régressions nécessitent le SDK public épinglé comme les gardes existantes,
+effectuent seulement des lectures/Git et interdisent sockets/DNS ; aucun build.
+La CI du HEAD suivant doit être contrôlée séparément de cet échec initial.

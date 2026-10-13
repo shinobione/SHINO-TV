@@ -48,6 +48,12 @@ def source_gate():
         'companion/shino_b3_capture.py': '98a7e39f19d7917b2029f2b8ab393615f1478cf1',
         'companion/test_shino_b3_capture.py': 'de17954a836e566e51c5ee18c1b1bf7fc185facd',
         'companion/SHINO_B3_READONLY_CAPTURE.md': 'f0a17dcad31872ab0f90286871aa1b04df35fdb6',
+        # 13 October owner documentary/code freeze: new offline B5 tools only.
+        # Exact reviewed Git blobs; all historical deployed-source pins remain.
+        'companion/shino_b5_get_diagnostic.py': '16a036896fac1b676328888313c516e2c3507f8d',
+        'companion/test_shino_b5_get_diagnostic.py': '07bc1cfc28904206674389c896d1504cd90281d2',
+        'companion/shino_b5_partial_preflight.py': 'c4b950a08a6d498a01fa49d86e75f48e3e3c0cc6',
+        'companion/test_shino_b5_partial_preflight.py': '84adec2c7ce3ad49c9b0424afaa94af082019cb2',
     }
     for name in subprocess.check_output(["git","ls-files","firmware","companion","tools/m9_single_attempt*"],cwd=ROOT,text=True).splitlines():
         if name in new_offline_script_pins:
