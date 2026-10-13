@@ -1,5 +1,75 @@
 # SHINO // TV — Agent handoff / operational source of truth
-Last owner mandate update: **2026-10-12**; the **2026-10-01** square-scene product contract remains below. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
+Last owner mandate update: **2026-10-13**; the **2026-10-01** square-scene product contract remains below. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
+
+**Current owner mandate — FREEZE B5.1 PHYSICAL LAN PASS, 13 October 2026:**
+Owner authorizes only this documentary/Git freeze, focused commits/push on the
+existing PR47 branch, Draft/unmerged. Local and actual GitHub starting HEAD
+a063c001d69ffaffb6beac8427e03941d371ac68 verified; stale local origin cache is not
+the current remote. Preserve all local changes/private artifacts and V2.2
+prototypes. No device contact, OTA, reboot, flash, Wi-Fi/provisioning, firmware
+rebuild or B5.1 BIN change is authorized.
+
+**Current physical state, OWNER-REPORTED:** B5.1 running,414176 B / SHA-256
+973cf725ab1d7a259d00d60e8af8a8e8e2da544af39578e06b649218588607cf.
+Windows full transfer and initial POSTBOOT_ACCEPTANCE_UNCONFIRMED receipt are
+separate from the later physical identity GET confirming the executed image.
+First boot/Freebox association PASS;192.168.1.70 is an observed DHCP lease,
+not a fixed address. LittleFS fs_ok=true,24 files/181402 B; ota_enabled=true.
+CPU/GPU/RAM/GPU temp cards work through LAN SHINO LINK from an Ethernet PC.
+These are owner observations, not new agent-performed device tests or CI proof.
+
+Reboot, automatic reconnect, fallback AP, full LAN OTA, RTC/eboot recovery and
+whole-native OTA memory high-water remain NOT VERIFIED/HOLD. V2.2 clock/cover
+is preserved as a separate offline PR40 pilot, not part of installed B5.1.
+[Canonical checkpoint](M09_B51_PHYSICAL_LAN_CHECKPOINT_2026-10-13.md) and
+[published owner report](https://github.com/shinobione/SHINO-TV/pull/47#issuecomment-6155556845).
+Verify new exact-head CI after push. Older mandates/results below retain their
+historical state; their earlier uninstalled/HOLD wording is not the new state.
+
+**Current owner mandate — B5 OTA Partial Transport Guard, 13 October 2026:**
+Offline-only owner tool/tests on unchanged branch HEAD a063c001. Existing
+firmware, normal updater, GET diagnostic and private packets are preserved.
+Latest targeted correction: strict normal-updater AP192.168.4.1 in all modes,
+before network; durable device/candidate-SHA reservation independent of marker,
+BIN paths and boot. Existing, incomplete or ambiguous state fails closed;
+exclusive creation precedes POST and is never undone on error. HOST8 new +18
+selected existing cases PASS on this correction; zero sockets/DNS. Reservation
+is local to the preserved Windows profile/state, not an on-device global lock.
+Separate default local inspection, future single bounded POST and independently
+authorized evidence GET. Full authentic414176 Content-Length, irreversible8192
+body cap, one socket/POST, durable exclusive attempt marker, no retries/tail/
+response polling/install/reboot. No device contact or commit/push authorized.
+
+[Local delivery and risks](SHINO_B5_PARTIAL_TRANSPORT_GUARD.md):
+`companion/shino_b5_partial_preflight.py` plus its matching test file. HOST
+Initial delivery before that correction: **33 focused cases PASS**, plus
+**11 existing regressions PASS**
+(7 Digest coordination,4 updater inspection). All33 use in-memory peers with
+socket/DNS guards asserting zero calls. Real retained BINs pass default local
+inspection under the same network/secret-read guards. Complete packet digests
+(1185/1186 files) unchanged; normal updater/firmware and GET diagnostic unchanged.
+READY_FOR_OWNER_REVIEW only; DEVICE NOT_RUN, native/physical execution HOLD.
+FAILED_NO_COMMIT/minima survive in a separate sanitized status read, including
+unsafe observations; reset/state/identity/FS uncertainty stays STOP, never OTA
+success. Physical prefix reception/sector count remain unknown. An independent
+future exact-operation/image owner decision is required; no physical command
+is supplied by this delivery. Mission stops after delivery.
+
+**Prior owner mandate — bounded GET Digest diagnostic, 13 October 2026:**
+Local diagnostic tool/tests only, starting clean at `a063c001` on the existing
+branch. Reuse pinned Digest and Windows coordination; at most one valid401
+challenge plus an authenticated GET per operation, full-body lock ownership,
+renewal between GETs, sanitized counters and STOP on a second401 or other error.
+No firmware/LINK change, B5/B5.1 private artifact modification, rebuild, device
+contact, POST, OTA, provisioning, network change, commit or push. Future physical
+reads need separate owner approval. Preserve historical401 and stack evidence.
+
+Local delivery: `companion/shino_b5_get_diagnostic.py` and its matching test file.
+Default CLI is offline; full-body shared lock, maximum two wire GETs, one valid
+challenge, second401 STOP, 6s network deadline and sanitized exchange counters.
+HOST **49 PASS** (32 new + 17 existing), including real TCP trickling-response
+timeout on loopback only. Full B5/B5.1 packet inventories (1185/1186 files) have
+identical before/after SHA-256 digests. No commit/push; DEVICE **NOT_RUN**.
 
 **Current owner mandate — B5.1 Home LAN Recovery & Permanent Fix, 12 October2026:**
 Same branch/Draft PR47, clean FF-synchronized starting HEAD6697b5b007b9e1358882cbb461a27e402f0552d8,

@@ -1,5 +1,91 @@
 # SHINO // TV — Roadmap
 
+## Mandat courant — FREEZE B5.1 PHYSICAL LAN PASS, 13 octobre 2026
+
+Décision propriétaire : figer le jalon fonctionnel B5.1 par documentation et
+commits/push ciblés sur la branche existante de PR #47, Draft et non fusionnée.
+Départ local/GitHub vérifié à `a063c001d69ffaffb6beac8427e03941d371ac68`.
+Préserver les modifications locales, tous les artefacts privés et les pilotes
+V2.2 ; aucune nouvelle intervention matérielle, reconstruction ou modification
+du BIN B5.1 n'est autorisée.
+
+**État courant — PASS PHYSIQUE rapporté par le propriétaire :** B5.1 exécuté,
+414176 B / SHA-256 `973cf725ab1d7a259d00d60e8af8a8e8e2da544af39578e06b649218588607cf`.
+Le transfert complet Windows et son reçu initial
+`POSTBOOT_ACCEPTANCE_UNCONFIRMED` restent distincts du GET physique ultérieur
+confirmant l'image exécutée. Premier boot et connexion Freebox PASS ; adresse
+DHCP observée `192.168.1.70`, aucune configuration fixe déduite. LittleFS
+`fs_ok=true`,24 fichiers/181402 B ; `ota_enabled=true`. Quatre cartes CPU/GPU/
+RAM/GPU temp fonctionnelles via SHINO LINK sur LAN, PC Ethernet.
+
+**NON VÉRIFIÉS / HOLD :** redémarrage, reconnexion automatique, AP secours,
+OTA LAN complète, récupération RTC/eboot et maxima mémoire OTA natifs.
+V2.2 horloge/pochette reste un pilote séparé hors ligne ; il n'est pas installé
+dans B5.1. Ce PASS fonctionnel ne vaut pas autorisation d'un nouveau transfert.
+
+[Checkpoint et distinction des preuves](M09_B51_PHYSICAL_LAN_CHECKPOINT_2026-10-13.md)
+— [compte rendu propriétaire publié](https://github.com/shinobione/SHINO-TV/pull/47#issuecomment-6155556845).
+La CI doit être vérifiée sur le nouveau HEAD de gel ; celle de `a063c001`
+reste une preuve antérieure. Les mandats et rapports ci-dessous conservent
+leur état historique au moment de leur rédaction.
+
+## Mandat courant — B5 OTA Partial Transport Guard, 13 octobre 2026
+
+Dernière correction propriétaire : limiter strictement tous les modes du transport
+partiel à l'AP `192.168.4.1`, avant ouverture réseau. Lier la réservation durable
+à l'appareil et au candidat, indépendamment du chemin `.attempt` choisi ; préserver
+tous les marqueurs et refuser tout état ambigu. Corrections et tests HOST ciblés
+uniquement, garanties précédentes conservées. Aucun firmware, BIN ou transport OTA
+normal modifié ; aucun contact appareil, flash, OTA, reboot, Wi-Fi, commit/push.
+
+Décision propriétaire : préparer hors ligne un outil distinct du transport OTA
+normal, annonçant l'image B5.1 complète mais plafonnant définitivement son corps
+à 8192 octets. Réutiliser inspection, HMAC, Digest et coordination existants ;
+marqueur durable, un seul POST, aucune reprise, collecte du statut séparée même
+après FAILED_NO_COMMIT. Tests HOST ciblés avec données et serveur fictifs,
+aucun contact appareil. Préserver toutes les modifications et tous les paquets,
+secrets, reçus et marqueurs préexistants. Aucun changement firmware, rebuild,
+commit/push, réseau, OTA/flash/reboot/provisionnement physique. Toute future
+opération physique requiert une autorisation séparée pour son périmètre et son
+image/hash exacts. Livraison puis STOP ; les seuils et HOLD natifs restent inchangés.
+
+Livraison locale : [outil et revue des risques](SHINO_B5_PARTIAL_TRANSPORT_GUARD.md).
+Dernière correction : AP strict et réservation appareil/SHA indépendante du
+marqueur, conservée sur échec/état ambigu ;8 nouveaux tests +18 régressions
+ciblées PASS,26 cas uniques sur ce correctif, zéro socket/DNS. Registre local au
+profil Windows ; aucune qualification physique ni autorisation de transfert.
+Livraison initiale avant cette correction : HOST33 tests ciblés PASS
++11 régressions existantes PASS ; zéro
+socket/DNS dans les nouveaux tests. Inspection locale des vrais BIN PASS sans
+lecture de secrets. Inventaires complets B5/B5.1 inchangés (1185/1186 fichiers).
+READY_FOR_OWNER_REVIEW logiciel uniquement ; physique/native HOLD/NOT_RUN.
+Aucun transfert, firmware modifié, rebuild, commit ou push pendant cette mission.
+
+## Mandat courant — diagnostic GET Digest borné, 13 octobre 2026
+
+Précision propriétaire : correctif local minimal pour accepter exactement
+`(IP unset)` avec `sta_online=false`, le refuser avec `true`, et conserver un
+verdict HOLD lorsque STA est hors ligne. Régression fidèle au Core et tests
+ciblés uniquement ; aucun contact appareil, rebuild firmware, commit ou push.
+
+Décision propriétaire : remplacer le client ponctuel par un outil GET réutilisable,
+avec coordination Digest existante, un seul challenge valide par opération et
+STOP au second 401. Corrections locales et tests hors ligne limités au diagnostic.
+Départ propre sur la branche existante, HEAD `a063c001d69ffaffb6beac8427e03941d371ac68`.
+Ne modifier ni firmware, ni LINK, ni paquets privés B5/B5.1, manifestes, reçus ou
+marqueurs. Aucun rebuild, contact SmallTV, POST, OTA, provisionnement, changement
+réseau, commit ou push. Nouvelle qualification physique séparément autorisée.
+Le 401 du 12 octobre reste unattributé ; stack B5 observée 2128 B, marge 80 B sur
+2048, sans qualification du pire cas natif B5.1. Préserver les preuves antérieures.
+
+Livraison locale : `companion/shino_b5_get_diagnostic.py`, GET uniquement, mode
+hors ligne par défaut ; verrou partagé jusqu'à fermeture du corps, deux GET
+maximum par opération, délai réseau total 6 s, erreurs et événements sans secrets.
+Validation HOST : 32 nouveaux tests + 17 régressions existantes = **49 PASS**,
+dont réponse lente sur `127.0.0.1` interrompue au délai total. Les inventaires
+SHA-256 complets avant/après des paquets B5 (1185 fichiers) et B5.1 (1186 fichiers)
+sont identiques. `git diff --check` PASS. Aucun commit/push ; DEVICE **NOT_RUN**.
+
 ## Mandat courant — B5.1 Home LAN Recovery & Permanent Fix, 12 octobre 2026
 
 Décision propriétaire : diagnostiquer et corriger le provisionnement domestique
