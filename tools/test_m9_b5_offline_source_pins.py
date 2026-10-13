@@ -1,4 +1,4 @@
-"""Read-only source gates; pinned public SDK required, no build or owner input."""
+"""Real tracked-file guards in isolation: no SDK, build or owner input."""
 import ast
 from pathlib import Path
 import subprocess
@@ -9,11 +9,24 @@ import m9_signed_ota_runner as signed
 import m9_stagea_source_gate as stagea
 
 ROOT = Path(__file__).resolve().parents[1]
-REVIEWED = "251be908d760ff3d61958dff851afd384a3f267b"
 TOOLS = ("companion/shino_b5_get_diagnostic.py",
          "companion/test_shino_b5_get_diagnostic.py",
          "companion/shino_b5_partial_preflight.py",
          "companion/test_shino_b5_partial_preflight.py")
+
+
+def tracked_gate(module):
+    """Execute the actual pin assignment/loop, excluding the separate SDK gate."""
+    tree = ast.parse(Path(module.__file__).read_text(encoding="utf-8"))
+    function = next(node for node in tree.body if isinstance(node, ast.FunctionDef)
+                    and node.name == ("source_gate" if module is signed else "run"))
+    assignment = next(node for node in function.body if isinstance(node, ast.Assign)
+                      and any(isinstance(t, ast.Name) and t.id == "new_offline_script_pins"
+                              for t in node.targets))
+    loop = next(node for node in function.body if isinstance(node, ast.For)
+                and isinstance(node.target, ast.Name) and node.target.id == "name")
+    block = ast.Module(body=[assignment, loop], type_ignores=[])
+    exec(compile(block, module.__file__, "exec"), {"ROOT": ROOT, "subprocess": subprocess})
 
 
 class OfflineSourcePinsTests(unittest.TestCase):
@@ -21,6 +34,17 @@ class OfflineSourcePinsTests(unittest.TestCase):
         for name in ("socket.socket", "socket.create_connection", "socket.getaddrinfo"):
             guard = self.enterContext(patch(name, side_effect=AssertionError("NO NETWORK")))
             self.addCleanup(guard.assert_not_called)
+        # The general CI job has a shallow clone. Use immutable HEAD blobs as
+        # this unit's baseline snapshot; specialized gates check real history.
+        original = subprocess.check_output
+        def snapshot(command, *args, **kwargs):
+            if command[:2] == ["git", "show"]:
+                ref, path = command[2].split(":", 1)
+                if ref in ("7455f6b353f1733a78f2a6d25503edb063f7befb",
+                           "b59964af43b555b75d415e6d063580945e6d99f7"):
+                    command = ["git", "show", "HEAD:"+path]
+            return original(command, *args, **kwargs)
+        self.enterContext(patch.object(subprocess, "check_output", side_effect=snapshot))
 
     def test_both_gates_pin_the_reviewed_public_git_blobs(self):
         for module in (signed, stagea):
@@ -32,17 +56,14 @@ class OfflineSourcePinsTests(unittest.TestCase):
             pins = ast.literal_eval(assignments[0].value)
             for name in TOOLS:
                 expected = subprocess.check_output(
-                    ["git", "rev-parse", REVIEWED+":"+name], cwd=ROOT, text=True).strip()
+                    ["git", "rev-parse", "HEAD:"+name], cwd=ROOT, text=True).strip()
                 self.assertEqual(pins.get(name), expected, (module.__name__, name))
 
-    def test_actual_source_closure_preserves_both_legacy_gates(self):
-        first = signed.source_gate()
-        second = stagea.run()
-        self.assertEqual(first["firmware_LF_pins"], 113)
-        self.assertTrue(first["installed_sources_unchanged"])
-        self.assertFalse(first["stage_a_ota_route"])
-        self.assertEqual(second["PHASE_T_SOURCE"], "PASS_OFFLINE")
-        self.assertEqual(second["device_contacts"], 0)
+    def test_actual_tracked_closure_does_not_require_sdk(self):
+        for module in (signed, stagea):
+            with self.subTest(gate=module.__name__), \
+                 patch.object(module, "core_root", side_effect=AssertionError("NO SDK REQUIRED")):
+                tracked_gate(module)
 
     def test_each_tampered_new_tool_is_rejected(self):
         original = subprocess.check_output
@@ -53,7 +74,7 @@ class OfflineSourcePinsTests(unittest.TestCase):
                 return original(command, *args, **kwargs)
             with self.subTest(tool=name), patch.object(subprocess, "check_output", side_effect=changed):
                 with self.assertRaisesRegex(AssertionError, "offline launcher changed"):
-                    signed.source_gate()
+                    tracked_gate(signed)
 
     def test_unknown_new_companion_is_not_exempt(self):
         original = subprocess.check_output
@@ -65,7 +86,7 @@ class OfflineSourcePinsTests(unittest.TestCase):
             return result
         with patch.object(subprocess, "check_output", side_effect=additional):
             with self.assertRaises(subprocess.CalledProcessError):
-                signed.source_gate()
+                tracked_gate(signed)
 
     def test_preexisting_companion_remains_frozen(self):
         original = Path.read_bytes
@@ -75,7 +96,7 @@ class OfflineSourcePinsTests(unittest.TestCase):
             return result+b"\n# synthetic drift\n" if path == protected else result
         with patch.object(Path, "read_bytes", changed):
             with self.assertRaisesRegex(AssertionError, "companion/media_sessions.py"):
-                signed.source_gate()
+                tracked_gate(signed)
 
 
 if __name__ == "__main__":

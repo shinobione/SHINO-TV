@@ -103,8 +103,15 @@ uniquement les quatre blobs Git publics revus dans les listes d'empreintes
 exactes existantes de ces deux gardes. Aucune exemption globale, aucun ancien
 pin, seuil mémoire, firmware ou transport normal n'est changé.
 **5 régressions de garde source PASS** après reproduction de l'échec : clôture
-réelle des deux gardes, empreintes revues, refus de chacun des quatre scripts
+des fichiers Git suivis des deux gardes, empreintes revues, refus de chacun des quatre scripts
 altérés, refus d'un script inconnu et maintien du gel d'un ancien companion.
-Ces régressions nécessitent le SDK public épinglé comme les gardes existantes,
-effectuent seulement des lectures/Git et interdisent sockets/DNS ; aucun build.
-La CI du HEAD suivant doit être contrôlée séparément de cet échec initial.
+Ces régressions exécutent le bloc réel de pin/comparaison extrait des gardes,
+sans dupliquer sa logique et sans SDK ; seuls lectures/Git sont nécessaires,
+sockets/DNS sont interdits. Le job général a révélé la dépendance SDK indue de
+la première version du test ; elle a été retirée. Le clone superficiel du job
+général ne contient pas non plus les anciennes révisions : les tests unitaires
+utilisent les blobs HEAD immuables comme snapshot, tandis que les gardes
+spécialisées continuent de contrôler les vraies références historiques.
+Les gardes complètes restent
+exécutées avec leur SDK public par les workflows spécialisés, sans changement.
+La CI du HEAD suivant doit être contrôlée séparément des échecs précédents.
