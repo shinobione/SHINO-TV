@@ -26,7 +26,9 @@ jobs:
         with:
           python-version: '3.12'
       - name: Focused source-generation tests (public fixtures)
-        run: python -m unittest discover -s tools -p 'test_shino_b52_clock_build.py' -v
+        run: |
+          python -m unittest discover -s tools -p 'test_shino_b52_clock_build.py' -v
+          python -m unittest discover -s tools -p 'test_shino_b52_owner_candidate.py' -v
       - name: Install pinned PlatformIO toolchain
         run: python -m pip install 'platformio==6.1.18'
       - name: Build unchanged B5.1 public reference and B5.2 public clock graph

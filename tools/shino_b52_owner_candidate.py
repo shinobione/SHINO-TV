@@ -14,6 +14,7 @@ from uuid import uuid4
 from m9_stagea_build import ENV, ROOT
 from shino_b52_clock_build import build as build_b52, private_source_gate
 from shino_b5_lan_build import build as build_public_b51
+import shino_owner_transition as owner_identity
 from shino_owner_transition import OWNER, SECRETS
 
 BRANCH = "codex/b52-owner-build-prep"
@@ -40,14 +41,33 @@ def available_libraries():
                     yield candidate
 
 
+def owner_credentials():
+    """Resolve only an existing private credential file in known Git worktrees."""
+    if SECRETS.is_file() and not SECRETS.is_symlink():
+        return SECRETS
+    raw = subprocess.check_output(
+        ["git", "worktree", "list", "--porcelain"], cwd=ROOT, text=True)
+    matches = []
+    for line in raw.splitlines():
+        if not line.startswith("worktree "):
+            continue
+        other_root = Path(line[len("worktree "):])
+        candidate = other_root / "research-local" / "m9-owner" / "owner-credentials.json"
+        if candidate.is_file() and not candidate.is_symlink() and candidate.stat().st_size <= 4096:
+            if candidate not in matches:
+                matches.append(candidate)
+    if len(matches) != 1:
+        raise ValueError("HOLD: owner credentials missing or ambiguous across Git worktrees")
+    return matches[0]
+
+
 def preflight():
     branch = subprocess.check_output(
         ["git", "branch", "--show-current"], cwd=ROOT, text=True).strip()
     if branch != BRANCH:
         raise ValueError("HOLD: wrong branch for B5.2 private candidate")
     head = private_source_gate()
-    if not SECRETS.is_file():
-        raise ValueError("HOLD: existing owner-local credentials missing; do not regenerate")
+    owner_credentials()
     return head
 
 
@@ -73,7 +93,14 @@ def run(bootstrap_libraries=False, libraries=None):
     output = OWNER / ("b52-clock-candidate-" + uuid4().hex[:12])
     if output.exists():
         raise ValueError("HOLD: candidate directory collision")
-    report = build_b52(output, libs, private=True)
+    # Redirect only this process's read-only credential lookup, never the
+    # owner-local output destination or the original credential file.
+    existing_lookup = owner_identity.SECRETS
+    try:
+        owner_identity.SECRETS = owner_credentials()
+        report = build_b52(output, libs, private=True)
+    finally:
+        owner_identity.SECRETS = existing_lookup
     binary = output / ".pio" / "build" / ENV / "firmware.bin"
     manifest = json.loads((output / "release.json").read_text(encoding="utf-8"))
     data = binary.read_bytes()

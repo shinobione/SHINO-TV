@@ -28,9 +28,24 @@ class OwnerBuildTests(unittest.TestCase):
         with patch.object(target.subprocess, "check_output",
                           return_value=target.BRANCH + "\n"), \
              patch.object(target, "private_source_gate", return_value="a" * 40), \
-             patch.object(target, "SECRETS", Path("__missing_shino_owner_credentials__")):
+             patch.object(target, "owner_credentials",
+                          side_effect=ValueError("HOLD: credentials missing")):
             with self.assertRaisesRegex(ValueError, "credentials missing"):
                 target.preflight()
+
+    def test_worktree_credential_discovery_is_readonly_and_unambiguous(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            worktree = root / "other"
+            owner_dir = worktree / "research-local" / "m9-owner"
+            owner_dir.mkdir(parents=True)
+            source = owner_dir / "owner-credentials.json"
+            source.write_text("fixture-not-a-secret")
+            with patch.object(target, "SECRETS", root / "missing.json"), \
+                 patch.object(target.subprocess, "check_output",
+                              return_value="worktree " + str(worktree) + "\n"):
+                self.assertEqual(target.owner_credentials(), source)
+                self.assertEqual(source.read_text(), "fixture-not-a-secret")
 
     def test_no_libraries_never_bootstraps_or_reads_private(self):
         with patch.object(target, "preflight", return_value="a" * 40), \
