@@ -46,7 +46,9 @@ class BuildTests(unittest.TestCase):
             self.assertFalse(out.exists())
 
     def test_private_preparation_preserves_owner_identity(self):
-        with tempfile.TemporaryDirectory(prefix="b52-private-fixture-") as td:
+        parent=b52.ROOT/"research-local"
+        parent.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix="b52-private-fixture-",dir=parent) as td:
             owner=Path(td)/"m9-owner";owner.mkdir()
             out=owner/"candidate"
             def fake_prepare(folder,private=False):

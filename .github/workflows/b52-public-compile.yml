@@ -1,0 +1,69 @@
+name: B5.2 public inert clock firmware compile
+
+on:
+  push:
+    branches: [codex/b52-owner-build-prep]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  b52-public-build:
+    name: Compile actual B5.2 public BIN and inspect linked resources (NO DEVICE)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Focused source-generation tests (public fixtures)
+        run: python -m unittest discover -s tools -p 'test_shino_b52_clock_build.py' -v
+      - name: Install pinned PlatformIO toolchain
+        run: python -m pip install 'platformio==6.1.18'
+      - name: Build unchanged B5.1 public reference and B5.2 public clock graph
+        run: |
+          python tools/shino_b5_lan_build.py research-local/b52-ci-reference > "${{ runner.temp }}/b52-reference-stdout.json"
+          python tools/shino_b52_clock_build.py research-local/b52-ci-public --libraries "research-local/b52-ci-reference/.pio/libdeps/esp12e_m9_4m2m_normal_qualification" > "${{ runner.temp }}/b52-public-stdout.json"
+          python tools/shino_b52_clock_resources.py research-local/b52-ci-reference research-local/b52-ci-public --output research-local/b52-ci-public/resources.json > "${{ runner.temp }}/b52-resources-stdout.json"
+      - name: Verify exact public BIN, manifest, and noninstallable authority
+        run: |
+          python - <<'PY'
+          import json, hashlib
+          from pathlib import Path
+          p=Path("research-local/b52-ci-public")
+          manifest=json.loads((p/"release.json").read_text())
+          report=json.loads((p/"report.json").read_text())
+          resources=json.loads((p/"resources.json").read_text())
+          binary=p/".pio/build/esp12e_m9_4m2m_normal_qualification/firmware.bin"
+          raw=binary.read_bytes()
+          assert len(raw)==manifest["bytes"]==report["bytes"]
+          assert hashlib.sha256(raw).hexdigest()==manifest["sha256"]==report["sha256"]
+          assert manifest["layout"]=="4m2m"
+          assert report["private"] is False and report["clock_authority"] is False
+          assert report["private_build"] is False and report["physical"]=="NOT_RUN"
+          assert resources["verdict"]=="PASS_OFFLINE_PHYSICAL_HOLD"
+          assert resources["device_contacts"]==0 and resources["physical"]=="NOT_RUN"
+          print(json.dumps({"scope":"PUBLIC_INERT_NOT_INSTALLABLE","bytes":len(raw),
+            "sha256":manifest["sha256"],"source_commit":report["source_commit"],
+            "layout":manifest["layout"],"resources":resources["verdict"],
+            "physical":"NOT_RUN"},indent=2))
+          PY
+      - name: Publish only inert reports, NEVER any BIN, ELF or owner credentials
+        uses: actions/upload-artifact@v4
+        with:
+          name: b52-public-inert-reports-${{ github.sha }}
+          retention-days: 7
+          if-no-files-found: error
+          path: |
+            research-local/b52-ci-public/release.json
+            research-local/b52-ci-public/report.json
+            research-local/b52-ci-public/resources.json
