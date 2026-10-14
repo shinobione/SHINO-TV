@@ -1,0 +1,31 @@
+{
+  "cases_passed": 17,
+  "checks": 1721,
+  "clock_state_bytes": 20,
+  "renderer_bytes": 868,
+  "max_slice_pixel_writes": 8712,
+  "render_heap_allocations": 0,
+  "device_contacts": 0,
+  "individual_preview_size": [
+    240,
+    240
+  ],
+  "compiler": "cl.exe",
+  "sanitizers": "MSVC ASan",
+  "font_sha256": "04d399ad4a25a132b52239b3c53c5638350845dfc3a2d036a0fb67bac353025e",
+  "preview_hashes": {
+    "idle-expired.png": "94dc6317d457c3cb984ebf48945a8a43133f35cb072d5ea526d9b41c4752eb2b",
+    "idle-midnight.png": "ba9f0a6bc8c286e70dc1faa4e31b3e0dc4f3f012151244f60d6ce9cf84d047f3",
+    "idle-pc-disconnected.png": "2518dee0c93636a182548370c9d6638ee3573f86b4a8bb339901b5673b8b647e",
+    "idle-synced.png": "08b4eb4b8fe3c0dd16c2d991e7c55b617d9c0856f7ae09a7820df3476b13680a",
+    "idle-unsynced.png": "6cf6aaab65515944c82b705f4893bed31819d242c810097e1021a96d1b193a6b"
+  },
+  "source_hashes": {
+    "firmware/include/display/ClockFoundation.h": "820cbb9b23786550f526c170672de0a4019c664dc412b406ba24dd0731f394f8",
+    "firmware/include/display/SceneEngine.h": "7093b25661987efb98a5aaf674f703c3527f0c109148c24e60913a52e651b638",
+    "tools/shino_b52_clock_lab.cpp": "5d0d2fa15506c497bd04a2dea643cc2d571e9d619ed878cd4bcfca34ba5a7deb"
+  },
+  "physical": "NOT_RUN",
+  "fixture_time": "SYNTHETIC_HOST_ONLY",
+  "native_heap_stack_measured": false
+}

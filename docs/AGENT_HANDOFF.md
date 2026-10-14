@@ -1,5 +1,48 @@
 # SHINO // TV — Agent handoff / operational source of truth
-Last owner mandate update: **2026-10-13**; the **2026-10-01** square-scene product contract remains below. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
+Last owner mandate update: **2026-10-14**; the **2026-10-01** square-scene product contract remains below. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
+
+**Current owner mandate — B5.2 GITHUB PUBLICATION, 14 October 2026:**
+Owner review of B52_OWNER_REVIEW.zip completed: **READY_FOR_GITHUB_REVIEW**,
+software qualification only. All40 local files matched the reviewed archive
+byte-for-byte; SHA256 b42957fa75633a4575ef9cd364ed540abb396fccecdc0b68d78dcef0c9d40b85.
+Only these active summaries record the new mandate; reviewed source/evidence
+stay unchanged unless a concrete CI failure requires a bounded correction.
+Explicit selected commits and non-force push on codex/b52-clock-foundation,
+new Draft PR against feature/shino-tv-b3-telemetry-scratch-experiment, depending
+on frozen244334e / PR47. Verify all triggered workflows at final exact HEAD;
+retain SKIPPED/NOT_RUN. Keep both worktrees and private artifacts intact.
+No merge, device contact, OTA/flash/reboot/provisioning/Wi-Fi change, private
+build or automatic LINK publication. B5.2 physical qualification stays HOLD.
+Earlier mandates and closure reports retain their historical meaning.
+
+**Current owner mandate — B5.2 CLOCK FRESHNESS / CLOSE THREE P2:**
+Existing isolated local diff, frozen244334e and main worktree preserved. Source
+closure **READY_FOR_OWNER_REVIEW**: projections compared at validation; pending
+challenge expiry latched from native loop; post-MAC monotonic deadline recheck;
+unchanged resource budget rechecked after HTTP body, before borrowed crypto.
+ASan proof21/59, render17/1721, HTTP/Digest/telemetry49, Python23, generator3 PASS.
+Final public inert421552 B/static46720 B (+1328/+228 vs pre-fix B5.2); selected
+known clock crypto1440 B and OTA1616 B are not whole-native bounds. No device,
+private build, commit/push/merge or automatic LINK publication. Physical RNG,
+latency, memory and absolute PC UTC remain unqualified. Earlier HOLD reports
+retain pre-fix provenance. [Closure/assumptions/evidence](B52_CLOCK_FRESHNESS_FIX.md).
+
+**Current owner mandate — B5.2 CLOCK FOUNDATION, 14 October 2026:**
+Isolated offline implementation from frozen 244334edac07701dc25b5ffc494715152ae1bfa5.
+Keep PR47/frozen branch and installed B5.1 unchanged. No push before review,
+device contact, secret read, private build, Wi-Fi change, installation or merge.
+Reuse pure PR40 SceneEngine in the real B5.1 Normal/LAN graph, preserving four
+metrics, bars, TTL6s, bounded Digest ingress, LittleFS, 4m2m and OTA floors.
+Select paired-PC UTC/OS offset through dedicated authenticated clock routes;
+maximum lease120s, visible source/age, explicit expiration and no uptime clock.
+Music/cover remains a later ownership adapter, not the old Mission8 graph.
+New public inert build, targeted HOST/native evidence and 240x240 captures only;
+B5.2 synchronization/LCD/runtime/OTA physical evidence remains NOT_RUN/HOLD.
+[Design and evidence](B52_CLOCK_FOUNDATION.md).
+
+Final offline review,14 October: **HOLD**, four HOST reproductions accept old/
+replayed samples and renew their lease. ASan17 cases/1722 checks PASS; protocol
+unchanged, no device operation. [Review and one next action](B52_FINAL_OFFLINE_REVIEW_2026-10-14.md).
 
 **Current owner mandate — FREEZE B5.1 PHYSICAL LAN PASS, 13 October 2026:**
 Owner authorizes only this documentary/Git freeze, focused commits/push on the
