@@ -19,6 +19,8 @@ NATIVE=ROOT/"experiments/b52_clock/native"
 
 def patch_clock(source):
     source=once(source,'#include "B5Lan.h"','#include "B5Lan.h"\n#include "B52Clock.h"')
+    # The generated LAN diagnostic must identify the new clock firmware.
+    source=once(source,'B5.1','B5.2')
     source=once(source,'Upload,LanIntent,LanProvision,LanStatus};',
         'Upload,LanIntent,LanProvision,LanStatus,ClockSync,ClockStatus};')
     source=once(source,'if(path=="/api/v1/lan/status")return Route::LanStatus;',

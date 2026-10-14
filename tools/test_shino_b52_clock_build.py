@@ -17,6 +17,8 @@ class BuildTests(unittest.TestCase):
         self.assertIn('bytes!=B52Clock::FRAME_BYTES',new)
         self.assertIn('CLOCK_FRAME_BOUND',new)
         self.assertIn('B52ClockHttp.inc',new)
+        self.assertIn('B5.2',new)
+        self.assertNotIn('B5.1',new)
         self.assertNotIn("MediaReceiver",new)
         self.assertNotIn("FirstBootBridge",new)
         for start,end in (("bool auth(){","enum class Route"),("__attribute__((noinline)) void upload(","__attribute__((noinline)) bool beforeBody"),("__attribute__((noinline)) void telemetry(){","__attribute__((noinline)) void metrics(){")):
