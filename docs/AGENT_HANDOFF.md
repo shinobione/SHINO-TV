@@ -1,6 +1,23 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last owner mandate update: **2026-10-14**; the **2026-10-01** square-scene product contract remains below. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+**Current owner mandate — B5.2 LINK CLOCK PUBLISHER / GITHUB PUBLICATION:**
+Explicit owner GO: commit/push only the13 reviewed PC/HOST files from372d20f
+on codex/b52-link-clock-publisher, no force; create a Draft PR against
+codex/b52-clock-foundation (PR48), without modifying/merging PR48. Reuse the
+existing HOST results: no new test campaign/review loop. Keep default-off clock
+activation and physical HOLD. No Windows configuration, device/OTA/flash, merge
+or other worktree changes. The offline evidence below retains its dated scope.
+
+**Current owner mandate — B5.2 LINK CLOCK PUBLISHER, 14 October 2026:**
+Offline integration from PR48 /372d20f in a new isolated worktree. Same single
+LINK worker, metrics first, default-off opt-in for an explicitly verified B5.2
+target. Existing publish_clock proof/zero-wait Digest lock/1s budget; no POST
+retry. Retarget or unknown POST suspends clock; telemetry continues. Preserve
+configuration/autostart/credentials, firmware, B5.1 and PR48. HOST/loopback only;
+no external network, device, private build, commit/push/merge.
+[Decision, tests and future activation](B52_LINK_CLOCK_PUBLISHER.md).
+
 **Current owner mandate — B5.2 GITHUB PUBLICATION, 14 October 2026:**
 Owner review of B52_OWNER_REVIEW.zip completed: **READY_FOR_GITHUB_REVIEW**,
 software qualification only. All40 local files matched the reviewed archive

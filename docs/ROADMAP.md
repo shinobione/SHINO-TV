@@ -1,5 +1,29 @@
 # SHINO // TV — Roadmap
 
+## Mandat courant — B5.2 LINK CLOCK PUBLISHER : publication GitHub, 14 octobre 2026
+
+GO propriétaire : publier les13 fichiers PC/HOST déjà revus depuis372d20f sur
+`codex/b52-link-clock-publisher`. Commit ciblé, push sans force et nouvelle PR
+Draft vers `codex/b52-clock-foundation` (PR48), sans modifier ni fusionner PR48.
+Réutiliser les preuves HOST existantes ; aucune nouvelle campagne de tests,
+activation, configuration Windows, opération appareil, flash/OTA ou merge.
+L'horloge reste opt-in désactivée par défaut ; qualification physique HOLD.
+Les résultats et commandes de la mission hors ligne ci-dessous restent datés.
+
+## Mandat courant — B5.2 LINK CLOCK PUBLISHER, 14 octobre 2026
+
+Décision propriétaire : intégrer hors ligne la publication PC périodique dans
+le worker LINK existant, opt-in désactivé par défaut, depuis PR48 /
+`372d20f934db9bbd6b7c0ecbb784d57f40c393d5`, sur une branche isolée.
+Télémétrie prioritaire (~2 s, TTL6s), publish_clock exclusivement, verrou Digest,
+budget total1s et aucun retry POST. Cible B5.2 explicitement confirmée ;
+changement de cible ou résultat POST inconnu suspend l'horloge. Garde d'instance
+unique pour les modes émetteurs, sans modification silencieuse de configuration
+ou démarrage Windows. Tests HOST/fakes et boucle locale uniquement.
+Aucun B5.1/appareil, réseau externe, firmware/build privé, commit, push ou merge.
+Livrer code, preuves de concurrence et activation future documentée, non exécutée.
+[Décision et résultats](B52_LINK_CLOCK_PUBLISHER.md).
+
 ## Mandat courant — B5.2 GITHUB PUBLICATION, 14 octobre 2026
 
 Revue propriétaire de `B52_OWNER_REVIEW.zip` terminée :

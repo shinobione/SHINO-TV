@@ -21,6 +21,8 @@ import time
 import webbrowser
 
 from metrics_server import collect_metrics, query_nvidia
+from clock_sync import ClockTransport
+from link_clock import LinkClockPublisher
 from shino_digest_coord import CoordinationBusy, HttpDiagnostics, digest_exchange, exception_outcome
 from push_fsless_metrics import (
     SenderError, SendStatus, encode_sample, make_opener, read_credentials, send_sample, validate_host,
@@ -45,6 +47,22 @@ def config_path() -> Path:
     # No files, password values or configuration are placed inside the Git repo.
     local = os.environ.get("LOCALAPPDATA")
     return (Path(local) if local else Path.home() / "AppData" / "Local") / "SHINO-TV" / "link.json"
+
+
+@contextmanager
+def link_instance(*, directory=None):
+    """One LINK sender across targets/processes, including the default clock-off mode.
+
+    Reuse the existing OS-lock primitive in a separate, fixed worker namespace.
+    DEFAULT_HOST is only the common lock identifier here; this performs no HTTP.
+    Never remove a lock file: the OS releases ownership on process exit.
+    """
+    root = Path(directory) if directory is not None else config_path().parent / 'worker-instance'
+    try:
+        with digest_exchange(DEFAULT_HOST, wait_seconds=0, directory=root):
+            yield
+    except CoordinationBusy as exc:
+        raise LinkError('LINK already running or instance lock unavailable') from exc
 
 
 def private_config(path: Path) -> Path:
@@ -159,7 +177,7 @@ class LinkEngine:
     """Purely PC-side rate-limited state machine; no startup network side effects."""
 
     def __init__(self, host: str, opener, sampler, sender=send_sample,
-                 clock=time.monotonic, opener_factory=None, http_diagnostics=None):
+                 clock=time.monotonic, opener_factory=None, http_diagnostics=None, clock_publisher=None):
         self.host = validate_host(host)
         self.opener = opener
         self.sampler = sampler
@@ -181,6 +199,8 @@ class LinkEngine:
         self.ttl_overruns = 0
         self.ttl_episode_active = False
         self.max_success_interval_ms = None
+        self.clock_publisher = clock_publisher
+        self._worker_guard = threading.Lock()
 
     def retarget(self, host: str) -> None:
         host=validate_host(host)
@@ -192,6 +212,8 @@ class LinkEngine:
         self.state="WAITING"
         self.last_success=None
         self.ttl_episode_active=False
+        if self.clock_publisher is not None:
+            self.clock_publisher.retarget()
 
     def observe_success_age(self, now):
         age = None if self.last_success is None else max(0, now - self.last_success) * 1000
@@ -200,7 +222,7 @@ class LinkEngine:
             self.ttl_episode_active = True
         return age
 
-    def step(self, now: float | None = None) -> str:
+    def step(self, now: float | None = None, *, stop=None) -> str:
         use_live_clock = now is None
         now = self.clock() if use_live_clock else now
         if now < self.next_due:
@@ -263,6 +285,14 @@ class LinkEngine:
                              'success_gap_exceeds_ttl': age is not None and age > METRICS_TTL_MS,
                              'collection_ms': round(collection_ms, 3),
                              'duration_ms': round(max(0, self.clock() - started) * 1000, 3)})
+        if self.clock_publisher is not None:
+            if not accepted:
+                self.clock_publisher.disconnected()
+            elif self.clock_publisher.after_metrics(self.host, self.next_due, stop=stop):
+                # The Core has one mutable Digest challenge. Clock GET may rotate
+                # it: acquire a fresh telemetry challenge at its next scheduled send.
+                if self.opener_factory is not None:
+                    self.opener = None
         return self.state
 
     def diagnostics(self) -> dict:
@@ -276,16 +306,26 @@ class LinkEngine:
                 'history': list(self.history)}
         if self.http_diagnostics is not None:
             result['http'] = self.http_diagnostics.snapshot()
+        result['clock'] = (self.clock_publisher.snapshot() if self.clock_publisher is not None
+                           else dict(enabled=False, state='CLOCK_DISABLED'))
         return result
 
     def run(self, stop: threading.Event, report, observe=None, target_supplier=None) -> None:
+        if not self._worker_guard.acquire(blocking=False):
+            raise LinkError('LINK worker already active')
+        try:
+            self._run(stop, report, observe, target_supplier)
+        finally:
+            self._worker_guard.release()
+
+    def _run(self, stop, report, observe, target_supplier):
         last_state = None
         last_attempt = 0
         while not stop.is_set():
             if target_supplier:
                 try: self.retarget(target_supplier())
                 except (OSError,ValueError): pass
-            state = self.step()
+            state = self.step(stop=stop)
             if state != last_state:
                 report(state)
                 last_state = state
@@ -299,9 +339,11 @@ class LinkEngine:
             stop.wait(max(0.01, self.next_due - self.clock()))
 
 
-def make_engine(config: dict[str, str], *, diagnostics=False) -> LinkEngine:
+def make_engine(config: dict[str, str], *, diagnostics=False, clock_b52_host=None) -> LinkEngine:
     # Lazy import: --dry-run/configure/autostart status never need to read secrets
     # or contact the device. The credentials file is never copied into link.json.
+    if clock_b52_host is not None and validate_host(clock_b52_host) != config['host']:
+        raise LinkError('Clock B5.2 assertion must match the configured target')
     user, password = read_credentials(Path(config["credentials_file"]))
     factory = lambda: make_opener(config["host"], user, password)
     opener = factory()
@@ -311,7 +353,10 @@ def make_engine(config: dict[str, str], *, diagnostics=False) -> LinkEngine:
     engine=LinkEngine(config["host"], opener,
                       lambda: collect_metrics(psutil, query_nvidia),
                       sender=lambda *args, **kwargs: coordinated_link_sender(*args, **kwargs, diagnostics=http),
-                      opener_factory=factory, http_diagnostics=http)
+                       opener_factory=factory, http_diagnostics=http,
+                       clock_publisher=(LinkClockPublisher(clock_b52_host,
+                           lambda host: ClockTransport(host, user, password))
+                           if clock_b52_host is not None else None))
     engine.opener_factory=lambda: make_opener(engine.host,user,password)
     return engine
 
@@ -340,13 +385,13 @@ def diagnostics_writer(path: Path):
     return write
 
 
-def run_tray(config: dict[str, str], observe=None) -> int:
+def run_tray(config: dict[str, str], observe=None, *, clock_b52_host=None) -> int:
     try:
         import pystray
         from PIL import Image, ImageDraw
     except ImportError as exc:
         raise LinkError("Tray dependencies missing. Install companion/requirements-link.txt") from exc
-    engine = make_engine(config, diagnostics=observe is not None)
+    engine = make_engine(config, diagnostics=observe is not None, clock_b52_host=clock_b52_host)
     stop = threading.Event()
     status = {"value": "WAITING"}
     picture = Image.new("RGB", (64, 64), "#141820")
@@ -383,7 +428,9 @@ def run_tray(config: dict[str, str], observe=None) -> int:
         icon.run()
     finally:
         stop.set()
-        worker.join(timeout=4)
+        # Keep the process/instance lock until its one worker has really stopped.
+        # No replacement sender can overlap an in-flight metric/clock request.
+        worker.join()
     return 0
 
 
@@ -467,7 +514,11 @@ def main(argv: list[str] | None = None) -> int:
                         help="Private matching-build file; used ONLY for --configure, no password on CLI")
     parser.add_argument('--diagnostics-file', type=Path,
                         help='Optional bounded sanitized status snapshot for --run/--tray')
+    parser.add_argument('--clock-b52-host',
+                        help='Opt-in ONLY for --run/--tray: owner-verified B5.2 IPv4 matching configured host')
     args = parser.parse_args(argv)
+    if args.clock_b52_host is not None and not (args.run or args.tray):
+        parser.error('--clock-b52-host requires --run or --tray; no configuration or auto-start changes')
     try:
         if args.dry_run:
             import psutil
@@ -493,23 +544,26 @@ def main(argv: list[str] | None = None) -> int:
             print("SHINO // LINK auto-start:", autostart(args.autostart, path))
             return 0
         config = load_config(path)
-        observe = diagnostics_writer(args.diagnostics_file) if args.diagnostics_file else None
-        if args.tray:
-            return run_tray(config, observe)
-        engine = make_engine(config, diagnostics=observe is not None)
-        if args.once:
-            state = engine.step()
-            print("One RAM-only sample:", state)
-            return 0 if state == "CONNECTED" else 1
-        stop = threading.Event()
-        print("SHINO // LINK started (RAM-only metrics, Ctrl+C to stop).")
-        try:
-            engine.run(stop, lambda state: print("SHINO // LINK:", state, flush=True), observe,
-                       lambda: load_config(path)["host"])
-        except KeyboardInterrupt:
-            stop.set()
-            print("\nSHINO // LINK stopped; device metrics expire after six seconds.")
-        return 0
+        if args.clock_b52_host is not None and validate_host(args.clock_b52_host) != config['host']:
+            raise LinkError('Clock B5.2 assertion must match the configured target')
+        with link_instance():
+            observe = diagnostics_writer(args.diagnostics_file) if args.diagnostics_file else None
+            if args.tray:
+                return run_tray(config, observe, clock_b52_host=args.clock_b52_host)
+            engine = make_engine(config, diagnostics=observe is not None, clock_b52_host=args.clock_b52_host)
+            if args.once:
+                state = engine.step()
+                print("One RAM-only sample:", state)
+                return 0 if state == "CONNECTED" else 1
+            stop = threading.Event()
+            print("SHINO // LINK started (RAM-only metrics, Ctrl+C to stop).")
+            try:
+                engine.run(stop, lambda state: print("SHINO // LINK:", state, flush=True), observe,
+                           lambda: load_config(path)["host"])
+            except KeyboardInterrupt:
+                stop.set()
+                print("\nSHINO // LINK stopped; device metrics expire after six seconds.")
+            return 0
     except (LinkError, SenderError) as exc:
         # These are deliberately sanitized errors; never print raw credentials,
         # HTTP challenges, config content or third-party tracebacks.
