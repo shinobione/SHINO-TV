@@ -1,0 +1,424 @@
+{
+  "base": "372d20f934db9bbd6b7c0ecbb784d57f40c393d5",
+  "branch": "codex/b52-link-clock-publisher",
+  "current_source_sha256": {
+    "companion/clock_sync.py": "71159c2c88a400b1292788d03057d69739665df473eff01400fcfa3ff35bfe5e",
+    "companion/link_clock.py": "09534c9164fb6159298caca869e0008ec0f4d482b9957f39fc83497ef7ad41c0",
+    "companion/metrics_server.py": "7bab08a0248fa0132f70b650159f105d0caaded91b43ad8a0577df38b5468b37",
+    "companion/push_fsless_metrics.py": "f4fd7f104d9a6356bbfc9fb3a2a4447b642af7cfb685e9c58b787aacc878cb26",
+    "companion/shino_digest_coord.py": "6babc17fb6aa72397168f7972431b143b747ff1cceb21785f11f07d7a5d5af65",
+    "companion/shino_link.py": "5db0ede345e2e6ab9046b2190f96f33faffb0fd7dcaf21f20d2987d0575af89e",
+    "companion/test_link_clock.py": "6d5bf8ac406f62a47a134e03efd9a80e32241e1c1f728b4e9a360de36f69b963",
+    "companion/test_link_clock_loopback.py": "94c64c85ba29a936eae07b8126ab6d3fb65288ddf8f08b392e5b8682f653fed3"
+  },
+  "provenance_notes": [
+    "Runtime product sources unchanged across all retained measured runs.",
+    "First loopback log has six methods; concurrent stress added separately.",
+    "Final test-only watchdog checked on load and slow GET without rerunning the long cadence.",
+    "Current source hashes identify the review copy, not a captured historical test-file snapshot.",
+    "Concurrent load forces early clock due times only in tests; production interval remains60s.",
+    "1s is the configured clock deadline, not an OS scheduling or physical network bound."
+  ],
+  "python": "3.12.10",
+  "results": {
+    "clock_configured_exchange_budget_ms": 1000,
+    "clock_enabled_tcp_ttl_overruns": 0,
+    "failures": 0,
+    "loaded_max_ack_interval_ms": 2125,
+    "loopback_distinct_tests": 7,
+    "max_outer_clock_duration_ms": 1062,
+    "nominal_32_samples_ms": 62344,
+    "nominal_max_ack_interval_ms": 2032,
+    "required_slot_ms": 1250,
+    "skipped": 0,
+    "targeted_host_tests": 117
+  },
+  "runs": [
+    {
+      "report": "loopback.log",
+      "scenarios": [
+        {
+          "clock": {
+            "accepted": 0,
+            "attempts": 1,
+            "enabled": true,
+            "history": [
+              {
+                "duration_ms": 15.0,
+                "result": "CLOCK_COMPATIBILITY_HOLD"
+              }
+            ],
+            "interval_s": 60.0,
+            "last_result": "CLOCK_COMPATIBILITY_HOLD",
+            "source": "HOST_CLOCK_EXCHANGE_ONLY",
+            "state": "CLOCK_COMPATIBILITY_HOLD"
+          },
+          "clock_gets": 2,
+          "clock_posts": 0,
+          "duration_ms": 2031.0,
+          "max_ack_interval_ms": 2031.0,
+          "metrics_accepted": 2,
+          "metrics_http_requests": 4,
+          "phase": "absent",
+          "ttl_overruns": 0
+        },
+        {
+          "clock": {
+            "accepted": 0,
+            "attempts": 1,
+            "enabled": true,
+            "history": [
+              {
+                "duration_ms": 16.0,
+                "result": "CLOCK_COMPATIBILITY_HOLD"
+              }
+            ],
+            "interval_s": 60.0,
+            "last_result": "CLOCK_COMPATIBILITY_HOLD",
+            "source": "HOST_CLOCK_EXCHANGE_ONLY",
+            "state": "CLOCK_COMPATIBILITY_HOLD"
+          },
+          "clock_gets": 2,
+          "clock_posts": 0,
+          "duration_ms": 2047.0,
+          "max_ack_interval_ms": 2032.0,
+          "metrics_accepted": 2,
+          "metrics_http_requests": 4,
+          "phase": "incompatible",
+          "ttl_overruns": 0
+        },
+        {
+          "clock": {
+            "accepted": 0,
+            "attempts": 1,
+            "enabled": true,
+            "history": [
+              {
+                "duration_ms": 15.0,
+                "result": "CLOCK_COORDINATION_HOLD"
+              }
+            ],
+            "interval_s": 60.0,
+            "last_result": "CLOCK_COORDINATION_HOLD",
+            "source": "HOST_CLOCK_EXCHANGE_ONLY",
+            "state": "CLOCK_COORDINATION_HOLD"
+          },
+          "clock_gets": 0,
+          "clock_posts": 0,
+          "duration_ms": 2015.0,
+          "max_ack_interval_ms": 2015.0,
+          "metrics_accepted": 2,
+          "metrics_http_requests": 3,
+          "phase": "busy",
+          "ttl_overruns": 0
+        },
+        {
+          "clock": {
+            "accepted": 2,
+            "attempts": 2,
+            "enabled": true,
+            "history": [
+              {
+                "duration_ms": 16.0,
+                "result": "CLOCK_SAMPLE_ACCEPTED"
+              },
+              {
+                "duration_ms": 31.0,
+                "result": "CLOCK_SAMPLE_ACCEPTED"
+              }
+            ],
+            "interval_s": 60.0,
+            "last_result": "CLOCK_SAMPLE_ACCEPTED",
+            "source": "HOST_CLOCK_EXCHANGE_ONLY",
+            "state": "CLOCK_SAMPLE_ACCEPTED"
+          },
+          "clock_gets": 4,
+          "clock_posts": 2,
+          "duration_ms": 62344.0,
+          "max_ack_interval_ms": 2032.0,
+          "metrics_accepted": 32,
+          "metrics_http_requests": 35,
+          "phase": "nominal",
+          "ttl_overruns": 0
+        },
+        {
+          "clock": {
+            "accepted": 0,
+            "attempts": 1,
+            "enabled": true,
+            "history": [
+              {
+                "duration_ms": 1031.0,
+                "result": "CLOCK_SOURCE_HOLD"
+              }
+            ],
+            "interval_s": 60.0,
+            "last_result": "CLOCK_SOURCE_HOLD",
+            "source": "HOST_CLOCK_EXCHANGE_ONLY",
+            "state": "CLOCK_SOURCE_HOLD"
+          },
+          "clock_gets": 2,
+          "clock_posts": 0,
+          "duration_ms": 2031.0,
+          "max_ack_interval_ms": 2031.0,
+          "metrics_accepted": 2,
+          "metrics_http_requests": 4,
+          "phase": "slow_get_headers",
+          "ttl_overruns": 0
+        },
+        {
+          "clock": {
+            "accepted": 0,
+            "attempts": 1,
+            "enabled": true,
+            "history": [
+              {
+                "duration_ms": 1062.0,
+                "result": "CLOCK_SOURCE_HOLD"
+              }
+            ],
+            "interval_s": 60.0,
+            "last_result": "CLOCK_SOURCE_HOLD",
+            "source": "HOST_CLOCK_EXCHANGE_ONLY",
+            "state": "CLOCK_SOURCE_HOLD"
+          },
+          "clock_gets": 2,
+          "clock_posts": 0,
+          "duration_ms": 2047.0,
+          "max_ack_interval_ms": 2031.0,
+          "metrics_accepted": 2,
+          "metrics_http_requests": 4,
+          "phase": "slow_get_body",
+          "ttl_overruns": 0
+        },
+        {
+          "clock": {
+            "accepted": 0,
+            "attempts": 1,
+            "enabled": true,
+            "history": [
+              {
+                "duration_ms": 1031.0,
+                "result": "CLOCK_UNKNOWN_NO_RETRY"
+              }
+            ],
+            "interval_s": 60.0,
+            "last_result": "CLOCK_UNKNOWN_NO_RETRY",
+            "source": "HOST_CLOCK_EXCHANGE_ONLY",
+            "state": "CLOCK_UNKNOWN_NO_RETRY"
+          },
+          "clock_gets": 2,
+          "clock_posts": 1,
+          "duration_ms": 2016.0,
+          "max_ack_interval_ms": 2016.0,
+          "metrics_accepted": 2,
+          "metrics_http_requests": 4,
+          "phase": "slow_post_body",
+          "ttl_overruns": 0
+        },
+        {
+          "clock": {
+            "accepted": 0,
+            "attempts": 1,
+            "enabled": true,
+            "history": [
+              {
+                "duration_ms": 16.0,
+                "result": "CLOCK_UNKNOWN_NO_RETRY"
+              }
+            ],
+            "interval_s": 60.0,
+            "last_result": "CLOCK_UNKNOWN_NO_RETRY",
+            "source": "HOST_CLOCK_EXCHANGE_ONLY",
+            "state": "CLOCK_UNKNOWN_NO_RETRY"
+          },
+          "clock_gets": 2,
+          "clock_posts": 1,
+          "duration_ms": 2032.0,
+          "max_ack_interval_ms": 2032.0,
+          "metrics_accepted": 2,
+          "metrics_http_requests": 4,
+          "phase": "unknown",
+          "ttl_overruns": 0
+        },
+        {
+          "clock": {
+            "accepted": 0,
+            "attempts": 1,
+            "enabled": true,
+            "history": [
+              {
+                "duration_ms": 31.0,
+                "result": "CLOCK_UNKNOWN_NO_RETRY"
+              }
+            ],
+            "interval_s": 60.0,
+            "last_result": "CLOCK_UNKNOWN_NO_RETRY",
+            "source": "HOST_CLOCK_EXCHANGE_ONLY",
+            "state": "CLOCK_UNKNOWN_NO_RETRY"
+          },
+          "clock_gets": 2,
+          "clock_posts": 1,
+          "duration_ms": 2015.0,
+          "max_ack_interval_ms": 2015.0,
+          "metrics_accepted": 2,
+          "metrics_http_requests": 4,
+          "phase": "post_401",
+          "ttl_overruns": 0
+        }
+      ]
+    },
+    {
+      "report": "concurrent-load.log",
+      "scenarios": [
+        {
+          "cadence": "ACCELERATED_DUE_FOR_STRESS_ONLY",
+          "clock": {
+            "accepted": 5,
+            "attempts": 6,
+            "enabled": true,
+            "history": [
+              {
+                "duration_ms": 16.0,
+                "result": "CLOCK_SAMPLE_ACCEPTED"
+              },
+              {
+                "duration_ms": 16.0,
+                "result": "CLOCK_SAMPLE_ACCEPTED"
+              },
+              {
+                "duration_ms": 15.0,
+                "result": "CLOCK_SAMPLE_ACCEPTED"
+              },
+              {
+                "duration_ms": 31.0,
+                "result": "CLOCK_SAMPLE_ACCEPTED"
+              },
+              {
+                "duration_ms": 0,
+                "result": "CLOCK_COORDINATION_HOLD"
+              },
+              {
+                "duration_ms": 16.0,
+                "result": "CLOCK_SAMPLE_ACCEPTED"
+              }
+            ],
+            "interval_s": 60.0,
+            "last_result": "CLOCK_SAMPLE_ACCEPTED",
+            "source": "HOST_CLOCK_EXCHANGE_ONLY",
+            "state": "CLOCK_SAMPLE_ACCEPTED"
+          },
+          "clock_posts": 5,
+          "duration_ms": 10282.0,
+          "max_ack_interval_ms": 2078.0,
+          "metrics_accepted": 6,
+          "peer_lock_holds": 65,
+          "phase": "concurrent_lock_load",
+          "ttl_overruns": 0
+        }
+      ]
+    },
+    {
+      "report": "watchdog-check.log",
+      "scenarios": [
+        {
+          "cadence": "ACCELERATED_DUE_FOR_STRESS_ONLY",
+          "clock": {
+            "accepted": 4,
+            "attempts": 6,
+            "enabled": true,
+            "history": [
+              {
+                "duration_ms": 16.0,
+                "result": "CLOCK_SAMPLE_ACCEPTED"
+              },
+              {
+                "duration_ms": 15.0,
+                "result": "CLOCK_SAMPLE_ACCEPTED"
+              },
+              {
+                "duration_ms": 15.0,
+                "result": "CLOCK_COORDINATION_HOLD"
+              },
+              {
+                "duration_ms": 16.0,
+                "result": "CLOCK_SAMPLE_ACCEPTED"
+              },
+              {
+                "duration_ms": 16.0,
+                "result": "CLOCK_COORDINATION_HOLD"
+              },
+              {
+                "duration_ms": 16.0,
+                "result": "CLOCK_SAMPLE_ACCEPTED"
+              }
+            ],
+            "interval_s": 60.0,
+            "last_result": "CLOCK_SAMPLE_ACCEPTED",
+            "source": "HOST_CLOCK_EXCHANGE_ONLY",
+            "state": "CLOCK_SAMPLE_ACCEPTED"
+          },
+          "clock_posts": 4,
+          "duration_ms": 10454.0,
+          "max_ack_interval_ms": 2125.0,
+          "metrics_accepted": 6,
+          "peer_lock_holds": 65,
+          "phase": "concurrent_lock_load",
+          "ttl_overruns": 0
+        },
+        {
+          "clock": {
+            "accepted": 0,
+            "attempts": 1,
+            "enabled": true,
+            "history": [
+              {
+                "duration_ms": 1032.0,
+                "result": "CLOCK_SOURCE_HOLD"
+              }
+            ],
+            "interval_s": 60.0,
+            "last_result": "CLOCK_SOURCE_HOLD",
+            "source": "HOST_CLOCK_EXCHANGE_ONLY",
+            "state": "CLOCK_SOURCE_HOLD"
+          },
+          "clock_gets": 2,
+          "clock_posts": 0,
+          "duration_ms": 2016.0,
+          "max_ack_interval_ms": 2016.0,
+          "metrics_accepted": 2,
+          "metrics_http_requests": 4,
+          "phase": "slow_get_headers",
+          "ttl_overruns": 0
+        },
+        {
+          "clock": {
+            "accepted": 0,
+            "attempts": 1,
+            "enabled": true,
+            "history": [
+              {
+                "duration_ms": 1031.0,
+                "result": "CLOCK_SOURCE_HOLD"
+              }
+            ],
+            "interval_s": 60.0,
+            "last_result": "CLOCK_SOURCE_HOLD",
+            "source": "HOST_CLOCK_EXCHANGE_ONLY",
+            "state": "CLOCK_SOURCE_HOLD"
+          },
+          "clock_gets": 2,
+          "clock_posts": 0,
+          "duration_ms": 2031.0,
+          "max_ack_interval_ms": 2031.0,
+          "metrics_accepted": 2,
+          "metrics_http_requests": 4,
+          "phase": "slow_get_body",
+          "ttl_overruns": 0
+        }
+      ]
+    }
+  ],
+  "schema": 1,
+  "scope": "HOST_ONLY_NO_DEVICE_OR_EXTERNAL_NETWORK"
+}

@@ -12,10 +12,15 @@ OLD_SCENE_SHA256_LF = 'd22e09b31225bf15ccce69e3753610864d04056a93baadc055f8c60ad
 WIFI_MANIFEST_SHA256_LF = "dd7cf647ba1e26ab4aa1986fd1f2cc3c7d4d25d43f05e9de1aa67de9b0b1f995"
 REVIEWED_SCENE_SHA256_LF = '443fee68eeb5841170c20140ba2bed1b4713daf79f5a58781820468d5ebfa8bd'
 NEW_FILE_BLOBS = {'firmware/include/display/ClockFoundation.h': '9e6e12d829460e5f2e719076407413e07a5626b0',
- 'companion/clock_sync.py': '21c4ab7e89e497aaf163b0c7e12d64fdb9dc9352',
+ 'companion/clock_sync.py': 'cb58144a7147c59a57c93a23b39f7833f7166361',
  'companion/test_clock_freshness.py': '85c21b29de70db4772c2dced3d98d84354588381',
  'companion/test_clock_sync.py': 'acff21843767f449c7ff8f1e210e086f34eb1df5',
- 'companion/test_clock_sync_deadline.py': '822f7ad563be1657865cfe4808684ee2c85d93b3'}
+ 'companion/test_clock_sync_deadline.py': '822f7ad563be1657865cfe4808684ee2c85d93b3',
+ # B5.2 LINK publisher: exact reviewed PR49 PC-only blobs, no source wildcard.
+ 'companion/link_clock.py': 'fa2e05e6b06146536f7e27a04723743966ff044a',
+ 'companion/shino_link.py': '9552087d872ac838c12ac8924062d9f8da488183',
+ 'companion/test_link_clock.py': 'a9c501b74a524ee0610b33af8463e4b54785576c',
+ 'companion/test_link_clock_loopback.py': 'e5b8d50f74f75a6aa1db2b509bd732c7f41c593d'}
 NEW_FIRMWARE_SHA256_LF = {"firmware/include/display/ClockFoundation.h": '820cbb9b23786550f526c170672de0a4019c664dc412b406ba24dd0731f394f8'}
 
 # Seven inverse diff blocks from the owner-reviewed overlay, not a text wildcard.

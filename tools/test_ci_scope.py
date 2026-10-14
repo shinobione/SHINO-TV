@@ -51,6 +51,17 @@ class TestCiScope(unittest.TestCase):
             with self.subTest(group=group):
                 self.assertFalse(scope.in_scope(group, ["ota/firmware/ShinoHttpOta.h"]))
 
+    def test_b52_link_changes_use_windows_not_legacy_p0_p1(self):
+        for path in ("companion/shino_link.py", "companion/test_shino_link.py"):
+            with self.subTest(path=path):
+                self.assertTrue(scope.in_scope("ci-windows", [path]))
+                self.assertFalse(scope.in_scope("ci-home", [path]))
+        for path in ("companion/provision_home_wifi.py",
+                     "experiments/home_lan/src/HomeLan.cpp",
+                     "tools/home_lan_resources.py"):
+            with self.subTest(path=path):
+                self.assertTrue(scope.in_scope("ci-home", [path]))
+
     def test_windows_changes_scoped(self):
         self.assertTrue(scope.in_scope("ci-windows", ["companion/shino_link.py"]))
         self.assertFalse(scope.in_scope("ci-windows", ["docs/README.md"]))

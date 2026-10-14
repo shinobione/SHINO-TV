@@ -195,27 +195,33 @@ class ClockTransport:
     def prepare(self):return self._request()
     def post(self,raw):return self._request(raw)
 
-def publish_clock(host,transport,*,authorize_clock_sync=False):
+def publish_clock(host,transport,*,authorize_clock_sync=False,cancelled=None):
     if authorize_clock_sync is not True:return "CLOCK_DISABLED_NO_IO"
     host=_safe_host(host)
     if isinstance(transport,ClockTransport) and transport.host!=host:
         raise ClockHold("CLOCK_HOST_MISMATCH")
     posted=False
     try:
+        if cancelled is not None and cancelled():return "CLOCK_STOPPED_NO_RETRY"
         with digest_exchange(host,wait_seconds=0):
             with transport.session() if isinstance(transport,ClockTransport) else contextlib.nullcontext():
+                if cancelled is not None and cancelled():return "CLOCK_STOPPED_NO_RETRY"
                 status=transport.prepare()
                 if type(status) is not dict or status.get("protocol")!=PROTOCOL or status.get("clock_enabled") is not True:
                     return "CLOCK_COMPATIBILITY_HOLD"
                 challenge_tokens(status)
                 sample=capture_pc_clock() # after lock/auth/status readiness
                 frame=seal(sample,status,transport.clock_key)
+                if cancelled is not None and cancelled():return "CLOCK_STOPPED_NO_RETRY"
                 posted=True
                 reply=transport.post(frame) # one call; no refresh or retry
                 if type(reply) is dict and set(reply)=={"status","persisted"} and reply.get("status")=="CLOCK_SAMPLE_ACCEPTED" and reply.get("persisted") is False:
                     return "CLOCK_SAMPLE_ACCEPTED"
                 return "CLOCK_UNKNOWN_NO_RETRY"
     except CoordinationBusy:return "CLOCK_COORDINATION_HOLD"
+    except HTTPError as error:
+        if not posted and error.code in (404,405):return "CLOCK_COMPATIBILITY_HOLD"
+        return "CLOCK_UNKNOWN_NO_RETRY" if posted else "CLOCK_SOURCE_HOLD"
     except Exception:
         return "CLOCK_UNKNOWN_NO_RETRY" if posted else "CLOCK_SOURCE_HOLD"
 

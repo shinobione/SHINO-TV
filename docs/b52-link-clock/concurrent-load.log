@@ -1,0 +1,6 @@
+HOST_LOOPBACK_MEASUREMENTS=[{"cadence": "ACCELERATED_DUE_FOR_STRESS_ONLY", "clock": {"accepted": 5, "attempts": 6, "enabled": true, "history": [{"duration_ms": 16.0, "result": "CLOCK_SAMPLE_ACCEPTED"}, {"duration_ms": 16.0, "result": "CLOCK_SAMPLE_ACCEPTED"}, {"duration_ms": 15.0, "result": "CLOCK_SAMPLE_ACCEPTED"}, {"duration_ms": 31.0, "result": "CLOCK_SAMPLE_ACCEPTED"}, {"duration_ms": 0, "result": "CLOCK_COORDINATION_HOLD"}, {"duration_ms": 16.0, "result": "CLOCK_SAMPLE_ACCEPTED"}], "interval_s": 60.0, "last_result": "CLOCK_SAMPLE_ACCEPTED", "source": "HOST_CLOCK_EXCHANGE_ONLY", "state": "CLOCK_SAMPLE_ACCEPTED"}, "clock_posts": 5, "duration_ms": 10282.0, "max_ack_interval_ms": 2078.0, "metrics_accepted": 6, "peer_lock_holds": 65, "phase": "concurrent_lock_load", "ttl_overruns": 0}]
+.
+----------------------------------------------------------------------
+Ran 1 test in 10.331s
+
+OK
