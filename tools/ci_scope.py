@@ -71,12 +71,13 @@ SCOPE.update({
     ),
     "ci-legacy": (),
     "ci-home": (
+        # Historical P0/P1 linked-resource gate, not the later B5.2 LINK graph.
+        # LINK source changes are covered by ci-windows; P0/P1 source changes
+        # and home-LAN provisioning continue to trigger the original gate.
         "experiments/home_lan/**",
         "tools/home_lan*",
         "companion/provision_home_wifi.py",
-        "companion/test_provision_home_wifi.py",
-        "companion/shino_link.py",
-        "companion/test_shino_link.py"
+        "companion/test_provision_home_wifi.py"
     ),
     "ci-artwork": (
         "experiments/artwork_pilot/**",
