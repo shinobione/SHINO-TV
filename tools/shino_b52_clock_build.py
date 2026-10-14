@@ -17,6 +17,16 @@ from m9_stagea_build import ENV
 
 NATIVE=ROOT/"experiments/b52_clock/native"
 
+
+def private_source_gate():
+    """Read-only Git preflight before accessing owner credentials or build inputs."""
+    status=subprocess.check_output(["git","status","--porcelain"],cwd=ROOT,text=True)
+    if status.strip():raise ValueError("B5.2 private build HOLD: Git source tree is not clean")
+    head=subprocess.check_output(["git","rev-parse","HEAD"],cwd=ROOT,text=True).strip()
+    if len(head)!=40 or any(c not in "0123456789abcdef" for c in head.lower()):
+        raise ValueError("B5.2 private build HOLD: invalid HEAD identity")
+    return head
+
 def patch_clock(source):
     source=once(source,'#include "B5Lan.h"','#include "B5Lan.h"\n#include "B52Clock.h"')
     # The generated LAN diagnostic must identify the new clock firmware.
@@ -72,6 +82,7 @@ def prepare(directory,private=False):
     return directory,device,build_id
 
 def build(directory,libraries,private=False):
+    if private:private_source_gate()
     libraries=Path(libraries).resolve()
     for name,version in (("ArduinoJson","7.4.3"),("GFX Library for Arduino","1.6.4"),("AnimatedGIF","2.2.0")):
         if "version="+version not in (libraries/name/"library.properties").read_text(encoding="utf-8"):
@@ -92,7 +103,7 @@ def build(directory,libraries,private=False):
     with (directory/"build.log").open("x",encoding="utf-8") as log:
         result=subprocess.run([pio,"run","-d",str(directory),"-e",ENV],
             cwd=ROOT,env=environment,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,timeout=1200)
-    if result.returncode:raise RuntimeError("Public B5.2 compile failed; inspect new build.log")
+    if result.returncode:raise RuntimeError("B5.2 offline compile failed; inspect private build.log locally" if private else "Public B5.2 compile failed; inspect new build.log")
     report=inspect_build(directory,device,build_id,private=private)
     report.update(firmware="B5.2-CLOCK-OWNER-PRIVATE" if private else "B5.2-CLOCK-PUBLIC-INERT",
         clock_authority=private,
@@ -116,7 +127,10 @@ if __name__=="__main__":
     a=p.parse_args()
     result=build(a.directory,a.libraries,private=a.private)
     if a.private:
-        print("B52_OWNER_PRIVATE_BUILD_OFFLINE_ONLY — PHYSICAL_NO_GO")
+        # Artifact size and hash are public review facts; keep device/build IDs private.
+        print("B52_OWNER_PRIVATE_BUILD_OFFLINE_ONLY PHYSICAL_NO_GO "
+              f"bytes={result['bytes']} sha256={result['sha256']} "
+              f"source_commit={result['source_commit']}")
     else:
         print(json.dumps(result,indent=2))
 

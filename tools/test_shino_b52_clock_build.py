@@ -25,6 +25,18 @@ class BuildTests(unittest.TestCase):
             self.assertEqual(src[src.index(start):src.index(end)],new[new.index(start):new.index(end)])
     def test_anchor_drift_fails_closed(self):
         with self.assertRaises(ValueError):b52.patch_clock("different graph")
+    def test_private_source_gate_fails_on_dirty_tree(self):
+        with patch.object(b52.subprocess,"check_output",return_value=" M tools/unreviewed.py\\n"):
+            with self.assertRaisesRegex(ValueError,"not clean"):
+                b52.private_source_gate()
+
+    def test_private_source_gate_records_exact_clean_head(self):
+        sha="a"*40
+        def git(command,**kwargs):
+            return "" if command[1]=="status" else sha+"\\n"
+        with patch.object(b52.subprocess,"check_output",side_effect=git):
+            self.assertEqual(b52.private_source_gate(),sha)
+
     def test_private_preparation_refuses_non_owner_path_before_secret_access(self):
         with tempfile.TemporaryDirectory(prefix="b52-private-guard-") as td:
             out=Path(td)/"candidate"
