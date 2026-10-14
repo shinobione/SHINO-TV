@@ -4,10 +4,12 @@ No firmware mutation or authority. Immutable historical hashes are still checked
 against the complete reconstructed predecessor. Unknown current text is refused.
 """
 import hashlib
+import json
 import subprocess
 
 SCENE = "firmware/include/display/SceneEngine.h"
 OLD_SCENE_SHA256_LF = 'd22e09b31225bf15ccce69e3753610864d04056a93baadc055f8c60ad8c8d413'
+WIFI_MANIFEST_SHA256_LF = "dd7cf647ba1e26ab4aa1986fd1f2cc3c7d4d25d43f05e9de1aa67de9b0b1f995"
 REVIEWED_SCENE_SHA256_LF = '443fee68eeb5841170c20140ba2bed1b4713daf79f5a58781820468d5ebfa8bd'
 NEW_FILE_BLOBS = {'firmware/include/display/ClockFoundation.h': '9e6e12d829460e5f2e719076407413e07a5626b0',
  'companion/clock_sync.py': '21c4ab7e89e497aaf163b0c7e12d64fdb9dc9352',
@@ -96,18 +98,22 @@ def wifi_firmware_predecessor(root):
     """Prove the old Wi-Fi pair's exact firmware set, plus pinned B5.2 additions."""
     reference = "2b9ef75b4cf650277baae8da871ebe41f3227ddf"
     additions = reviewed_new_firmware(root)
+    # The unchanged Phase O table was compared against every file at reference:
+    # all 113 LF digests are identical. Pin the table itself so shallow-clone
+    # operation never substitutes an unverified or edited historical manifest.
+    raw = (root / "tools/m9_phase_o_sources.json").read_bytes().replace(b"\r\n", b"\n")
+    if hashlib.sha256(raw).hexdigest() != WIFI_MANIFEST_SHA256_LF:
+        raise B52SourceDrift("Immutable Wi-Fi historical pin manifest changed")
+    historical = json.loads(raw)["firmware_sha256_lf"]
     names = subprocess.check_output(["git", "ls-files", "firmware"], cwd=root, text=True).splitlines()
-    checked = 0
-    for name in names:
-        if name in additions:
-            continue  # Exact new header digest was already verified above.
-        original = subprocess.check_output(["git", "show", reference + ":" + name], cwd=root)
+    if set(names) != set(historical) | set(additions):
+        raise B52SourceDrift("Unreviewed Wi-Fi firmware source set")
+    for name, expected in historical.items():
         actual = (root / name).read_bytes().replace(b"\r\n", b"\n")
         if name == SCENE:
             actual = predecessor(name, actual.decode("utf-8")).encode("utf-8")
-        if actual != original.replace(b"\r\n", b"\n"):
+        if hashlib.sha256(actual).hexdigest() != expected:
             raise B52SourceDrift("Wi-Fi historical firmware mutation: " + name)
-        checked += 1
-    return dict(reference=reference, historical_firmware_files_checked=checked,
+    return dict(reference=reference, historical_firmware_files_checked=len(historical),
                 source_scope="PINNED_PREDECESSOR_PROJECTION_NOT_RAW_CURRENT_EQUALITY",
                 reviewed_new_firmware_sha256_lf=additions)

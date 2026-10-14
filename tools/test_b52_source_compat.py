@@ -55,12 +55,30 @@ class B52SourceCompatibilityTests(unittest.TestCase):
     def test_wifi_historical_set_and_added_header_both_pinned(self):
         from b52_source_compat import wifi_firmware_predecessor
 
-        report = wifi_firmware_predecessor(ROOT)
+        import subprocess
+        original = subprocess.check_output
+        def shallow(command, *args, **kwargs):
+            if command[:2] == ["git", "show"]:
+                raise AssertionError("NO DEEP HISTORY AVAILABLE")
+            return original(command, *args, **kwargs)
+        with patch.object(subprocess, "check_output", side_effect=shallow):
+            report = wifi_firmware_predecessor(ROOT)
         self.assertEqual(report["historical_firmware_files_checked"], 113)
         self.assertEqual(set(report["reviewed_new_firmware_sha256_lf"]),
                          {"firmware/include/display/ClockFoundation.h"})
         self.assertEqual(report["source_scope"],
                          "PINNED_PREDECESSOR_PROJECTION_NOT_RAW_CURRENT_EQUALITY")
+
+    def test_historical_pin_manifest_tampering_fails_closed(self):
+        from b52_source_compat import wifi_firmware_predecessor
+
+        read = Path.read_bytes
+        manifest = ROOT / "tools/m9_phase_o_sources.json"
+        def changed(path):
+            data = read(path)
+            return data + b" " if path == manifest else data
+        with patch.object(Path, "read_bytes", changed), self.assertRaises(ValueError):
+            wifi_firmware_predecessor(ROOT)
 
 
 if __name__ == "__main__":

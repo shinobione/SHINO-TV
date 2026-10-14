@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 import m9_signed_ota_runner as signed
 import m9_stagea_source_gate as stagea
+from b52_source_compat import NEW_FILE_BLOBS, SCENE, predecessor
 
 ROOT = Path(__file__).resolve().parents[1]
 TOOLS = ("companion/shino_b5_get_diagnostic.py",
@@ -25,7 +26,12 @@ def tracked_gate(module):
                               for t in node.targets))
     loop = next(node for node in function.body if isinstance(node, ast.For)
                 and isinstance(node.target, ast.Name) and node.target.id == "name")
-    block = ast.Module(body=[assignment, loop], type_ignores=[])
+    # Include the actual reviewed-overlay import and pin-map update, while
+    # continuing to exclude core_root/signing/SDK work before the assignment.
+    imports = [node for node in function.body if isinstance(node, ast.ImportFrom)
+               and node.module == 'b52_source_compat']
+    start, end = function.body.index(assignment), function.body.index(loop)
+    block = ast.Module(body=imports + function.body[start:end+1], type_ignores=[])
     exec(compile(block, module.__file__, "exec"), {"ROOT": ROOT, "subprocess": subprocess})
 
 
@@ -43,6 +49,11 @@ class OfflineSourcePinsTests(unittest.TestCase):
                 if ref in ("7455f6b353f1733a78f2a6d25503edb063f7befb",
                            "b59964af43b555b75d415e6d063580945e6d99f7"):
                     command = ["git", "show", "HEAD:"+path]
+                    if path == SCENE:
+                        # The independent compatibility tests prove this
+                        # reconstruction against the immutable old SHA-256.
+                        data = original(command, *args, **kwargs)
+                        return predecessor(path, data.decode('utf-8')).encode('utf-8')
             return original(command, *args, **kwargs)
         self.enterContext(patch.object(subprocess, "check_output", side_effect=snapshot))
 
@@ -87,6 +98,17 @@ class OfflineSourcePinsTests(unittest.TestCase):
         with patch.object(subprocess, "check_output", side_effect=additional):
             with self.assertRaises(subprocess.CalledProcessError):
                 tracked_gate(signed)
+
+    def test_each_reviewed_clock_file_is_pinned_before_sdk(self):
+        original = subprocess.check_output
+        for name in NEW_FILE_BLOBS:
+            def changed(command, *args, **kwargs):
+                if command == ["git", "hash-object", "--", name]:
+                    return "0"*40+"\n"
+                return original(command, *args, **kwargs)
+            with self.subTest(clock_file=name), patch.object(subprocess, "check_output", side_effect=changed):
+                with self.assertRaisesRegex(AssertionError, "offline launcher changed"):
+                    tracked_gate(signed)
 
     def test_preexisting_companion_remains_frozen(self):
         original = Path.read_bytes
