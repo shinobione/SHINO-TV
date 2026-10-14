@@ -33,7 +33,7 @@ class BuildTests(unittest.TestCase):
     def test_private_source_gate_records_exact_clean_head(self):
         sha="a"*40
         def git(command,**kwargs):
-            return "" if command[1]=="status" else sha+"\\n"
+            return "" if command[1]=="status" else sha+"\n"
         with patch.object(b52.subprocess,"check_output",side_effect=git):
             self.assertEqual(b52.private_source_gate(),sha)
 
