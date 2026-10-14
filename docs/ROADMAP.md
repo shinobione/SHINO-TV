@@ -18,6 +18,12 @@ Aucun merge, appareil, OTA, flash, reboot, provisioning, changement Wi-Fi,
 build privé ni publication automatique SHINO LINK ; qualifications physiques
 B5.2 toujours HOLD. Les clôtures précédentes restent des preuves historiques.
 
+Publication Draft [PR #48](https://github.com/shinobione/SHINO-TV/pull/48).
+La CI a démontré une collision des empreintes Mission9 avec l’overlay horloge.
+[Correction de fermeture des sources, tests et limites](B52_GITHUB_PUBLICATION.md) :
+projection exacte, empreintes historiques conservées et aucune source runtime
+revue modifiée. La CI finale doit être contrôlée après le commit de correction.
+
 ## Mandat courant — B5.2 CLOCK FRESHNESS FIX, 14 octobre 2026
 
 Précision propriétaire — CLOSE THREE P2 : reprendre le diff existant, comparer

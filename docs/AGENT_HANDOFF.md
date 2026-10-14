@@ -14,6 +14,11 @@ retain SKIPPED/NOT_RUN. Keep both worktrees and private artifacts intact.
 No merge, device contact, OTA/flash/reboot/provisioning/Wi-Fi change, private
 build or automatic LINK publication. B5.2 physical qualification stays HOLD.
 Earlier mandates and closure reports retain their historical meaning.
+Draft [PR48](https://github.com/shinobione/SHINO-TV/pull/48) now exists.
+[CI source-closure correction](B52_GITHUB_PUBLICATION.md) addresses demonstrated
+historical SceneEngine/new-header identity collisions only; exact predecessor
+pins and physical gates remain. Reviewed runtime source stays unchanged.
+Verify every triggered workflow on the correction commit, retaining SKIPPED.
 
 **Current owner mandate — B5.2 CLOCK FRESHNESS / CLOSE THREE P2:**
 Existing isolated local diff, frozen244334e and main worktree preserved. Source

@@ -27,7 +27,12 @@ class PhaseOTests(unittest.TestCase):
                          (399264, NORMAL_SHA, 0x062000, 98))
         names = subprocess.check_output(['git', 'ls-files', 'firmware'], cwd=ROOT, text=True).splitlines()
         pins = json.loads(qualification.PINS.read_text(encoding='utf-8'))
-        self.assertEqual(set(names), set(pins['firmware_sha256_lf']))
+        # Historical 113-file identity stays immutable. The one reviewed clock
+        # header is separately pinned, never covered by a wildcard exception.
+        self.assertEqual(set(report['reviewed_new_firmware_sha256_lf']),
+                         {'firmware/include/display/ClockFoundation.h'})
+        self.assertEqual(set(names), set(pins['firmware_sha256_lf']) |
+                         set(report['reviewed_new_firmware_sha256_lf']))
         self.assertTrue(report['transaction_classes_source_equivalent'])
         self.assertTrue(report['runner_source_equivalent_except_numeric_receipt'])
         self.assertEqual(report['PHASE_O_RETAINED_CANDIDATE_IDENTITY_GATE'], 'NOT_READ_BY_THIS_RUN')

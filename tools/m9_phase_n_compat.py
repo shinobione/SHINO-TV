@@ -12,6 +12,9 @@ class PhaseNDrift(AssertionError, ValueError):
     """Both historical assertion gates and current data audits fail closed."""
 
 def predecessor(path, text):
+    # The reviewed clock overlay has its own exact current/predecessor pins.
+    from b52_source_compat import predecessor as clock_predecessor
+    text = clock_predecessor(path, text)
     pins = json.loads((ROOT/'tools/m9_phase_n_sources.json').read_text(encoding='utf-8'))
     if path not in pins['predecessor_sha256_lf']:
         return text

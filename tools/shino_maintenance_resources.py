@@ -4,6 +4,7 @@ from pathlib import Path
 from shino_wifi_resources import one
 from m9_stagea_resources import symbols_with_data
 from m9_stagea_build import ROOT,ENV
+from b52_source_compat import wifi_firmware_predecessor
 
 def run(baseline,candidate):
     base=one(baseline);built=one(candidate)
@@ -11,9 +12,9 @@ def run(baseline,candidate):
     assert base['dependencies']==built['dependencies'] and base['identity_sha256']==built['identity_sha256']
     assert built['inputs']['maintenance_callable'] and not built['inputs']['trusted_consent_bound']
     assert base['noinit']==built['noinit']==56
-    # Deployed/default/StageA sources remain byte-identical to the old freeze.
-    for name in subprocess.check_output(['git','ls-files','firmware'],cwd=ROOT,text=True).splitlines():
-        assert subprocess.check_output(['git','show','2b9ef75b4cf650277baae8da871ebe41f3227ddf:'+name],cwd=ROOT).replace(b'\r\n',b'\n')==(ROOT/name).read_bytes().replace(b'\r\n',b'\n')
+    # Historical firmware equality is projected explicitly; current clock
+    # additions retain separate exact pins, never raw-equality claims.
+    historical_source=wifi_firmware_predecessor(ROOT)
     elf=Path(candidate)/'.pio/build'/ENV/'firmware.elf';symbols=symbols_with_data(elf)
     rows=[v for k,v in symbols.items() if 'maintenanceSizes' in k];assert len(rows)==1
     types=dict(zip(('http','native','owner','string','handler','uri'),struct.unpack('<6I',rows[0]['data'])))
@@ -47,6 +48,7 @@ def run(baseline,candidate):
     return dict(verdict='NO_GO',principal_blocker='SIMULTANEOUS_NATIVE_MEMORY_FLOOR_NOT_ESTABLISHED',
         callable_native='PASS_OFFLINE',host_lifecycle='SEPARATE_HOST_EVIDENCE',baseline=base,candidate=built,delta=delta,
         native_types=types,loop_direct_calls=calls,transitive_call_paths=call_paths,normal_known_dynamic_payload=normal_payload,
+        historical_source=historical_source,
         normal_known_dynamic_payload_total=normal_known,
         reclaim_credit_limit='724 B native payload is guaranteed only after normal registration. Metadata, request Strings, active/queued clients and fragmentation vary. Host release is not physical high-water.',
         maintenance_dynamic_payload=dict(updater=4096,secondary_stack=0,rsa=0,json=0,ordinary_http=0),

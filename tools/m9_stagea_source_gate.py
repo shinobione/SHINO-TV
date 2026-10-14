@@ -6,6 +6,7 @@ from v07_pinned_core_probe import core_root
 ROOT=Path(__file__).resolve().parents[1]
 
 def run():
+    from b52_source_compat import NEW_FILE_BLOBS, SCENE, predecessor
     previous=signed_gate();core=core_root()
     pins=json.loads((ROOT/'tools/m9_stagea_core_sources.json').read_text())
     for name,digest in pins.items():
@@ -39,6 +40,7 @@ def run():
         'companion/shino_b5_partial_preflight.py': 'c4b950a08a6d498a01fa49d86e75f48e3e3c0cc6',
         'companion/test_shino_b5_partial_preflight.py': '84adec2c7ce3ad49c9b0424afaa94af082019cb2',
     }
+    new_offline_script_pins.update(NEW_FILE_BLOBS)
     for name in subprocess.check_output(['git','ls-files','firmware','companion','tools/m9_single_attempt*'],cwd=ROOT,text=True).splitlines():
         if name in new_offline_script_pins:
             digest=subprocess.check_output(['git','hash-object','--',name],cwd=ROOT,text=True).strip()
@@ -64,7 +66,10 @@ def run():
         if name in ('companion/shino_install.py','companion/test_shino_install.py','companion/SHINO-INSTALL.cmd','companion/SHINO_INSTALL.md','companion/SHINO-OFFLINE-CHECK.cmd','companion/shino_maintenance_control.py','companion/test_shino_maintenance_control.py'):
             continue
         original=subprocess.check_output(['git','show','b59964af43b555b75d415e6d063580945e6d99f7:'+name],cwd=ROOT)
-        assert (ROOT/name).read_bytes().replace(b'\r\n',b'\n')==original.replace(b'\r\n',b'\n'),name
+        actual=(ROOT/name).read_bytes().replace(b'\r\n',b'\n')
+        if name == SCENE:
+            actual=predecessor(name,actual.decode('utf-8')).encode('utf-8')
+        assert actual==original.replace(b'\r\n',b'\n'),name
     stage=(ROOT/'firmware/src/boot/M9NormalStageA.cpp').read_text()
     assert 'M9StageAHttp' not in stage and 'setStageARawHook' not in stage
     graph=(ROOT/'experiments/m9_stagea_ota/include/M9StageALink.inc').read_text()
@@ -74,6 +79,7 @@ def run():
     files=[*sorted((ROOT/'experiments/m9_stagea_ota').rglob('*')),*sorted((ROOT/'tools').glob('m9_stagea*'))]
     return dict(PHASE_T_SOURCE='PASS_OFFLINE',previous=previous,additional_core_LF_pins=len(pins),
         deployed_source_identity='b59964af43b555b75d415e6d063580945e6d99f7',default_stagea_ota=False,
+        source_identity_scope='PINNED_PREDECESSOR_PROJECTION_NOT_RAW_CURRENT_EQUALITY',
         composition_LF_sha256={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes().replace(b'\r\n',b'\n')).hexdigest() for p in files if p.is_file()},
         device_contacts=0,serial_io=0,flash_writes=0,rtc_writes=0,reboots=0,device_filesystem_writes=0)
 
