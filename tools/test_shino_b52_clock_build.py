@@ -23,6 +23,34 @@ class BuildTests(unittest.TestCase):
             self.assertEqual(src[src.index(start):src.index(end)],new[new.index(start):new.index(end)])
     def test_anchor_drift_fails_closed(self):
         with self.assertRaises(ValueError):b52.patch_clock("different graph")
+    def test_private_preparation_refuses_non_owner_path_before_secret_access(self):
+        with tempfile.TemporaryDirectory(prefix="b52-private-guard-") as td:
+            out=Path(td)/"candidate"
+            with patch.object(b52,"prepare_b51",side_effect=AssertionError("SECRET LOAD")):
+                with self.assertRaisesRegex(ValueError,"owner-local"):
+                    b52.prepare(out,private=True)
+            self.assertFalse(out.exists())
+
+    def test_private_preparation_preserves_owner_identity(self):
+        with tempfile.TemporaryDirectory(prefix="b52-private-fixture-") as td:
+            owner=Path(td)/"m9-owner";owner.mkdir()
+            out=owner/"candidate"
+            def fake_prepare(folder,private=False):
+                self.assertTrue(private)
+                new,device,identity=b51.prepare(folder,private=False)
+                release=new/"include/ShinoRelease.h"
+                release.write_text(release.read_text(encoding="utf-8").replace(
+                    "#define SHINO_OTA_PRIVATE 0","#define SHINO_OTA_PRIVATE 1"),encoding="utf-8")
+                return new,device,identity
+            with patch.object(b52,"OWNER",owner),patch.object(b52,"prepare_b51",side_effect=fake_prepare):
+                _,device,identity=b52.prepare(out,private=True)
+            release=(out/"include/ShinoRelease.h").read_text(encoding="utf-8")
+            self.assertIn("#define SHINO_OTA_PRIVATE 1",release)
+            self.assertIn(f'#define SHINO_OTA_BUILD "{identity}"',release)
+            self.assertNotEqual(identity,"c"*64)
+            self.assertIn("B52Clock::step(now)",(out/"src/boot/M9NormalStageA.cpp").read_text())
+            self.assertIn("clockPermitted=SHINO_OTA_PRIVATE",(out/"include/B52ClockHttp.inc").read_text())
+
     def test_public_only_new_output_and_inert_authority(self):
         parent=b52.ROOT/"research-local"
         parent.mkdir(exist_ok=True)

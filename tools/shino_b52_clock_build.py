@@ -1,7 +1,8 @@
 """B5.2 CLOCK public inert source graph and compile, offline only.
 
-No private option, credential loader call, upload target, device client or signing
-key. Outputs must be new ignored directories. Retained B5.1 artifacts are read-only.
+Public builds remain inert. Private builds are explicit and owner-local only,
+using B5.1 protected credentials. No device or install actions.
+Outputs must be new ignored directories; retained artifacts stay read-only.
 """
 import argparse
 import configparser
@@ -11,6 +12,7 @@ import shutil
 import subprocess
 from pathlib import Path
 from shino_b5_lan_build import prepare as prepare_b51,inspect_build,once,ROOT
+from shino_owner_transition import OWNER
 from m9_stagea_build import ENV
 
 NATIVE=ROOT/"experiments/b52_clock/native"
@@ -45,30 +47,34 @@ def patch_clock(source):
         '    ESP.wdtFeed();yield();observer.poll();')
     return source
 
-def prepare(directory):
+def prepare(directory,private=False):
     directory=Path(directory).resolve()
     if directory.exists():raise ValueError("New B5.2 output directory required")
-    directory,device,build_id=prepare_b51(directory,private=False)
+    if private and OWNER.resolve() not in directory.parents:
+        raise ValueError("B5.2 private candidate must remain in ignored owner-local storage")
+    directory,device,build_id=prepare_b51(directory,private=private)
     normal=directory/"src/boot/M9NormalStageA.cpp"
     normal.write_text(patch_clock(normal.read_text(encoding="utf-8")),encoding="utf-8",newline="\n")
     for name,target in (("B52Clock.h","include/B52Clock.h"),("ClockFreshness.h","include/ClockFreshness.h"),("B52Clock.cpp","src/boot/B52Clock.cpp"),("B52ClockHttp.inc","include/B52ClockHttp.inc")):
         shutil.copyfile(NATIVE/name,directory/target)
     shutil.copyfile(ROOT/"firmware/include/display/ClockFoundation.h",directory/"include/display/ClockFoundation.h")
-    release=directory/"include/ShinoRelease.h"
-    release.write_text(once(release.read_text(encoding="utf-8"),'#define SHINO_OTA_BUILD "'+build_id+'"',
-        '#define SHINO_OTA_BUILD "'+'c'*64+'"'),encoding="utf-8")
-    build_id="c"*64
+    # Public: synthetic identity. Private: preserve the real release identity.
+    if not private:
+        release=directory/"include/ShinoRelease.h"
+        release.write_text(once(release.read_text(encoding="utf-8"),'#define SHINO_OTA_BUILD "'+build_id+'"',
+            '#define SHINO_OTA_BUILD "'+'c'*64+'"'),encoding="utf-8")
+        build_id="c"*64
     ini=configparser.ConfigParser(interpolation=None);ini.read(directory/"platformio.ini")
     ini["env:"+ENV]["build_src_filter"]+=" -<boot/M9NormalDashboard.cpp>"
     with (directory/"platformio.ini").open("w",encoding="utf-8") as f:ini.write(f)
     return directory,device,build_id
 
-def build(directory,libraries):
+def build(directory,libraries,private=False):
     libraries=Path(libraries).resolve()
     for name,version in (("ArduinoJson","7.4.3"),("GFX Library for Arduino","1.6.4"),("AnimatedGIF","2.2.0")):
         if "version="+version not in (libraries/name/"library.properties").read_text(encoding="utf-8"):
             raise ValueError("Pinned public dependency required: "+name)
-    directory,device,build_id=prepare(directory)
+    directory,device,build_id=prepare(directory,private=private)
     # Use existing pinned library sources; prevent registry resolution/download.
     ini=configparser.ConfigParser(interpolation=None);ini.read(directory/"platformio.ini")
     ini["env:esp12e"]["lib_deps"]=""
@@ -85,11 +91,12 @@ def build(directory,libraries):
         result=subprocess.run([pio,"run","-d",str(directory),"-e",ENV],
             cwd=ROOT,env=environment,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,timeout=1200)
     if result.returncode:raise RuntimeError("Public B5.2 compile failed; inspect new build.log")
-    report=inspect_build(directory,device,build_id,private=False)
-    report.update(firmware="B5.2-CLOCK-PUBLIC-INERT",clock_authority=False,
+    report=inspect_build(directory,device,build_id,private=private)
+    report.update(firmware="B5.2-CLOCK-OWNER-PRIVATE" if private else "B5.2-CLOCK-PUBLIC-INERT",
+        clock_authority=private,
         clock_protocol="shino-pc-clock-2",clock_frame_bytes=64,clock_max_lease_s=120,
         clock_challenge_ms=2000,
-        clock_renderer_heap_allocations=0,private_build=False,
+        clock_renderer_heap_allocations=0,private_build=private,
         music_receiver_integrated=False,physical="NOT_RUN")
     report["clock_inputs_sha256"]={p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in
         ("firmware/include/display/ClockFoundation.h","firmware/include/display/SceneEngine.h",
@@ -102,6 +109,12 @@ if __name__=="__main__":
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument("directory",type=Path)
     p.add_argument("--libraries",type=Path,required=True)
+    p.add_argument("--private",action="store_true",
+                   help="Owner-local offline candidate only; no install or device access")
     a=p.parse_args()
-    print(json.dumps(build(a.directory,a.libraries),indent=2))
+    result=build(a.directory,a.libraries,private=a.private)
+    if a.private:
+        print("B52_OWNER_PRIVATE_BUILD_OFFLINE_ONLY — PHYSICAL_NO_GO")
+    else:
+        print(json.dumps(result,indent=2))
 
