@@ -16,6 +16,7 @@ GRAPH = ROOT/"experiments/m9_signed_ota"
 
 
 def source_gate():
+    from b52_source_compat import NEW_FILE_BLOBS, SCENE, predecessor
     core = core_root()
     pins = json.loads((ROOT/"tools/m9_signed_core_sources.json").read_text())
     for name, digest in pins.items():
@@ -55,6 +56,10 @@ def source_gate():
         'companion/shino_b5_partial_preflight.py': 'c4b950a08a6d498a01fa49d86e75f48e3e3c0cc6',
         'companion/test_shino_b5_partial_preflight.py': '84adec2c7ce3ad49c9b0424afaa94af082019cb2',
     }
+    # Added B5.2 sources did not exist at the frozen signed-graph checkpoint.
+    # Every path is pinned to its reviewed blob; SceneEngine still proves its
+    # complete immutable predecessor rather than bypassing historical checks.
+    new_offline_script_pins.update(NEW_FILE_BLOBS)
     for name in subprocess.check_output(["git","ls-files","firmware","companion","tools/m9_single_attempt*"],cwd=ROOT,text=True).splitlines():
         if name in new_offline_script_pins:
             digest = subprocess.check_output(["git","hash-object","--",name],cwd=ROOT,text=True).strip()
@@ -82,7 +87,10 @@ def source_gate():
             continue
         # Phase S has no edits to any deployed graph, sender or physical writer.
         old = subprocess.check_output(["git","show","7455f6b353f1733a78f2a6d25503edb063f7befb:"+name],cwd=ROOT)
-        assert (ROOT/name).read_bytes().replace(b"\r\n",b"\n") == old.replace(b"\r\n",b"\n"), name
+        actual = (ROOT/name).read_bytes().replace(b"\r\n",b"\n")
+        if name == SCENE:
+            actual = predecessor(name, actual.decode('utf-8')).encode('utf-8')
+        assert actual == old.replace(b"\r\n",b"\n"), name
     assert stage.count("service.begin()") == 1 and stage.count("Webserver service;") == 1
     assert "M9Signed" not in stage
     # Independently verify reviewed header clone differs only by namespace,
@@ -93,7 +101,10 @@ def source_gate():
     actual = (GRAPH/"include/M9SignedHttp.h").read_text()
     assert actual[actual.index("class HeaderGate final"):] == tail
     return dict(pinned_core_files=len(pins), firmware_LF_pins=113, stage_a_single_owner=True,
-                stage_a_ota_route=False, installed_sources_unchanged=True, device_contacts=0)
+                stage_a_ota_route=False,
+                installed_sources_unchanged=predecessor(SCENE,(ROOT/SCENE).read_text(encoding='utf-8')) == (ROOT/SCENE).read_text(encoding='utf-8'),
+                historical_source_identity='PINNED_PREDECESSOR_PROJECTION_NOT_RAW_CURRENT_EQUALITY',
+                device_contacts=0)
 
 
 def run():

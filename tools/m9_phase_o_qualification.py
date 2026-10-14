@@ -41,10 +41,17 @@ def transaction_equivalent(text, expected):
 
 
 def source_gate(root=ROOT):
+    from b52_source_compat import predecessor, reviewed_new_firmware, SCENE
+    current_scene = (root/SCENE).read_text(encoding='utf-8')
+    projected = predecessor(SCENE, current_scene) != current_scene
+    new_firmware = reviewed_new_firmware(root)
     pins = json.loads(PINS.read_text(encoding='utf-8'))
     for group in ('firmware_sha256_lf', 'unchanged_sha256_lf', 'current_binding_tool_sha256_lf'):
         for name, expected in pins[group].items():
-            if digest((root/name).read_bytes()) != expected:
+            actual = (root/name).read_bytes().replace(b'\r\n', b'\n')
+            if group == 'firmware_sha256_lf':
+                actual = predecessor(name, actual.decode('utf-8')).encode('utf-8')
+            if digest(actual) != expected:
                 raise ValueError('Phase O source drift: ' + name)
     runner_equivalent((root/'tools/m9_single_attempt_physical_runner.py').read_text(encoding='utf-8'),
                       pins['runner_predecessor_sha256_lf'])
@@ -64,7 +71,8 @@ def source_gate(root=ROOT):
     from m9_phase_n_qualification import source_gate as stage_a_source_gate
     stage_a_source_gate(root)  # Current N source pins + explicit historical projection.
     return dict(PHASE_O_BINDING_SOURCE_GATE='PASS/OFFLINE',
-                firmware_identity='RAW_PHASE_N_HEAD_EQUALITY',
+                firmware_identity='PINNED_B52_PREDECESSOR_PROJECTION' if projected else 'RAW_PHASE_N_HEAD_EQUALITY',
+                reviewed_new_firmware_sha256_lf=new_firmware,
                 firmware_files_checked=len(pins['firmware_sha256_lf']),
                 phase_n_source_checkpoint=pins['phase_n_source_checkpoint'],
                 phase_o_start_head=pins['start_head'],

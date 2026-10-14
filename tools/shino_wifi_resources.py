@@ -5,6 +5,7 @@ from m9_signed_ota_resources import elf_sections
 from m9_stagea_resources import symbols_with_data
 from m9_signed_release import validate_image
 from m9_stagea_build import ENV,ROOT
+from b52_source_compat import wifi_firmware_predecessor
 def one(directory):
     directory=Path(directory);p=directory/'.pio/build'/ENV;sections=elf_sections(p/'firmware.elf')
     raw=(p/'firmware.bin').read_bytes();validate_image(raw)
@@ -28,8 +29,7 @@ def run(baseline,integrated):
     base=one(baseline);candidate=one(integrated)
     assert base['inputs']['firmware_LF_sha256']==candidate['inputs']['firmware_LF_sha256'] and base['dependencies']==candidate['dependencies'] and base['identity_sha256']==candidate['identity_sha256']
     assert base['noinit']==candidate['noinit']==56
-    for name in subprocess.check_output(['git','ls-files','firmware'],cwd=ROOT,text=True).splitlines():
-        assert subprocess.check_output(['git','show','2b9ef75b4cf650277baae8da871ebe41f3227ddf:'+name],cwd=ROOT).replace(b'\r\n',b'\n')==(ROOT/name).read_bytes().replace(b'\r\n',b'\n')
+    historical_source=wifi_firmware_predecessor(ROOT)
     delta={name:candidate[name]-base[name] for name in ('bin_bytes','linked_flash','static_ram','noinit')}
     symbols=symbols_with_data(Path(integrated)/'.pio/build'/ENV/'firmware.elf')
     native=[v for k,v in symbols.items() if 'shinoInstallStorage' in k];assert len(native)==1 and native[0]['binding']==0
@@ -37,6 +37,7 @@ def run(baseline,integrated):
     def frame(term):return max(r['bytes'] for r in candidate['frames'] if term in r['function'])
     return dict(verdict='NO_GO',principal_blocker='SIMULTANEOUS_NATIVE_MEMORY_FLOOR_NOT_ESTABLISHED',native_link='PASS_OFFLINE',
         baseline=base,integrated=candidate,delta=delta,native_object_bytes=native[0]['bytes'],
+        historical_source=historical_source,
         floors=dict(heap=20480,largest=16384,stack=2048,fragmentation=25),observed_owner=dict(heap=30224,largest=30008,stack=3248),
         known_dynamic_updater=4096,no_rsa_or_bearssl_secondary_stack=True,
         conservative_tcp_scenario_reserve=4096,private_key_payload=32,

@@ -1,0 +1,43 @@
+{
+  "scope": "HOST_LOOPBACK actual parser Digest clock; SDK/radio/flash RAM seams",
+  "cases_passed": 23,
+  "cases": [
+    "unauthenticated clock GET denied",
+    "unauthenticated clock POST denied",
+    "cold boot is not synchronized",
+    "fixed authenticated frame accepted",
+    "clock status bounded and source retained",
+    "real PC publisher to native clock path",
+    "coordinated reader resumes after publisher",
+    "wrong magic rejected",
+    "invalid epoch rejected",
+    "invalid offset rejected",
+    "invalid lease rejected",
+    "wrong length rejected before body 15",
+    "wrong length rejected before body 17",
+    "wrong MIME rejected",
+    "Expect rejected",
+    "GET body rejected",
+    "interrupted frame never renews clock",
+    "public compile write authority closed",
+    "expired status not a valid time",
+    "fresh reconnect sample accepted",
+    "authenticated LAN path preserved",
+    "foreign LAN peer denied",
+    "no SDK flash or restart side effects"
+  ],
+  "stats": {
+    "reads": 2,
+    "sdk_writes": 0,
+    "sta_connects": 0,
+    "ap_active": true,
+    "wpa2_applied": false,
+    "flash_writes": 0,
+    "restarts": 0,
+    "cards": 0
+  },
+  "device_contacts": 0,
+  "private_inputs": false,
+  "physical": "NOT_RUN",
+  "firmware_transfer_tests": 0
+}

@@ -105,7 +105,11 @@ jobs:
           o=json.loads((root/'o-binding-source.json').read_text())
           assert o['PHASE_O_BINDING_SOURCE_GATE']=='PASS/OFFLINE'
           assert o['PHASE_O_RETAINED_CANDIDATE_IDENTITY_GATE']=='NOT_READ_BY_THIS_RUN'
-          assert o['firmware_files_checked']==113 and o['firmware_identity']=='RAW_PHASE_N_HEAD_EQUALITY'
+          assert o['firmware_files_checked']==113 and o['firmware_identity']=='PINNED_B52_PREDECESSOR_PROJECTION'
+          import sys
+          sys.path.insert(0,'tools')
+          from b52_source_compat import NEW_FIRMWARE_SHA256_LF
+          assert o['reviewed_new_firmware_sha256_lf']==NEW_FIRMWARE_SHA256_LF
           assert o['candidate']['block_count']==98 and o['candidate']['rounded_end']==0x062000
           assert o['candidate']['final_payload_bytes']==1952 and o['candidate']['final_ff_padding_bytes']==2144
           assert o['transaction_classes_source_equivalent'] and o['runner_source_equivalent_except_numeric_receipt']

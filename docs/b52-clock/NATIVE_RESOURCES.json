@@ -1,0 +1,404 @@
+{
+  "verdict": "PASS_OFFLINE_PHYSICAL_HOLD",
+  "baseline": {
+    "bin_bytes": 414112,
+    "static_ram": 44904,
+    "sections": {
+      ".data": 1648,
+      ".noinit": 56,
+      ".text": 258,
+      ".irom0.text": 367284,
+      ".text1": 27917,
+      ".rodata": 12848,
+      ".bss": 30352
+    }
+  },
+  "candidate": {
+    "bin_bytes": 420224,
+    "static_ram": 46492,
+    "sections": {
+      ".data": 2516,
+      ".noinit": 56,
+      ".text": 258,
+      ".irom0.text": 371792,
+      ".text1": 27917,
+      ".rodata": 13592,
+      ".bss": 30328
+    },
+    "bin_sha256": "80fd47a874b5671536936739359e0c4c5ac01249ed491161a6a39b930b08f0d4",
+    "elf_sha256": "96a67583e06dcffe304c808ef9cb2f4872d86863a539ed38d1a10acd37eee7f4"
+  },
+  "delta": {
+    "bin_bytes": 6112,
+    "static_ram": 1588,
+    "linked_flash": 6120,
+    "noinit": 0
+  },
+  "objects": {
+    "B52Clock::(anonymous namespace)::clockState": 20,
+    "B52Clock::(anonymous namespace)::lcd": 4,
+    "B52Clock::(anonymous namespace)::renderer": 868
+  },
+  "compiler_frames": {
+    "wrapper": {
+      "function": "loop_wrapper()",
+      "bytes": 16
+    },
+    "loop": {
+      "function": "M9NormalStageA::loop()",
+      "bytes": 80
+    },
+    "dispatch": {
+      "function": "M9NormalStageA::(anonymous namespace)::serviceRequest()",
+      "bytes": 32
+    },
+    "admission": {
+      "function": "M9NormalStageA::(anonymous namespace)::beforeBody()",
+      "bytes": 64
+    },
+    "sync_handler": {
+      "function": "M9NormalStageA::(anonymous namespace)::clockSync()",
+      "bytes": 48
+    },
+    "decode": {
+      "function": "B52Clock::synchronize(unsigned char const*, unsigned int, unsigned int, unsigned int)",
+      "bytes": 32
+    },
+    "status_handler": {
+      "function": "M9NormalStageA::(anonymous namespace)::clockStatus()",
+      "bytes": 64
+    },
+    "render_step": {
+      "function": "B52Clock::step(unsigned int)",
+      "bytes": 144
+    },
+    "calendar": {
+      "function": "ClockFoundation::State::civil(unsigned int, int, ArtworkPilot::ClockData&)",
+      "bytes": 48
+    },
+    "header": {
+      "function": "ArtworkPilot::Renderer::paintHeader(ArtworkPilot::Canvas&, unsigned int)",
+      "bytes": 144
+    },
+    "card": {
+      "function": "ArtworkPilot::Renderer::paintCard(ArtworkPilot::Canvas&, unsigned int)",
+      "bytes": 80
+    },
+    "text": {
+      "function": "B52Clock::(anonymous namespace)::Lcd::text(int, int, char const*, unsigned short, unsigned char)",
+      "bytes": 48
+    }
+  },
+  "partial_known_clock_sync_bytes": 272,
+  "partial_known_clock_draw_bytes": 432,
+  "partial_paths_exclude": [
+    "libc printf",
+    "GFX print/drawChar/SPI descendants",
+    "SDK/ROM/IRQ and allocator peaks"
+  ],
+  "known_ota_path_max_before": 1616,
+  "known_ota_path_max_after": 1616,
+  "ota_paths_after": {
+    "hmac_key_sha256": {
+      "compiled_bytes": 1616,
+      "functions": [
+        {
+          "name": "loop_wrapper()",
+          "frame": 16
+        },
+        {
+          "name": "M9NormalStageA::loop()",
+          "frame": 80
+        },
+        {
+          "name": "M9NormalStageA::(anonymous namespace)::serviceRequest()",
+          "frame": 32
+        },
+        {
+          "name": "M9NormalStageA::(anonymous namespace)::beforeBody()",
+          "frame": 64
+        },
+        {
+          "name": "M9NormalStageA::(anonymous namespace)::upload(unsigned int)",
+          "frame": 128
+        },
+        {
+          "name": "ShinoHttpOta::Transfer::begin(ShinoHttpOta::Release const&, char const*, char const*, char const*, char const*, unsigned char const*, unsigned int, ShinoHttpOta::Budget, bool)",
+          "frame": 128
+        },
+        {
+          "name": "ShinoHttpOta::proof(ShinoHttpOta::ProofWorkspace&, unsigned char const*, char const*, char const*, ShinoHttpOta::Release const&, char*)",
+          "frame": 128
+        },
+        {
+          "name": "br_hmac_key_init",
+          "frame": 304
+        },
+        {
+          "name": "process_key",
+          "frame": 304
+        },
+        {
+          "name": "br_sha224_update",
+          "frame": 48
+        },
+        {
+          "name": "br_sha2small_round",
+          "frame": 384
+        }
+      ]
+    },
+    "staging_sha256": {
+      "compiled_bytes": 1072,
+      "functions": [
+        {
+          "name": "loop_wrapper()",
+          "frame": 16
+        },
+        {
+          "name": "M9NormalStageA::loop()",
+          "frame": 80
+        },
+        {
+          "name": "M9NormalStageA::(anonymous namespace)::serviceRequest()",
+          "frame": 32
+        },
+        {
+          "name": "M9NormalStageA::(anonymous namespace)::beforeBody()",
+          "frame": 64
+        },
+        {
+          "name": "M9NormalStageA::(anonymous namespace)::upload(unsigned int)",
+          "frame": 128
+        },
+        {
+          "name": "ShinoHttpOta::Transfer::finish(ShinoHttpOta::Budget)",
+          "frame": 144
+        },
+        {
+          "name": "ShinoHttpOta::Transfer::stagedImage()",
+          "frame": 176
+        },
+        {
+          "name": "br_sha224_update",
+          "frame": 48
+        },
+        {
+          "name": "br_sha2small_round",
+          "frame": 384
+        }
+      ]
+    },
+    "segment_word_read": {
+      "compiled_bytes": 784,
+      "functions": [
+        {
+          "name": "loop_wrapper()",
+          "frame": 16
+        },
+        {
+          "name": "M9NormalStageA::loop()",
+          "frame": 80
+        },
+        {
+          "name": "M9NormalStageA::(anonymous namespace)::serviceRequest()",
+          "frame": 32
+        },
+        {
+          "name": "M9NormalStageA::(anonymous namespace)::beforeBody()",
+          "frame": 64
+        },
+        {
+          "name": "M9NormalStageA::(anonymous namespace)::upload(unsigned int)",
+          "frame": 128
+        },
+        {
+          "name": "ShinoHttpOta::Transfer::finish(ShinoHttpOta::Budget)",
+          "frame": 144
+        },
+        {
+          "name": "ShinoHttpOta::Transfer::segments(unsigned int)",
+          "frame": 240
+        },
+        {
+          "name": "ShinoHttpOta::Transfer::read(unsigned int, void*, unsigned int)",
+          "frame": 64
+        },
+        {
+          "name": "EspClass::flashRead(unsigned int, unsigned int*, unsigned int)",
+          "frame": 16
+        }
+      ]
+    },
+    "core_verify_before_commit": {
+      "compiled_bytes": 720,
+      "functions": [
+        {
+          "name": "loop_wrapper()",
+          "frame": 16
+        },
+        {
+          "name": "M9NormalStageA::loop()",
+          "frame": 80
+        },
+        {
+          "name": "M9NormalStageA::(anonymous namespace)::serviceRequest()",
+          "frame": 32
+        },
+        {
+          "name": "M9NormalStageA::(anonymous namespace)::beforeBody()",
+          "frame": 64
+        },
+        {
+          "name": "M9NormalStageA::(anonymous namespace)::upload(unsigned int)",
+          "frame": 128
+        },
+        {
+          "name": "ShinoHttpOta::Transfer::finish(ShinoHttpOta::Budget)",
+          "frame": 144
+        },
+        {
+          "name": "UpdaterClass::end(bool)",
+          "frame": 192
+        },
+        {
+          "name": "UpdaterClass::_verifyEnd()",
+          "frame": 48
+        },
+        {
+          "name": "EspClass::flashRead(unsigned int, unsigned int*, unsigned int)",
+          "frame": 16
+        }
+      ]
+    },
+    "rtc_command_commit": {
+      "compiled_bytes": 672,
+      "functions": [
+        {
+          "name": "loop_wrapper()",
+          "frame": 16
+        },
+        {
+          "name": "M9NormalStageA::loop()",
+          "frame": 80
+        },
+        {
+          "name": "M9NormalStageA::(anonymous namespace)::serviceRequest()",
+          "frame": 32
+        },
+        {
+          "name": "M9NormalStageA::(anonymous namespace)::beforeBody()",
+          "frame": 64
+        },
+        {
+          "name": "M9NormalStageA::(anonymous namespace)::upload(unsigned int)",
+          "frame": 128
+        },
+        {
+          "name": "ShinoHttpOta::Transfer::finish(ShinoHttpOta::Budget)",
+          "frame": 144
+        },
+        {
+          "name": "UpdaterClass::end(bool)",
+          "frame": 192
+        },
+        {
+          "name": "eboot_command_write",
+          "frame": 16
+        }
+      ]
+    },
+    "last_chunk_core_flush": {
+      "compiled_bytes": 416,
+      "functions": [
+        {
+          "name": "loop_wrapper()",
+          "frame": 16
+        },
+        {
+          "name": "M9NormalStageA::loop()",
+          "frame": 80
+        },
+        {
+          "name": "M9NormalStageA::(anonymous namespace)::serviceRequest()",
+          "frame": 32
+        },
+        {
+          "name": "M9NormalStageA::(anonymous namespace)::beforeBody()",
+          "frame": 64
+        },
+        {
+          "name": "M9NormalStageA::(anonymous namespace)::upload(unsigned int)",
+          "frame": 128
+        },
+        {
+          "name": "UpdaterClass::write(unsigned char*, unsigned int)",
+          "frame": 48
+        },
+        {
+          "name": "UpdaterClass::_writeBuffer()",
+          "frame": 48
+        }
+      ]
+    },
+    "segment_resource_observation": {
+      "compiled_bytes": 736,
+      "functions": [
+        {
+          "name": "loop_wrapper()",
+          "frame": 16
+        },
+        {
+          "name": "M9NormalStageA::loop()",
+          "frame": 80
+        },
+        {
+          "name": "M9NormalStageA::(anonymous namespace)::serviceRequest()",
+          "frame": 32
+        },
+        {
+          "name": "M9NormalStageA::(anonymous namespace)::beforeBody()",
+          "frame": 64
+        },
+        {
+          "name": "M9NormalStageA::(anonymous namespace)::upload(unsigned int)",
+          "frame": 128
+        },
+        {
+          "name": "ShinoHttpOta::Transfer::finish(ShinoHttpOta::Budget)",
+          "frame": 144
+        },
+        {
+          "name": "ShinoHttpOta::Transfer::segments(unsigned int)",
+          "frame": 240
+        },
+        {
+          "name": "M9NormalStageA::(anonymous namespace)::uploadHealthy()",
+          "frame": 32
+        }
+      ]
+    }
+  },
+  "layout_symbols": {
+    "_EEPROM_start": 1080012800,
+    "_FS_start": 1077936128,
+    "_FS_end": 1080008704
+  },
+  "offline_static_increment_budget": 2048,
+  "floors": {
+    "ota_admission_heap": 25600,
+    "execution_heap": 20480,
+    "largest": 16384,
+    "continuation_stack": 2048,
+    "fragmentation_max": 25
+  },
+  "actual_native_heap": "NOT_MEASURED",
+  "actual_native_largest_block": "NOT_MEASURED",
+  "actual_native_fragmentation": "NOT_MEASURED",
+  "actual_native_stack": "NOT_MEASURED",
+  "host_renderer_additional_heap_allocations": 0,
+  "device_contacts": 0,
+  "physical": "NOT_RUN",
+  "baseline_rebuilt": false,
+  "music_receiver_integrated": false
+}

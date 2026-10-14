@@ -1,0 +1,11 @@
+{
+  "cases_passed": 21,
+  "checks": 59,
+  "gate_bytes": 40,
+  "host_workspace_bytes": 416,
+  "host_hmac_mean_us": 15.087,
+  "absolute_utc_proven": false,
+  "device_contacts": 0,
+  "sanitizers": "MSVC ASan, C crypto and C++ gate",
+  "physical": "NOT_RUN"
+}

@@ -1,0 +1,111 @@
+{
+  "scope": "HOST_LOOPBACK actual parser Digest clock BearSSL; SDK/radio/flash RAM seams",
+  "cases_passed": 49,
+  "cases": [
+    "unauthenticated clock GET denied",
+    "unauthenticated clock POST denied",
+    "cold boot is not synchronized",
+    "REGRESSION old plausible message at cold boot refused",
+    "fresh authenticated cryptographic sample accepted",
+    "REGRESSION exact body and Digest replay at60s refused without renewal",
+    "REGRESSION replay after clock expiry cannot restore validity",
+    "fresh reconnect sample accepted",
+    "REGRESSION new valid authentication and proof cannot rewind one day",
+    "backward rejection never renews lease",
+    "challenge expires exactly at2000ms",
+    "UTC body modification refused and lease unchanged",
+    "offset body modification refused and lease unchanged",
+    "lease body modification refused and lease unchanged",
+    "MAC modification refused and lease unchanged",
+    "wrong proof key refused",
+    "matching challenge consumed even on bad proof",
+    "new challenge invalidates previous unused challenge",
+    "HOST boot-state reset remains unsynchronized",
+    "previous boot proof refused",
+    "plausible old v2 message at new unanchored boot refused",
+    "idle challenge expiry latches across complete millis wrap",
+    "LIMIT fresh paired-PC2020 assertion accepted without absolute UTC anchor",
+    "simultaneous identical POSTs have at most one clock application",
+    "post-body resource drop503 preserves clock anchor and lease",
+    "wrong length refused before body 16",
+    "wrong length refused before body 63",
+    "wrong length refused before body 65",
+    "wrong MIME refused",
+    "Expect refused",
+    "GET body refused",
+    "interrupted frame never renews lease",
+    "public compile authority closed",
+    "public GET issues no challenge",
+    "real publisher exchange 0",
+    "real publisher exchange 1",
+    "real publisher exchange 2",
+    "real publisher exchange 3",
+    "real publisher exchange 4",
+    "coordinated reader resumes after publisher",
+    "telemetry Digest admission preserved",
+    "telemetry authenticated preparation refreshes Digest",
+    "telemetry accepted after clock crypto scratch release",
+    "four telemetry values and six second TTL unchanged",
+    "telemetry expires independently while clock valid",
+    "telemetry reconnect after expiry accepted",
+    "authenticated LAN clock path preserved",
+    "foreign LAN peer refused",
+    "no SDK flash or actual restart side effects"
+  ],
+  "stats": {
+    "reads": 2,
+    "sdk_writes": 0,
+    "sta_connects": 0,
+    "ap_active": true,
+    "wpa2_applied": false,
+    "flash_writes": 0,
+    "restarts": 0,
+    "cards": 0
+  },
+  "device_contacts": 0,
+  "private_inputs": false,
+  "physical": "NOT_RUN",
+  "firmware_transfer_tests": 0,
+  "clock_exchange_timings": [
+    {
+      "total_ms": 31.0,
+      "wire_methods": [
+        "GET",
+        "GET",
+        "POST"
+      ]
+    },
+    {
+      "total_ms": 31.0,
+      "wire_methods": [
+        "GET",
+        "POST"
+      ]
+    },
+    {
+      "total_ms": 32.0,
+      "wire_methods": [
+        "GET",
+        "POST"
+      ]
+    },
+    {
+      "total_ms": 31.0,
+      "wire_methods": [
+        "GET",
+        "POST"
+      ]
+    },
+    {
+      "total_ms": 31.0,
+      "wire_methods": [
+        "GET",
+        "POST"
+      ]
+    }
+  ],
+  "pc_exchange_budget_ms": 1000,
+  "challenge_validity_ms": 2000,
+  "utc_absolute_accuracy": "NOT_PROVEN",
+  "old_reproductions_now_refused": 4
+}

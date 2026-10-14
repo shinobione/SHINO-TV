@@ -1,0 +1,20 @@
+{
+  "scene_engine_regressions": 33,
+  "scene_engine_checks": 268999,
+  "clock_policy_render_cases": 16,
+  "clock_policy_render_checks": 1717,
+  "python_provider_tests": 18,
+  "generator_guards": 3,
+  "http_loopback_cases": 23,
+  "compiler": "MSVC",
+  "sanitizers": "NOT_RUN",
+  "device_contacts": 0,
+  "private_build": false,
+  "physical": "NOT_RUN",
+  "deadline_trickle_cases": [
+    "headers",
+    "body"
+  ],
+  "review": "P2 fixed with monotonic1s deadline/socket shutdown; regression RED then GREEN",
+  "active_link_clock_publication": false
+}

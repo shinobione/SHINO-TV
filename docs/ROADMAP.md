@@ -1,5 +1,72 @@
 # SHINO // TV — Roadmap
 
+## Mandat courant — B5.2 GITHUB PUBLICATION, 14 octobre 2026
+
+Revue propriétaire de `B52_OWNER_REVIEW.zip` terminée :
+**READY_FOR_GITHUB_REVIEW**, qualification logicielle uniquement. Les40 fichiers
+locaux ont été comparés octet pour octet à l'archive revue, SHA-256
+`b42957fa75633a4575ef9cd364ed540abb396fccecdc0b68d78dcef0c9d40b85`.
+Seuls les résumés actifs consignent maintenant ce nouveau mandat ; les sources
+et preuves revues restent inchangées, sauf défaut CI précisément démontré.
+
+Autorisation : commits ciblés et push sans force de `codex/b52-clock-foundation`,
+puis nouvelle PR Draft vers `feature/shino-tv-b3-telemetry-scratch-experiment`
+(B5.1 figé `244334edac07701dc25b5ffc494715152ae1bfa5`, dépendance PR #47).
+Vérifier tous les workflows déclenchés sur le SHA final, avec SKIPPED/NOT_RUN
+explicites. Préserver les deux worktrees et tous les artefacts propriétaires.
+Aucun merge, appareil, OTA, flash, reboot, provisioning, changement Wi-Fi,
+build privé ni publication automatique SHINO LINK ; qualifications physiques
+B5.2 toujours HOLD. Les clôtures précédentes restent des preuves historiques.
+
+Publication Draft [PR #48](https://github.com/shinobione/SHINO-TV/pull/48).
+La CI a démontré une collision des empreintes Mission9 avec l’overlay horloge.
+[Correction de fermeture des sources, tests et limites](B52_GITHUB_PUBLICATION.md) :
+projection exacte, empreintes historiques conservées et aucune source runtime
+revue modifiée. La CI finale doit être contrôlée après le commit de correction.
+
+## Mandat courant — B5.2 CLOCK FRESHNESS FIX, 14 octobre 2026
+
+Précision propriétaire — CLOSE THREE P2 : reprendre le diff existant, comparer
+les deux projections au même instant, expirer irréversiblement les challenges
+depuis la boucle et vérifier le délai après MAC. Recontrôler le budget après
+lecture HTTP et mesurer les frames Gate/tag/BearSSL dans le build public final.
+Livraison READY_FOR_OWNER_REVIEW ou HOLD, sans intervention sur B5.1.
+
+Clôture logicielle : **READY_FOR_OWNER_REVIEW**, trois P2 et contrôle budget
+post-lecture validés. ASan21/59 + rendu17/1721, HTTP/Digest/télémétrie49,
+Python23 et générateur3 PASS. Public421552 B/RAM46720 B, delta+1328/+228 B
+vs B5.2 précédent ; physique HOLD. Aucun commit/push ni changement B5.1.
+
+Correction hors ligne autorisée du défaut de fraîcheur/rejeu démontré, dans le
+worktree B5.2 existant. Challenge court lié au boot, HMAC séparé par domaine
+depuis le secret Digest existant, consommation unique et UTC non décroissante.
+Le PC échantillonne après le challenge ; aucune précision UTC absolue déduite.
+Préserver scènes, télémétrie, verrou, seuils, B5.1 et tous les artefacts. Tests
+ciblés et nouveau build public inerte ; aucun appareil, build privé, commit,
+push, merge ou publication LINK automatique. [Décision et preuves](B52_CLOCK_FRESHNESS_FIX.md).
+
+## Mandat courant — B5.2 CLOCK FOUNDATION, 14 octobre 2026
+
+Décision propriétaire : première horloge native IDLE 240×240, intégrée hors
+ligne au vrai graphe B5.1, avec les quatre cartes et barres conservées. Départ
+figé `244334edac07701dc25b5ffc494715152ae1bfa5`, PR #47 Draft ; développement
+dans un worktree/une branche locale séparés, sans modifier la branche gelée.
+Aucun push avant revue, contact appareil, secret, build privé, installation,
+Wi-Fi, reboot ou merge. L'image B5.1 installée et les artefacts restent intacts.
+
+Fournisseur retenu : horloge réelle du PC appairé, UTC et offset du système,
+sur une route dédiée au Digest existant, sans changer le contrat des métriques.
+Validité bornée à 120 s, source/âge visibles, expiration explicite ; pas d'heure
+tirée de l'uptime. Le rendu pur de PR #40 est réutilisé, sans réactiver son graphe
+Mission 8 ni intégrer la musique/pochette. Build public inerte et preuves HOST/
+natives hors ligne uniquement ; toute qualification B5.2 physique reste HOLD.
+[Décision, contrat et preuves B5.2](B52_CLOCK_FOUNDATION.md).
+
+Revue finale hors ligne du 14 octobre : **HOLD**. Quatre cas HOST démontrent
+l'acceptation de messages anciens/rejoués et le renouvellement indu du bail.
+ASan17 cas/1722 contrôles PASS ; aucune correction de protocole ni opération
+physique. [Constats et unique prochaine action](B52_FINAL_OFFLINE_REVIEW_2026-10-14.md).
+
 ## Mandat courant — FREEZE B5.1 PHYSICAL LAN PASS, 13 octobre 2026
 
 Décision propriétaire : figer le jalon fonctionnel B5.1 par documentation et
