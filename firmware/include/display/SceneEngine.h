@@ -116,11 +116,15 @@ struct Metrics {
 // Local civil time from an eventual trustworthy provider; validity and lease
 // are mandatory. A valid lease can keep ticking while PC telemetry disconnects.
 // No network provider is installed by this pilot. Synthetic is preview-only.
+enum class ClockSource : uint8_t { Unknown, PairedPc };
 struct ClockData {
     uint32_t observedMs = 0, validForMs = 0;
     uint16_t year = 0;
     uint8_t month = 0, day = 0, hour = 0, minute = 0, second = 0;
     bool valid = false, synthetic = false;
+    ClockSource source = ClockSource::Unknown;
+    int16_t utcOffsetMinutes = 0;
+    uint32_t syncedMs = 0;
 };
 struct WeatherData {
     char place[17] = {}, condition[17] = {};
@@ -167,7 +171,7 @@ class Renderer {
     WeatherData weather;
     Policy policy;
     Marquee titleMotion, artistMotion;
-    uint32_t revision = 0, stateSince = 0, clockMinute = 0, weatherMinute = 0;
+    uint32_t revision = 0, stateSince = 0, clockMinute = 0, weatherMinute = 0, clockAgeMinute = 0;
     Cover cover = Cover::None;
     Scene scene = Scene::Offline;
     State observedState = State::NoSession;
@@ -245,9 +249,11 @@ class Renderer {
         const uint32_t minute = cf ? (clock.hour * 3600U + clock.minute * 60U + clock.second +
                                     uint32_t(now-clock.observedMs) / 1000) / 60 : 0;
         const uint32_t weatherAge = wf ? uint32_t(now-weather.observedMs)/60000 : 0;
-        if (cf != clockWasFresh || wf != weatherWasFresh || minute != clockMinute || weatherAge != weatherMinute) {
+        const uint32_t clockAge = cf && clock.source == ClockSource::PairedPc ? uint32_t(now-clock.syncedMs)/60000 : 0;
+        if (cf != clockWasFresh || wf != weatherWasFresh || minute != clockMinute || weatherAge != weatherMinute || clockAge != clockAgeMinute) {
             headerDirty = true; headerTask = 0;
             clockWasFresh = cf; weatherWasFresh = wf; clockMinute = minute; weatherMinute = weatherAge;
+            clockAgeMinute = clockAge;
         }
     }
     void paintCard(Canvas& c, unsigned i) {
@@ -271,8 +277,14 @@ class Renderer {
             c.fill(4, y, 232, headerTask == 13 ? 9 : 8,
                    DashboardV2::rgb565(8+headerTask, 22, 40+headerTask*3));
         } else if (headerTask == 14) {
-            c.text(8, 12, (clock.synthetic || weather.synthetic) ? "SYNTHETIC PREVIEW DATA" :
-                   scene == Scene::Offline ? "PC OFFLINE" : "SHINO // TV", LABEL);
+            if (clock.synthetic || weather.synthetic) c.text(8,12,"SYNTHETIC PREVIEW DATA",LABEL);
+            else if (clock.source == ClockSource::PairedPc) {
+                char source[24];
+                const int offset = clock.utcOffsetMinutes;
+                const unsigned magnitude = unsigned(offset < 0 ? -offset : offset);
+                snprintf(source,sizeof source,"PC SYNC UTC%c%02u:%02u",offset < 0 ? '-' : '+',magnitude/60,magnitude%60);
+                c.text(8,12,clockFresh(now) ? source : "PC CLOCK EXPIRED",LABEL);
+            } else c.text(8,12,scene == Scene::Offline ? "PC OFFLINE" : "SHINO // TV",LABEL);
         } else if (headerTask == 15 || headerTask == 16) {
             if (clockFresh(now)) {
                 unsigned year = clock.year, month = clock.month, day = clock.day;
@@ -303,7 +315,13 @@ class Renderer {
                 if (weather.condition[0]) c.text(8,109,weather.condition,LABEL);
                 char age[12];snprintf(age,sizeof age,"%lum old",(unsigned long)(uint32_t(now-weather.observedMs)/60000));
                 c.text(232-int(strlen(age))*6,109,age,LABEL);
-            } else c.text(8, 97, weather.valid ? "WEATHER STALE / INVALID" : "WEATHER UNAVAILABLE", LABEL);
+            } else {
+                c.text(8, 97, weather.valid ? "WEATHER STALE / INVALID" : "WEATHER UNAVAILABLE", LABEL);
+                if (clockFresh(now) && clock.source == ClockSource::PairedPc) {
+                    char age[24];snprintf(age,sizeof age,"PC SYNC %lum",(unsigned long)(uint32_t(now-clock.syncedMs)/60000));
+                    c.text(8,109,age,LABEL);
+                }
+            }
             headerDirty = false;
         }
         ++headerTask;
