@@ -1,0 +1,106 @@
+name: B5.3 lean NTP and 240px qualification
+
+on:
+  push:
+    branches: [feature/shino-tv-b53-lean-qualification]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify exact source graphs and B5.2 clock predecessor
+        run: |
+          python -m unittest discover -s tools -p test_shino_b53_lean.py -v
+          python -m unittest discover -s tools -p test_shino_b53_clock_build.py -v
+          python -m unittest discover -s tools -p test_shino_b53_layout.py -v
+          python -m unittest discover -s tools -p test_shino_b52_clock_build.py -v
+      - name: Install pinned PlatformIO
+        run: python -m pip install 'platformio==6.1.18'
+      - name: Build public B5.1 reference for pinned dependencies
+        run: |
+          python tools/shino_b5_lan_build.py research-local/b53-lean-deps > /tmp/b53-lean-deps.json
+      - name: Compile real lightweight ESP8266 4m2m graph, without HTTPS
+        run: |
+          python tools/shino_b53_lean_build.py research-local/b53-lean --libraries "research-local/b53-lean-deps/.pio/libdeps/esp12e_m9_4m2m_normal_qualification" > /tmp/b53-lean.json
+      - name: Compile full weather TLS graph on same exact source commit
+        run: |
+          python tools/shino_b53_clock_build.py research-local/b53-full --libraries "research-local/b53-lean-deps/.pio/libdeps/esp12e_m9_4m2m_normal_qualification" > /tmp/b53-full.json
+      - name: Compare actual images and static resources (no private artifacts)
+        run: |
+          python - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          outputs={}
+          for variant,path in (('lean','research-local/b53-lean'),
+                               ('full','research-local/b53-full')):
+              p=Path(path)
+              report=json.loads((p/'report.json').read_text())
+              manifest=json.loads((p/'release.json').read_text())
+              image=(p/'.pio/build/esp12e_m9_4m2m_normal_qualification/firmware.bin').read_bytes()
+              assert len(image)==report['bytes']==manifest['bytes']
+              assert hashlib.sha256(image).hexdigest()==report['sha256']==manifest['sha256']
+              assert manifest['layout']=='4m2m' and report['layout']=='4m2m'
+              assert report['private'] is False and report['clock_authority'] is False
+              assert report['physical']=='NOT_RUN'
+              assert report['native_sntp_source'] is True
+              assert report['weather_network_source']==(variant=='full')
+              assert report['weather_configured'] is False
+              outputs[variant]={k:report[k] for k in ('bytes','sha256','static_ram','layout')}
+          p=Path('research-local/b53-lean')
+          assert not (p/'src/boot/B53WeatherHttps.cpp').exists()
+          assert not (p/'include/B53WeatherCA.h').exists()
+          assert not (p/'include/B53WeatherHttps.h').exists()
+          normal=(p/'src/boot/M9NormalStageA.cpp').read_text()
+          assert 'B53WeatherHttps' not in normal
+          assert 'B53Sntp::begin()' in normal and 'B52Clock::step(now)' in normal
+          raw=(p/'.pio/build/esp12e_m9_4m2m_normal_qualification/firmware.bin').read_bytes()
+          assert b'api.open-meteo.com' not in raw
+          assert outputs['lean']['bytes']<outputs['full']['bytes']
+          assert outputs['lean']['static_ram']<outputs['full']['static_ram']
+          delta={'bytes':outputs['full']['bytes']-outputs['lean']['bytes'],
+                 'static_ram':outputs['full']['static_ram']-outputs['lean']['static_ram']}
+          result={'status':'PASS_PUBLIC_INERT_COMPARISON','source_sha':os.getenv('GITHUB_SHA'),
+                  'lean':outputs['lean'],'full':outputs['full'],'saved':delta,
+                  'runtime_heap':'NON_VERIFIE','runtime_cont_stack':'NON_VERIFIE',
+                  'boot':'NOT_RUN','ota':'NOT_RUN'}
+          print(json.dumps(result,indent=2))
+          (p/'comparison.json').write_text(json.dumps(result,indent=2)+'\n')
+          PY
+      - name: Exercise actual lean IDLE renderer with mock 240x240 LCD
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -pedantic \
+            -Iresearch-local/b53-lean/include \
+            experiments/b53_autonomous/tests/test_b53_idle_scene.cpp \
+            -o /tmp/b53-lean-render
+          /tmp/b53-lean-render
+      - name: Compiler diagnostics only, if offline build fails
+        if: failure()
+        run: |
+          for d in research-local/b53-lean research-local/b53-full; do
+            test -f "$d/build.log" || continue
+            grep -E 'fatal error:|error:|undefined reference|Error:' "$d/build.log" | tail -n 50 || true
+          done
+      - name: Upload reports only, never BIN, ELF or credentials
+        uses: actions/upload-artifact@v4
+        with:
+          name: b53-lean-vs-full-public-reports
+          retention-days: 7
+          if-no-files-found: error
+          path: |
+            research-local/b53-lean/release.json
+            research-local/b53-lean/report.json
+            research-local/b53-lean/comparison.json
+            research-local/b53-full/release.json
+            research-local/b53-full/report.json
