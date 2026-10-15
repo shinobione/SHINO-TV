@@ -66,6 +66,7 @@ class OwnerGate(unittest.TestCase):
                         "noinit":56,"physical":"NOT_RUN","ota_posts":0,
                         "device_contacts":0,"static_ram":46000}
             with patch.object(target,"OWNER",owner), \
+                 patch.object(target,"ROOT",root), \
                  patch.object(target,"preflight",return_value="a"*40), \
                  patch.object(target,"pinned_libraries",return_value=True), \
                  patch.object(target,"owner_credentials",return_value=root/"existing.json"), \
