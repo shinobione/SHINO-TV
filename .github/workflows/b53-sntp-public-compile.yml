@@ -1,0 +1,52 @@
+name: B5.3 public inert SNTP firmware compile
+on:
+  push:
+    branches: [feature/shino-tv-b53-autonomous-host]
+permissions:
+  contents: read
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Source and predecessor tests
+        run: |
+          python -m unittest discover -s tools -p test_shino_b53_clock_build.py -v
+          python -m unittest discover -s tools -p test_shino_b52_clock_build.py -v
+      - name: Pinned compiler
+        run: python -m pip install 'platformio==6.1.18'
+      - name: Build actual public-inert 4m2m firmware
+        run: |
+          python tools/shino_b5_lan_build.py research-local/b53-ci-base > /tmp/b53-base.json
+          python tools/shino_b53_clock_build.py research-local/b53-ci-public --libraries "research-local/b53-ci-base/.pio/libdeps/esp12e_m9_4m2m_normal_qualification" > /tmp/b53-public.json
+      - name: Check exact BIN and absence of install authority
+        run: |
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          p=Path('research-local/b53-ci-public')
+          m=json.loads((p/'release.json').read_text())
+          r=json.loads((p/'report.json').read_text())
+          b=(p/'.pio/build/esp12e_m9_4m2m_normal_qualification/firmware.bin').read_bytes()
+          assert len(b)==m['bytes']==r['bytes']
+          assert hashlib.sha256(b).hexdigest()==m['sha256']==r['sha256']
+          assert m['layout']=='4m2m' and r['private'] is False
+          assert r['clock_authority'] is False and r['private_build'] is False
+          assert r['native_sntp_source'] is True and r['physical']=='NOT_RUN'
+          print(json.dumps({'public_inert':True,'bytes':len(b),'sha256':m['sha256'],'static_ram':r['static_ram'],'physical':'NOT_RUN'}))
+          PY
+      - name: Reports only (never BIN/ELF)
+        uses: actions/upload-artifact@v4
+        with:
+          name: b53-public-reports
+          retention-days: 7
+          path: |
+            research-local/b53-ci-public/release.json
+            research-local/b53-ci-public/report.json
