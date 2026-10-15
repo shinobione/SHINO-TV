@@ -363,15 +363,23 @@ class B5GetDiagnostic:
             return {"identity_matches_release": True, **{k: data[k] for k in fields},
                     **{k: data[k] for k in ("ota_enabled", "fs_ok", "metrics_fresh", "last_update")}}
         if path == PATHS[1]:
-            # Installed B5 emits exactly these four fields. The extended
-            # B5.1 response must not be silently interpreted as B5.
-            if (set(data) != {"state", "lan_ip", "sta_online", "ota_protocol"}
-                    or any(type(data[k]) is not str
-                           for k in ("state", "lan_ip", "ota_protocol"))):
+            # B5: four exact fields. B5.1/B5.2: eight exact fields;
+            # B5.2 retains the B5.1 handler's literal firmware="B5.1".
+            fields = set(data)
+            legacy = {"state", "lan_ip", "sta_online", "ota_protocol"}
+            extended = legacy | {"credential_state", "connection",
+                                 "provision", "firmware"}
+            if fields not in (legacy, extended):
+                raise DiagnosticStop("INVALID_SCHEMA")
+            string_keys = ("state", "lan_ip", "ota_protocol")
+            if fields == extended:
+                string_keys += ("credential_state", "connection",
+                                "provision", "firmware")
+            if any(type(data[k]) is not str for k in string_keys):
                 raise DiagnosticStop("INVALID_SCHEMA")
             booleans(data, ("sta_online",))
             states = {"NO_SAVED_WIFI", "STA_CONNECTING", "AP_RECOVERY_RETRY", "STA_ONLINE"}
-            if data.get("state") not in states or data.get("ota_protocol") != "shino-http-ota-1":
+            if data["state"] not in states or data["ota_protocol"] != "shino-http-ota-1":
                 raise DiagnosticStop("LAN_STATE_HOLD")
             address = data["lan_ip"]
             # Core 3.1.2 renders an unset IPAddress as this exact sentinel.
@@ -382,8 +390,45 @@ class B5GetDiagnostic:
                     raise DiagnosticStop("INVALID_SCHEMA") from None
             if data["sta_online"] == (address in ("0.0.0.0", "(IP unset)")):
                 raise DiagnosticStop("LAN_STATE_HOLD")
-            return {"state": data["state"], "sta_online": data["sta_online"],
-                    "lan_ip": address, "wifi_storage_proven": False}
+            result = {"state": data["state"], "sta_online": data["sta_online"],
+                      "lan_ip": address, "wifi_storage_proven": False}
+            if fields == extended:
+                # All values below are emitted by the reviewed B5Lan.cpp;
+                # do not accept arbitrary new enum labels/firmware IDs.
+                storage = {"EMPTY", "VERIFIED", "INVALID", "UNKNOWN"}
+                connection = {
+                    "NOT_STARTED", "LAYOUT_HOLD", "MEMORY_HOLD",
+                    "SDK_READ_FAILED", "STA_ENABLE_FAILED", "SAVED_WIFI_INVALID",
+                    "SDK_CURRENT_CONFIG_FAILED", "DHCP_START_FAILED",
+                    "STA_CONNECT_FAILED", "WAIT_ASSOCIATION_OR_DHCP",
+                    "STA_ONLINE", "STA_AUTH_REJECTED", "STA_NO_SSID"
+                }
+                provision = {
+                    "NOT_ATTEMPTED", "PROVISION_VERIFIED", "PROVISION_AP_STATE",
+                    "PROVISION_INTENT_INVALID", "PROVISION_PAYLOAD_INVALID",
+                    "PROVISION_LAYOUT_UNSAFE", "PROVISION_STA_ENABLE_FAILED",
+                    "PROVISION_MEMORY_HOLD", "PROVISION_SDK_READ_FAILED",
+                    "PROVISION_SDK_WRITE_FAILED_UNKNOWN",
+                    "PROVISION_READBACK_FAILED_UNKNOWN",
+                    "PROVISION_READBACK_MISMATCH_UNKNOWN"
+                }
+                if (data["credential_state"] not in storage
+                        or data["connection"] not in connection
+                        or data["provision"] not in provision
+                        or data["firmware"] != "B5.1"):
+                    raise DiagnosticStop("LAN_STATE_HOLD")
+                # Do not promote SDK credential uncertainty, previous
+                # provision failure or an unhealthy connection to PASS.
+                if (data["credential_state"] != "VERIFIED"
+                        or data["connection"] not in
+                            {"STA_ONLINE", "WAIT_ASSOCIATION_OR_DHCP"}
+                        or data["provision"] not in
+                            {"NOT_ATTEMPTED", "PROVISION_VERIFIED"}):
+                    raise DiagnosticStop("LAN_STATE_HOLD")
+                result["wifi_storage_proven"] = True
+                result["lan_extended_validated"] = True
+                result["firmware_handler_label"] = "B5.1"
+            return result
         integers(data, RESOURCE_INTS)
         booleans(data, RESOURCE_BOOLS)
         if (any(not data[k] for k in RESOURCE_BOOLS) or data["checked_file_count"] != 24

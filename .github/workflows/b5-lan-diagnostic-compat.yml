@@ -1,0 +1,43 @@
+name: B5 LAN diagnostic schema — HOST only
+on:
+  push:
+    branches:
+      - fix/shino-b5-lan-diagnostic-compat
+    paths:
+      - 'companion/shino_b5_get_diagnostic.py'
+      - 'companion/test_shino_b5_get_diagnostic.py'
+      - 'tools/shino_b5_lan_build.py'
+      - '.github/workflows/b5-lan-diagnostic-compat.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: B5/B5.1/B5.2 LAN strict schema + bounded Digest regressions
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          python -m unittest discover -s companion -p test_shino_b5_get_diagnostic.py -v
+      - name: Verify only these HOST files changed from the sealed B5.3 source
+        run: |
+          git diff --name-only 54aed39fa7cff7b982be7dafd6ac430cbb8cef20 HEAD |
+            tee /tmp/b5-diagnostic-files
+          python - <<'PY'
+          from pathlib import Path
+          allowed = {'companion/shino_b5_get_diagnostic.py',
+                     'companion/test_shino_b5_get_diagnostic.py',
+                     '.github/workflows/b5-lan-diagnostic-compat.yml',
+                     'docs/B5_LAN_DIAGNOSTIC_COMPAT.md'}
+          actual=set(Path('/tmp/b5-diagnostic-files').read_text().splitlines())
+          assert actual == allowed, (actual,allowed)
+          print('B5_DIAGNOSTIC_SCHEMA_HOST_ONLY_PASS — PHYSICAL_HOLD')
+          PY

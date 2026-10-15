@@ -669,12 +669,97 @@ class TestB5GetDiagnostic(unittest.TestCase):
                 self.server.payloads[target.PATHS[1]] = payload
                 self.assert_stop("INVALID_SCHEMA", target.PATHS[1])
 
-    def test_lan_b51_eight_field_schema_is_distinct_and_rejected(self):
-        # B5.1's handler adds four fields; no private inputs are needed.
-        self.server.payloads[target.PATHS[1]].update(
-            credential_state="EMPTY", connection="NOT_ATTEMPTED",
+    def test_lan_b51_b52_exact_eight_field_schema_accepts_healthy_state(self):
+        # B5.2 uses the actual eight-field B5.1 LAN handler verbatim.
+        self.server.payloads[target.PATHS[1]] = dict(
+            state="STA_ONLINE", lan_ip="192.168.1.70", sta_online=True,
+            ota_protocol="shino-http-ota-1", credential_state="VERIFIED",
+            connection="STA_ONLINE", provision="NOT_ATTEMPTED", firmware="B5.1")
+        shown = self.client.get(target.PATHS[1])
+        self.assertEqual(shown["lan_ip"], "192.168.1.70")
+        self.assertTrue(shown["sta_online"])
+        self.assertTrue(shown["wifi_storage_proven"])
+        self.assertTrue(shown["lan_extended_validated"])
+        self.assertEqual(shown["firmware_handler_label"], "B5.1")
+        self.assertEqual(self.client.operations[-1]["get_200_confirmed"], 1)
+
+    def test_lan_extended_partial_extra_or_wrong_type_stops(self):
+        original = dict(state="STA_ONLINE", lan_ip="192.168.1.70",
+            sta_online=True, ota_protocol="shino-http-ota-1",
+            credential_state="VERIFIED", connection="STA_ONLINE",
             provision="NOT_ATTEMPTED", firmware="B5.1")
-        self.assert_stop("INVALID_SCHEMA", target.PATHS[1])
+        variants = []
+        for name in ("credential_state", "connection", "provision", "firmware"):
+            item = dict(original)
+            item.pop(name)
+            variants.append(item)
+            for wrong in (None, 0, True, [], {}, 2.5):
+                variants.append(dict(original, **{name: wrong}))
+        variants.append(dict(original, extra=True))
+        for payload in variants:
+            with self.subTest(payload=payload):
+                self.client = self.make_client()
+                self.server.payloads[target.PATHS[1]] = payload
+                self.assert_stop("INVALID_SCHEMA", target.PATHS[1])
+
+    def test_lan_extended_invalid_known_values_stop(self):
+        original = dict(state="STA_ONLINE", lan_ip="192.168.1.70",
+            sta_online=True, ota_protocol="shino-http-ota-1",
+            credential_state="VERIFIED", connection="STA_ONLINE",
+            provision="NOT_ATTEMPTED", firmware="B5.1")
+        cases = [
+            ("credential_state", "UNKNOWN"),
+            ("credential_state", "INVALID"),
+            ("credential_state", "EMPTY"),
+            ("credential_state", "FABRICATED"),
+            ("connection", "STA_AUTH_REJECTED"),
+            ("connection", "MEMORY_HOLD"),
+            ("connection", "NOT_STARTED"),
+            ("connection", "FABRICATED"),
+            ("provision", "PROVISION_READBACK_MISMATCH_UNKNOWN"),
+            ("provision", "PROVISION_MEMORY_HOLD"),
+            ("provision", "FABRICATED"),
+            ("firmware", "B5.2"),
+            ("firmware", "B5.3"),
+            ("firmware", "FABRICATED"),
+        ]
+        for key,value in cases:
+            with self.subTest(key=key,value=value):
+                self.client = self.make_client()
+                self.server.payloads[target.PATHS[1]] = dict(original,**{key:value})
+                self.assert_stop("LAN_STATE_HOLD", target.PATHS[1])
+
+    def test_lan_extended_no_third_get_after_schema_failure(self):
+        self.server.payloads[target.PATHS[1]] = dict(
+            state="STA_ONLINE", lan_ip="192.168.1.70", sta_online=True,
+            ota_protocol="shino-http-ota-1", credential_state="VERIFIED",
+            connection="STA_ONLINE", provision="NOT_ATTEMPTED",
+            firmware="B5.1", unexpected="no")
+        result = target.run_diagnostic(self.client)
+        self.assertEqual((result["status"],result["reason"]),("STOP","INVALID_SCHEMA"))
+        self.assertNotIn(target.PATHS[2], [r["path"] for r in self.server.requests])
+
+    def test_lan_extended_full_get_flow_mocked(self):
+        self.server.payloads[target.PATHS[1]] = dict(
+            state="STA_ONLINE", lan_ip="192.168.1.70", sta_online=True,
+            ota_protocol="shino-http-ota-1", credential_state="VERIFIED",
+            connection="STA_ONLINE", provision="PROVISION_VERIFIED",
+            firmware="B5.1")
+        result = target.run_diagnostic(self.client)
+        self.assertEqual(result["status"],"GET_READS_COMPLETE_NOT_QUALIFICATION")
+        self.assertEqual(len(result["exchanges"]),3)
+        self.assertTrue(result["readings"][target.PATHS[1]]["wifi_storage_proven"])
+        self.assertEqual(sum(e["wire_gets_sent"] for e in result["exchanges"]),6)
+
+    def test_b51_lan_handler_source_contract_stays_exact(self):
+        # A source-level regression: no loosened JSON subset acceptance.
+        source = (Path(__file__).resolve().parents[1] / "tools" /
+                  "shino_b5_lan_build.py").read_text(encoding="utf-8")
+        for marker in ("credential_state", "connection", "provision",
+                       "firmware", "B5.1"):
+            self.assertIn(marker, source)
+        self.assertIn('void lanStatus()', source)
+
 
     def test_lan_field_types_are_checked_before_values(self):
         baseline = dict(self.server.payloads[target.PATHS[1]])
