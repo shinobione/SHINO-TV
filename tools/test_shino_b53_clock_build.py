@@ -21,6 +21,12 @@ class B53GraphTests(unittest.TestCase):
             b53.prepare(out)
             firmware=(out/"src/boot/M9NormalStageA.cpp").read_text()
             self.assertIn("B53Sntp::begin();",firmware)
+            self.assertIn('B53WeatherHttps::begin("","");',firmware)
+            self.assertIn("B53WeatherHttps::poll(now,uploadBusy,requestPending",firmware)
+            self.assertIn("setWeather(const ArtworkPilot::WeatherData",
+                          (out/"include/B52Clock.h").read_text())
+            self.assertIn("B53WeatherGate::allowed",
+                          (out/"src/boot/B53WeatherHttps.cpp").read_text())
             self.assertIn('#include "B53Sntp.h"',firmware)
             self.assertIn("B52ClockHttp.inc",firmware)
             self.assertIn("B52Clock::step(now)",firmware)

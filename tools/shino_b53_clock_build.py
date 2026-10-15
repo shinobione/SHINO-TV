@@ -31,7 +31,9 @@ def patch_clock(raw):
         clockChanged=false;lastAuthority=authority;lastMinute=minute;
         lastGeneration=pc.generation;
     }"""
-    return once(raw,before,after)
+    raw=once(raw,before,after)
+    return once(raw,'void refreshMetrics(){',
+        'void setWeather(const ArtworkPilot::WeatherData& sample){renderer.setWeather(sample);}\nvoid refreshMetrics(){')
 def patch_scene(raw):
     raw=once(raw,'enum class ClockSource : uint8_t { Unknown, PairedPc };',
              'enum class ClockSource : uint8_t { Unknown, PairedPc, Sntp };')
@@ -52,12 +54,27 @@ def prepare(destination):
     marker='apReady=B5Lan::begin("SHINO-TV-StageA",SHINO_SETUP_AP_PSK);if(!apReady)return;'
     source=once(normal.read_text(encoding="utf-8"),'#include "B52Clock.h"',
                 '#include "B52Clock.h"\n#include "B53Sntp.h"')
-    normal.write_text(once(source,marker,marker+"\n    B53Sntp::begin();"),
+    source=once(source,'#include "B53Sntp.h"',
+                '#include "B53Sntp.h"\n#include "B53WeatherHttps.h"')
+    source=once(source,marker,marker+'\n    B53Sntp::begin();\n    B53WeatherHttps::begin("","");')
+    source=once(source,'B52Clock::step(now);',
+                'B53WeatherHttps::poll(now,uploadBusy,requestPending,FslessMetrics::stale());\n        B52Clock::step(now);')
+    normal.write_text(source,
                       encoding="utf-8",newline="\n")
     shutil.copyfile(SOURCE/"native/B53Sntp.cpp",dest/"src/boot/B53Sntp.cpp")
     shutil.copyfile(SOURCE/"native/B53Sntp.h",dest/"include/B53Sntp.h")
     shutil.copyfile(SOURCE/"include/B53AutonomyPolicy.h",dest/"include/B53AutonomyPolicy.h")
     shutil.copyfile(SOURCE/"include/B53Layout.h",dest/"include/B53Layout.h")
+    header=dest/"include/B52Clock.h"
+    header.write_text(once(header.read_text(encoding="utf-8"),'void refreshMetrics();',
+        'void setWeather(const ArtworkPilot::WeatherData& sample);\nvoid refreshMetrics();'),
+        encoding="utf-8",newline="\n")
+    for name,where in (("B53WeatherHttps.cpp","src/boot/B53WeatherHttps.cpp"),
+        ("B53WeatherHttps.h","include/B53WeatherHttps.h"),
+        ("B53WeatherCA.h","include/B53WeatherCA.h")):
+        shutil.copyfile(SOURCE/"native"/name,dest/where)
+    for name in ("B53WeatherFrame.h","B53WeatherGate.h"):
+        shutil.copyfile(SOURCE/"include"/name,dest/"include"/name)
     return dest,device,build_id
 def build(directory,libraries):
     libs=Path(libraries).resolve()
@@ -82,7 +99,7 @@ def build(directory,libraries):
     if result.returncode:raise RuntimeError("B5.3 public compile failed: see build.log")
     report=inspect_build(dest,device,build_id,private=False)
     report.update(firmware="B5.3-SNTP-PUBLIC-INERT",private_build=False,
-        native_sntp_source=True,weather_network_source=False,
+        native_sntp_source=True,weather_network_source=True,weather_configured=False,
         ota_memory_native_measured=False,clock_authority=False,
         physical="NOT_RUN",device_contacts=0,ota_posts=0)
     (dest/"report.json").write_text(json.dumps(report,indent=2)+"\n",encoding="utf-8")

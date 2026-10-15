@@ -28,6 +28,13 @@ jobs:
             experiments/b53_autonomous/tests/test_b53_weather_frame.cpp \
             -o /tmp/shino-b53-weather
           /tmp/shino-b53-weather
+      - name: Exercise TLS resource gate (HOST only)
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -pedantic \
+            -Iexperiments/b53_autonomous/include \
+            experiments/b53_autonomous/tests/test_b53_weather_gate.cpp \
+            -o /tmp/shino-b53-weather-gate
+          /tmp/shino-b53-weather-gate
       - name: Pinned compiler
         run: python -m pip install 'platformio==6.1.18'
       - name: Build actual public-inert 4m2m firmware
@@ -60,6 +67,7 @@ jobs:
           assert m['layout']=='4m2m' and r['private'] is False
           assert r['clock_authority'] is False and r['private_build'] is False
           assert r['native_sntp_source'] is True and r['physical']=='NOT_RUN'
+          assert r['weather_network_source'] is True and r['weather_configured'] is False
           print(json.dumps({'public_inert':True,'bytes':len(b),'sha256':m['sha256'],'static_ram':r['static_ram'],'physical':'NOT_RUN'}))
           PY
       - name: Reports only (never BIN/ELF)
