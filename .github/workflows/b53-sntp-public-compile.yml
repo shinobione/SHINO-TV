@@ -28,6 +28,13 @@ jobs:
             experiments/b53_autonomous/tests/test_b53_weather_frame.cpp \
             -o /tmp/shino-b53-weather
           /tmp/shino-b53-weather
+      - name: Exercise bounded HTTP chunked body (HOST only)
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -pedantic \
+            -Iexperiments/b53_autonomous/include \
+            experiments/b53_autonomous/tests/test_b53_chunked.cpp \
+            -o /tmp/shino-b53-chunked
+          /tmp/shino-b53-chunked
       - name: Exercise TLS resource gate (HOST only)
         run: |
           g++ -std=c++17 -Wall -Wextra -Werror -pedantic \

@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Owner opt-in B5.3 weather transport. Public-inert graph passes empty
 // coordinates and therefore NEVER performs network I/O.
-// No insecure TLS, redirect following, chunked HTTP or unbounded body.
+// No insecure TLS, redirect following or unbounded decoded HTTP body.
 #include "B53WeatherHttps.h"
 #include "B53WeatherCA.h"
 #include "B53WeatherFrame.h"
+#include "B53WeatherChunked.h"
 #include "B53WeatherGate.h"
 #include "B53Sntp.h"
 #include "B52Clock.h"
@@ -90,22 +91,28 @@ bool fetch(uint32_t utc,B53WeatherFrame::Sample& sample){
     char header[120]={};
     if(!line(tls,header,sizeof(header),until)||
         strncmp(header,"HTTP/1.1 200 ",13)!=0){tls.stop();return false;}
-    int length=-1;bool json=false,endHeaders=false;
+    int length=-1;bool chunked=false,json=false,endHeaders=false;
     unsigned headerBytes=0;
     for(unsigned i=0;i<24;++i){
         if(!line(tls,header,sizeof(header),until)){tls.stop();return false;}
         headerBytes+=unsigned(strlen(header))+2;
         if(headerBytes>HEADER_MAX){tls.stop();return false;}
         if(!header[0]){endHeaders=true;break;}
-        if(prefix(header,"transfer-encoding:")||
-           prefix(header,"content-encoding:")||
+        if(prefix(header,"content-encoding:")||
            prefix(header,"location:")){tls.stop();return false;}
+        if(prefix(header,"transfer-encoding:")){
+            if(chunked||length>=0){tls.stop();return false;}
+            const char* transfer=strchr(header,':')+1;
+            while(*transfer==' '||*transfer=='\t')++transfer;
+            if(strcmp(transfer,"chunked")!=0){tls.stop();return false;}
+            chunked=true;
+        }
         if(prefix(header,"content-type:")){
             if(json||!strstr(header,"application/json")){tls.stop();return false;}
             json=true;
         }
         if(prefix(header,"content-length:")){
-            if(length>=0){tls.stop();return false;}
+            if(length>=0||chunked){tls.stop();return false;}
             const char* s=strchr(header,':')+1;
             while(*s==' ')++s;
             unsigned bytes=0,digits=0;
@@ -119,16 +126,32 @@ bool fetch(uint32_t utc,B53WeatherFrame::Sample& sample){
             length=int(bytes);
         }
     }
-    if(!endHeaders||!json||length<16){tls.stop();return false;}
-    size_t got=0;
-    while(got<size_t(length)&&int32_t(until-millis())>0){
-        int ch=tls.read();
-        if(ch>=0)body[got++]=char(ch);
-        else if(!tls.connected()&&!tls.available())break;
-        else yield();
+    if(!endHeaders||!json||(!chunked&&length<16)){tls.stop();return false;}
+    size_t got=0;bool complete=false;
+    if(chunked){
+        B53WeatherChunked::Decoder decoder(body,B53WeatherFrame::MAX_BODY);
+        bool valid=true;
+        while(!decoder.complete()&&int32_t(until-millis())>0){
+            const int ch=tls.read();
+            if(ch>=0){
+                if(!decoder.consume(uint8_t(ch))){valid=false;break;}
+            }else if(!tls.connected()&&!tls.available())break;
+            else yield();
+        }
+        got=decoder.size();
+        complete=valid&&decoder.complete();
+    }else{
+        while(got<size_t(length)&&int32_t(until-millis())>0){
+            const int ch=tls.read();
+            if(ch>=0)body[got++]=char(ch);
+            else if(!tls.connected()&&!tls.available())break;
+            else yield();
+        }
+        body[got]=0;
+        complete=got==size_t(length);
     }
-    body[got]=0;
-    bool ok=got==size_t(length)&&B53WeatherFrame::parse(body,got,sample);
+    const bool ok=complete&&got>=16&&
+        B53WeatherFrame::parse(body,got,sample);
     tls.stop();
     return ok;
 }

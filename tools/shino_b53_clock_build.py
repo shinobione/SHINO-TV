@@ -73,7 +73,7 @@ def prepare(destination):
         ("B53WeatherHttps.h","include/B53WeatherHttps.h"),
         ("B53WeatherCA.h","include/B53WeatherCA.h")):
         shutil.copyfile(SOURCE/"native"/name,dest/where)
-    for name in ("B53WeatherFrame.h","B53WeatherGate.h"):
+    for name in ("B53WeatherFrame.h","B53WeatherGate.h","B53WeatherChunked.h"):
         shutil.copyfile(SOURCE/"include"/name,dest/"include"/name)
     return dest,device,build_id
 def build(directory,libraries):
