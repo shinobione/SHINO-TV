@@ -3,6 +3,7 @@ import argparse,configparser,hashlib,json,os,shutil,subprocess
 from pathlib import Path
 from shino_b52_clock_build import prepare as prepare_b52,ROOT,ENV
 from shino_b5_lan_build import once,inspect_build
+from shino_b53_layout import patch_design
 SOURCE=ROOT/"experiments/b53_autonomous"
 PINNED=(("ArduinoJson","7.4.3"),("GFX Library for Arduino","1.6.4"),("AnimatedGIF","2.2.0"))
 def patch_clock(raw):
@@ -45,7 +46,7 @@ def prepare(destination):
     if destination.exists():raise ValueError("New B5.3 public output required")
     dest,device,build_id=prepare_b52(destination,private=False)
     for path,func in ((dest/"src/boot/B52Clock.cpp",patch_clock),
-                      (dest/"include/display/SceneEngine.h",patch_scene)):
+                      (dest/"include/display/SceneEngine.h",lambda raw:patch_design(patch_scene(raw)))):
         path.write_text(func(path.read_text(encoding="utf-8")),encoding="utf-8",newline="\n")
     normal=dest/"src/boot/M9NormalStageA.cpp"
     marker='apReady=B5Lan::begin("SHINO-TV-StageA",SHINO_SETUP_AP_PSK);if(!apReady)return;'
@@ -56,6 +57,7 @@ def prepare(destination):
     shutil.copyfile(SOURCE/"native/B53Sntp.cpp",dest/"src/boot/B53Sntp.cpp")
     shutil.copyfile(SOURCE/"native/B53Sntp.h",dest/"include/B53Sntp.h")
     shutil.copyfile(SOURCE/"include/B53AutonomyPolicy.h",dest/"include/B53AutonomyPolicy.h")
+    shutil.copyfile(SOURCE/"include/B53Layout.h",dest/"include/B53Layout.h")
     return dest,device,build_id
 def build(directory,libraries):
     libs=Path(libraries).resolve()
