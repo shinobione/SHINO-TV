@@ -21,6 +21,7 @@ class B53GraphTests(unittest.TestCase):
             b53.prepare(out)
             firmware=(out/"src/boot/M9NormalStageA.cpp").read_text()
             self.assertIn("B53Sntp::begin();",firmware)
+            self.assertIn('#include "B53Sntp.h"',firmware)
             self.assertIn("B52ClockHttp.inc",firmware)
             self.assertIn("B52Clock::step(now)",firmware)
             self.assertIn("SHINO_OTA_PRIVATE 0",(out/"include/ShinoRelease.h").read_text())

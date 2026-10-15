@@ -49,7 +49,9 @@ def prepare(destination):
         path.write_text(func(path.read_text(encoding="utf-8")),encoding="utf-8",newline="\n")
     normal=dest/"src/boot/M9NormalStageA.cpp"
     marker='apReady=B5Lan::begin("SHINO-TV-StageA",SHINO_SETUP_AP_PSK);if(!apReady)return;'
-    normal.write_text(once(normal.read_text(encoding="utf-8"),marker,marker+"\n    B53Sntp::begin();"),
+    source=once(normal.read_text(encoding="utf-8"),'#include "B52Clock.h"',
+                '#include "B52Clock.h"\n#include "B53Sntp.h"')
+    normal.write_text(once(source,marker,marker+"\n    B53Sntp::begin();"),
                       encoding="utf-8",newline="\n")
     shutil.copyfile(SOURCE/"native/B53Sntp.cpp",dest/"src/boot/B53Sntp.cpp")
     shutil.copyfile(SOURCE/"native/B53Sntp.h",dest/"include/B53Sntp.h")
