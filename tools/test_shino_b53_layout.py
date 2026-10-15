@@ -31,7 +31,7 @@ class OwnerLayoutTests(unittest.TestCase):
 
     def test_offline_clock_weather_but_no_fake_metrics(self):
         s=self.generated
-        self.assertIn('if(stale) {\\n            c.fill(r.x,r.y,r.w,r.h,BG);',s)
+        self.assertIn('if(stale) {\n            c.fill(r.x,r.y,r.w,r.h,BG);',s)
         self.assertIn('c.text(60,148,"PC OFFLINE",LABEL,2);',s)
         self.assertIn('offlineRendered = false; dirty = 15;',s)
         self.assertIn('if(weatherFresh(now))',s)
