@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
+#include <initializer_list>
 
 namespace B53WeatherFrame {
 constexpr size_t MAX_BODY=768;
