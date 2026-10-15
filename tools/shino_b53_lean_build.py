@@ -1,6 +1,7 @@
 """B5.3 lean offline build: SNTP + owner's 240px cards, no BearSSL.
 
-Only public-inert 4m2m images; no credentials, LAN, OTA or flash.
+Offline 4m2m graphs only. Private images confined to existing ignored owner-local
+storage; no device, LAN, OTA, flash or secret emission.
 The original weather-enabled B5.3 builder remains entirely unchanged.
 """
 import argparse
@@ -11,17 +12,20 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from shino_b52_clock_build import prepare as prepare_b52, ROOT, ENV
+from shino_b52_clock_build import prepare as prepare_b52, ROOT, ENV, private_source_gate
+from shino_owner_transition import OWNER
 from shino_b53_clock_build import patch_clock,patch_scene,PINNED,SOURCE
 from shino_b53_layout import patch_design
 from shino_b5_lan_build import inspect_build,once
 
 
-def prepare(directory):
+def prepare(directory,private=False):
     dest=Path(directory).resolve()
+    if private and OWNER.resolve() not in dest.parents:
+        raise ValueError('HOLD: private output must remain under ignored owner-local directory')
     if dest.exists():
         raise ValueError("B5.3 lean requires a NEW public output directory")
-    dest,device,build_id=prepare_b52(dest,private=False)
+    dest,device,build_id=prepare_b52(dest,private=private)
     clock=dest/"src/boot/B52Clock.cpp"
     new=patch_clock(clock.read_text(encoding="utf-8"))
     # No weather producer or setWeather() symbol in this variant.
@@ -47,13 +51,14 @@ def prepare(directory):
     return dest,device,build_id
 
 
-def build(directory,libraries):
+def build(directory,libraries,private=False):
+    if private: private_source_gate()
     libs=Path(libraries).resolve()
     for name,version in PINNED:
         p=libs/name/"library.properties"
         if not p.is_file() or "version="+version not in p.read_text(encoding="utf-8"):
             raise ValueError("Missing pinned dependency "+name)
-    dest,device,build_id=prepare(directory)
+    dest,device,build_id=prepare(directory,private=private)
     ini=configparser.ConfigParser(interpolation=None)
     ini.read(dest/"platformio.ini")
     ini["env:esp12e"]["lib_deps"]=""
@@ -73,8 +78,8 @@ def build(directory,libraries):
     if process.returncode:
         raise RuntimeError("B5.3 lean PUBLIC build failed; inspect build.log")
     report=inspect_build(dest,device,build_id,private=False)
-    report.update(firmware="B5.3-LEAN-NTP-PUBLIC-INERT",
-                  lean_variant=True,private_build=False,clock_authority=False,
+    report.update(firmware="B5.3-LEAN-NTP-OWNER-PRIVATE" if private else "B5.3-LEAN-NTP-PUBLIC-INERT",
+                  lean_variant=True,private_build=private,clock_authority=private,
                   native_sntp_source=True,weather_network_source=False,
                   weather_configured=False,physical="NOT_RUN",
                   ota_memory_native_measured=False,device_contacts=0,ota_posts=0)
@@ -86,9 +91,11 @@ if __name__=="__main__":
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("directory",type=Path)
     parser.add_argument("--libraries",required=True,type=Path)
+    parser.add_argument("--private",action="store_true",
+                        help="Offline owner-local only: never installs or contacts hardware")
     args=parser.parse_args()
-    report=build(args.directory,args.libraries)
-    print(json.dumps({"status":"B53_LEAN_PUBLIC_INERT_COMPILE",
+    report=build(args.directory,args.libraries,private=args.private)
+    print(json.dumps({"status":"B53_LEAN_OWNER_PRIVATE_OFFLINE" if args.private else "B53_LEAN_PUBLIC_INERT_COMPILE",
           "bytes":report["bytes"],"sha256":report["sha256"],
           "static_ram":report["static_ram"],"layout":report["layout"],
           "physical":"NOT_RUN"},indent=2))

@@ -23,6 +23,7 @@ jobs:
       - name: Verify exact source graphs and B5.2 clock predecessor
         run: |
           python -m unittest discover -s tools -p test_shino_b53_lean.py -v
+          python -m unittest discover -s tools -p test_shino_b53_lean_owner_candidate.py -v
           python -m unittest discover -s tools -p test_shino_b53_clock_build.py -v
           python -m unittest discover -s tools -p test_shino_b53_layout.py -v
           python -m unittest discover -s tools -p test_shino_b52_clock_build.py -v
