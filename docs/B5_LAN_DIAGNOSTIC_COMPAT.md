@@ -33,3 +33,18 @@ Wi-Fi change, filesystem/RTC/flash write or secret access.
 perform any further real diagnostic GET. Do not retry the prior terminal
 session under the previous authorization. Runtime stack (last observed
 2144 B free), fresh LINK and whole-native OTA peaks remain HOLD.
+
+## LAN_STATE_HOLD field-independent triage (HOST-only)
+
+The second real B5.2 session had two authenticated HTTP 200 results but ended
+on `LAN_STATE_HOLD`. Its LAN body was not retained. The new offline-only
+code does **not** relax any acceptance gate: it keeps `LAN_STATE_HOLD`
+as the terminal reason, but adds one of ten fixed non-secret `lan_hold_gate`
+categories to the report. Unknown/missing JSON still stops as `INVALID_SCHEMA`.
+These categories do not disclose the raw LAN response, credentials, tokens,
+SSID or passwords. No automatic retry and no subsequent resource GET on HOLD.
+
+No physical execution or device modification in this commit. A new separately
+scoped owner GO will be necessary before any additional physical GET; this
+work does not authorize one. Last owner observation: B5.2 stack free 2144 B,
+LINK stale; B5.3 OTA remains HOLD.

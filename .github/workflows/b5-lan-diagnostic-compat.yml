@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - fix/shino-b5-lan-diagnostic-compat
+      - fix/shino-b5-lan-hold-gates
     paths:
       - 'companion/shino_b5_get_diagnostic.py'
       - 'companion/test_shino_b5_get_diagnostic.py'

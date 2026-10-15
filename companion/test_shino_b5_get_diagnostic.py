@@ -730,6 +730,48 @@ class TestB5GetDiagnostic(unittest.TestCase):
                 self.server.payloads[target.PATHS[1]] = dict(original,**{key:value})
                 self.assert_stop("LAN_STATE_HOLD", target.PATHS[1])
 
+    def test_lan_failure_gate_is_sanitized_and_terminal(self):
+        base = dict(state="STA_ONLINE", lan_ip="192.168.1.70",
+            sta_online=True, ota_protocol="shino-http-ota-1",
+            credential_state="VERIFIED", connection="STA_ONLINE",
+            provision="NOT_ATTEMPTED", firmware="B5.1")
+        for field,value,gate in [
+                ("state", "SAVED_WIFI_UNKNOWN_HOLD", "CONTROLLER_STATE"),
+                ("ota_protocol", "wrong", "PROTOCOL"),
+                ("sta_online", False, "STA_IP_INVARIANT"),
+                ("credential_state", "NOT_REAL", "SDK_STORAGE_ENUM"),
+                ("connection", "NOT_REAL", "CONNECTION_ENUM"),
+                ("provision", "NOT_REAL", "PROVISION_ENUM"),
+                ("firmware", "B5.2", "FIRMWARE_HANDLER"),
+                ("credential_state", "UNKNOWN", "SAVED_WIFI_NOT_VERIFIED"),
+                ("connection", "STA_AUTH_REJECTED", "CONNECTION_NOT_READY"),
+                ("provision", "PROVISION_MEMORY_HOLD", "PROVISION_NOT_CLEAN")]:
+            with self.subTest(field=field, value=value):
+                self.client = self.make_client()
+                self.server.requests.clear()
+                self.server.payloads[target.PATHS[1]] = dict(base, **{field:value})
+                result = target.run_diagnostic(self.client)
+                self.assertEqual(result["status"], "STOP")
+                self.assertEqual(result["reason"], "LAN_STATE_HOLD")
+                self.assertEqual(result["lan_hold_gate"], gate)
+                self.assertEqual(result["post_requests"], 0)
+                self.assertNotIn(target.PATHS[2],
+                                 [r["path"] for r in self.server.requests])
+                self.assertNotIn("NOT_REAL", json.dumps(result))
+                self.assertNotIn("PROVISION_MEMORY_HOLD", json.dumps(result))
+
+    def test_unknown_lan_json_still_rejects_without_raw_values(self):
+        self.server.payloads[target.PATHS[1]] = dict(
+            state="STA_ONLINE", lan_ip="192.168.1.70", sta_online=True,
+            ota_protocol="shino-http-ota-1", credential_state="VERIFIED",
+            connection="STA_ONLINE", provision="NOT_ATTEMPTED",
+            firmware="B5.1", unknown="private sample not permitted")
+        result = target.run_diagnostic(self.client)
+        self.assertEqual(result["reason"], "INVALID_SCHEMA")
+        self.assertNotIn("lan_hold_gate", result)
+        self.assertNotIn("private sample", json.dumps(result))
+        self.assertEqual(len(result["exchanges"]), 2)
+
     def test_lan_extended_no_third_get_after_schema_failure(self):
         self.server.payloads[target.PATHS[1]] = dict(
             state="STA_ONLINE", lan_ip="192.168.1.70", sta_online=True,

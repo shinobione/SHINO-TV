@@ -41,9 +41,11 @@ READ_GAP_SECONDS = 2.25
 
 class DiagnosticStop(ValueError):
     """Only a fixed code leaves the transport; never an HTTP exception/body."""
-    def __init__(self, code):
+    def __init__(self, code, gate=None):
         super().__init__(code)
         self.code = code
+        # Fixed, non-secret LAN validation category; never HTTP body fields.
+        self.gate = gate
 
 
 @dataclass
@@ -379,8 +381,10 @@ class B5GetDiagnostic:
                 raise DiagnosticStop("INVALID_SCHEMA")
             booleans(data, ("sta_online",))
             states = {"NO_SAVED_WIFI", "STA_CONNECTING", "AP_RECOVERY_RETRY", "STA_ONLINE"}
-            if data["state"] not in states or data["ota_protocol"] != "shino-http-ota-1":
-                raise DiagnosticStop("LAN_STATE_HOLD")
+            if data["state"] not in states:
+                raise DiagnosticStop("LAN_STATE_HOLD", "CONTROLLER_STATE")
+            if data["ota_protocol"] != "shino-http-ota-1":
+                raise DiagnosticStop("LAN_STATE_HOLD", "PROTOCOL")
             address = data["lan_ip"]
             # Core 3.1.2 renders an unset IPAddress as this exact sentinel.
             if address != "(IP unset)":
@@ -389,7 +393,7 @@ class B5GetDiagnostic:
                 except (ValueError, TypeError):
                     raise DiagnosticStop("INVALID_SCHEMA") from None
             if data["sta_online"] == (address in ("0.0.0.0", "(IP unset)")):
-                raise DiagnosticStop("LAN_STATE_HOLD")
+                raise DiagnosticStop("LAN_STATE_HOLD", "STA_IP_INVARIANT")
             result = {"state": data["state"], "sta_online": data["sta_online"],
                       "lan_ip": address, "wifi_storage_proven": False}
             if fields == extended:
@@ -412,19 +416,24 @@ class B5GetDiagnostic:
                     "PROVISION_READBACK_FAILED_UNKNOWN",
                     "PROVISION_READBACK_MISMATCH_UNKNOWN"
                 }
-                if (data["credential_state"] not in storage
-                        or data["connection"] not in connection
-                        or data["provision"] not in provision
-                        or data["firmware"] != "B5.1"):
-                    raise DiagnosticStop("LAN_STATE_HOLD")
+                if data["credential_state"] not in storage:
+                    raise DiagnosticStop("LAN_STATE_HOLD", "SDK_STORAGE_ENUM")
+                if data["connection"] not in connection:
+                    raise DiagnosticStop("LAN_STATE_HOLD", "CONNECTION_ENUM")
+                if data["provision"] not in provision:
+                    raise DiagnosticStop("LAN_STATE_HOLD", "PROVISION_ENUM")
+                if data["firmware"] != "B5.1":
+                    raise DiagnosticStop("LAN_STATE_HOLD", "FIRMWARE_HANDLER")
                 # Do not promote SDK credential uncertainty, previous
                 # provision failure or an unhealthy connection to PASS.
-                if (data["credential_state"] != "VERIFIED"
-                        or data["connection"] not in
-                            {"STA_ONLINE", "WAIT_ASSOCIATION_OR_DHCP"}
-                        or data["provision"] not in
-                            {"NOT_ATTEMPTED", "PROVISION_VERIFIED"}):
-                    raise DiagnosticStop("LAN_STATE_HOLD")
+                if data["credential_state"] != "VERIFIED":
+                    raise DiagnosticStop("LAN_STATE_HOLD", "SAVED_WIFI_NOT_VERIFIED")
+                if data["connection"] not in {
+                        "STA_ONLINE", "WAIT_ASSOCIATION_OR_DHCP"}:
+                    raise DiagnosticStop("LAN_STATE_HOLD", "CONNECTION_NOT_READY")
+                if data["provision"] not in {
+                        "NOT_ATTEMPTED", "PROVISION_VERIFIED"}:
+                    raise DiagnosticStop("LAN_STATE_HOLD", "PROVISION_NOT_CLEAN")
                 # A valid SDK read is not proof of persistence across reboot.
                 result["sdk_saved_wifi_reported_valid"] = True
                 result["lan_extended_validated"] = True
@@ -547,6 +556,9 @@ def run_diagnostic(client):
                 raise DiagnosticStop("LAN_OFFLINE_HOLD")
     except DiagnosticStop as error:
         result.update(status="STOP", reason=error.code)
+        if error.code == "LAN_STATE_HOLD" and error.gate is not None:
+            # Evidence is a fixed failure category, not a raw private response.
+            result["lan_hold_gate"] = error.gate
     result.update(readings=readings, exchanges=client.operations)
     return result
 
