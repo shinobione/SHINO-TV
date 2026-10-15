@@ -1,0 +1,20 @@
+name: B5.3 autonomous HOST policy
+on:
+  push:
+    branches: [feature/shino-tv-b53-autonomous-host]
+  pull_request:
+    paths:
+      - 'experiments/b53_autonomous/**'
+      - '.github/workflows/b53-autonomous-host.yml'
+jobs:
+  policy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and exercise native-independent clock/weather policy
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -pedantic \
+            -Iexperiments/b53_autonomous/include \
+            experiments/b53_autonomous/tests/test_b53_policy.cpp \
+            -o /tmp/shino-b53-policy
+          /tmp/shino-b53-policy
