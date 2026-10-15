@@ -678,7 +678,8 @@ class TestB5GetDiagnostic(unittest.TestCase):
         shown = self.client.get(target.PATHS[1])
         self.assertEqual(shown["lan_ip"], "192.168.1.70")
         self.assertTrue(shown["sta_online"])
-        self.assertTrue(shown["wifi_storage_proven"])
+        self.assertFalse(shown["wifi_storage_proven"])
+        self.assertTrue(shown["sdk_saved_wifi_reported_valid"])
         self.assertTrue(shown["lan_extended_validated"])
         self.assertEqual(shown["firmware_handler_label"], "B5.1")
         self.assertEqual(self.client.operations[-1]["get_200_confirmed"], 1)
@@ -748,7 +749,8 @@ class TestB5GetDiagnostic(unittest.TestCase):
         result = target.run_diagnostic(self.client)
         self.assertEqual(result["status"],"GET_READS_COMPLETE_NOT_QUALIFICATION")
         self.assertEqual(len(result["exchanges"]),3)
-        self.assertTrue(result["readings"][target.PATHS[1]]["wifi_storage_proven"])
+        self.assertFalse(result["readings"][target.PATHS[1]]["wifi_storage_proven"])
+        self.assertTrue(result["readings"][target.PATHS[1]]["sdk_saved_wifi_reported_valid"])
         self.assertEqual(sum(e["wire_gets_sent"] for e in result["exchanges"]),6)
 
     def test_b51_lan_handler_source_contract_stays_exact(self):

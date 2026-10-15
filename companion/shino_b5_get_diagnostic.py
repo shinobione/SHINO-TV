@@ -425,7 +425,8 @@ class B5GetDiagnostic:
                         or data["provision"] not in
                             {"NOT_ATTEMPTED", "PROVISION_VERIFIED"}):
                     raise DiagnosticStop("LAN_STATE_HOLD")
-                result["wifi_storage_proven"] = True
+                # A valid SDK read is not proof of persistence across reboot.
+                result["sdk_saved_wifi_reported_valid"] = True
                 result["lan_extended_validated"] = True
                 result["firmware_handler_label"] = "B5.1"
             return result
