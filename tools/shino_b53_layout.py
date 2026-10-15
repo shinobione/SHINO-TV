@@ -141,4 +141,11 @@ def patch_design(source):
             }
             return false;'''
     source=once(source,old,new)
+    # Preserve the original zero-allocation Caption reset while making the
+    # memory intent explicit to the strict HOST compiler. Caption is a POD
+    # scalar/array aggregate; no temporary Caption or extra stack is created.
+    source=once(source,
+        'memset(&caption,0,sizeof caption); caption.state = State::NoSession;',
+        'memset(static_cast<void*>(&caption),0,sizeof caption); '
+        'caption.state = State::NoSession;')
     return source

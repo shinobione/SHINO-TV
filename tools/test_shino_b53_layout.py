@@ -36,6 +36,7 @@ class OwnerLayoutTests(unittest.TestCase):
         self.assertIn('offlineRendered = false; dirty = 15;',s)
         self.assertIn('if(weatherFresh(now))',s)
         self.assertIn('"WEATHER --"',s)
+        self.assertIn("memset(static_cast<void*>(&caption),0,sizeof caption)",s)
 
     def test_change_is_generated_only_and_fail_closed(self):
         self.assertNotIn('PC OFFLINE",LABEL,2',self.original)
