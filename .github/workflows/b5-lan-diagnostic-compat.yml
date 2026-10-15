@@ -26,6 +26,7 @@ jobs:
         env:
           PYTHONDONTWRITEBYTECODE: '1'
         run: |
+          mkdir -p research-local
           python -m unittest discover -s companion -p test_shino_b5_get_diagnostic.py -v
       - name: Verify only these HOST files changed from the sealed B5.3 source
         run: |
