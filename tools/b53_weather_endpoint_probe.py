@@ -22,10 +22,10 @@ MAX_BODY=768
 
 def pem_from_source():
     text=CA_SOURCE.read_text(encoding="ascii")
-    match=re.search(r"-----BEGIN CERTIFICATE-----\\s+.*?-----END CERTIFICATE-----",
+    match=re.search(r"-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----",
                     text,re.S)
     if not match: raise ValueError("Committed CA anchor missing")
-    return match.group(0)+"\\n"
+    return match.group(0)+chr(10)
 
 def probe():
     report={"scope":"PUBLIC_GITHUB_RUNNER_ONLY","host":HOST,
@@ -42,18 +42,18 @@ def probe():
              "-verify_return_error","-verify_hostname",HOST,
              "-CAfile",str(ca)]
         try:
-            completed=subprocess.run(cmd,input="\\n",text=True,capture_output=True,
+            completed=subprocess.run(cmd,input=chr(10),text=True,capture_output=True,
                                      timeout=22,check=False)
         except (OSError,subprocess.TimeoutExpired) as ex:
             report["openssl_error"]=type(ex).__name__
         else:
-            output=completed.stdout+"\\n"+completed.stderr
+            output=completed.stdout+chr(10)+completed.stderr
             report["openssl_exit"]=completed.returncode
             report["tls12_anchor_verified"]=(completed.returncode==0
                 and "Verify return code: 0 (ok)" in output)
             # Count only server extension in received ServerHello; client
             # offering the extension is not evidence the server accepted it.
-            accepted=re.search(r'TLS server extension ["\\\']?max fragment length',
+            accepted=re.search(r"TLS server extension.*max fragment length",
                                output,re.I)
             report["mfln512"]=("SUPPORTED" if accepted else "NOT_ADVERTISED"
                               if report["tls12_anchor_verified"] else "NON_VERIFIE")
@@ -104,9 +104,7 @@ if __name__=="__main__":
     path=os.getenv("GITHUB_STEP_SUMMARY")
     if path:
         with open(path,"a",encoding="utf-8") as f:
-            f.write("## B5.3 Open-Meteo public endpoint probe\\n\\n"
-                    +"\\`\\`\\`json\\n"+json.dumps(result,indent=2)
-                    +"\\n\\`\\`\\`\\n\\n"
-                    +"Endpoint PASS is **not** native heap/stack or OTA PASS.\\n")
-    # The job should FAIL if the endpoint prerequisite is not satisfied.
+            f.write("## B5.3 Open-Meteo public endpoint probe"+chr(10)+chr(10))
+            f.write("Result: **"+result["verdict"]+"**"+chr(10)+chr(10))
+            f.write("Endpoint qualification does not prove ESP8266 TLS memory."+chr(10))
     sys.exit(0 if result["verdict"]=="PASS_ENDPOINT_PREREQUISITES" else 1)
