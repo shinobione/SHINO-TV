@@ -1,0 +1,21 @@
+name: B5.3 Open-Meteo endpoint capability gate
+on:
+  push:
+    branches: [feature/shino-tv-b53-autonomous-host]
+    paths:
+      - 'tools/b53_weather_endpoint_probe.py'
+      - 'experiments/b53_autonomous/native/B53WeatherCA.h'
+      - '.github/workflows/b53-weather-endpoint-gate.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  endpoint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Probe public TLS 1.2 + MFLN 512 and bounded HTTPS JSON
+        run: python tools/b53_weather_endpoint_probe.py
