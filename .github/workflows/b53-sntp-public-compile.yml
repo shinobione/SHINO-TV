@@ -26,6 +26,11 @@ jobs:
         run: |
           python tools/shino_b5_lan_build.py research-local/b53-ci-base > /tmp/b53-base.json
           python tools/shino_b53_clock_build.py research-local/b53-ci-public --libraries "research-local/b53-ci-base/.pio/libdeps/esp12e_m9_4m2m_normal_qualification" > /tmp/b53-public.json
+      - name: Show public-inert compiler errors on failed build
+        if: failure()
+        run: |
+          test -f research-local/b53-ci-public/build.log || exit 0
+          grep -E '(^|[[:space:]])(fatal error:|error:|undefined reference|collect2: error|ld returned|Error:)' research-local/b53-ci-public/build.log | tail -n 50 || true
       - name: Check exact BIN and absence of install authority
         run: |
           python - <<'PY'
