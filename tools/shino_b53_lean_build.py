@@ -8,6 +8,7 @@ import argparse
 import configparser
 import json
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -18,6 +19,25 @@ from shino_b53_clock_build import patch_clock,patch_scene,PINNED,SOURCE
 from shino_b53_layout import patch_design
 from shino_b5_lan_build import inspect_build,once
 
+
+PINNED_PLATFORMIO="6.1.18"
+
+def pinned_platformio():
+    """Fail closed unless the first PATH CLI matches the pinned Core."""
+    binary=shutil.which("pio") or shutil.which("platformio")
+    if not binary:
+        raise ValueError("HOLD: pinned PlatformIO executable unavailable")
+    try:
+        result=subprocess.run([binary,"--version"],stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,
+            timeout=10,check=False)
+    except (OSError,subprocess.TimeoutExpired) as exc:
+        raise ValueError("HOLD: PlatformIO version could not be checked") from exc
+    if result.returncode or not re.fullmatch(
+            r"PlatformIO Core,\s*version\s*6\.1\.18",
+            (result.stdout or "").strip()):
+        raise ValueError("HOLD: PlatformIO Core must be 6.1.18")
+    return binary
 
 def prepare(directory,private=False):
     dest=Path(directory).resolve()
@@ -53,6 +73,7 @@ def prepare(directory,private=False):
 
 def build(directory,libraries,private=False):
     if private: private_source_gate()
+    pio=pinned_platformio()
     libs=Path(libraries).resolve()
     for name,version in PINNED:
         p=libs/name/"library.properties"
@@ -65,8 +86,6 @@ def build(directory,libraries,private=False):
     ini["env:"+ENV]["lib_extra_dirs"]+="\n"+libs.as_posix()
     with (dest/"platformio.ini").open("w",encoding="utf-8") as f:
         ini.write(f)
-    pio=shutil.which("pio") or shutil.which("platformio")
-    if not pio:raise ValueError("PlatformIO not installed")
     env=dict(os.environ,PLATFORMIO_SETTING_ENABLE_TELEMETRY="no",
              PLATFORMIO_SETTING_CHECK_PLATFORMIO_INTERVAL="0",
              PLATFORMIO_SETTING_CHECK_PLATFORMS_INTERVAL="0",
@@ -77,7 +96,7 @@ def build(directory,libraries,private=False):
             stdout=log,stderr=subprocess.STDOUT,timeout=1200)
     if process.returncode:
         raise RuntimeError("B5.3 lean PUBLIC build failed; inspect build.log")
-    report=inspect_build(dest,device,build_id,private=False)
+    report=inspect_build(dest,device,build_id,private=private)
     report.update(firmware="B5.3-LEAN-NTP-OWNER-PRIVATE" if private else "B5.3-LEAN-NTP-PUBLIC-INERT",
                   lean_variant=True,private_build=private,clock_authority=private,
                   native_sntp_source=True,weather_network_source=False,

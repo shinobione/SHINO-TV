@@ -21,10 +21,21 @@ class OwnerGate(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,"diverged"):
                 target.preflight()
 
+    def test_wrong_platformio_stops_before_owner_credentials(self):
+        with patch.object(target.subprocess,"check_output",side_effect=[
+                target.BRANCH+"\n","a"*40+"\n"]), \
+             patch.object(target,"private_source_gate",return_value="a"*40), \
+             patch.object(target,"pinned_platformio",
+                          side_effect=ValueError("HOLD: PlatformIO Core must be 6.1.18")), \
+             patch.object(target,"owner_credentials",side_effect=AssertionError("NO")):
+            with self.assertRaisesRegex(ValueError,"PlatformIO Core"):
+                target.preflight()
+
     def test_missing_credentials_fail_closed(self):
         with patch.object(target.subprocess,"check_output",side_effect=[
                 target.BRANCH+"\n","a"*40+"\n"]), \
              patch.object(target,"private_source_gate",return_value="a"*40), \
+             patch.object(target,"pinned_platformio",return_value="pio"), \
              patch.object(target,"owner_credentials",side_effect=ValueError("missing")):
             with self.assertRaisesRegex(ValueError,"missing"):
                 target.preflight()

@@ -13,7 +13,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from m9_stagea_build import ENV, ROOT
-from shino_b53_lean_build import build as build_lean
+from shino_b53_lean_build import build as build_lean, pinned_platformio
 from shino_b52_clock_build import private_source_gate
 from shino_b5_lan_build import build as build_public_b51
 from shino_b52_owner_candidate import (
@@ -38,6 +38,7 @@ def preflight():
         ["git","rev-parse","refs/remotes/origin/"+BRANCH],cwd=ROOT,text=True).strip()
     if head!=origin:
         raise ValueError("HOLD: checkout diverged from remote-tracking SHA")
+    pinned_platformio()  # Before reading any private credentials
     owner_credentials()  # Only unique, non-symlink, existing private identity
     return head
 

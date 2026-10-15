@@ -36,6 +36,51 @@ class LeanGraph(unittest.TestCase):
                 self.assertNotIn("WiFiClientSecure",content)
             with self.assertRaises(ValueError):lean.prepare(out)
 
+    def test_platformio_exact_version_gate(self):
+        from unittest.mock import patch
+        from types import SimpleNamespace
+        with patch.object(lean.shutil,"which",return_value="C:/pinned/pio.exe"), \
+             patch.object(lean.subprocess,"run",return_value=SimpleNamespace(
+                 returncode=0,stdout="PlatformIO Core, version 6.1.18\n")):
+            self.assertEqual(lean.pinned_platformio(),"C:/pinned/pio.exe")
+        with patch.object(lean.shutil,"which",return_value="C:/global/pio.exe"), \
+             patch.object(lean.subprocess,"run",return_value=SimpleNamespace(
+                 returncode=0,stdout="PlatformIO Core, version 6.2.0\n")):
+            with self.assertRaisesRegex(ValueError,"6.1.18"):
+                lean.pinned_platformio()
+
+    def test_private_build_forwards_private_to_inspect_build(self):
+        from unittest.mock import patch
+        from types import SimpleNamespace
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)
+            libs=root/"deps"
+            for name,version in lean.PINNED:
+                entry=libs/name
+                entry.mkdir(parents=True)
+                (entry/"library.properties").write_text("version="+version+"\n")
+            def fake_prepare(output,private=False):
+                out=Path(output)
+                out.mkdir()
+                (out/"platformio.ini").write_text(
+                    "[env:esp12e]\nlib_deps =\n[env:"+lean.ENV+"]\nlib_extra_dirs =\n")
+                return out,"device","build"
+            observed=[]
+            def fake_inspect(directory,device,build_id,private=False):
+                observed.append(private)
+                return {"private":private,"bytes":123,
+                        "sha256":"a"*64,"static_ram":47000}
+            with patch.object(lean,"private_source_gate"), \
+                 patch.object(lean,"pinned_platformio",return_value="pio"), \
+                 patch.object(lean,"prepare",side_effect=fake_prepare), \
+                 patch.object(lean,"inspect_build",side_effect=fake_inspect), \
+                 patch.object(lean.subprocess,"run",return_value=SimpleNamespace(returncode=0)):
+                result=lean.build(root/"out",libs,private=True)
+            self.assertEqual(observed,[True])
+            self.assertIs(result["private"],True)
+            self.assertIs(result["private_build"],True)
+            self.assertIs(result["clock_authority"],True)
+
     def test_weather_build_kept_separately(self):
         root=lean.ROOT/"research-local"
         root.mkdir(exist_ok=True)
