@@ -32,6 +32,13 @@ jobs:
         run: |
           test -f research-local/b53-ci-public/build.log || exit 0
           grep -E '(^|[[:space:]])(fatal error:|error:|undefined reference|collect2: error|ld returned|Error:)' research-local/b53-ci-public/build.log | tail -n 50 || true
+      - name: Exercise materialized 240px native renderer with mock LCD
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -pedantic \
+            -Iresearch-local/b53-ci-public/include \
+            experiments/b53_autonomous/tests/test_b53_idle_scene.cpp \
+            -o /tmp/shino-b53-idle-scene
+          /tmp/shino-b53-idle-scene
       - name: Check exact BIN and absence of install authority
         run: |
           python - <<'PY'
