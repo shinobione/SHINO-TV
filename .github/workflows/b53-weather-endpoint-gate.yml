@@ -4,6 +4,8 @@ on:
     branches: [feature/shino-tv-b53-autonomous-host]
     paths:
       - 'tools/b53_weather_endpoint_probe.py'
+      - 'experiments/b53_autonomous/native/B53WeatherHttps.cpp'
+      - 'experiments/b53_autonomous/include/B53WeatherChunked.h'
       - 'experiments/b53_autonomous/native/B53WeatherCA.h'
       - '.github/workflows/b53-weather-endpoint-gate.yml'
   workflow_dispatch:

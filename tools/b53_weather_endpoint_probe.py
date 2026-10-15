@@ -85,10 +85,16 @@ def probe():
             report["http_error"]=type(ex).__name__
     chain=report["tls12_anchor_verified"]
     mfln=report["mfln512"]=="SUPPORTED"
+    # The exact native build supports bounded fixed-length or strict
+    # transfer-encoding: chunked (not both, never arbitrary encodings).
+    fixed=(report["http_content_length"] is not None and
+           report["http_transfer_encoding"] is None)
+    chunked=(report["http_content_length"] is None and
+             report["http_transfer_encoding"]=="chunked")
+    report["framing"]=("FIXED" if fixed else "CHUNKED" if chunked else "UNSUPPORTED")
     response=(report["http_status"]==200 and
               report.get("http_final_host")==HOST and
-              report["http_content_length"] is not None and
-              report["http_transfer_encoding"] is None and
+              (fixed or chunked) and
               report.get("http_content_encoding") in (None,"identity") and
               bool(report["http_content_type"]) and
               "application/json" in report["http_content_type"] and
