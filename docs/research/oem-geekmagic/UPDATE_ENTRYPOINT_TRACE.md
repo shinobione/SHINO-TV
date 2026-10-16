@@ -129,6 +129,52 @@ Ce schéma **n'est pas** un graphe de flux/route OTA confirmé : l'identité des
 
 **Aucune action firmware / Wi-Fi / SmallTV / Codex / B5.3 réalisée.**
 
+## Résolution indépendante du branchement compact : 0x40211672–0x4021168E (17 octobre 2026)
+
+**Nouveau résultat, analyse statique : le trou local entre les deux listes Capstone V5 est résolu par lecture du BIN OEM et décodage indépendant de l'instruction Xtensa compacte.** Ce résultat ne transforme pas le tronçon en gestionnaire OTA attribué.
+
+**Méthode / provenance :** relire l'archive constructeur V9.0.44 au commit épinglé, extraire en mémoire son BIN, obtenir directement les **29 octets** à l'offset fichier `0x11672..0x1168E` (mêmes adresses IROM avec préfixe `0x40200000`), puis examiner le branchement `cc32` selon la **table RI6 de l'ISA Xtensa** publiée par Espressif ([`CodeDensity.tex`](https://github.com/espressif/xtensa-isa-doc/blob/main/CodeDensity.tex), encodage BEQZ.N/BNEZ.N). Les instructions avant et après cette plage restent celles du reçu réel Capstone V5, et leurs octets concordent. Les instructions ci-dessous **non présentes dans le listing V5** ont été décodées sur la base de l'ISA et des encodages Xtensa attestés ; **ce ne sont pas de nouvelles lignes Capstone exécutées sur Windows**.
+
+| Adresse IROM | Octets OEM | Lecture / destination | Source |
+|---|---|---|---|
+| `0x40211672` | `22 2c 2d` | `l32i a2, a12, 0xb4` | Capstone V5 |
+| `0x40211675` | `cc 32` | **`bnez.n a2, 0x4021167C`** ; immédiat RI6 signé `+3`, cible `PC+4+3` | **ISA Xtensa**, décodé indépendamment |
+| `0x40211677` | `2d 0c` | `mov.n a2, a12` | décodage format MOV.N |
+| `0x40211679` | `05 cd ff` | `call0 0x4021134C` | décodage format CALL0 |
+| `0x4021167C` | `08 f1` | `l32i.n a0, a1, 0x3c` | format L32I.N |
+| `0x4021167E` | `c8 e1` | `l32i.n a12, a1, 0x38` | format L32I.N |
+| `0x40211680` | `e8 c1` | `l32i.n a14, a1, 0x30` | format L32I.N |
+| `0x40211682` | `2d 0d` | `mov.n a2, a13` | format MOV.N |
+| `0x40211684` | `d8 d1` | `l32i.n a13, a1, 0x34` | format L32I.N |
+| `0x40211686` | `12 c1 40` | `addi a1, a1, 0x40` | décodage du prologue inverse |
+| `0x40211689` | `91 70 ff` | `l32r a9, 0x4021144C` → littéral `0x40220968` | Capstone V5 + littéral OEM |
+| `0x4021168C` | `a0 09 00` | `jx a9`, saut indirect vers `0x40220968` si atteint | Capstone V5 |
+
+Décodage RI6 vérifié par calcul indépendant sur la séquence réelle `cc32` : `little-endian = 0x32CC`, opcode bas `0xC`, code `BNEZ.N`, registre `a2`, immédiat `+3`, **cible `0x4021167C`**. La somme des tailles d'instructions ci-dessus vaut **29 octets exactement**, sans trou ni chevauchement dans cette fenêtre. Contrôles locaux de formule RI6, cible et frontières **PASS** (ce ne sont pas des tests firmware/device). Espressif : [RI6 Code Density](https://github.com/espressif/xtensa-isa-doc/blob/main/CodeDensity.tex), [CALL0](https://github.com/espressif/xtensa-isa-doc/blob/main/InstructionsCALL0.tex).
+
+**Flot local reconstitué :**
+
+- Chemin A : si `a2 != 0` à `0x40211675`, branche directement vers `0x4021167C`.
+- Chemin B : si `a2 == 0`, exécute `mov.n a2,a12`, puis `call0 0x4021134C`, et revient normalement à `0x4021167C` **si** la fonction appelée retourne.
+- Le suffixe restaure des registres et la pile avant le **saut terminal indirect** vers la routine `0x40220968`, elle-même reconnue comme relais vers `0x40220958` puis `0x402208BC` dans V4/V5.
+
+**Portée de la découverte :** l'intervalle `0x40211672..0x4021168E`, précédemment **HOLD pour absence de décodage continu**, est maintenant **ANALYSÉ STATIQUEMENT**. Le code local contenant `l32r a3,/update` à `0x40211648` poursuit via des `call0` et la séquence ci-dessus, sauf effets d'appels/branches hors fenêtre non établis. Nous avons donc une **liaison de flot local bien plus solide** entre l'utilisation de la chaîne `/update` et le relais `0x40220968`.
+
+**Mais les fonctions appelées ne sont toujours pas identifiées.** À partir des encodages CALL0 des octets de la fenêtre V5 et de l'ISA, leurs destinations directes **calculées, sans noms fonctionnels**, sont notamment :
+
+| Appel dans la région | Adresse IROM cible calculée |
+|---|---|
+| `0x4021163F`, `0x40211645` | `0x4022FD3C` |
+| `0x4021164D` (après chargement de la chaîne `/update`) | `0x40224CEC` |
+| `0x4021165C` | `0x40211214` |
+| `0x40211661` | `0x40224AF8` |
+| `0x4021166A` | `0x4022088C` |
+| `0x40211679` | `0x4021134C` |
+
+Les destinations sont **des cibles d'appel selon les octets**, pas des fonctions nommées ni leurs comportements prouvés. Une étude des ABI, objets HTTP, appels et corps des fonctions est nécessaire avant d'affirmer `server.on("/update")`, un callback POST, une authentification ou un accès flash. La proximité de `0x4022088C` avec `0x402208BC` n'identifie pas non plus le mécanisme OTA.
+
+**État après cette passe :** le blocage « instruction de branchement manquante » est levé ; **l'attribution de la routine HTTP/OTA reste HOLD**. Aucune comparaison sécurité du mécanisme constructeur vs SHINO n'est validée, aucune modification firmware proposée. Aucun nouveau kit Windows nécessaire pour cette étape, aucun contact SmallTV ni Codex.
+
 ## Confrontation aux sources publiques Arduino (sans attribution OEM)
 
 Le composant **ESP8266HTTPUpdateServer** d'Arduino Core 3.1.2 possède une procédure connue : formulaire GET, réception POST, authentification selon paramètres, `Update.begin`, `Update.write`, `Update.end`, redémarrage ; le Core Updater peut déposer une commande eboot. Des chaînes OEM correspondent à ce composant public. **Il n'est pas prouvé** que GeekMagic utilise cette version exacte, la même configuration d'authentification ni ces chemins d'exécution.
