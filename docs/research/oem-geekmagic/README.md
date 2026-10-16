@@ -81,6 +81,7 @@ Les kits de diagnostic et ZIP Windows restent **hors du dépôt**. Aucun BIN pro
 ## 7. Sources et traçabilité
 
 - [Matrice des preuves, SHA-256, adresses et interprétation prudente](EVIDENCE_MATRIX.md).
+- [Investigation spécifique du point d'entrée constructeur `/update`](UPDATE_ENTRYPOINT_TRACE.md) — références ROM/DRAM vérifiées, lien route/callback encore HOLD.
 - [Audit SHINO historique fabricant](../../FIRMWARE_AUDIT_01.md) et [layout comparatif](../../COMPARATIVE_FLASH_LAYOUT_AUDIT.md).
 - [Manifeste OEM V9.0.44 historiquement épinglé](../../../recovery/factory_ota_v9_0_44.json).
 - [Firmware officiel GeekMagic V9.0.44, commit épinglé](https://github.com/GeekMagicClock/smalltv-ultra/blob/55d7877fcba8b1cb7a66a0830d35d5b374bc8540/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip).
