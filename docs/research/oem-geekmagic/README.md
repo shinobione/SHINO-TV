@@ -28,44 +28,44 @@ Comprendre la technologie constructeur pour savoir **si elle apporte un avantage
 | Format ESP8266 | En-tête initial à 0, seconde image à 0x1000, segments IRAM/DRAM/IROM ; images de type ESP8266 reconnues | **PROUVÉ par analyse statique** |
 | Taille / CRC OEM | Champs de taille et CRC interne à 0x1010–0x1017 ; CRC non réfléchi 0x04C11DB7 avec ces huit octets neutralisés ; correspondent aux deux BIN | **PROUVÉ sur octets publics** |
 | Checksum segment interne | XOR des segments avec neutralisation du même champ ; correspond aux valeurs 0x67 (V44) et 0x3E (V50) | **PROUVÉ sur octets publics** |
-| Références réseau et OTA | Textes et pointeurs relatifs à \`/update\`, \`/doUpload\`, \`/wifisave\`, \`/wifi.json\`, \`/ntp.json\`, etc. retrouvés | **PROUVÉ comme octets / pointeurs**, rôle des gestionnaires **HYPOTHÈSE** |
+| Références réseau et OTA | Textes et pointeurs relatifs à `/update`, `/doUpload`, `/wifisave`, `/wifi.json`, `/ntp.json`, etc. retrouvés | **PROUVÉ comme octets / pointeurs**, rôle des gestionnaires **HYPOTHÈSE** |
 | Code machine | Quatre zones candidates V9.0.44 désassemblées par Capstone 6 (mode ESP8266) ; 12 tests synthétiques du kit V3 PASS d'après exécution Windows | **OBSERVÉ sur rapport utilisateur**, attribution fonctionnelle **NON VÉRIFIÉE** |
-| Bibliothèque OTA | Textes OEM très spécifiques concordant avec le \`ESP8266HTTPUpdateServer\` public ; source Arduino Core 3.1.2 lue | **Correspondance PROUVÉE**, version OEM et appels exacts **NON VÉRIFIÉS** |
+| Bibliothèque OTA | Textes OEM très spécifiques concordant avec le `ESP8266HTTPUpdateServer` public ; source Arduino Core 3.1.2 lue | **Correspondance PROUVÉE**, version OEM et appels exacts **NON VÉRIFIÉS** |
 
 Ces contrôles internes attestent un **format d'intégrité**, pas une signature cryptographique ni l'exécution effective d'un contrôle à l'upload. **Un transfert OTA réussi ne démontre pas le démarrage de l'image.**
 
 ## 3. Découverte utile : deux composants à ne pas confondre
 
-### 3.1. \`/update\` : piste OTA prioritaire
+### 3.1. `/update` : piste OTA prioritaire
 
-Le BIN OEM contient \`/update\`, une page de transfert de fichier \`firmware\`, ainsi que des messages \`Update Success! Rebooting...\`, \`Unauthenticated Update\`, \`Not Enough Space\` et \`Update was aborted\`. Ces chaînes concordent avec le code source public \`ESP8266HTTPUpdateServer\`, mais le HTML OEM comporte aussi des personnalisations.
+Le BIN OEM contient `/update`, une page de transfert de fichier `firmware`, ainsi que des messages `Update Success! Rebooting...`, `Unauthenticated Update`, `Not Enough Space` et `Update was aborted`. Ces chaînes concordent avec le code source public `ESP8266HTTPUpdateServer`, mais le HTML OEM comporte aussi des personnalisations.
 
 **Hypothèse :** bibliothèque standard Arduino ou dérivé constructeur. **Non prouvé :** identité de la version OEM, contrôle d'accès exact, signature/MD5 exigés, ordre des vérifications et comportement de son eboot. Les messages d'erreur *présents* ne sont pas des erreurs *observées sur l'appareil*.
 
-### 3.2. \`/doUpload\` : une autre route, non équivalente à OTA
+### 3.2. `/doUpload` : une autre route, non équivalente à OTA
 
-Un pointeur adjacent à la chaîne \`/doUpload\` conduit à l'adresse IROM candidate \`0x40211F68\`. Capstone décode notamment des instructions \`l32r\`, \`movi\` (valeur \`0xc8\`, soit 200) et un \`jx\` indirect. La valeur cible lue à l'adresse littérale \`0x40211F64\` est \`0x40211F2C\`.
+Un pointeur adjacent à la chaîne `/doUpload` conduit à l'adresse IROM candidate `0x40211F68`. Capstone décode notamment des instructions `l32r`, `movi` (valeur `0xc8`, soit 200) et un `jx` indirect. La valeur cible lue à l'adresse littérale `0x40211F64` est `0x40211F2C`.
 
-**PROUVÉ :** octets, valeur de pointeur, décodage de la fenêtre. **HYPOTHÈSE :** petit relais de traitement HTTP. **NON VÉRIFIÉ :** qu'il soit exécuté pour \`/doUpload\`, ce qu'il traite, et qu'il ait le moindre lien avec l'OTA firmware. Il pourrait concerner un upload de fichiers médias. **Ne pas poursuivre la logique OTA en supposant \`/doUpload == /update\`.**
+**PROUVÉ :** octets, valeur de pointeur, décodage de la fenêtre. **HYPOTHÈSE :** petit relais de traitement HTTP. **NON VÉRIFIÉ :** qu'il soit exécuté pour `/doUpload`, ce qu'il traite, et qu'il ait le moindre lien avec l'OTA firmware. Il pourrait concerner un upload de fichiers médias. **Ne pas poursuivre la logique OTA en supposant `/doUpload == /update`.**
 
 ## 4. Comparaison utile avec SHINO
 
 | Domaine | GeekMagic OEM | SHINO (source consultée sur la branche M9) | Décision |
 |---|---|---|---|
-| Intégrité BIN | Taille, CRC interne, XOR segments démontrés | \`ota/firmware/ShinoHttpOta.h\` valide également taille/CRC/segments et SHA-256 | **Conserver**, ne pas remplacer par CRC seul |
-| Authentification OTA | **NON VÉRIFIÉE** ; la bibliothèque *publique* permet une authentification optionnelle selon configuration | HMAC de l'opération, identité, nonce, SHA-256 et validation avant \`core_.end(false)\` présents dans le code consulté | Ne pas rétrograder le protocole SHINO |
-| Staging et boot | Comportement OEM non désassemblé ; Arduino Core utilise un staging dépendant du linker puis commande eboot | Cible SHINO \`4m2m\`, Core Updater/eboot et contrôles mémoire | Maintenir les garde-fous et la qualification physique/postboot |
+| Intégrité BIN | Taille, CRC interne, XOR segments démontrés | `ota/firmware/ShinoHttpOta.h` valide également taille/CRC/segments et SHA-256 | **Conserver**, ne pas remplacer par CRC seul |
+| Authentification OTA | **NON VÉRIFIÉE** ; la bibliothèque *publique* permet une authentification optionnelle selon configuration | HMAC de l'opération, identité, nonce, SHA-256 et validation avant `core_.end(false)` présents dans le code consulté | Ne pas rétrograder le protocole SHINO |
+| Staging et boot | Comportement OEM non désassemblé ; Arduino Core utilise un staging dépendant du linker puis commande eboot | Cible SHINO `4m2m`, Core Updater/eboot et contrôles mémoire | Maintenir les garde-fous et la qualification physique/postboot |
 | Wi-Fi | Routes et journal de versions constructeur : reconnexion annoncée | B5.1 LAN et travail B5.3 séparés, détails sur branche spécifique | Comparaison d'algorithmes **plus tard**, sans perturber Codex |
 | Horloge / météo | Versions OEM annoncent correctifs DST/fuseau, secours horaire via météo | B5.3 SNTP/météo en cours sur une **autre branche** | Source d'idées, pas d'intégration automatique |
 | LCD 240×240 | Le matériel et des pistes documentaires sont connus ; routine constructeur non identifiée | Rendu natif SHINO, quatre métriques | Désassemblage LCD non fait ; aucun changement |
 
-**Attention au temps :** cette comparaison repose sur le code SHINO effectivement consulté en octobre 2026, **pas** sur une nouvelle lecture du firmware physiquement installé. La roadmap opérationnelle, l'état de B5.1/B5.2/B5.3 et les autorisations d'installation appartiennent à [\`docs/ROADMAP.md\`](../../ROADMAP.md) et [\`docs/AGENT_HANDOFF.md\`](../../AGENT_HANDOFF.md), non à ce dossier de recherche.
+**Attention au temps :** cette comparaison repose sur le code SHINO effectivement consulté en octobre 2026, **pas** sur une nouvelle lecture du firmware physiquement installé. La roadmap opérationnelle, l'état de B5.1/B5.2/B5.3 et les autorisations d'installation appartiennent à [`docs/ROADMAP.md`](../../ROADMAP.md) et [`docs/AGENT_HANDOFF.md`](../../AGENT_HANDOFF.md), non à ce dossier de recherche.
 
 ## 5. Outils : ce qui a marché, ce qui ne l'a pas fait
 
 - **REA (morluto/rea)** : sa documentation confirme l'inspection par Binwalk et l'extraction par Unblob sur Linux x64, mais **aucune session REA sur les BIN OEM n'a été exécutée**. REA ne fournit pas de décompilation Xtensa brute garantie.
-- **Xtensa GNU objdump**, outil PlatformIO Windows : \`--version\` et \`-i\` réussis, mais diagnostic sur trois octets bruts = plantage Windows \`0xC0000005\`. Cause interne non établie. Ne pas qualifier le firmware de corrompu.
-- **Capstone 6** dans un environnement Python Windows isolé : kit V3, **12/12 tests synthétiques PASS**, quatre fenêtres de candidats désassemblées, statut \`CANDIDATE_DISASSEMBLY_OBTAINED\` dans le rapport transmis.
+- **Xtensa GNU objdump**, outil PlatformIO Windows : `--version` et `-i` réussis, mais diagnostic sur trois octets bruts = plantage Windows `0xC0000005`. Cause interne non établie. Ne pas qualifier le firmware de corrompu.
+- **Capstone 6** dans un environnement Python Windows isolé : kit V3, **12/12 tests synthétiques PASS**, quatre fenêtres de candidats désassemblées, statut `CANDIDATE_DISASSEMBLY_OBTAINED` dans le rapport transmis.
 - **Ghidra / pseudocode / graphe d'appels OEM complet** : **NON EXÉCUTÉS**.
 
 Les kits de diagnostic et ZIP Windows restent **hors du dépôt**. Aucun BIN propriétaire, sauvegarde flash MASTER, secret, trace Wi-Fi privée ou fichier de configuration personnel n'est commité.
@@ -89,4 +89,4 @@ Les kits de diagnostic et ZIP Windows restent **hors du dépôt**. Aucun BIN pro
 - [ESP8266 Arduino Core 3.1.2 — serveur HTTP OTA](https://github.com/esp8266/Arduino/blob/3.1.2/libraries/ESP8266HTTPUpdateServer/src/ESP8266HTTPUpdateServer-impl.h), [Updater/eboot](https://github.com/esp8266/Arduino/blob/3.1.2/cores/esp8266/Updater.cpp) et [getFreeSketchSpace](https://github.com/esp8266/Arduino/blob/3.1.2/cores/esp8266/Esp.cpp).
 - [Branche SHINO de référence M9](https://github.com/shinobione/SHINO-TV/tree/feature/shino-tv-m9-flash-layout-liberation) et [branche B5.3 distincte](https://github.com/shinobione/SHINO-TV/tree/feature/shino-tv-b53-autonomous-host).
 
-**Règle de preuve :** \`PROUVÉ\` = calcul/code/bytes examinés ; \`OBSERVÉ\` = reçu Windows/retour propriétaire ; \`SIMULÉ\` = simulation ou test synthétique ; \`HYPOTHÈSE\` = interprétation plausible ; \`HOLD/NON VÉRIFIÉ\` = conclusion interdite à ce stade.
+**Règle de preuve :** `PROUVÉ` = calcul/code/bytes examinés ; `OBSERVÉ` = reçu Windows/retour propriétaire ; `SIMULÉ` = simulation ou test synthétique ; `HYPOTHÈSE` = interprétation plausible ; `HOLD/NON VÉRIFIÉ` = conclusion interdite à ce stade.
