@@ -107,6 +107,28 @@ Pool IROM @ 0x4021144C = 0x40220968
 
 Ce schéma **n'est pas** un graphe de flux/route OTA confirmé : l'identité des objets RAM, les branches internes et les liaisons de données doivent être établies. La priorité technique passe à **désassembler en continu la fenêtre `0x40211620..0x402116A0`, puis la destination `0x40220958`**. C'est plus utile que de relancer des scans de pointeurs sans voir les appels.
 
+## Reçu XREF V5 — pistes suivies jusqu'à 0x402208BC (16 octobre 2026)
+
+**Source :** `SHINO-OEM-XREF-20261016-232451.zip`, reçu du propriétaire et vérifié dans cette conversation : **3 358 octets**, SHA-256 **`bbbd60458f9dfe86665c6b1213d97033710feb35f6d4d2d2be5e61f5173adf94`**, test d'intégrité ZIP **PASS**. Contenu : `xref_receipt.json` et **5 listings** Capstone Xtensa. Les empreintes constructeur V9.0.44 du reçu correspondent à celles déjà vérifiées dans cet audit.
+
+**Statut fourni par l'outil : `HOLD_INCOMPLETE_XREFS` — ne pas le convertir en PASS**. Les cinq fenêtres sont bien décodées par Capstone, mais seulement **3 des 4 motifs `l32r` attendus** ont été observés à leur adresse exacte dans les listings **V5**. La quatrième instruction (`0x4022096B`) a été décodée dans le **reçu antérieur V4** ; elle n'était pas dans les zones proposées au décodeur V5. Les recoupements V4+V5 confirment les octets et cibles de cette chaîne **locale**, **pas** un flot d'exécution HTTP.
+
+| Instruction observée | Interprétation très limitée | Provenance |
+|---|---|---|
+| `0x40211648 : l32r a3, 0x40211440` | Le littéral contient `0x3FFE90AD`, début de la chaîne **`/update`** dans la DRAM OEM | V5 |
+| `0x40211689 : l32r a9, 0x4021144C` ; `0x4021168C : jx a9` | Le littéral donne `0x40220968`, cible du saut indirect **si ce point est atteint** | V5 |
+| `0x4022096B : l32r a9, 0x40220964` ; `0x4022096E : jx a9` | Le littéral donne `0x40220958` | V4, point volontairement distinct du V5 |
+| `0x40220958 : movi.n a4, 5` ; `0x4022095D : l32r a9, 0x40220954` ; `0x40220960 : jx a9` | Le littéral donne `0x402208BC` | V5 |
+| `0x402208BC : addi a1, a1, -0x10` | Début de routine avec prologue et sauvegardes de registres, opérations `extui`, `call0`, `beqz` | V5 |
+
+**Nuance majeure de flot :** le listing large de `0x40211620` s'arrête à `0x40211672`, puis un autre désassemblage commence directement à `0x40211689`. **Le segment `0x40211674..0x40211688` n'a pas été validé en continu**, et il n'existe pas encore de preuve qu'un chemin de traitement du texte `/update` atteigne l'instruction `jx` à `0x4021168C`. De plus, les octets situés après un `jx` inconditionnel (`0x4021168F` et `0x40220963`) ne doivent **pas** être considérés comme des instructions atteintes par simple continuation linéaire : ils peuvent relever d'un autre bloc ou de données.
+
+**Routine `0x402208BC` :** dans la fenêtre décodée, elle tronque `a4` sur 8 bits, `a3` sur 16 bits, sauvegarde plusieurs registres, exécute des appels, teste `beqz` et écrit dans un objet pointé. **Aucun lien prouvé avec `Update.begin`, `Update.write`, `Update.end`, la signature OTA ou eboot.** Le nom et la portée de cette routine restent inconnus. Le listing est **partiel** ; aucune extrapolation à sa fin.
+
+**Conclusion V5 :** présence démontrée de la chaîne `/update` comme opérande d'un `l32r` et d'une **suite de relais Xtensa localement décodés**, mais **attribution du gestionnaire OTA = HOLD**. La prochaine preuve pertinente est un désassemblage **continu et délimité par fonctions** autour de `0x40211620..0x40211690`, la résolution des `call0` et une comparaison des callbacks HTTP réellement inscrits. Ne pas solliciter d'OTA/flash physique pour combler cette lacune.
+
+**Aucune action firmware / Wi-Fi / SmallTV / Codex / B5.3 réalisée.**
+
 ## Confrontation aux sources publiques Arduino (sans attribution OEM)
 
 Le composant **ESP8266HTTPUpdateServer** d'Arduino Core 3.1.2 possède une procédure connue : formulaire GET, réception POST, authentification selon paramètres, `Update.begin`, `Update.write`, `Update.end`, redémarrage ; le Core Updater peut déposer une commande eboot. Des chaînes OEM correspondent à ce composant public. **Il n'est pas prouvé** que GeekMagic utilise cette version exacte, la même configuration d'authentification ni ces chemins d'exécution.
