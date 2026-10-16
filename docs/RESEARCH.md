@@ -1,5 +1,9 @@
 # Initial technical research
 
+
+> **Research update — 2026-10-16:** GeekMagic OEM firmware reverse engineering is now centrally documented in **[the OEM audit dossier](research/oem-geekmagic/README.md)** with **[the evidence matrix](research/oem-geekmagic/EVIDENCE_MATRIX.md)**. Official V9.0.44 is available in the manufacturer's pinned Git history; V9.0.44/V9.0.50 images, internal checksums and first Capstone Xtensa candidate disassemblies have been analyzed. The 2026-09 notes below are retained as **historical research**, not the current audit status. No OEM OTA authentication or physical behavior has been proven by this research. No changes to the B5.3 program or the owner's hardware.
+
+
 ## Manufacturer's firmware
 
 https://github.com/GeekMagicClock/smalltv-ultra
