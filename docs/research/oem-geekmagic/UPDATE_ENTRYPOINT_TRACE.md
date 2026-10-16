@@ -68,6 +68,45 @@ Le rapport lit au littéral `0x40220964` le mot `0x40220958` (offset BIN `0x2095
 
 **Important :** le compte-rendu et les listings V4 sont une **preuve reçue de Windows**, pas une exécution de Capstone dans le conteneur GitHub ; aucune opération appareil.
 
+## Recherche indépendante des utilisateurs de littéraux IROM
+
+Pour dépasser la seule proximité des pointeurs, le ZIP OEM officiel V9.0.44 a été **redécodé en mémoire depuis la source GitHub épinglée**. Une recherche des motifs d'instruction Xtensa `l32r` pouvant charger les quatre mots adjacents du pool à `0x40211440`–`0x4021144C` a été effectuée sur la zone IROM.
+
+**Limite méthodologique :** détection brute d'opcodes `l32r` possibles, **pas encore un désassemblage continu Capstone** ni une preuve de frontière de fonction. Une correspondance hors code peut être un faux positif. La formule appliquée à chaque candidat est : `literal = ((PC + 3) & ~3) + (int16_le(opcode[1:3]) * 4)`, conformément aux instructions `l32r` déjà rendues dans les listings Capstone V3/V4.
+
+| Adresse IROM candidate de l'instruction | Octets | Adresse du littéral résolue | Valeur enregistrée dans le pool |
+|---|---|---|---|
+| `0x40211648` | `31 7E FF` | `0x40211440` | `0x3FFE90AD` → **texte `/update`** |
+| `0x40211653` | `21 7C FF` | `0x40211444` | `0x3FFEF840` — objet RAM non nommé |
+| `0x40211664` | `D1 79 FF` | `0x40211448` | `0x3FFEF884` — objet RAM non nommé |
+| `0x40211689` | `91 70 FF` | `0x4021144C` | `0x40220968` — **routine relais décodée en V4** |
+
+La recherche brute a trouvé **une signature** correspondant à `0x40211440` et **une** à `0x4021144C`. Plusieurs signatures correspondaient aux deux mots RAM voisins, mais celles affichées sont concentrées entre `0x40211648` et `0x40211689`. Le contexte à `0x40211689` contient les octets `91 70 FF A0 09 00` : selon les décodages Capstone antérieurs, le second triplet `A0 09 00` pourrait correspondre à `jx a9`. **Revalidation Capstone requise.**
+
+**Piste de flot local, non démontrée :**
+
+```text
+/ update en DRAM @ 0x3FFE90AD
+    ^
+    | mot-littéral IROM @ 0x40211440
+    |        |
+    |        +-- l32r candidat @ 0x40211648 (utilisateur de la chaîne)
+    |
+Pool IROM @ 0x4021144C = 0x40220968
+                  ^
+                  +-- l32r candidat @ 0x40211689
+                           |
+                           +-- motif jx a9 @ 0x4021168C ?
+                                     |
+                                     v
+                              0x40220968 (stub V4)
+                                     |
+                                     v
+                              0x40220958 (cible du stub V4)
+```
+
+Ce schéma **n'est pas** un graphe de flux/route OTA confirmé : l'identité des objets RAM, les branches internes et les liaisons de données doivent être établies. La priorité technique passe à **désassembler en continu la fenêtre `0x40211620..0x402116A0`, puis la destination `0x40220958`**. C'est plus utile que de relancer des scans de pointeurs sans voir les appels.
+
 ## Confrontation aux sources publiques Arduino (sans attribution OEM)
 
 Le composant **ESP8266HTTPUpdateServer** d'Arduino Core 3.1.2 possède une procédure connue : formulaire GET, réception POST, authentification selon paramètres, `Update.begin`, `Update.write`, `Update.end`, redémarrage ; le Core Updater peut déposer une commande eboot. Des chaînes OEM correspondent à ce composant public. **Il n'est pas prouvé** que GeekMagic utilise cette version exacte, la même configuration d'authentification ni ces chemins d'exécution.
