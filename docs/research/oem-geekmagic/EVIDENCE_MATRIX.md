@@ -77,6 +77,8 @@ Cela suggère une continuité du code entre versions ; **ce n'est pas** une preu
 
 **Source de preuve :** archive de résultats transmise par le propriétaire `SHINO-OEM-V3-20261016-195747.zip`, analysée dans cette conversation. Elle contient `audit.json` et les quatre listings texte. Les fichiers OEM ni ces listings complets ne sont versés dans Git ; seuls les faits utiles sont consignés ici.
 
+**Empreinte du reçu Windows vérifiée sur l'archive fournie :** 3 740 octets ; SHA-256 `82ca692c299039c577c91f9c51802f262845a68e53ef803504a42bef8e9913de` ; contrôle d'intégrité des membres ZIP **PASS**. Cette empreinte identifie le *reçu d'analyse*, **pas** le firmware OEM ni un dump privé.
+
 - `audit.json` indique version `44`, Git source `55d7877fcba8b1cb7a66a0830d35d5b374bc8540`, SHA-256 ZIP/BIN concordants, `candidate_count = 4`.
 - Les quatre candidats ont chacun `provider = CAPSTONE`, `error = null` et un fichier de désassemblage.
 - Le terminal de l'utilisateur indiquait **12/12 tests du kit V3 PASS** : cela valide les tests du kit sur leur périmètre, pas une couverture des fonctions OEM.
