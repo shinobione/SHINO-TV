@@ -1,5 +1,37 @@
 # SHINO // TV — Roadmap
 
+## M3-D — TCP half-close et routeur unilisten en laboratoire (17 octobre 2026)
+
+**GO propriétaire : développement et qualification hors ligne, sans contact SmallTV.**
+PR #59 Draft, empilée sur la PR #58 ; B5.3 installée et Codex B5.4
+intouchés.
+
+Le prototype C++ POSIX `experiments/link_m3d_socket_lab/` exécute
+un serveur TCP **uniquement sur 127.0.0.1**, sur un port dynamique
+et un seul socket d'écoute. Il exploite le vrai moteur HMAC/SHA256
+M3-C avec réception octet par octet avant l'admission du corps.
+Pour résoudre le deadlock FIN/ACK du contrat M3-C,
+le client dédié envoie le corps et ferme **son canal d'écriture seulement**,
+puis peut lire la réponse. Le serveur confirme après FIN propre,
+et renvoie **202 `applied:false` : aucune scène appliquée**.
+Sans demi-fermeture, le client HTTP classique reçoit un 408 borné.
+
+**PREUVE :** 12 vrais échanges TCP host PASS sur une CI ciblée
+(`M3-D one-listener loopback`) ; régressions M3-C et 26 tests
+M3-A PASS. **Ce n'est PAS une intégration ESP8266/lwIP.**
+Les véritables routes historiques dashboard/status/métriques
+renvoient intentionnellement **503** dans ce laboratoire ;
+leur **parité est HOLD**. Aucun changement de `firmware/`,
+`companion/`, OTA, LittleFS, Wi-Fi, layout 4m2m, ni appareil.
+
+Le produit demeure **M3 CONTROL=HOLD** tant que
+port 80 natif unique, préservation effective des routes historiques,
+interactions du worker de métriques, budget Xtensa mémoire/stack,
+sécurité provisioning/boot/CAS, ACK + relecture et rendu LCD
+ne sont pas prouvés. Météo B5.4 détenue par Codex reste séparée.
+
+Voir [preuves et limitations du laboratoire M3-D](LINK_M3D_SINGLE_OWNER_SOCKET_LAB.md).
+
 ## M3-C — Preuve cryptographique avant corps, prototype isolé (17 octobre 2026)
 
 **Décision propriétaire : GO M3-C pour le développement et les tests hors ligne.**

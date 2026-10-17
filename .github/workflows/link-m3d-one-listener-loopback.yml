@@ -1,0 +1,45 @@
+name: LINK M3-D one-listener loopback real sockets (NO DEVICE)
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/link_m3d_socket_lab/**'
+      - 'docs/LINK_M3D_SINGLE_OWNER_SOCKET_LAB.md'
+      - 'docs/ROADMAP.md'
+      - '.github/workflows/link-m3d-one-listener-loopback.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-real-sockets:
+    name: Real POSIX single listener, M3-C HMAC gate, 12 TCP cases
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Compile real C++ OpenSSL loopback socket receiver (NO device)
+        run: |
+          g++ -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \
+            -fno-exceptions -fno-rtti \
+            experiments/link_m3d_socket_lab/single_owner_loopback.cpp \
+            -lcrypto -o "${{ runner.temp }}/m3d_loopback"
+      - name: Execute real TCP client/server 12-case compatibility and fail-closed suite
+        env:
+          M3D_LAB_BINARY: ${{ runner.temp }}/m3d_loopback
+        run: python -m unittest discover -s experiments/link_m3d_socket_lab -p 'test_loopback_contract.py' -v
+      - name: Retain existing native crypto proof regressions (HOST)
+        run: |
+          g++ -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \
+            -fno-exceptions -fno-rtti \
+            experiments/link_m3c_crypto/test_crypto_ingress.cpp \
+            -lcrypto -o "${{ runner.temp }}/m3c_baseline"
+          "${{ runner.temp }}/m3c_baseline"
+      - name: Retain M3-A pure host contract fail-closed tests
+        run: python -m unittest discover -s experiments/link_m3_control_contract -p 'test_*.py' -v
