@@ -116,7 +116,7 @@ class OfflineSourcePinsTests(unittest.TestCase):
         for name in LINK_M2_FILE_BLOBS:
             def changed(command, *args, **kwargs):
                 if command == ["git", "hash-object", "--", name]:
-                    return "0"*40 + "\\n"
+                    return "0"*40 + "\n"
                 return original(command, *args, **kwargs)
             with self.subTest(file=name), patch.object(subprocess, "check_output", side_effect=changed):
                 with self.assertRaises(AssertionError):
