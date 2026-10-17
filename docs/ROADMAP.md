@@ -1,5 +1,34 @@
 # SHINO // TV — Roadmap
 
+## M3-C — Preuve cryptographique avant corps, prototype isolé (17 octobre 2026)
+
+**Décision propriétaire : GO M3-C pour le développement et les tests hors ligne.**
+Aucun GO d'activation, flash ou OTA. Les PR #54 (tray M2),
+#56 (M3-A) et #57 (M3-B) restent les bases empilées ; la nouvelle
+PR Draft #58 contient M3-C, séparée de la branche Codex B5.4.
+
+Le prototype C++ `experiments/link_m3c_crypto/` vérifie réellement
+HMAC-SHA-256 du chemin/méthode/Host/appareil/boot/mode/révision/tx/
+longueur/empreinte SHA du corps **avant de lire le corps** ;
+puis il compare l'empreinte réelle, le JSON canonique M3-A et exige
+un FIN propre. Un ledger de test en mémoire refuse replays et CAS
+périmés, **sans garantie de concurrence/reboot native**.
+Le code inclut un test HOST OpenSSL et un build Xtensa/BearSSL
+d'un programme autonome **inerte, jamais installable**.
+
+**M3-C HOST/Xtensa inert : PASS ciblé, PAS M3 produit.**
+Les conditions pour rendre les modes contrôlables sur SmallTV restent
+HOLD : propriétaire unique du port HTTP, données de boot/nonce
+réellement sûres, secret de contrôle provisionné, CAS atomique,
+échange réseau authentifié et ressource/stack native intégrées,
+ACK/status du rendu et validation sur 240×240.
+Ces travaux ne doivent pas perturber la B5.3 physiquement installée,
+le LINK en service, les guards Mission 9 ou les quatre gates
+météo B5.4 détenus par Codex.
+
+Voir [M3-C contrat et limites](LINK_M3C_CRYPTO_GATE.md).
+Aucune installation appareil, aucun endpoint M3 activé, aucune fusion.
+
 ## M3-A — Contrat de sélection d'affichage, HOST UNIQUEMENT (17 octobre 2026)
 
 **Décision propriétaire : GO M3 (code et tests hors ligne) ; aucun GO matériel.**
