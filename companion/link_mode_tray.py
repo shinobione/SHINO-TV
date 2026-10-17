@@ -26,24 +26,22 @@ SCENE_LABELS = {
     Scene.NO_MEDIA: "Lecture musicale non vérifiée",
 }
 
-# Existing core telemetry freshness contract; never extend it for a GUI.
-METRICS_TTL_MS = 6000
-
-
-def passive_link_signals(engine) -> Signals:
+def passive_link_signals(engine, *, ttl_ms: int) -> Signals:
     """Observe the existing sender without HTTP, retries or worker mutation.
 
     The Windows ACK age is a local approximation, not a device scene ACK.
     Media source is deliberately unconnected in M2, and weather/time validity
     cannot be inferred from Windows wall time or the B5.3 installed clock.
     """
+    if type(ttl_ms) is not int or ttl_ms <= 0:
+        raise ValueError("telemetry TTL must be a positive integer in ms")
     completed = engine.last_success
     fresh = False
     if type(completed) in (int, float) and math.isfinite(completed):
         now = engine.clock()
         if type(now) in (int, float) and math.isfinite(now):
             age_ms = (now - completed) * 1000
-            fresh = 0 <= age_ms <= METRICS_TTL_MS
+            fresh = 0 <= age_ms <= ttl_ms
     return Signals(
         pc_connected=fresh, metrics_fresh=fresh, music_playing=False,
         time_valid=False, weather_valid=False,
