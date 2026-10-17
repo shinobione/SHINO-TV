@@ -2,6 +2,8 @@
 
 **17 octobre 2026 — analyse statique hors ligne. Statut : PARTIAL ; comportement OTA/auth/flash HOLD.**
 
+> **Mise à jour V7 exécutée sur Windows :** reçu propriétaire reçu et vérifié (**14 listings Capstone**) ; [analyse des deux callbacks POST et du défi HTTP Basic 401](POST_CALLBACK_V7.md). Le passage ci-dessous qui annonce « V7 non encore exécuté » décrit l'état **avant** réception, et est conservé comme historique ; la preuve actuelle se trouve dans le document lié. La présence d'un défi HTTP Basic **ne prouve pas** l'authentification efficace de toutes les étapes OTA.
+
 Complément de [l'enquête `/update`](UPDATE_ENTRYPOINT_TRACE.md), du [Calltrace V6](UPDATE_ENTRYPOINT_TRACE.md) et du [registre des routes HTTP](HTTP_ROUTE_CROSS_REFERENCE.md).
 
 ## Preuves et source
