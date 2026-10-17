@@ -2,7 +2,9 @@
 
 An independent, experimental firmware and PC-companion project for the **GeekMagic SmallTV-Ultra (ESP8266)**.
 
-> **Status:** Phase 0 — research and recovery planning. No firmware has been flashed, extracted from the device, or validated on the owner's hardware.
+> **État actuel : consulter [la roadmap](docs/ROADMAP.md) et [le handoff des agents](docs/AGENT_HANDOFF.md).** Le propriétaire confirme le 17 octobre 2026 que **B5.3 est installé et fonctionnel** : quatre mesures, date/heure et horloge persistante PC éteint. Ce retour est une **observation propriétaire**, pas une lecture physique ou une identification du SHA réalisée ici. Les sections de ce README décrivant « Phase 0 », le firmware OEM encore installé ou l'absence de flash sont **des archives historiques** de l'initialisation du dépôt et ne décrivent plus l'appareil.
+>
+> **Recherche constructeur à retrouver lors d'un bug :** [guide pratique SHINO (par symptôme)](docs/research/oem-geekmagic/USAGE_GUIDE_SHINO.md) · [dossier complet V7–V10](docs/research/oem-geekmagic/README.md) · [matrice des preuves](docs/research/oem-geekmagic/EVIDENCE_MATRIX.md). Pas d'OTA, de flash ni de modification B5.4 autorisés par ces documents.
 
 ## Target device
 
