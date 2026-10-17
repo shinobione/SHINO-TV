@@ -132,14 +132,20 @@ class RealMetricsHostModeIntegration(unittest.TestCase):
             clock.now = 2
             self.assertEqual(owner.tick(2), "MODE_PENDING_METRICS_PRIORITY")
             self.assertEqual(engine.state, "RETRYING")
-            self.assertEqual(len(sink.history), 1)
-            self.assertEqual(sink.history[0]["cpu_usage"], 22.5)
+            # LINK's serializer checks general wire types and bounds;
+            # the real original receiver rejects CPU=102 after the POST.
+            # It returns 422 without replacing the prior valid RAM sample.
+            self.assertEqual(len(sink.history), 2)
+            self.assertEqual(sink.history[-1]["code"], 422)
+            self.assertEqual(sink.history[-1]["cpu_usage"], 22.5)
             self.assertEqual(tx.posts, 0)
+            self.assertEqual(engine.next_due, 4.0)  # regular LINK backoff
 
             state["sample"]["cpu_usage"] = 33.0
             clock.now = 4
             self.assertEqual(owner.tick(4), "MODE_ACK_READBACK_SIMULATED_ONLY")
-            self.assertEqual(len(sink.history), 2)
+            self.assertEqual(len(sink.history), 3)
+            self.assertEqual(sink.history[-1]["code"], 200)
             self.assertEqual(sink.history[-1]["cpu_usage"], 33)
             self.assertEqual(engine.accepted, 2)
             self.assertEqual(tx.posts, 1)
