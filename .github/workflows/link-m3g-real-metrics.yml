@@ -1,0 +1,58 @@
+name: LINK M3-G actual FslessMetrics + Digest loopback (NO DEVICE)
+on:
+  pull_request:
+    paths:
+      - 'experiments/link_m3g_real/**'
+      - 'docs/LINK_M3G_REAL_METRICS.md'
+      - 'docs/ROADMAP.md'
+      - '.github/workflows/link-m3g-real-metrics.yml'
+permissions:
+  contents: read
+jobs:
+  actual-original-metrics:
+    name: 20 true localhost requests, actual ArduinoJson/FslessMetrics, fake owner Digest
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Assert original B5.3 source SHA and no competing listener
+        run: python -m unittest discover -s experiments/link_m3g_real -p 'test_exact_source.py' -v
+      - name: Fetch exact pinned ArduinoJson 7.4.3 to isolated lab only
+        run: |
+          python -m pip install 'platformio==6.1.18'
+          pio pkg install -d experiments/link_m3g_real -e deps_for_host
+      - name: Verify actual ArduinoJson source version
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import sys
+          root=Path("experiments/link_m3g_real/.pio/libdeps/deps_for_host/ArduinoJson/src")
+          target=root/"ArduinoJson/version.hpp"
+          if not target.is_file() or '#define ARDUINOJSON_VERSION "7.4.3"' not in target.read_text():
+              sys.exit("HOLD: ArduinoJson 7.4.3 pinned source missing")
+          print("PINNED_REAL_ARDUINOJSON_7_4_3_SOURCE_READY")
+          PY
+      - name: Build actual unmodified FslessMetrics.cpp in Digest TCP lab
+        run: |
+          g++ -std=c++17 -O1 -Wall -Wextra -Werror -pedantic -DPROGMEM= \
+            -I tools/host_arduinojson_stubs \
+            -I firmware/include \
+            -I experiments/link_m3g_real/.pio/libdeps/deps_for_host/ArduinoJson/src \
+            experiments/link_m3g_real/native_integrated_real_metrics.cpp \
+            firmware/src/boot/FslessMetrics.cpp \
+            firmware/src/boot/FslessWebUI.cpp -lcrypto \
+            -o "${{ runner.temp }}/m3g_actual_metrics"
+      - name: Execute exactly twenty real TCP localhost Digest+Cookie+Metrics requests
+        env:
+          M3G_REAL_METRICS_BIN: ${{ runner.temp }}/m3g_actual_metrics
+        run: python -m unittest discover -s experiments/link_m3g_real -p 'test_live_metrics_loopback.py' -v
+      - name: Existing 26 M3-A no retry regressions
+        run: python -m unittest discover -s experiments/link_m3_control_contract -p 'test_*.py' -v
+      - name: Preserve five exact B5.3 source gate regressions
+        run: python -m unittest discover -s experiments/link_m3e_legacy -p 'test_b53_source_pins.py' -v
