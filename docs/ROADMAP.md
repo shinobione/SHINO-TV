@@ -21,12 +21,22 @@ Puis seulement concevoir un contrat de contrôle authentifié, étroit, borné
 et compatible avec le serveur/Digest/verrous actuels, le renderer natif et
 les budgets ESP8266. Conserver télémétrie/TTL 6 s, scènes 240×240, règles de
 fraîcheur, HMAC/OTA, LittleFS/4m2m et garde d'une seule instance. Aucun POST
-de mode automatique sur firmware B5.1 incompatible. Toute réponse incertaine
-se termine en UNKNOWN/HOLD, sans replay aveugle.
+de mode sur le firmware B5.3 actuellement installé, qui ne propose pas encore
+ce protocole de sélection. Toute réponse incertaine se termine en UNKNOWN/HOLD,
+sans replay aveugle.
 
-**Dépendances non closes :** B5.2 horloge native et publisher encore offline,
-musique/pochette native non qualifiée sur le B5.1 installé, météo/NTP autonome
-non démontrée ; comportement PAUSED et arbitrage Web/Windows restent à valider.
+**Base fonctionnelle confirmée par le propriétaire (17 octobre 2026) :**
+B5.2 a affiché l'horloge avec les quatre mesures via LINK. B5.3 LEAN est
+installée, identifiée par un GET Digest post-OTA, et a conservé heure/date
+pendant cinq minutes avec le PC éteint, sans gel ni redémarrage observés ;
+les quatre mesures sont revenues après reconnexion de LINK. La lecture d'état
+a confirmé LittleFS et des mesures fraîches. Ce sont des observations
+physiques, non de simples résultats HOST ou CI.
+**Reste à qualifier séparément :** preuve directe de callback/source SNTP,
+extrema mémoire et stabilité prolongée ; météo HTTPS volontairement exclue de
+B5.3 LEAN (affichage `WEATHER --`) ; musique/pochette native, comportement
+PAUSED et arbitrage Web/Windows. Ne pas réouvrir B5.2/B5.3 comme si leur
+fonctionnement utilisateur n'avait jamais été validé.
 Aucun nouveau firmware, EXE, route ou commande réseau n'est ici installé.
 Aucune autorisation de flash, OTA, redémarrage, provisionnement ou merge.
 
