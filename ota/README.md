@@ -55,14 +55,24 @@ générées privées, log privé, ni `owner-credentials.json`.** Le build public
 sans `--private` garde l'autorité d'installation fermée, tout en liant le même
 graphe pour inspection.
 
-Ouvrir `companion/SHINO-UPDATE.cmd`, choisir `release.json` et confirmer le hash
-affiché. Vérification hors ligne avant toute connexion. L'outil utilise les
-identifiants locaux et l'AP `192.168.4.1`, sans proxy/redirection. Arrêter LINK
-pendant l'upload et le relancer quand l'outil le demande. Une seule requête
-upload ; aucun retry. Le succès exige un **nouveau boot**, le SHA256 réel du
-firmware exécuté, le build attendu, les fichiers vérifiés, les mesures fraîches
-et un récepteur OTA encore disponible. Une réponse perdue se résout seulement
-par ces lectures ; sinon le résultat reste UNKNOWN.
+Ouvrir `companion/SHINO-UPDATE.cmd` pour **vérifier le candidat hors
+ligne uniquement** : la GUI générale n'installe plus de firmware et ne contacte
+pas le SmallTV. Elle ne constitue pas une autorisation physique.
+
+**Pour une future installation physique, uniquement après un nouvel accord
+explicite portant sur le BIN/SHA exacts**, utiliser le lanceur `UPDATE-B*.cmd`
+du paquet A2/B2 prélié. Il impose le **SHA-256 exact de A actuellement attendu**,
+un marqueur durable `.attempt` et un **reçu neuf**. L'entrée CLI
+`--install` et la fonction `install()` refusent également les opérations
+sans ces trois garde-fous. Aucun retry après résultat incertain.
+
+Le lanceur qualifié utilise les identifiants locaux et l'AP `192.168.4.1`,
+sans proxy/redirection. Arrêter LINK pendant l'upload et le relancer quand
+l'outil le demande. Une seule requête upload ; aucun retry. Le succès exige
+un **nouveau boot**, le SHA256 réel du firmware exécuté, le build attendu, les
+fichiers vérifiés, les mesures fraîches et un récepteur OTA encore disponible.
+Une réponse perdue se résout seulement par ces lectures ; sinon le résultat
+reste UNKNOWN.
 La confirmation exige aussi que B retrouve le plancher d'admission25600 octets
 de heap ; un boot avec mesures mais sans marge pour une prochaine OTA ne suffit
 pas à déclarer le succès. La qualification bornée vérifie ce même plancher.

@@ -26,6 +26,7 @@ class UpdaterTests(unittest.TestCase):
                          ota_enabled=True,fs_ok=True,fs_files=24,fs_bytes=181402,metrics_fresh=True,heap=30000,block=28000,stack=3200,frag=1)
         self.after=dict(self.before,build_id=self.m["build_id"],sha256=self.m["sha256"],bytes=len(self.raw),boot_id="2"*32)
         self.ticks=0
+        self.attempt_sequence=0
     def sleep(self,n):self.ticks+=n
     def io(self,after=None,lost=False):
         test=self
@@ -40,7 +41,82 @@ class UpdaterTests(unittest.TestCase):
                 return dict(status="STAGED_PENDING_BOOT",heap_min=23000,block_min=20000,stack_min=2400,frag_max=2,samples=800)
         return IO()
     def install(self,io,confirm=None):
-        return update.install(self.binary,self.manifest,self.credentials,confirm or self.m["sha256"],transport=io,clock=lambda:self.ticks,sleep=self.sleep)
+        self.attempt_sequence+=1
+        marker=self.binary.parent/f"test-attempt-{self.attempt_sequence}.attempt"
+        receipt=self.binary.parent/f"test-attempt-{self.attempt_sequence}.json"
+        return update.install(self.binary,self.manifest,self.credentials,confirm or self.m["sha256"],
+                              transport=io,clock=lambda:self.ticks,sleep=self.sleep,
+                              expected_current_sha256=self.before["sha256"],
+                              attempt_marker=marker,receipt_path=receipt)
+    def test_cli_requires_all_one_shot_controls_before_network(self):
+        """No CLI upload without current-A SHA, attempt marker AND unique receipt."""
+        base=["shino_update.py","--bin",str(self.binary),"--manifest",str(self.manifest),
+              "--install","--confirm-sha256",self.m["sha256"]]
+        gates=["--expected-current-sha256",self.before["sha256"],
+               "--attempt-marker",str(self.binary.parent/"ota.attempt"),
+               "--receipt",str(self.binary.parent/"ota-receipt.json")]
+        for omitted in ("--expected-current-sha256","--attempt-marker","--receipt"):
+            with self.subTest(omitted=omitted):
+                argv=list(base)
+                for i in (0,2,4):
+                    if gates[i]!=omitted:argv+=gates[i:i+2]
+                with patch.object(sys,"argv",argv),patch.object(update,"install",side_effect=AssertionError("upload called")),\
+                     patch.object(update,"load_identity",side_effect=AssertionError("private identity touched")),\
+                     contextlib.redirect_stderr(io.StringIO()):
+                    self.assertEqual(update.main(),2)
+
+    def test_cli_exact_packet_controls_still_reach_install_once(self):
+        marker=self.binary.parent/"ota.attempt"
+        receipt=self.binary.parent/"ota-receipt.json"
+        argv=["shino_update.py","--bin",str(self.binary),"--manifest",str(self.manifest),
+              "--install","--confirm-sha256",self.m["sha256"],
+              "--expected-current-sha256",self.before["sha256"],
+              "--attempt-marker",str(marker),"--receipt",str(receipt)]
+        with patch.object(sys,"argv",argv),patch.object(update,"install",return_value={"status":"BOOT_AND_TELEMETRY_CONFIRMED"}) as install,\
+             patch.object(update,"save_receipt") as saved,contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(update.main(),0)
+        self.assertEqual(install.call_count,1)
+        self.assertEqual(install.call_args.kwargs["expected_current_sha256"],self.before["sha256"])
+        self.assertEqual(install.call_args.kwargs["attempt_marker"],marker)
+        self.assertEqual(install.call_args.kwargs["receipt_path"],receipt)
+        saved.assert_called_once_with(receipt,{"status":"BOOT_AND_TELEMETRY_CONFIRMED"})
+
+    def test_general_gui_is_offline_only_even_if_install_requested(self):
+        import ast
+        import inspect
+        import textwrap
+        body=ast.parse(textwrap.dedent(inspect.getsource(update.gui)))
+        names={node.id for node in ast.walk(body) if isinstance(node,ast.Name)}
+        self.assertNotIn("install",names)
+        self.assertNotIn("Transport",names)
+        with patch.object(sys,"argv",["shino_update.py","--gui","--install"]),\
+             patch.object(update,"gui",side_effect=AssertionError("GUI opened for install")),\
+             contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(update.main(),2)
+        with patch.object(sys,"argv",["shino_update.py","--gui"]),patch.object(update,"gui") as gui:
+            self.assertEqual(update.main(),0)
+            gui.assert_called_once_with(None,None)
+
+    def test_install_api_requires_three_controls_before_credentials_or_network(self):
+        with patch.object(update,"inspect",side_effect=AssertionError("inspected")),\
+             patch.object(update,"load_identity",side_effect=AssertionError("credentials")),\
+             patch.object(update,"Transport",side_effect=AssertionError("network")):
+            for kwargs in ({},
+                           {"expected_current_sha256":self.before["sha256"]},
+                           {"expected_current_sha256":self.before["sha256"],"attempt_marker":self.binary.parent/"once.attempt"}):
+                with self.subTest(kwargs=kwargs),self.assertRaises(update.UpdateError):
+                    update.install(self.binary,self.manifest,self.credentials,self.m["sha256"],**kwargs)
+
+    def test_install_api_rejects_existing_receipt_before_io(self):
+        receipt=self.binary.parent/"once-receipt.json";receipt.write_text("ALREADY_ATTEMPTED")
+        with patch.object(update,"load_identity",side_effect=AssertionError("credentials")),\
+             patch.object(update,"Transport",side_effect=AssertionError("network")):
+            with self.assertRaisesRegex(update.UpdateError,"receipt"):
+                update.install(self.binary,self.manifest,self.credentials,self.m["sha256"],
+                               expected_current_sha256=self.before["sha256"],
+                               attempt_marker=self.binary.parent/"once.attempt",receipt_path=receipt)
+        self.assertEqual(receipt.read_text(),"ALREADY_ATTEMPTED")
+
     def test_offline_does_not_load_credentials_or_network(self):
         with patch("socket.create_connection",side_effect=AssertionError("network")),patch.object(update,"load_identity",side_effect=AssertionError("credentials")):
             self.assertEqual(update.inspect(self.binary,self.manifest),(self.m,self.raw))
@@ -81,14 +157,14 @@ class UpdaterTests(unittest.TestCase):
         result=update.install(
             self.binary,self.manifest,self.credentials,self.m["sha256"],
             transport=transport,clock=lambda:self.ticks,sleep=self.sleep,
-            expected_current_sha256=self.before["sha256"],attempt_marker=marker)
+            expected_current_sha256=self.before["sha256"],attempt_marker=marker,receipt_path=marker.with_suffix(".receipt.json"))
         self.assertEqual(result["status"],"BOOT_AND_TELEMETRY_CONFIRMED")
         self.assertEqual(transport.posts,1)
         again=self.io()
         with self.assertRaisesRegex(update.UpdateError,"marker"):
             update.install(self.binary,self.manifest,self.credentials,self.m["sha256"],
                            transport=again,expected_current_sha256=self.before["sha256"],
-                           attempt_marker=marker)
+                           attempt_marker=marker,receipt_path=marker.with_suffix(".receipt.json"))
         self.assertEqual(again.gets+again.posts,0)
 
     def test_one_shot_mismatched_A_never_creates_marker_or_uploads(self):
@@ -97,7 +173,7 @@ class UpdaterTests(unittest.TestCase):
         with self.assertRaisesRegex(update.UpdateError,"does not match"):
             update.install(self.binary,self.manifest,self.credentials,self.m["sha256"],
                            transport=transport,expected_current_sha256="c"*64,
-                           attempt_marker=marker)
+                           attempt_marker=marker,receipt_path=marker.with_suffix(".receipt.json"))
         self.assertEqual((transport.gets,transport.posts),(1,0))
         self.assertFalse(marker.exists())
 
@@ -108,7 +184,7 @@ class UpdaterTests(unittest.TestCase):
         with self.assertRaisesRegex(update.UpdateError,"floors"):
             update.install(self.binary,self.manifest,self.credentials,self.m["sha256"],
                            transport=transport,expected_current_sha256=self.before["sha256"],
-                           attempt_marker=marker)
+                           attempt_marker=marker,receipt_path=marker.with_suffix(".receipt.json"))
         self.assertEqual((transport.gets,transport.posts),(1,0))
         self.assertFalse(marker.exists())
 
@@ -118,13 +194,13 @@ class UpdaterTests(unittest.TestCase):
         result=update.install(
             self.binary,self.manifest,self.credentials,self.m["sha256"],
             transport=transport,clock=lambda:self.ticks,sleep=self.sleep,
-            expected_current_sha256=self.before["sha256"],attempt_marker=marker)
+            expected_current_sha256=self.before["sha256"],attempt_marker=marker,receipt_path=marker.with_suffix(".receipt.json"))
         self.assertEqual(result["status"],"UNKNOWN_NO_RETRY")
         self.assertEqual(transport.posts,1)
         with self.assertRaisesRegex(update.UpdateError,"marker"):
             update.install(self.binary,self.manifest,self.credentials,self.m["sha256"],
                            transport=self.io(),expected_current_sha256=self.before["sha256"],
-                           attempt_marker=marker)
+                           attempt_marker=marker,receipt_path=marker.with_suffix(".receipt.json"))
 
     def test_changed_bin_before_install_prevents_network(self):
         self.binary.write_bytes(self.raw[:-1]+b"x");io=self.io()
