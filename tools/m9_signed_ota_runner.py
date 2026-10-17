@@ -17,6 +17,7 @@ GRAPH = ROOT/"experiments/m9_signed_ota"
 
 def source_gate():
     from b52_source_compat import NEW_FILE_BLOBS, SCENE, predecessor
+    from link_m2_source_identity import LINK_M2_FILE_BLOBS, LINK_PATH, reviewed_link_predecessor
     core = core_root()
     pins = json.loads((ROOT/"tools/m9_signed_core_sources.json").read_text())
     for name, digest in pins.items():
@@ -60,10 +61,15 @@ def source_gate():
     # Every path is pinned to its reviewed blob; SceneEngine still proves its
     # complete immutable predecessor rather than bypassing historical checks.
     new_offline_script_pins.update(NEW_FILE_BLOBS)
+    # M1/M2 are new PC-only sources; exact Git blobs, never wildcard bypasses.
+    # M2 LINK is also reconstructed against its immutable B5.2 predecessor.
+    new_offline_script_pins.update(LINK_M2_FILE_BLOBS)
     for name in subprocess.check_output(["git","ls-files","firmware","companion","tools/m9_single_attempt*"],cwd=ROOT,text=True).splitlines():
         if name in new_offline_script_pins:
             digest = subprocess.check_output(["git","hash-object","--",name],cwd=ROOT,text=True).strip()
             assert digest == new_offline_script_pins[name], "offline launcher changed: " + name
+            if name == LINK_PATH:
+                reviewed_link_predecessor((ROOT/name).read_bytes().replace(b"\r\n", b"\n"))
             continue
         # Issue43 adds only these offline installer paths. Every PREEXISTING
         # companion, firmware and physical-writer file retains exact identity.
