@@ -19,6 +19,7 @@ This file is binding context for AI coding/review agents working in this reposit
 
 ## Working links
 - Source of record: `docs/ROADMAP.md` (active section + full original historical appendix).
+- **Firmware GeekMagic OEM reverse engineering:** `docs/research/oem-geekmagic/USAGE_GUIDE_SHINO.md` (incident→preuve→source), then `docs/research/oem-geekmagic/README.md` and `EVIDENCE_MATRIX.md`. V7–V10 contain **static OEM evidence**, not proof of physical OTA security, operational LCD drivers or the firmware installed on the owner's B5.3 device. Consult only for a concrete issue; do not duplicate the investigation.
 - Detailed machine-actionable transfer: `docs/AGENT_HANDOFF.md`.
 - Canonical scene dimensions and reference files: `docs/design-reference/README.md`.
 - Offline PR #40 implementation and known non-final mixed-mode fixture: `docs/artwork-pilot/README.md`.
