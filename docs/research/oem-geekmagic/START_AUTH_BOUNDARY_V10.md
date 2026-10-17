@@ -190,3 +190,30 @@ En plus du reçu Capstone V10, **les octets réels du BIN OEM V9.0.44 ont été 
 **Limite appliquée à GeekMagic :** les octets OEM V10 montrent très fortement un stockage/test d'état `_authenticated` en START, et une branche WRITE où la lecture correspondante n'apparaît pas ; mais **la provenance exacte du serveur compilé, les contrôles supplémentaires avant dispatch, les préconditions du moteur Update et les chemins complets d'erreur restent non démontrés**. La différence statique justifie une revue de sécurité **HOLD**, pas une déclaration de vulnérabilité exploitable et pas une expérimentation réseau sur le SmallTV.
 
 **Décision pour SHINO :** conserver une autorisation indépendante, authentifiée et **effective avant toute écriture**, liée à chaque transaction, y compris ERROR, INTERRUPTION, RESTART et END ; ne jamais tenir le code HTTP final comme une garantie d'intégrité/accès. Cette préconisation est une règle de conception, **pas une modification du firmware effectuée dans cette recherche**.
+
+## 9. Invariants de session Updater à ne pas confondre avec l'authentification — audit complémentaire
+
+**Date : 17 octobre 2026.** Nouvelle lecture **des sources publiques exactes**, pas un désassemblage supplémentaire du constructeur et **pas un test physique**. Les quatre ZIP de reçus propriétaires **V7/V8/V9/V10** ont été relus et leur intégrité `ZipFile.testzip()` contrôlée **PASS**. Dans ces fragments seulement, les accès `this+0x20` attribuables à l'état d'authentification se trouvent dans **POST A** (lecture à `0x40212021`) et **START/POST B** (écriture à `0x40214423`) ; les fragments délimités de WRITE/END montrent l'accès au champ `this+0x24` d'erreur et non au booléen d'autorisation. Cette observation est **limitée aux fenêtres décodées** et n'établit pas l'absence de garde dans tout le logiciel.
+
+### Contrat vérifié de l'Updater Arduino ESP8266 3.1.2
+
+Les routines ci-dessous ont été lues dans [`Updater.cpp` au tag 3.1.2](https://github.com/esp8266/Arduino/blob/3.1.2/cores/esp8266/Updater.cpp), avec constantes/structures dans [`Updater.h`](https://github.com/esp8266/Arduino/blob/3.1.2/cores/esp8266/Updater.h).
+
+| Situation | Effet prouvé dans le code public | Ce que cela **ne** garantit **pas** |
+|---|---|---|
+| `begin(size, ...)` alors que `_size > 0` | Retourne `false` si une session Updater est déjà active | Aucune liaison à l'identité réseau ni annulation de l'ancienne session |
+| `write(data,len)` avec `hasError()` ou `!isRunning()` | Retourne **0**, sans écrire les données fournies dans cet appel | Pas un test d'authentification ; un Updater déjà actif peut accepter les écritures du mauvais appelant si l'application les laisse passer |
+| `write` au-delà de la taille autorisée | Déclenche `UPDATE_ERROR_SPACE`, puis le chemin `_setError()` invalide la session | Ne prouve pas que l'appelant a été autorisé à commencer la mise à jour |
+| `_setError(...)` | Réinitialise l'état de mise à jour en appelant `_reset()` | Ne prouve pas l'effacement physique de données déjà placées en zone staging |
+| `end(true)` | Autorise à finaliser selon les octets effectivement reçus : `_size = progress()` si les autres vérifications passent | **N'impose pas à lui seul** la taille exacte attendue d'un candidat SHINO |
+| `end` sur `U_FLASH` après les vérifications de ce Core | Programme la commande `eboot ACTION_COPY_RAW` | Ne prouve ni l'exécution eboot, ni le boot d'une image OEM, ni la validation postboot |
+
+Une lecture directe de [`ESP8266HTTPUpdateServer-impl.h` 3.1.2](https://github.com/esp8266/Arduino/blob/3.1.2/libraries/ESP8266HTTPUpdateServer/src/ESP8266HTTPUpdateServer-impl.h) montre que le callback START retourne immédiatement si l'authentification échoue, **sans appeler explicitement `Update.end()` dans cette branche** ; cela n'autorise **aucune conclusion de vulnérabilité OEM** puisque les requêtes, préconditions et lifetimes réels ne sont pas établis. Pour le produit SHINO, il faut néanmoins vérifier la gestion des sessions déjà ouvertes, des interruptions et des transferts suivants.
+
+### Critères concrets pour SHINO, à vérifier dans son code actuel et ses tests
+
+Une solution robuste exige que chaque réception fasse l'objet d'une **autorisation liée à une transaction identifiée et bornée**, validée **avant les effets flash** ; qu'un nouveau START invalide proprement tout état précédent non autorisé ; que WRITE/END/ABORTED et les interruptions refusent les anciennes transactions ; que `end(true)` ne soit jamais pris pour une validation de taille sans contrôle applicatif de la **longueur, du SHA et de la signature attendus** ; et que **commande eboot créée, firmware installé et firmware effectivement démarré** restent trois résultats distincts.
+
+**ÉTAT :** vérification de contrat source **PROUVÉE POUR LE CORE PUBLIC**. **HOLD POUR LE BINAIRE OEM** : version exacte du Core compilé, état d'autorisation effectif de chaque requête, appel BEGIN `0x402246DC` encore non désassemblé, activation eboot et postboot. **HOLD POUR LE FIRMWARE SHINO** tant qu'une revue/test sur son code au commit concerné n'a pas été faite. Ce document n'implémente pas ces contrôles et ne change aucun composant.
+
+**Aucune opération SmallTV, Wi-Fi, UART, flash, OTA, reboot, fusion, modification du firmware ni intervention B5.3.**
