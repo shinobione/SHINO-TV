@@ -14,6 +14,7 @@ on:
       - 'tools/test_m9_b5_offline_source_pins.py'
       - 'tools/m9_signed_ota_runner.py'
       - 'tools/m9_stagea_source_gate.py'
+      - 'tools/test_link_m2_win32_smoke.py'
 
 permissions:
   contents: read
@@ -38,3 +39,26 @@ jobs:
         run: python -m unittest discover -s tools -p 'test_link_m2_source_identity.py' -v
       - name: Exercise both retained Mission 9 historical identity gates
         run: python -m unittest discover -s tools -p 'test_m9_b5_offline_source_pins.py' -v
+
+  real-windows-tray:
+    name: LINK M2 actual Win32 pystray backend smoke (NO DEVICE)
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install existing LINK tray dependencies only
+        run: python -m pip install -r companion/requirements-link.txt
+      - name: Import the actual Win32 pystray backend (not fake module)
+        run: python -c "import sys, pystray; from PIL import Image; assert sys.platform == 'win32' and pystray.Icon.HAS_MENU and pystray.Icon.HAS_MENU_RADIO; print('WIN32_BACKEND_IMPORT_PASS')"
+      - name: Run M1 / M2 / LINK regressions without a network sender
+        run: |
+          python -m unittest discover -s companion -p 'test_link_display_modes.py' -v
+          python -m unittest discover -s companion -p 'test_link_mode_tray.py' -v
+          python -m unittest discover -s companion -p 'test_shino_link.py' -v
+      - name: Exercise real Win32 menu callbacks and bounded icon lifecycle
+        run: python -m unittest discover -s tools -p 'test_link_m2_win32_smoke.py' -v
+      - name: Inspect per-user startup status read only
+        run: python companion/shino_link.py --autostart status
