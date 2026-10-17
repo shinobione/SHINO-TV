@@ -22,7 +22,7 @@
 
 namespace ShinoM3C {
 
-enum class Phase : uint8_t { Header, AuthenticatedHeader, VerifiedFrame, Reject };
+enum class Phase : uint8_t { Header, AuthenticatedHeader, BodyDigestMatched, VerifiedFrame, Reject };
 enum class Mode : uint8_t { Auto, ClockWeather, Monitoring, Music };
 struct Result {
     Mode mode = Mode::Auto;
@@ -84,7 +84,7 @@ public:
         const bool sameHash = constantTime(got, declaredBodyHash_, 32u);
         clear(got, sizeof(got));
         if (!hashOk || !sameHash || !exactCanonicalBody()) return deny();
-        phase_ = Phase::VerifiedFrame;
+        phase_ = Phase::BodyDigestMatched;
         return phase_;
     }
 
@@ -92,8 +92,9 @@ public:
                                   uint32_t elapsedMs) {
         // A HASH-MATCHED body is not an applied command. Explicit FIN
         // and zero unread queued bytes are required before further review.
-        if (phase_ != Phase::VerifiedFrame || !peerClosed ||
+        if (phase_ != Phase::BodyDigestMatched || !peerClosed ||
             pendingBytes != 0u || elapsedMs > kBodyDeadlineMs) return deny();
+        phase_ = Phase::VerifiedFrame;
         return phase_;
     }
     Phase closeOrTimeout() {
