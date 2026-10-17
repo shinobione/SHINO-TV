@@ -152,7 +152,7 @@ class Binding:
                 or not any(addr in block for block in (
                     ipaddress.ip_network("10.0.0.0/8"),
                     ipaddress.ip_network("172.16.0.0/12"),
-                    ipaddress.ip_network("192.168.0.0/16"))):
+                    ipaddress.ip_network("192.168.0.0/16")))):
             raise ContractError("INVALID_HOST")
         _hex(self.device, _HEX16, "DEVICE")
         _hex(self.boot, _HEX32, "BOOT")
