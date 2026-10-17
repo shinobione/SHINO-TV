@@ -10,13 +10,21 @@ les changements de contexte (Spotify, jeu, télémétrie) jusqu'au retour explic
 à Automatique. La page web existante reste un accès secondaire aux diagnostics
 et au secours ; elle n'est pas remplacée ni désactivée par cette étude.
 
-Ne pas confondre cette cible avec l'état installé. Au checkpoint physique B5.1
-du 13 octobre, le propriétaire a rapporté un boot/LAN/Freebox, LittleFS, les
-quatre mesures via LINK sur PC Ethernet. B5.2 horloge et publisher sont des
-travaux offline dans les PR #48/#49, non qualifiés sur le SmallTV. Le rendu
-musical natif et les pochettes relèvent d'une intégration future ; l'horloge
-et la météo autonomes PC éteint demandent un fournisseur indépendant du PC,
-une synchronisation de l'heure et des essais physiques distincts.
+Ne pas confondre le contrat futur de sélection avec les fonctionnalités déjà
+installées. **Constat physique propriétaire actualisé au 17 octobre 2026 :**
+B5.2 a réellement affiché l'horloge et les quatre métriques grâce à LINK
+(validation de l'usage, au-delà des preuves HOST initiales des PR #48/#49).
+Puis B5.3 LEAN a été installée par OTA unique. Sa nouvelle identité a été
+confirmée par une lecture Digest postboot ; LittleFS est conforme au contrôle,
+LINK envoie de nouveau des métriques fraîches. Le propriétaire a observé
+heure/date pendant cinq minutes avec le PC éteint, sans gel/redémarrage,
+puis le retour des quatre cartes à la reprise de LINK. **Fonctionnement
+utilisateur B5.3 confirmé.** La source exacte SNTP sur appareil, les extrema
+mémoire, l'historique de synchro et une longue endurance restent NON VÉRIFIÉS.
+B5.3 LEAN exclut volontairement le client HTTPS météo ; la ligne météo
+demeure `WEATHER --`. La météo fonctionnelle et la scène musicale native
+restent des évolutions à part, mais **l'horloge autonome ne doit pas être
+présentée comme non installée**.
 
 ## Décision d'architecture à instruire
 **Préférence : faire évoluer LINK, ne pas créer un second agent concurrent.**
@@ -63,7 +71,9 @@ simple effet CSS/masquage improvisé. Chaque écran doit tenir réellement en
    Après boot appareil ou redémarrage LINK, réconciliation prudente par lecture
    du mode/identité/compatibilité ; ne pas supposer que le SmallTV se souvient.
    Pour un PC éteint, le mode automatique autonome nécessite alimentation USB
-   persistante et fournisseurs de temps/météo côté SmallTV : NON VÉRIFIÉ.
+   persistante côté USB. L'horloge sans PC a déjà été observée pendant cinq
+   minutes sur B5.3 ; la source SNTP exacte n'a pas été confirmée par le
+   journal. La météo autonome n'est pas présente dans B5.3 LEAN.
 5. Après commande avec résultat réseau ambigu : **UNKNOWN/HOLD, aucun renvoi
    aveugle**. Une nouvelle commande requiert réconciliation sûre et intention
    fraîche ; ne jamais rejouer automatiquement un POST déjà potentiellement
@@ -123,18 +133,20 @@ recovery, auto-start et mise à jour seront vérifiés sur Windows avant livrais
 ## Découpage proposé et critères de sortie
 | Phase | Portée | Validation et barrière |
 | --- | --- | --- |
-| **M0 — Inventaire / décision** | Revoir PR actives, HEADs, B5.1 installé, B5.2 et pilotes PR #40 ; relever contrats telemetry/Digest/tray, état des scènes, exigences 240² et accès web | Document de décision sans firmware modifié ; dépendances et risques notés |
+| **M0 — Inventaire / décision** | Revoir PR actives, HEADs, B5.3 LEAN installé et B5.2 validée auparavant ; relever contrats telemetry/Digest/tray, état des scènes et pilotes PR #40, exigences 240² et accès web | Document de décision sans firmware modifié ; dépendances et risques notés |
 | **M1 — Politique pure HOST** | Machine `AUTO / CLOCK_WEATHER / MONITORING / MUSIC`, priorité manuelle et décisions fallback ; tests d'événements et prévisualisation 240×240 | Tests Windows/CI de la table des transitions, sans aucun contact SmallTV |
 | **M2 — Tray UX / configuration PC** | Menu radio + Auto, mode demandé/confirmé/inconnu ; fenêtre de configuration optionnelle ; unique moteur, instance lock, état atomique local opt-in ; pas de nouveau sender | Smoke Windows/pystray, sortie sans console lorsque empaqueté ; telemetry/clock inchangées |
 | **M3 — Contrat contrôlé avec le firmware** | API d'admission étroite, capacités/version/identité, ACK de commande et lecture de statut, transactions protégées ; scène CLOCK_WEATHER distincte | Tests mauvais format/rejeu/digest concurrent/coupure/Wi-Fi/timeout/redémarrage sur HOST et code natif, revue heap/stack/flash |
-| **M4 — Intégration scènes et média** | Brancher les scènes natives existantes avec la politique ; construire l'autonomie NTP/météo séparément ; musique/pochette seulement après validation du transport/rendu | Tests 240×240, données périmées, PAUSED, no-art, reconnection, LAN ; consentement physique sur candidat exact |
+| **M4 — Intégration scènes et média** | Brancher les scènes natives avec la politique et préserver l'horloge B5.3 déjà opérationnelle hors PC ; ajouter ultérieurement la météo (absente du LEAN), puis musique/pochette après validation du transport/rendu | Tests 240×240, données périmées, PAUSED, no-art, reconnexion, LAN ; consentement physique sur candidat exact |
 | **M5 — Qualification et distribution** | EXE Windows utilisateur léger + autostart sans console, dépannage et documentation ; qualification hardware longue, stabilité et récupération | Essais PC et SmallTV réellement observés, mémoire, LCD, cold boot, AP secours, OTA distincte ; aucune install sans GO exact |
 
 Les étapes M1 et M2 sont possibles sans nouveau firmware, mais le SmallTV
 ne peut pas appliquer physiquement les choix tant que M3/M4 n'existent pas.
 Ne pas annoncer de date, de build physique, de taille ou de marge mémoire sans
-artefact/mesure. Les évolutions B5.2 horloge, B5.3 autonomie, musique et OTA
-conservent leurs validations indépendantes. Aucun merge ou déploiement impliqué.
+artefact/mesure. Les validations physiques d'usage B5.2 et B5.3 sont
+acquises au périmètre rapporté ci-dessus ; météo, sources SNTP exactes,
+musique, nouveaux contrôles et qualification OTA/mémoire prolongée conservent
+leurs gates indépendants. Aucun merge ni déploiement impliqué.
 
 ## Matrice minimale à tester avant un GO physique
 - AUTO: nouveau morceau, pause, arrêt, changement de source, PC déconnecté
