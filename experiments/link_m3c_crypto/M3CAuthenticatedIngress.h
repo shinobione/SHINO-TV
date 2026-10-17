@@ -163,7 +163,8 @@ private:
         if (!s.n || s.n>32u) return false;
         for (size_t i=0u;i<s.n;++i) {
             const char c=s.p[i];
-            if (!((c>='a'&&c<='z')||(c>='A'&&c<='Z')||c=='-'))
+            if (!((c>='a'&&c<='z')||(c>='A'&&c<='Z')||
+                  (c>='0'&&c<='9')||c=='-'))
                 return false;
         }
         return true;
