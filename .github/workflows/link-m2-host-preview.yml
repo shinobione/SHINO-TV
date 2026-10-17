@@ -9,6 +9,11 @@ on:
       - 'companion/test_link_display_modes.py'
       - 'companion/test_link_mode_tray.py'
       - '.github/workflows/link-m2-host-preview.yml'
+      - 'tools/link_m2_source_identity.py'
+      - 'tools/test_link_m2_source_identity.py'
+      - 'tools/test_m9_b5_offline_source_pins.py'
+      - 'tools/m9_signed_ota_runner.py'
+      - 'tools/m9_stagea_source_gate.py'
 
 permissions:
   contents: read
@@ -29,3 +34,7 @@ jobs:
         run: python -m unittest discover -s companion -p 'test_link_display_modes.py' -v
       - name: Exercise M2 pystray preview and real run_tray assembly with fakes
         run: python -m unittest discover -s companion -p 'test_link_mode_tray.py' -v
+      - name: Prove immutable B5.2 predecessor from reviewed M2 source
+        run: python -m unittest discover -s tools -p 'test_link_m2_source_identity.py' -v
+      - name: Exercise both retained Mission 9 historical identity gates
+        run: python -m unittest discover -s tools -p 'test_m9_b5_offline_source_pins.py' -v
