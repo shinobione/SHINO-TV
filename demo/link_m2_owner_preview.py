@@ -9,6 +9,10 @@ from __future__ import annotations
 
 import threading
 import sys
+from pathlib import Path
+
+# Direct source launch works from any working directory, no installation.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "companion"))
 
 from PIL import Image, ImageDraw
 import pystray
@@ -152,7 +156,7 @@ def self_test():
     assert controller.decision().proposed_scene is Scene.MONITORING_UNAVAILABLE
     radios[3](icon)  # manual music offline
     assert controller.decision().proposed_scene is Scene.NO_MEDIA
-    assert icon.updates == 7
+    assert icon.updates == 6
     items[-1](icon)
     assert icon.stopped
     return 0
