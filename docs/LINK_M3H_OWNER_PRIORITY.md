@@ -24,15 +24,30 @@ L'état local `Snapshot` sépare la sélection demandée et l'aperçu PC, la fra
 - Les signaux perdus affichent des scènes de repli honnêtes ; en MUSIQUE jamais de cartes métriques superposées. Les quatre mesures continuent à être collectées dans le banc même quand leur affichage est caché.
 
 `test_owner_priority.py` couvre 9 scénarios : AUTO et TTL, manuel/retour AUTO, priorité à l'envoi échu, panne + backoff, perte d'ACK, anti-rejeu et clics rapprochés, nouveau boot, entrées invalides, clics concurrents.
+Trois scénarios supplémentaires exercent la **vraie source C++**
+via le pipeline HOST : musique/mode manuel, échantillon invalide et
+continuité métriques après perte simulée d'ACK.
 
 ## Ce que M3-H n'intègre PAS
 
-**IMPORTANT : ce n'est pas encore « un même serveur ESP8266 »**. M3-G
-établit séparément la parité HOST de `FslessMetrics.cpp` + ArduinoJson
-7.4.3 dans de vrais sockets TCP. M3-H vérifie la **cohérence côté PC**
-entre la machine `LinkEngine`, la politique M1 et le contrat M3-A
-**simulé**. Les deux suites fonctionnent dans des laboratoires
-distincts : ni M3-G ni M3-H n'ont été fusionnés dans un listener réel.
+**NOUVEAU test M3-H source-exécuté :** un deuxième job compile le
+**vrai `firmware/src/boot/FslessMetrics.cpp` inchangé**, avec
+**ArduinoJson 7.4.3 réel**, puis le pilote via un **pipe stdin/stdout
+HOST**, alimenté par `companion/push_fsless_metrics.py::encode_sample`
+dans le **vrai `LinkEngine`**. Dans **un même scénario HOST**, les
+échantillons réellement acceptés en RAM par ce code C++ continuent
+d'arriver pendant une sélection musicale, un retour manuel en AUTO,
+un POST M3-A avec ACK simulé perdu et un défaut de validation
+locale. Les fichiers météo, firmware et LINK installé restent inchangés.
+
+**IMPORTANT : ce n'est pas encore « un même serveur ESP8266 »**.
+M3-G établit séparément la parité **HTTP localhost** de
+`FslessMetrics.cpp` + ArduinoJson et Digest fictif sur vrais sockets.
+M3-H lie **temporellement** le vrai `LinkEngine`, la politique M1,
+le code télémétrique C++ réel via **pipe local**, et le contrat M3-A
+**simulé en mémoire**. Le pipe n'est PAS HTTP ni réseau, et le
+`FakeDevice` M3-A ne confirme aucun véritable pixel SmallTV.
+Aucun de ces tests n'a fusionné les handlers dans un listener natif.
 
 Ne pas prétendre que M3-H possède : sockets M3-C/BearSSL à côté du
 Digest legacy dans un `WiFiServer` unique, autorité de boot et
