@@ -119,3 +119,57 @@ Le registre **`a3` testé à `0x402144C0` conserve nécessairement la valeur cha
 La comparaison est pertinente : la source [`ESP8266HTTPUpdateServer-impl.h` (Core 3.1.2)](https://github.com/esp8266/Arduino/blob/3.1.2/libraries/ESP8266HTTPUpdateServer/src/ESP8266HTTPUpdateServer-impl.h) teste explicitement `_authenticated` dans ses conditions WRITE/END, alors que **les instructions OEM décodées sur cette arête directe ne le montrent pas**. Cela peut provenir d'une variante OEM, d'optimisations ou d'un contrôle réparti ; ces explications sont encore **HYPOTHÈSES**.
 
 **Prochaine preuve prioritaire (V10)** : étudier le callee START et les régions `0x402143E4..0x402144C0` pour voir *comment* `_authenticated` est mis à jour et *si* le callback ou son invocateur empêche toute transition WRITE sans autorisation. Vérifier aussi les autres chemins qui accèdent à `this+0x20`, et démontrer un graphe fermé avant toute recommandation. **Aucune action physique autorisée ou réalisée.**
+
+
+## 7. Reçu Windows V10 analysé : affectation du champ d'authentification et candidat BEGIN
+
+**17 octobre 2026 — preuve réellement reçue après la préparation V10.** La section 4 et la section 6 reflètent l'état **avant** cette réception ; le statut actuel est donné ici.
+
+### Intégrité, couverture et limites du reçu
+
+- Fichier reçu : `SHINO-OEM-START-AUTH-V10-20261017-122743.zip` ;
+- **6 410 octets**, **SHA-256 calculé `88e71bd82d9d056a7b012abf121dbf3d3c9abc67332b9710ae7efd0bfd48dcd4`**, intégrité `ZipFile.testzip()` **PASS** ;
+- `start_auth_v10.json` + **12 listings Capstone**, **18 fenêtres** vérifiées par rapport au manifeste du rapport : **12 CAPSTONE**, **6 `HOLD_DECODE_STOP`** ; toutes les **19 ancres** requises sont présentes dans le reçu (11 ancres d'octets et 8 CALL0) ;
+- le reçu présente le statut **`HOLD_AUTHORIZATION_PREWRITE_BEGIN_FLASH_POSTBOOT_NOT_PROVEN`** et les SHA ZIP/BIN du firmware OEM V9.0.44 épinglé ;
+- les sorties Capstone sont **des fragments avec points d'entrée choisis**, pas un graphe d'atteignabilité ni une preuve matérielle. Les fenêtres depuis `0x402143E4`, `0x402143F0`, `0x4021440D`, `0x4021441B`, `0x40214438`, `0x40214470` restent HOLD.
+
+### Résultat nouveau : écriture du booléen d'autorisation pendant START
+
+Le listing `11_start_store_b_40214420.txt` contient, au mot près :
+
+```asm
+40214420  l32i a3,a12,0        ; retrouver this depuis objet lambda
+40214423  s8i a2,a3,0x20       ; mémoriser résultat booléen dans this+0x20
+40214426  l8ui a3,a3,0         ; lire this+0, candidat _serial_output
+40214429  bnez a2, . +0x1d    ; résultat non nul → cible calculée 0x40214449
+4021442C  beqz a3, . +0x14e   ; résultat nul et pas de sortie série → cible calculée 0x4021457D
+4021442F  l32i.n a0,a1,0xc
+...
+40214440  l32r a9,0x40214390
+40214443  jx a9
+```
+
+La disposition de l'objet correspond aux champs de [`ESP8266HTTPUpdateServer.h` 3.1.2](https://github.com/esp8266/Arduino/blob/3.1.2/libraries/ESP8266HTTPUpdateServer/src/ESP8266HTTPUpdateServer.h) : `this+0x20` est l'emplacement candidat `_authenticated` et `this+0` celui du booléen `_serial_output`. Le chemin en cas de résultat nul rejoint une sortie ou une action de diagnostic, conforme à l'architecture du serveur OTA public. **La source précise du booléen `a2`, calculée dans le trou de désassemblage `0x402143E4..0x40214420`, n'est pas établie** : nous prouvons sa sauvegarde et son branchement, pas les conditions exactes de `authenticate()`.
+
+**Constat local fortement étayé :** le firmware constructeur **sauvegarde puis teste** un résultat d'autorisation pendant START. Cela ne prouve pas que la configuration OEM impose un mot de passe non vide.
+
+### Le chemin WRITE reste distinct : absence de lecture directe observée, pas preuve de vulnérabilité
+
+Le reçu V10 recoupe `0x402143A3 : l32i.n a3,a2,4` puis `0x402143AE : bnez a14,...` sur l'arête non-START vers `0x402144C0 : beqz a3,...`. Le registre `a3` conserve sur **cette arête directe** le pointeur `this+4` (candidat `_server`). `0x402144C3` discrimine le statut WRITE, puis `0x402144C6 : addi a2,a2,0x24` précède `String.length()` sur le champ erreur candidat, et `0x402144EC` appelle `0x40224608` (WRITE très fortement identifié par V9).
+
+**Nous n'observons pas de lecture de `this+0x20` sur l'arête non-START décodée avant WRITE.** Le premier garde de ce chemin (`beqz a3`) ne teste donc pas directement `_authenticated`, contrairement aux clauses `_authenticated && status == UPLOAD_FILE_WRITE` et `_authenticated && status == UPLOAD_FILE_END` de la [source publique 3.1.2](https://github.com/esp8266/Arduino/blob/3.1.2/libraries/ESP8266HTTPUpdateServer/src/ESP8266HTTPUpdateServer-impl.h).
+
+**HOLD :** aucune preuve que le dispatch OEM appelle ce callback sur des chunks non autorisés, qu'il n'existe aucun contrôle en amont, que `Update` puisse rester actif entre requêtes, ou qu'une écriture non authentifiée soit effectivement possible. **Ne pas conclure à une vulnérabilité exploitable.** Il est néanmoins **non justifié** de déclarer que le chemin WRITE OEM est protégé par une lecture explicite de `_authenticated` dans le callback décodé.
+
+### Nouvelle cible BEGIN probable vérifiée dans les octets OEM officiels
+
+En plus du reçu Capstone V10, **les octets réels du BIN OEM V9.0.44 ont été relus séparément depuis son ZIP officiel**, au commit déjà épinglé `55d7877fcba8b1cb7a66a0830d35d5b374bc8540`. Deux motifs `CALL0` présents dans les blocs START convergent :
+
+| Site OEM | Octets directement lus | Cible CALL0 calculée depuis les octets | Note |
+|---|---|---|---|
+| `0x40214481` | `85 25 10` | **`0x402246DC`** | précédé de `42 a0 64` à `0x4021447C`, conforme à `movi a4,100` / **`U_FS=100`** |
+| `0x402144B2` | `85 22 10` | **`0x402246DC`** | branche voisine correspondant au candidat firmware |
+
+À la cible `0x402246DC`, les octets initiaux OEM sont **`12 c1 d0`** (prologue compatible avec fonction Xtensa). Le Core public définit [`U_FS=100` et `U_FLASH=0`](https://github.com/esp8266/Arduino/blob/3.1.2/cores/esp8266/Updater.h) et expose `UpdaterClass::begin(size,command,...)`. La convergence des deux branches et la constante `U_FS` constituent une **attribution forte mais encore HYPOTHÉTIQUE** de `0x402246DC ≈ Update.begin()` : **ces deux motifs CALL0 n'ont pas encore été décodés comme instructions atteignables dans les fenêtres V10**, et le corps de `0x402246DC` n'a pas été désassemblé.
+
+**Prochaine investigation bornée :** (1) décoder le trou `0x402143E4..0x40214420` pour trouver la provenance du booléen d'autorisation ; (2) décoder les deux frontières `0x40214481` et `0x402144B2` et `0x402246DC` pour confirmer BEGIN ; (3) étudier le **dispatch / préconditions** de la lambda d'upload avant de déclarer une garantie ou une faille. **Aucune modification SmallTV, UART, OTA, Wi-Fi, flash, firmware SHINO, Codex ou B5.3**.
