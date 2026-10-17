@@ -19,7 +19,12 @@ La CI compare les vecteurs OpenSSL M3-C/M3-F dans deux
 variantes et mesure réellement les frames `-fstack-usage`,
 la BSS, les autres sections et le BIN de deux ELF
 ESP8266 **inertes** ; échec obligatoire si la frame
-d'authentification ne baisse pas. Voir
+d'authentification ne baisse pas. **Premier résultat CI ciblé
+M3-K #39070484065 PASS (avant dernier commit documentaire) :
+frame HMAC 992 → 640 octets (−352), BSS +352 octets,
+BIN identique 276 544 octets ; frame bodyByte 352 inchangée**.
+Ces valeurs appartiennent aux images inertes, pas à B5.3.
+Voir
 [M3-K — hypothèse, protocole et HOLD](LINK_M3K_HMAC_STACK.md).
 
 **M3 produit, firmware installé, HomeLAN/Digest, OTA,
