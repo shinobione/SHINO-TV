@@ -46,3 +46,47 @@ jobs:
           assert "type(transport) is not LabTransport" in lab
           print("M3H_PURE_HOST_NO_DEVICE_TRANSPORT_PASS")
           PY
+
+
+  actual-source-timeline:
+    name: Real LINK encoded samples through unchanged FslessMetrics ArduinoJson 7.4.3 plus M3-A mode timeline
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    env:
+      PYTHONPATH: companion:experiments/link_m3_control_contract:experiments/link_m3h_host
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install only pinned lab ArduinoJson 7.4.3 dependency
+        run: |
+          python -m pip install 'platformio==6.1.18'
+          pio pkg install -d experiments/link_m3g_real -e deps_for_host
+      - name: Assert real exact ArduinoJson version and original B5.3 blobs
+        run: |
+          python -m unittest discover -s experiments/link_m3g_real -p test_exact_source.py -v
+          python - <<'PY'
+          from pathlib import Path
+          root=Path("experiments/link_m3g_real/.pio/libdeps/deps_for_host/ArduinoJson/src")
+          v=(root/"ArduinoJson/version.hpp").read_text()
+          assert '#define ARDUINOJSON_VERSION "7.4.3"' in v
+          print("M3H_PINNED_ARDUINOJSON_SOURCE_PASS")
+          PY
+      - name: Compile original unmodified B5.3 FslessMetrics.cpp with flushable HOST input pipe
+        run: |
+          g++ -std=c++17 -O1 -Wall -Wextra -Werror -pedantic \
+            -I tools/host_arduinojson_stubs \
+            -I firmware/include \
+            -I experiments/link_m3g_real/.pio/libdeps/deps_for_host/ArduinoJson/src \
+            experiments/link_m3h_host/m3h_metrics_pipe.cpp \
+            firmware/src/boot/FslessMetrics.cpp \
+            -o "${{ runner.temp }}/m3h_real_metrics"
+      - name: Execute LINK scheduler + actual original C++ telemetry + one-intent simulated mode timeline
+        env:
+          M3H_ORIGINAL_METRICS_PIPE_BIN: ${{ runner.temp }}/m3h_real_metrics
+        run: python -m unittest discover -s experiments/link_m3h_host -p test_actual_metrics_timeline.py -v
