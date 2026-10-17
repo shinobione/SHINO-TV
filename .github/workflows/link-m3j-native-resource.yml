@@ -1,0 +1,83 @@
+name: LINK M3-J native Xtensa resource A-B gate (NO DEVICE)
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/link_m3j_native/**'
+      - 'docs/LINK_M3J_NATIVE_RESOURCE_GATE.md'
+      - 'docs/ROADMAP.md'
+      - '.github/workflows/link-m3j-native-resource.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-native-ab-build:
+    name: Inert native B5.3 metrics vs same-plus-M3-C WiFiServer/BearSSL A-B
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Verify unchanged exact B5.3 telemetry/HomeLAN sources
+        run: |
+          python -m unittest discover -s experiments/link_m3g_real -p 'test_exact_source.py' -v
+          python -m unittest discover -s experiments/link_m3e_legacy -p 'test_b53_source_pins.py' -v
+      - name: Verify inert laboratory never binds network or writes firmware
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('experiments/link_m3j_native/src/main.cpp').read_text()
+          metrics=Path('experiments/link_m3j_native/src/original_metrics_source.cpp').read_text()
+          for forbidden in ('.begin()', 'WiFi.begin', 'WiFi.mode', 'WiFi.persistent',
+                            'Update.begin', 'LittleFS.begin', 'ESP.restart',
+                            'server.on(', 'server.handleClient('):
+              assert forbidden not in s, forbidden
+          assert 'volatile bool inertLabProbeEnabled=false;' in s
+          assert 'm3j_crypto_probe' in s
+          assert '#include "../../../firmware/src/boot/FslessMetrics.cpp"' in metrics
+          print('M3J_NO_DEVICE_NO_ACTIVE_LISTENER_SOURCE_GUARD_PASS')
+          PY
+      - name: Install pinned native ESP8266 and ArduinoJson dependencies
+        run: python -m pip install 'platformio==6.1.18'
+      - name: Compile/link inert Xtensa baseline using actual B5.3 metrics
+        run: pio run -d experiments/link_m3j_native -e m3j_inert_baseline
+      - name: Compile/link exact native WiFiClient and BearSSL M3-C added gate
+        run: pio run -d experiments/link_m3j_native -e m3j_inert_m3_gate
+      - name: Extract actual ELF sections, BIN byte sizes/hashes, compiler stack frame samples
+        run: |
+          python experiments/link_m3j_native/report_resource_delta.py
+          cat experiments/link_m3j_native/m3j_derived_inert_resource_receipt.json >> "${GITHUB_STEP_SUMMARY}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m3j-inert-xtensa-resource-delta
+          path: experiments/link_m3j_native/m3j_derived_inert_resource_receipt.json
+          if-no-files-found: error
+          retention-days: 7
+
+  existing-traffic-baseline:
+    name: Existing actual M3-I real TCP and M3-F native HOST authentication regressions
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Execute existing pure HOST HMAC/legacy HELD gate tests
+        run: |
+          g++ -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \
+            -fno-exceptions -fno-rtti \
+            experiments/link_m3f_native/test_single_port_pump.cpp \
+            -lcrypto -o "${{ runner.temp }}/m3f_host"
+          "${{ runner.temp }}/m3f_host"
+      - name: Preserve M3-A strict no-repeat contract
+        run: python -m unittest discover -s experiments/link_m3_control_contract -p 'test_*.py' -v
