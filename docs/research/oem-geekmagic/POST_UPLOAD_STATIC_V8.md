@@ -91,7 +91,71 @@ Dans le [Core ESP8266 3.1.2 épinglé, `ESP8266WebServer.h`](https://github.com/
 
 **Prochaine preuve ciblée :** établir la continuité de POST B dans les quatre zones non décodées, notamment entre `0x402143E4` et `0x402144C0` et autour de `0x4021454F` ; suivre les cibles directes `0x4022FD4C`, `0x40224608` et `0x40224830` et corréler leurs effets aux champs de `HTTPUpload` et de l'Updater. Les 11 listings réussis **ne prouvent pas** la couverture du callback entier. Aucune OTA, UART, écriture flash, reboot, Wi-Fi ni modification B5.3.
 
-## 5. Verrou historique et objectif restant
+## 5. Corrélation des appels WRITE/END avec `HTTPUpload` et `UpdaterClass` (17 octobre)
+
+**Nouvelle qualification statique, fondée sur le ZIP V8 réellement reçu :** lecture directe des fichiers Capstone, vérification automatique de **15 instructions à leurs adresses exactes** et de **4 destinations CALL0 recalculées**. Toutes les assertions sont **PASS**, uniquement sur les listings du reçu OEM V8 ; elles ne constituent ni une décompilation de la cible, ni une mesure mémoire native, ni une OTA.
+
+**Confrontation à deux sources épinglées :** [`ESP8266WebServer.h` du Core 3.1.2](https://github.com/esp8266/Arduino/blob/3.1.2/libraries/ESP8266WebServer/src/ESP8266WebServer.h) définit `HTTPUpload` avec `status`, trois `String` (`filename`, `name`, `type`), puis `totalSize`, `currentSize`, `contentLength`, et enfin `uint8_t buf[HTTP_UPLOAD_BUFLEN]`. [`WString.h` du même tag](https://github.com/esp8266/Arduino/blob/3.1.2/cores/esp8266/WString.h) fournit un `String` avec union pointeur/SSO compatible avec **12 octets** sur ESP8266 32 bits. Le modèle de disposition mémoire *dans l'ABI 32 bits usuelle* donne :
+
+| Position calculée dans `HTTPUpload` | Champ / taille modèle |
+|---|---|
+| `+0x00` | `HTTPUploadStatus` / 4 octets |
+| `+0x04`, `+0x10`, `+0x1C` | trois `String` / 12 octets chacun |
+| `+0x28` | `totalSize` |
+| **`+0x2C`** | **`currentSize`** |
+| `+0x30` | `contentLength` |
+| **`+0x34`** | **`buf`** |
+
+**Limite :** ces offsets sont le **résultat d'un calcul ABI sur les sources publiques**, pas des `offsetof` mesurés dans le binaire propriétaire. Leur concordance avec deux accès indépendants dans les listings OEM constitue une forte indication de la même structure/layout.
+
+### Branche WRITE candidate, depuis le désassemblage réel `0x402144C0`
+
+```asm
+402144C3  bnei    a14, 1, ...
+402144C6  addi    a2, a2, 0x24
+402144C9  call0   0x4022FD4C
+...
+402144E4  l32i.n  a4, a13, 0x2C   ; size argument candidate
+402144E6  l32r    a2, 0x40211FA0 ; literal holding global object pointer
+402144E9  addi    a3, a13, 0x34   ; buffer address candidate
+402144EC  call0   0x40224608
+402144EF  l32i.n  a3, a13, 0x2C
+402144F1  bne     a2, a3, ...     ; compare returned bytes to requested length
+```
+
+L'ABI Xtensa CALL0 permet l'interprétation candidate `a2=this`, `a3=data`, `a4=len`. La fonction du Core [`UpdaterClass::write(uint8_t* data,size_t len)`](https://github.com/esp8266/Arduino/blob/3.1.2/cores/esp8266/Updater.cpp) retourne précisément un `size_t` comparé par l'appelant à `upload.currentSize`. **Attribution `0x40224608 ≈ Update.write` : HYPOTHÈSE FORTEMENT ÉTAYÉE ; contenu de `0x40224608` NON ENCORE DÉSASSEMBLÉ.**
+
+Le callee `0x4022FD4C`, appelé juste avant le traitement WRITE puis END sur un sous-objet à `+0x24`, peut représenter un test de longueur/erreur semblable à `_updaterError.length()` dans le [serveur HTTP OTA 3.1.2](https://github.com/esp8266/Arduino/blob/3.1.2/libraries/ESP8266HTTPUpdateServer/src/ESP8266HTTPUpdateServer-impl.h). **NON ATTRIBUÉ** tant que son corps n'est pas examiné.
+
+### Branche END candidate, depuis `0x40214500`
+
+```asm
+40214500  bnei    a14, 2, ...
+40214503  addi    a2, a2, 0x24
+40214506  call0   0x4022FD4C
+...
+4021450F  l32r    a2, 0x40211FA0
+40214512  movi.n  a3, 1
+40214514  call0   0x40224830
+```
+
+La signature correspond à `UpdaterClass::end(bool evenIfRemaining)` appelé avec `true` dans [ESP8266HTTPUpdateServer-impl.h](https://github.com/esp8266/Arduino/blob/3.1.2/libraries/ESP8266HTTPUpdateServer/src/ESP8266HTTPUpdateServer-impl.h). **Attribution `0x40224830 ≈ Update.end(true)` : HYPOTHÈSE FORTEMENT ÉTAYÉE, pas encore prouvée par le corps du callee.**
+
+### Contrôle automatique exact sur V8
+
+- **15/15** correspondances instruction/adresse/opcode/opérandes **PASS**, sur les listings `05_POST_B_first_branch_target_area` et `07_POST_B_downstream_2`.
+- **4/4** calculs de cibles de **CALL0** **PASS** :
+  - `0x402144C9 → 0x4022FD4C` ;
+  - `0x402144EC → 0x40224608` ;
+  - `0x40214506 → 0x4022FD4C` ;
+  - `0x40214514 → 0x40224830`.
+- Le ZIP reçu a de nouveau passé `ZipFile.testzip()` et son SHA-256 est identique au reçu V8 ci-dessus. Aucune nouvelle analyse Capstone réelle ni build du firmware effectuée durant cette corrélation.
+
+**Ce qui est plus solide désormais :** trois correspondances indépendantes avec le code public — tests de statut START/WRITE/END, **offsets `currentSize/buf`**, et **signature + contrôle du résultat `write` / argument `end(true)`**. Cette convergence identifie de façon **fortement probable** le moteur Updater utilisé. Elle **ne prouve pas** la branche START/`Update.begin`, la protection effective avant écriture, les éventuelles signatures, le retour d'erreur, la commande eboot ou le postboot.
+
+**PROCHAINE ACTION UNIQUE :** valider les **corps réels** de `0x40224608` et `0x40224830` et le test commun `0x4022FD4C` par un désassemblage Xtensa borné (sans balayage large, sans opération appareil) ; ensuite seulement retracer `Update.begin` dans START et les contrôles d'authentification.
+
+## 6. Verrou historique et objectif restant
 
 Identifier, dans les futurs listings Capstone, les instructions/branches réellement exécutables à partir de POST B et attribuer les transitions `UPLOAD_FILE_START`, `WRITE`, `END`, `ABORTED` **sans les importer du code Arduino par hypothèse**. Il faudra ensuite prouver ou maintenir HOLD pour les appels `Update.begin/write/end`, la protection avant écriture, et eboot.
 
