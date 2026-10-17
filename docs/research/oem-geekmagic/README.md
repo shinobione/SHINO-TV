@@ -87,7 +87,7 @@ Les kits de diagnostic et ZIP Windows restent **hors du dépôt**. Aucun BIN pro
 - [Reçu V7 : analyse des fonctions POST et construction HTTP Basic 401](POST_CALLBACK_V7.md) — défi authentification repéré dans le code OEM, parcours d'upload/flash encore HOLD.
 - [Continuation POST B, reçus V8 et attribution WRITE/END](POST_UPLOAD_STATIC_V8.md) — machine d'états, arguments et appels rapprochés des sources du Core.
 - [Reçu V9 : identification statique de la fonction Updater WRITE](UPDATER_CALLTRACE_V9.md) — exacts offsets ABI, contrôle d'espace et code d'erreur ; END/auth/eboot toujours HOLD.
-- [V10 : définir la preuve d'autorisation avant écriture (START/AUTH)](START_AUTH_BOUNDARY_V10.md) — branches et conditions à prouver, 18 fenêtres ciblées, garde-fous inchangés.
+- [Reçu Windows V10 : affectation `_authenticated`, branche START et candidat `Update.begin`](START_AUTH_BOUNDARY_V10.md) — 12/18 fenêtres décodées ; garde WRITE direct sans lecture d'autorisation visible, authentification effective/dispatch/eboot toujours HOLD.
 - [Audit SHINO historique fabricant](../../FIRMWARE_AUDIT_01.md) et [layout comparatif](../../COMPARATIVE_FLASH_LAYOUT_AUDIT.md).
 - [Manifeste OEM V9.0.44 historiquement épinglé](../../../recovery/factory_ota_v9_0_44.json).
 - [Firmware officiel GeekMagic V9.0.44, commit épinglé](https://github.com/GeekMagicClock/smalltv-ultra/blob/55d7877fcba8b1cb7a66a0830d35d5b374bc8540/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip).
