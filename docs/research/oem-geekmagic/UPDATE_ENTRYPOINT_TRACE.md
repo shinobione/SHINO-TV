@@ -175,6 +175,51 @@ Les destinations sont **des cibles d'appel selon les octets**, pas des fonctions
 
 **État après cette passe :** le blocage « instruction de branchement manquante » est levé ; **l'attribution de la routine HTTP/OTA reste HOLD**. Aucune comparaison sécurité du mécanisme constructeur vs SHINO n'est validée, aucune modification firmware proposée. Aucun nouveau kit Windows nécessaire pour cette étape, aucun contact SmallTV ni Codex.
 
+## Reçu HTTP Calltrace V6 : trois méthodes HTTP et callbacks candidats (17 octobre 2026)
+
+**Source principale :** fichier propriétaire `SHINO-OEM-CALLTRACE-20261017-102157.zip` transmis dans cette conversation et inspecté directement. Archive **5 598 octets**, SHA-256 recalculé **`e82a9777828af9abac14cec4f6e3ce9d5389af5305de7cd1fb902c2a1a9e3f2e`** ; test intégrité ZIP **PASS**. Contenu : `http_call_trace_v6.json` et **8 listings Capstone Xtensa**. Le rapport indique `HOLD_PARTIAL_FUNCTION_WINDOWS` et concordance avec les SHA du ZIP et BIN OEM V9.0.44 déjà documentés. Il demandait **9 fenêtres** : **8 avec instructions décodées**, **une HOLD** (`0x40211675`, Capstone n'a décodé aucune instruction à partir de cette adresse). L'instruction compacte de cette adresse avait été analysée **séparément**, sans démonstration par Capstone V6. Les 7 cibles CALL0 du contexte `/update` sont reprises et vérifiées comme dans la passe précédente.
+
+### Nouvelle concordance structurelle forte (au-delà des chaînes)
+
+Le listing `00_unique_callee_A_from_update_40211214.txt` commence sur un vrai prologue à `0x40211214` et se termine par `ret.n` à `0x40211321`. Il présente **trois blocs répétés de construction/inscription de callbacks** (qualification fonctionnelle provisoire), utilisant successivement des constantes numériques distinctes dans `a4` :
+
+| Adresse Xtensa dans le reçu V6 | Octets | Valeur mise dans `a4` | Appel CALL0 suivant | Correspondance exacte dans l'énumération Arduino ESP8266 3.1.2 |
+|---|---|---|---|---|
+| `0x40211260` | `0c14` | `1` | `0x40211268 → 0x402110F8` | **HTTP_GET** |
+| `0x402112A5` | `0c74` | `7` | `0x402112AF → 0x40211070` | **HTTP_OPTIONS** |
+| `0x402112F2` | `0c34` | `3` | `0x402112FC → 0x40211070` | **HTTP_POST** |
+
+La source épinglée [`ESP8266WebServer.h` v3.1.2](https://github.com/esp8266/Arduino/blob/3.1.2/libraries/ESP8266WebServer/src/ESP8266WebServer.h) définit **exactement** `enum HTTPMethod { HTTP_ANY, HTTP_GET, HTTP_HEAD, HTTP_POST, HTTP_PUT, HTTP_PATCH, HTTP_DELETE, HTTP_OPTIONS }`, donc GET=1, OPTIONS=7 et POST=3. La source épinglée [`ESP8266HTTPUpdateServer-impl.h` v3.1.2](https://github.com/esp8266/Arduino/blob/3.1.2/libraries/ESP8266HTTPUpdateServer/src/ESP8266HTTPUpdateServer-impl.h) inscrit précisément GET, OPTIONS et POST sur le chemin fourni à `setup(...)` ; POST est doté d'un callback final et d'un callback d'upload.
+
+De plus, le contexte déjà décodé du BIN OEM `0x40211648..0x4021165C` charge la chaîne `/update` depuis son mot-littéral `0x40211440`, prépare un objet et appelle **directement `0x40211214`**. Les trois méthodes sont donc relevées **dans la fonction appelée depuis le code qui utilise `/update`**, et non dans un fragment sans rapport. Les appels/valeurs vérifiables et leur ordre constituent une **concordance d'architecture beaucoup plus forte** que la simple présence de messages d'OTA dans les données.
+
+Le listing V6 montre également des **groupes de littéraux préparés différemment** avant les trois appels :
+- avant la méthode 1 : `l32r` vers deux mots IROM (`0x402111EC`, `0x402111F0`) ;
+- avant la méthode 7 : `l32r` vers quatre mots (`0x402111F4` à `0x40211200`) ;
+- avant la méthode 3 : `l32r` vers quatre mots (`0x40211204` à `0x40211210`).
+
+Ce schéma est **compatible** avec des fonctions et objets de callbacks distincts, y compris callbacks de réception pour OPTIONS/POST. **Le rôle de chacun des pointeurs demeure non attribué** sans inspection de ses cibles et des constructeurs `0x40211070` / `0x402110F8`.
+
+**Interprétation révisée :** l'hypothèse que GeekMagic réutilise/transpose le modèle `ESP8266HTTPUpdateServer` pour les routes GET / OPTIONS / POST de `/update` est désormais **fortement étayée statiquement**. Il reste **NON VÉRIFIÉ** que le binaire utilise exactement la version 3.1.2, que la gestion des callbacks copie littéralement le code public, qu'un utilisateur/mot de passe soit configuré, qu'une signature soit imposée, ou que les branches d'écriture flash/eboot exécutées soient identiques.
+
+### Autres résultats V6 et limites
+
+| Fenêtre | Constat de désassemblage reçu | Attribution |
+|---|---|---|
+| `0x4021134C` | prologue, accès à un champ d'objet `+0xB8`, **seulement huit instructions décodées** avant arrêt ; branche complète hors fenêtre utile | **HOLD** |
+| `0x40224CEC` | constructeur/initialisateur plausible : mise à zéro de champs puis appel, saut indirect ; `ret.n` accessible sur une branche | **HYPOTHÈSE utilitaire générique** |
+| `0x40224AF8` | lecture d'un octet à `+0x0B`, branche sur bit 7, indirection ; seulement sept instructions | **HOLD**, probable utilitaire de chaîne/objet |
+| `0x4022088C` | lit champ `+0x10`, si non nul appelle une autre fonction puis met le champ à zéro et retourne | **PROUVÉ localement**, interprétation libération/cleanup **HYPOTHÈSE** |
+| `0x402208BC` | manipule des sous-champs, appelle `0x4022088C` et deux routines non nommées ; listing interrompu avant la fin | **HOLD sur fonction métier et traitement OTA** |
+| `0x4022FD3C` | une seule instruction `l32i.n a5,a2,8`, puis arrêt du décodeur | **HOLD** |
+| `0x4021163F` | `l32r` pour la chaîne `/update`, appels et chargements objets déjà trouvés en V5 | **PROUVÉ localement**, sémantique globale **HOLD** |
+
+**Bilan V6 :** le point d'entrée **probable d'enregistrement GET/OPTIONS/POST pour `/update`** est maintenant clairement localisé autour de `0x40211214` et de ses helpers `0x40211070` / `0x402110F8`. En revanche, **le gestionnaire d'upload/validation de firmware n'a pas encore été identifié ni suivi jusqu'au Core Updater/eboot**. Le rapport final demeure `HOLD_PARTIAL_FUNCTION_WINDOWS`, et la validation physique du SmallTV est entièrement hors périmètre.
+
+**Prochaine preuve prioritaire :** résoudre les dix mots de la table de callbacks `0x402111EC..0x40211210` vers leurs véritables fonctions (avec contrôle des frontières et des retours), puis analyser les chemins d'authentification, `Update.begin/write/end`, erreurs et postboot. Les fonctions `0x40211070` et `0x402110F8` sont de bons candidats à inspecter pour attribuer l'enregistrement HTTP ; **ne pas inventer leurs signatures**.
+
+**Aucun changement firmware, flash, OTA, SmallTV, Codex ni B5.3.**
+
 ## Confrontation aux sources publiques Arduino (sans attribution OEM)
 
 Le composant **ESP8266HTTPUpdateServer** d'Arduino Core 3.1.2 possède une procédure connue : formulaire GET, réception POST, authentification selon paramètres, `Update.begin`, `Update.write`, `Update.end`, redémarrage ; le Core Updater peut déposer une commande eboot. Des chaînes OEM correspondent à ce composant public. **Il n'est pas prouvé** que GeekMagic utilise cette version exacte, la même configuration d'authentification ni ces chemins d'exécution.
