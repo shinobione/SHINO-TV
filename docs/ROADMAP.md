@@ -1,5 +1,38 @@
 # SHINO // TV — Roadmap
 
+## Évolution planifiée — SHINO // LINK Control Center / modes d'affichage (17 octobre 2026)
+
+**Décision produit : PLANIFIÉE / NON IMPLÉMENTÉE ; qualification appareil NON VÉRIFIÉE.**
+Le propriétaire propose de faire évoluer le tray/compagnon Windows existant en un
+centre de contrôle léger : choix immédiat **Automatique**, **Horloge / Météo**,
+**Monitoring PC** ou **Musique**, avec override manuel prioritaire sur toute
+détection automatique. Retour explicite au mode Automatique, état demandé
+distinct de l'état confirmé, option de persistance locale désactivée par
+défaut. En automatique : musique en lecture -> écran musical exclusif (lorsqu'il
+existera), sinon PC en ligne -> quatre cartes + heure/météo si valides, sinon
+horloge/météo autonomes si leurs fournisseurs sont qualifiés. La scène
+Horloge/Météo manuelle est distincte de l'IDLE hybride et ne montre pas
+les quatre mesures.
+
+**Orientation : faire évoluer SHINO // LINK, pas ajouter un second émetteur**
+ni remplacer la page web de diagnostic/secours. Ajouter d'abord moteur de
+priorités/tests HOST et menu tray/fenêtre Windows sans toucher au firmware.
+Puis seulement concevoir un contrat de contrôle authentifié, étroit, borné
+et compatible avec le serveur/Digest/verrous actuels, le renderer natif et
+les budgets ESP8266. Conserver télémétrie/TTL 6 s, scènes 240×240, règles de
+fraîcheur, HMAC/OTA, LittleFS/4m2m et garde d'une seule instance. Aucun POST
+de mode automatique sur firmware B5.1 incompatible. Toute réponse incertaine
+se termine en UNKNOWN/HOLD, sans replay aveugle.
+
+**Dépendances non closes :** B5.2 horloge native et publisher encore offline,
+musique/pochette native non qualifiée sur le B5.1 installé, météo/NTP autonome
+non démontrée ; comportement PAUSED et arbitrage Web/Windows restent à valider.
+Aucun nouveau firmware, EXE, route ou commande réseau n'est ici installé.
+Aucune autorisation de flash, OTA, redémarrage, provisionnement ou merge.
+
+[**Étude Windows versus Web, architecture, matrice des modes et phases M0–M5**](SHINO_LINK_DISPLAY_MODES_ROADMAP.md).
+
+
 ## Mandat courant — B5.2 LINK CLOCK PUBLISHER : publication GitHub, 14 octobre 2026
 
 GO propriétaire : publier les13 fichiers PC/HOST déjà revus depuis372d20f sur
