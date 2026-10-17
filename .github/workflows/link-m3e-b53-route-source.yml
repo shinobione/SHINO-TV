@@ -1,0 +1,67 @@
+name: LINK M3-E B5.3 native route identity gate (NO DEVICE)
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/link_m3e_legacy/**'
+      - 'docs/LINK_M3E_B53_ROUTE_PARITY_GATE.md'
+      - 'docs/ROADMAP.md'
+      - '.github/workflows/link-m3e-b53-route-source.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verified-b53-source:
+    name: B5.3 exact legacy sources, AP/STA guard and pure HOST C++ no-dispatch
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Pin real B5.3 FirstBootBridge HomeLan and path source blobs
+        run: python -m unittest discover -s experiments/link_m3e_legacy -p 'test_b53_source_pins.py' -v
+      - name: Compile strict HOST route inventory (never dispatch)
+        run: |
+          g++ -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \
+            -fno-exceptions -fno-rtti \
+            experiments/link_m3e_legacy/test_legacy_route_gate.cpp \
+            -o "${{ runner.temp }}/m3e_route_gate"
+      - name: Execute B5.3 AP/LAN/conditional/closed route tests
+        run: "${{ runner.temp }}/m3e_route_gate"
+      - name: Retain M3-A pure host command contract
+        run: python -m unittest discover -s experiments/link_m3_control_contract -p 'test_*.py' -v
+
+  inert-xtensa:
+    name: Inert pinned ESP8266 3.1.2 route build (NO SERVER/UPLOAD)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned PlatformIO
+        run: python -m pip install 'platformio==6.1.18'
+      - name: Link route classifier as inert Xtensa executable (NEVER UPLOAD)
+        run: pio run -d experiments/link_m3e_legacy -e b53_route_inventory_inert
+      - name: Print artifact-derived inert build metadata (not installed firmware)
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          root=Path("experiments/link_m3e_legacy/.pio/build/b53_route_inventory_inert")
+          files={}
+          for name in ("firmware.elf","firmware.bin"):
+              b=(root/name).read_bytes()
+              files[name]={"size":len(b),"sha256":hashlib.sha256(b).hexdigest()}
+          print(json.dumps({"scope":"INERT_M3E_ROUTE_ONLY","artifacts":files},sort_keys=True))
+          PY
