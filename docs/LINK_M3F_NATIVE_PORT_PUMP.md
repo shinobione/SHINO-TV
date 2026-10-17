@@ -76,7 +76,8 @@ corps de 2000 ms ; les horloges sont injectées par les tests.
   LCD 240×240, ACK natif, statut indépendant ni OTA.
 - Aucun terminal UART/USB, aucune commande physique, aucun
   changement Wi-Fi, aucun flash, aucune intervention sur
-  le SmallTV installé ou sur le LINK Windows.
+  le SmallTV ou sur le LINK Windows. La version du firmware
+  physiquement exécuté n'a pas été relue pendant M3-F : NON VÉRIFIÉ.
 - Branches Codex B5.4 et autres PR Draft non modifiées.
 
 ## Gates de sortie
