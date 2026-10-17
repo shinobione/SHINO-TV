@@ -1,0 +1,97 @@
+name: LINK M3-K HMAC stack reduction Xtensa parity (NO DEVICE)
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/link_m3k_stack/**'
+      - 'experiments/link_m3c_crypto/M3CAuthenticatedIngress.h'
+      - 'docs/LINK_M3K_HMAC_STACK.md'
+      - 'docs/ROADMAP.md'
+      - '.github/workflows/link-m3k-hmac-stack.yml'
+permissions:
+  contents: read
+
+jobs:
+  host-cryptographic-parity:
+    name: Identical real HMAC/sha body test suite, original and stack opt-in
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Confirm B5.3 original sources did not change
+        run: |
+          python -m unittest discover -s experiments/link_m3g_real -p test_exact_source.py -v
+          python -m unittest discover -s experiments/link_m3e_legacy -p test_b53_source_pins.py -v
+      - name: Compile old and opt-in OpenSSL M3-C vectors with warnings fatal
+        run: |
+          for variant in 0 1; do
+            g++ -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \
+                -fno-exceptions -fno-rtti \
+                -DSHINO_M3C_STACK_MEMBER_SCRATCH=$variant \
+                experiments/link_m3c_crypto/test_crypto_ingress.cpp \
+                -lcrypto -o "${{ runner.temp }}/m3c_$variant"
+            g++ -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \
+                -fno-exceptions -fno-rtti \
+                -DSHINO_M3C_STACK_MEMBER_SCRATCH=$variant \
+                experiments/link_m3f_native/test_single_port_pump.cpp \
+                -lcrypto -o "${{ runner.temp }}/m3f_$variant"
+            g++ -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \
+                -DSHINO_M3C_STACK_MEMBER_SCRATCH=$variant \
+                experiments/link_m3k_stack/gate_object_bytes.cpp \
+                -o "${{ runner.temp }}/gate_$variant"
+          done
+      - name: Execute strict baseline and opt-in successful/negative HMAC vectors
+        run: |
+          for variant in 0 1; do
+            "${{ runner.temp }}/m3c_$variant" > "${{ runner.temp }}/m3c_output_$variant"
+            "${{ runner.temp }}/m3f_$variant" > "${{ runner.temp }}/m3f_output_$variant"
+            "${{ runner.temp }}/gate_$variant" > "${{ runner.temp }}/gate_size_$variant"
+          done
+          diff -u "${{ runner.temp }}/m3c_output_0" "${{ runner.temp }}/m3c_output_1"
+          diff -u "${{ runner.temp }}/m3f_output_0" "${{ runner.temp }}/m3f_output_1"
+          python - <<'PY'
+          from pathlib import Path
+          import os
+          root=Path(os.environ["RUNNER_TEMP"])
+          a=int((root/"gate_size_0").read_text().strip())
+          b=int((root/"gate_size_1").read_text().strip())
+          assert b>=a+350, (a,b)
+          print(f"M3K_HOST_HMAC_FULL_VECTOR_PARITY_PASS; Gate instance bytes original={a} optimized={b}")
+          PY
+      - name: Preserve M3-A no-retry model
+        run: python -m unittest discover -s experiments/link_m3_control_contract -p 'test_*.py' -v
+
+  pinned-xtensa-ab:
+    name: Real ESP8266 Core3.1.2 -fstack-usage original vs member scratch
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned PlatformIO
+        run: python -m pip install 'platformio==6.1.18'
+      - name: Compile actual unmodified B5.3 metrics + original HMAC and WiFiClient
+        run: pio run -d experiments/link_m3k_stack -e m3k_original
+      - name: Compile same graph with opt-in per-Gate HMAC message scratch
+        run: pio run -d experiments/link_m3k_stack -e m3k_gate_scratch
+      - name: Assert genuine native reduction and derive exact static-RAM tradeoff
+        run: |
+          python experiments/link_m3k_stack/verify_stack_delta.py
+          cat experiments/link_m3k_stack/m3k_derived_stack_tradeoff.json >> "${GITHUB_STEP_SUMMARY}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m3k-xtensa-inert-stack-ram-tradeoff
+          path: experiments/link_m3k_stack/m3k_derived_stack_tradeoff.json
+          if-no-files-found: error
+          retention-days: 7

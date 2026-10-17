@@ -124,6 +124,14 @@ private:
     uint8_t body_[kBodyMax]{};
     uint8_t declaredBodyHash_[32]{};
     char proofHex_[65]{};
+#if defined(SHINO_M3C_STACK_MEMBER_SCRATCH) && SHINO_M3C_STACK_MEMBER_SCRATCH == 1
+    // M3-K experimental trade-off only: place the exactly same 350-byte
+    // canonical HMAC message scratch on the *Gate instance* instead of CONT
+    // stack. The owner MUST provide one serialized Gate per connection.
+    // Persistent secret-bearing scratch is wiped after each HMAC operation;
+    // it must never be a function-local static shared across connections.
+    char signedFieldsScratch_[350]{};
+#endif
     size_t headerUsed_ = 0u, lineStart_ = 0u, bodyUsed_ = 0u;
     uint16_t declaredLength_ = 0u;
     uint16_t seen_ = 0u;
@@ -331,16 +339,22 @@ private:
             hash[i*2u]=hex[declaredBodyHash_[i]>>4];
             hash[i*2u+1u]=hex[declaredBodyHash_[i]&15u];
         }
-        char signedFields[350]{};
-        const int n=std::snprintf(signedFields,sizeof(signedFields),
+        static constexpr size_t kSignedFieldBytes=350u;
+#if defined(SHINO_M3C_STACK_MEMBER_SCRATCH) && SHINO_M3C_STACK_MEMBER_SCRATCH == 1
+        char* const signedFields=signedFieldsScratch_;
+        clear(signedFields,kSignedFieldBytes);
+#else
+        char signedFields[kSignedFieldBytes]{};
+#endif
+        const int n=std::snprintf(signedFields,kSignedFieldBytes,
             "SHINO-M3-CONTROL-1\nPOST\n%s\n%s\n%s\n%s\n%lu\n%s\n%s\n%u\n%s",
             kRoute,id_.host,id_.device,id_.boot,
             static_cast<unsigned long>(candidate_.revision),
             modeLiteral_,candidate_.transaction,
             static_cast<unsigned>(declaredLength_),hash);
         clear(hash,sizeof(hash));
-        if(n<=0 || static_cast<size_t>(n)>=sizeof(signedFields)) {
-            clear(signedFields,sizeof(signedFields));return false;
+        if(n<=0 || static_cast<size_t>(n)>=kSignedFieldBytes) {
+            clear(signedFields,kSignedFieldBytes);return false;
         }
         uint8_t actual[32]{},expected[32]{};
         const bool decoded=decodeHex(Span{proofHex_,64u},expected,32u);
@@ -348,7 +362,7 @@ private:
             reinterpret_cast<const uint8_t*>(signedFields),
             static_cast<size_t>(n),actual);
         const bool accepted=computed && constantTime(actual,expected,32u);
-        clear(signedFields,sizeof(signedFields));
+        clear(signedFields,kSignedFieldBytes);
         clear(actual,sizeof(actual));clear(expected,sizeof(expected));
         clear(proofHex_,sizeof(proofHex_));
         return accepted;

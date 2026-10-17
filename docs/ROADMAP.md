@@ -1,5 +1,36 @@
 # SHINO // TV — Roadmap
 
+## M3-K — Optimisation HMAC CONT sans changer le contrat (17 octobre 2026)
+
+**GO propriétaire : code/test SHINO // LINK HOST/Xtensa inerte uniquement.**
+Base PR #65 M3-J `cfad65363457828d94ec5d15066e6ca18cd0bf2a`
+(13/13 CI PASS au SHA vérifié avant fork).
+
+La source M3-C de laboratoire possède une option **désactivée
+par défaut** `SHINO_M3C_STACK_MEMBER_SCRATCH=1` : déplacer
+le tampon HMAC canonique de **350 octets** de la frame de
+`authenticateHeader` vers l'instance `Gate`, avec
+effacement explicite après calcul. Aucune modification
+du contenu signé ni des critères HMAC, SHA, temps, body,
+CAS et FIN. **Trade-off : la taille de l'objet et possiblement
+la BSS augmentent**, ce n'est pas une économie RAM gratuite.
+
+La CI compare les vecteurs OpenSSL M3-C/M3-F dans deux
+variantes et mesure réellement les frames `-fstack-usage`,
+la BSS, les autres sections et le BIN de deux ELF
+ESP8266 **inertes** ; échec obligatoire si la frame
+d'authentification ne baisse pas. **Premier résultat CI ciblé
+M3-K #39070484065 PASS (avant dernier commit documentaire) :
+frame HMAC 992 → 640 octets (−352), BSS +352 octets,
+BIN identique 276 544 octets ; frame bodyByte 352 inchangée**.
+Ces valeurs appartiennent aux images inertes, pas à B5.3.
+Voir
+[M3-K — hypothèse, protocole et HOLD](LINK_M3K_HMAC_STACK.md).
+
+**M3 produit, firmware installé, HomeLAN/Digest, OTA,
+rendu LCD, stack/CONT physique, Freebox et Codex B5.4 :
+HOLD et intouchés**. Aucune fusion ni action matérielle.
+
 ## M3-J — Gate ressources natives Xtensa SHINO // LINK (17 octobre 2026)
 
 **GO propriétaire logiciel uniquement**. Branche M3-J empilée sur
