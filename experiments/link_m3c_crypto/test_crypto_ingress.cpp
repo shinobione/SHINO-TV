@@ -121,7 +121,8 @@ static void successAndCrossLanguageVector() {
     ensure(g.bodyReadingAllowed(),"body only after proof");
     ensure(feedBody(g,p.body)==Phase::VerifiedFrame,"verified body");
     ensure(g.verifiedNoSideEffect(),"verified frame");
-    ensure(g.closeOrTimeout()==Phase::VerifiedFrame,"verified exact");
+    ensure(g.finishAfterExactFraming(true,0u,150u)==Phase::VerifiedFrame,
+           "verified frame and clean FIN");
     ensure(g.resultForOfflineReview().mode==ShinoM3C::Mode::Music,"mode bind");
     ensure(g.resultForOfflineReview().revision==0u,"revision bind");
     ensure(std::strcmp(g.resultForOfflineReview().transaction,TX)==0,"tx bind");
@@ -223,6 +224,19 @@ static void invalidOrInterruptedBody() {
     {
         Gate g(ID,0u);
         ensure(g.bodyByte<RealCrypto>('A',0u)==Phase::Reject,"prebody is denied");
+    }
+    // A cryptographically valid body with no clean FIN or queued bytes is
+    // not yet a commit-eligible record.
+    for (unsigned caseIndex=0u;caseIndex<3u;++caseIndex) {
+        Gate g(ID,0u);
+        ensure(feedHeader(g,p.header)==Phase::AuthenticatedHeader,"setup");
+        ensure(feedBody(g,p.body)==Phase::VerifiedFrame,"digest match");
+        const Phase outcome=caseIndex==0u
+            ?g.finishAfterExactFraming(false,0u,150u)
+            :caseIndex==1u
+             ?g.finishAfterExactFraming(true,1u,150u)
+             :g.finishAfterExactFraming(true,0u,2001u);
+        ensure(outcome==Phase::Reject,"clean FIN must be proven");
     }
     // No state mutation anywhere in gate: it only yields an offline result.
 }
