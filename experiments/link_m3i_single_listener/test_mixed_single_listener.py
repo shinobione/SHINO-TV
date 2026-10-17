@@ -104,7 +104,7 @@ class SingleListenerMixedIntegration(unittest.TestCase):
             self.assertTrue(first.startswith("INTEGRATED_FIXTURE_PORT "),first)
             port=int(first.split()[-1])
             requests=0
-            def call(frame,*,half_close=False):
+            def call(frame,*,half_close=False,allow_transport_reset=False):
                 nonlocal requests
                 requests+=1
                 with socket.create_connection(("127.0.0.1",port),timeout=4) as s:
@@ -112,10 +112,18 @@ class SingleListenerMixedIntegration(unittest.TestCase):
                     s.sendall(frame)
                     if half_close: s.shutdown(socket.SHUT_WR)
                     chunks=[]
-                    while True:
-                        part=s.recv(8192)
-                        if not part:break
-                        chunks.append(part)
+                    try:
+                        while True:
+                            part=s.recv(8192)
+                            if not part:break
+                            chunks.append(part)
+                    except ConnectionResetError:
+                        # Linux may reset a connection closed with unread
+                        # INVALID surplus bytes; allowed for this exact
+                        # negative test only. Never silently mask good traffic.
+                        if not allow_transport_reset:
+                            raise
+                        return None,"",b""
                     return extract(b"".join(chunks))
             met="/api/v1/bridge/metrics"
             status,header,_=call(legacy("GET","/"))
@@ -172,8 +180,12 @@ class SingleListenerMixedIntegration(unittest.TestCase):
             status,_,_=call(h3+tampered,half_close=True)
             self.assertEqual(status,403)
             # Extra data beyond declared length is rejected before simulated CAS.
-            status,_,_=call(h3+b3+b"EXTRA",half_close=True)
-            self.assertEqual(status,403)
+            status,_,_=call(h3+b3+b"EXTRA",half_close=True,
+                              allow_transport_reset=True)
+            # Either explicit 403, or RST on surplus unread TCP bytes.
+            # Both must leave revision unchanged, proved by a subsequent
+            # valid request with the same revision/tx below.
+            self.assertIn(status,(403,None))
             # An ordinary HTTP client without writing FIN waits at most 2s.
             status,_,_=call(h3+b3)
             self.assertEqual(status,408)
