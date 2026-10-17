@@ -72,6 +72,40 @@ Le reçu JSON exact est produit par
 **Aucun chiffre de taille/stack n'est anticipé ou copié depuis
 un ancien build** ; seules les sorties CI au SHA final sont valides.
 
+## Première mesure CI Xtensa (artefacts inertes uniquement)
+
+La première exécution ciblée
+[workflow M3-J #39068885963](https://github.com/shinobione/SHINO-TV/actions/runs/39068885963)
+a terminé **SUCCESS sur deux jobs** au SHA antérieur de cette branche
+`7a5228f966d48b7f1b3222748dfbc333cd3cf99f`.
+Ce sont des **octets d'ELF/BIN produits par CI**, non des
+valeurs recopiées depuis une illustration ni du firmware installé.
+Le workflow doit être **rejoué sur le HEAD final** avant réception.
+
+| Grandeur de programme inerte | A (code métriques original) | B (A + HMAC/Core natif) | B − A |
+|---|---:|---:|---:|
+| BIN dérivé | 259 760 octets | 276 544 octets | **+16 784 octets** |
+| ELF `.text` | 254 111 octets | 270 895 octets | **+16 784 octets** |
+| ELF `.bss` | 25 688 octets | 27 392 octets | **+1 704 octets** |
+| ELF `.data` | 1 556 octets | 1 556 octets | 0 |
+
+Dans les `.su` du vrai compilateur Xtensa, la frame statique
+de `ShinoM3C::Gate::authenticateHeader<BearSslCrypto>` apparaît à
+**992 octets**, et celle de `bodyByte<BearSslCrypto>` à
+**352 octets**. Ces valeurs ne sont ni une mesure de pile CONT
+en fonctionnement ni la somme des frames sur un chemin d'appel
+complet. **Aucun maximum total de pile produit ne peut être
+certifié par ces résultats.** La compilation PASS n'efface
+pas l'ancien STOP/HOLD physique de B5.3.
+
+L'artefact de CI `m3j-inert-xtensa-resource-delta` contient
+les tailles et SHA calculés à partir des fichiers réellement
+émis (binaire de laboratoire uniquement). Les hash ne sont pas
+présentés ici comme des identités de firmware installé.
+Ce surcoût indique que l'intégration **ne doit pas être activée**
+sur la seule base d'une compilation ; réduction/profiling
+de pile et contrôle d'ordonnanceur natif requis.
+
 ## Pourquoi le statut matériel ne peut PAS devenir GO
 
 Le préflight physique B5.3 communiqué par le propriétaire a
