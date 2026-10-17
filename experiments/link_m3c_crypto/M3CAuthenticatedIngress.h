@@ -39,7 +39,7 @@ public:
     static constexpr size_t kHeaderMax = 1024u;
     static constexpr size_t kLineMax = 320u;
     static constexpr size_t kBodyMax = 240u;
-    static constexpr unsigned kFields = 10u;
+    static constexpr unsigned kFields = 11u;
     static constexpr uint32_t kHeaderDeadlineMs = 1000u; // injected lab clock only
     static constexpr uint32_t kBodyDeadlineMs = 2000u;   // injected lab clock only
     static constexpr const char* kRoute = "/api/v1/display/mode";
@@ -88,10 +88,16 @@ public:
         return phase_;
     }
 
+    Phase finishAfterExactFraming(bool peerClosed, size_t pendingBytes,
+                                  uint32_t elapsedMs) {
+        // A HASH-MATCHED body is not an applied command. Explicit FIN
+        // and zero unread queued bytes are required before further review.
+        if (phase_ != Phase::VerifiedFrame || !peerClosed ||
+            pendingBytes != 0u || elapsedMs > kBodyDeadlineMs) return deny();
+        return phase_;
+    }
     Phase closeOrTimeout() {
-        // An interrupted/short body is not a success. An exact frame may
-        // still be checked by caller for trailing network bytes/FIN before
-        // committing to a real renderer. No finish/commit API here.
+        // Any other EOF/cancellation without a verified frame is terminal.
         if (phase_ != Phase::VerifiedFrame) return deny();
         return phase_;
     }
