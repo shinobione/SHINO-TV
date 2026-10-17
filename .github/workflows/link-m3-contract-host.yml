@@ -1,0 +1,34 @@
+name: LINK M3-A offline control contract (NO DEVICE)
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/link_m3_control_contract/**'
+      - 'docs/LINK_M3_CONTROL_CONTRACT.md'
+      - 'docs/ROADMAP.md'
+      - '.github/workflows/link-m3-contract-host.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    name: M3-A strict parser / ACK / no-retry model (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Compile proposed M3 contract without native integration
+        run: python -m compileall -q experiments/link_m3_control_contract
+      - name: Run isolated offline security + transaction tests
+        run: python -m unittest discover -s experiments/link_m3_control_contract -p 'test_*.py' -v

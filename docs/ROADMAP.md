@@ -1,5 +1,25 @@
 # SHINO // TV — Roadmap
 
+## M3-A — Contrat de sélection d'affichage, HOST UNIQUEMENT (17 octobre 2026)
+
+**Décision propriétaire : GO M3 (code et tests hors ligne) ; aucun GO matériel.**
+La validation du menu Windows M2 a été rapportée par le propriétaire dans
+la PR #55 (« oui tt réagit correctement ») et ne vaut pas validation de
+l'écran physique. L'implémentation M3-A est isolée dans la PR Draft #56,
+empilée sur la PR #54, sans toucher aux branches Codex B5.4.
+
+Le laboratoire Python propose uniquement un schéma strict de sélection,
+un appariement appareil + boot vérifié, un CAS sur la révision, une intention
+unique, un ACK et une relecture indépendante. Résultat ambigu : UNKNOWN/HOLD,
+**pas de renvoi automatique**. Le simulateur de contrôle pré-corps est
+une simulation, non une preuve de Digest du vrai serveur ESP8266.
+
+**État effectif : M3-A HOST PASS ciblé ; M3 firmware / sécurité HTTP native /
+mémoire / scheduler / scènes et LCD = HOLD / NON IMPLÉMENTÉ.**
+Lire [le contrat détaillé](LINK_M3_CONTROL_CONTRACT.md).
+Préserver B5.3 installée et les quatre couvertures météo B5.4 non qualifiées.
+Aucun endpoint firmware n'a été ajouté, aucune action appareil, OTA ou merge.
+
 ## Évolution planifiée — SHINO // LINK Control Center / modes d'affichage (17 octobre 2026)
 
 **Décision produit : PLANIFIÉE / NON IMPLÉMENTÉE ; qualification appareil NON VÉRIFIÉE.**
