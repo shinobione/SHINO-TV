@@ -83,6 +83,7 @@ Les kits de diagnostic et ZIP Windows restent **hors du dépôt**. Aucun BIN pro
 - [Matrice des preuves, SHA-256, adresses et interprétation prudente](EVIDENCE_MATRIX.md).
 - [Investigation spécifique du point d'entrée constructeur `/update`](UPDATE_ENTRYPOINT_TRACE.md) — références ROM/DRAM vérifiées, lien route/callback encore HOLD.
 - [Références croisées des routes HTTP et des fonctions candidates](HTTP_ROUTE_CROSS_REFERENCE.md) — 6 routes, 7 appels Xtensa recalculés, limites d'attribution et priorités.
+- [Pointeurs de callbacks GET/OPTIONS/POST et relais Xtensa](CALLBACK_POINTERS_V7.md) — dix mots vérifiés, cinq sauts indirects et cibles POST encore HOLD.
 - [Audit SHINO historique fabricant](../../FIRMWARE_AUDIT_01.md) et [layout comparatif](../../COMPARATIVE_FLASH_LAYOUT_AUDIT.md).
 - [Manifeste OEM V9.0.44 historiquement épinglé](../../../recovery/factory_ota_v9_0_44.json).
 - [Firmware officiel GeekMagic V9.0.44, commit épinglé](https://github.com/GeekMagicClock/smalltv-ultra/blob/55d7877fcba8b1cb7a66a0830d35d5b374bc8540/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip).
