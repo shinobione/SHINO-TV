@@ -2,6 +2,40 @@
 **Décision produit proposée le 17 octobre 2026 — ROADMAP / DESIGN UNIQUEMENT.**
 **État : PLANIFIÉ / NON IMPLÉMENTÉ / DEVICE NON TESTÉ.**
 
+## Validation UX propriétaire — simulation interactive, 17 octobre 2026
+
+**APPROUVÉ PAR LE PROPRIÉTAIRE : comportement fonctionnel cible de l'interface.**
+Le propriétaire a testé les contrôles de la simulation dans ChatGPT et confirme :
+« c'est exactement le fonctionnement recherché ». La validation porte sur
+**le modèle interactif de choix des modes**, non sur la communication au
+SmallTV réel, un exécutable Windows, un test firmware ou une qualification
+physique des nouveaux modes.
+
+Cette validation fixe les règles UX suivantes pour M1/M2 et les tests :
+- Quatre modes exclusifs affichés : **Automatique** (par défaut),
+  **Horloge / Météo**, **Monitoring PC**, **Musique**.
+- Deux contextes simulables indépendants : PC connecté et musique en lecture.
+- En Automatique : musique seulement lorsque PC connecté **et** lecture
+  active ; sinon monitoring hybride quand le PC est connecté ; sinon
+  horloge autonome / secours en l'absence du PC.
+- En mode manuel Horloge / Météo : conserver cette préférence même si
+  Spotify démarre et/ou le PC reste connecté.
+- En mode manuel Monitoring PC : aucune bascule musicale ; indiquer
+  clairement « Monitoring indisponible » si le PC est déconnecté.
+- En mode manuel Musique : ne pas basculer en monitoring ; afficher
+  « Aucun média actif » quand aucune lecture n'est disponible.
+- Le bouton **Revenir en automatique** restaure immédiatement la logique
+  contextuelle ; il ne dépend pas du dernier choix manuel.
+- L'interface finale devra présenter le mode effectif et distinguer choix
+  demandé, confirmation reçue et fallback réel ; la simulation n'émet
+  actuellement **aucun** ordre au SmallTV.
+
+**Gel UX du concept** : ne pas rouvrir inutilement le choix de ces quatre
+modes ni leur priorité. La durée PAUSED, la météo réellement disponible,
+la persistance inter-redémarrage et les accords authentifiés côté appareil
+restent des détails d'implémentation/validation distincts, non exercés par
+cette simulation.
+
 ## Besoin propriétaire
 Faire évoluer l'actuel SHINO // LINK en une application Windows légère, avec
 icône tray, menu rapide et fenêtre de paramètres, permettant de sélectionner
