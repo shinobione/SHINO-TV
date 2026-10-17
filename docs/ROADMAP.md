@@ -1,5 +1,30 @@
 # SHINO // TV — Roadmap
 
+## M3-J — Gate ressources natives Xtensa SHINO // LINK (17 octobre 2026)
+
+**GO propriétaire logiciel uniquement**. Branche M3-J empilée sur
+la PR #64 M3-I (12/12 workflows PASS vérifiés avant fork).
+Les deux projets inertes `experiments/link_m3j_native/`
+compilent le **vrai Core ESP8266 3.1.2** et le vrai
+`FslessMetrics.cpp` inchangé : A sans M3, B avec le vrai chemin
+`WiFiServer/WiFiClient/BearSSL M3-C` issu de M3-F,
+sans jamais démarrer le serveur. La CI mesure les **différences
+réelles d'ELF text/data/bss**, les BIN/HASH des deux **inertes**,
+les symboles retenus et traces compilateur `-fstack-usage`.
+Aucun chiffre de coût n'est validé avant lecture des artefacts CI.
+
+Ce n'est **PAS une intégration sur FirstBootBridge/HomeLan**,
+une validation heap/CONT en fonctionnement ou un candidat OTA.
+Le préflight propriétaire B5.3 annonçait une marge CONT
+**seulement 80 octets** et un STOP/HOLD ; aucune conclusion de
+sûreté n'est extrapolée depuis ce build. Ni dispositif,
+ni Wi-Fi, ni Freebox, ni Codex B5.4, ni LINK Windows installé
+ne sont touchés. Voir [M3-J preuves et limites](LINK_M3J_NATIVE_RESOURCE_GATE.md).
+
+**M3 produit : HOLD** tant que l'unique serveur HTTP natif
+avec vrais handlers, authentification avant corps, budget
+mémoire/stack/WDT et récupération n'est pas qualifié.
+
 ## M3-I — Un seul listener TCP HOST : Digest métriques + HMAC contrôle (17 octobre 2026)
 
 **GO logiciel SHINO // LINK uniquement.** PR M3-I empilée sur #63
