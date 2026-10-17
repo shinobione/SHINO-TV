@@ -1,5 +1,34 @@
 # SHINO // TV — Roadmap
 
+## M3-E — Inventaire exact des routes B5.3, HOST/Xtensa inerte (17 octobre 2026)
+
+**GO propriétaire : poursuivre M3-E en code/tests hors ligne**, sans changer
+le SmallTV installé, le LINK Windows, le Wi-Fi ni B5.4 de Codex.
+M3-E est une branche/PR Draft empilée sur M3-D PR #59.
+
+**Correction du point de départ :** `M9NormalStageA.cpp` n'est pas
+le serveur principal B5.3. L'inventaire M3-E est extrait des
+trois sources identiques sur B5.3 autonomous et LEAN :
+`FirstBootBridge.cpp`, `HomeLan.cpp`, `HomeLanPolicy.h`.
+Les identités Git blob et la totalité des routes `server.on`/`s.on`
+sont contrôlées par tests source. La politique LAN actuelle ne
+permet PAS les routes de mode M3. Le firmware effectivement installé
+reste distinct d'une identité de branche/commit.
+
+Le classifieur C++ `experiments/link_m3e_legacy/` reconnaît
+les routes legacy, réservations OTA non actives, chemins M3 futurs,
+restrictions AP/STA et drapeaux factory/FS-probe. Il ne délègue
+aucune opération : `allowedToDispatch=false` pour tous les cas,
+et une image Xtensa inerte est uniquement compilée pour preuve de
+compatibilité. L'exécution réelle du dashboard, la télémétrie
+CPU/GPU/RAM/GPU temp, le Digest, l'OTA et le port 80 unique
+**restent HOLD**. Pas de faux verdict « parité native PASS ».
+
+Voir [M3-E : inventaire source B5.3 et limites](LINK_M3E_B53_ROUTE_PARITY_GATE.md).
+Prochain jalon : vrai propriétaire unique du port et parité
+des handlers historiques, budget mémoire/stack/scheduler sur
+graphe produit, puis éventuellement test matériel autorisé à part.
+
 ## M3-D — TCP half-close et routeur unilisten en laboratoire (17 octobre 2026)
 
 **GO propriétaire : développement et qualification hors ligne, sans contact SmallTV.**
