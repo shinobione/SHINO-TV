@@ -173,3 +173,20 @@ En plus du reçu Capstone V10, **les octets réels du BIN OEM V9.0.44 ont été 
 À la cible `0x402246DC`, les octets initiaux OEM sont **`12 c1 d0`** (prologue compatible avec fonction Xtensa). Le Core public définit [`U_FS=100` et `U_FLASH=0`](https://github.com/esp8266/Arduino/blob/3.1.2/cores/esp8266/Updater.h) et expose `UpdaterClass::begin(size,command,...)`. La convergence des deux branches et la constante `U_FS` constituent une **attribution forte mais encore HYPOTHÉTIQUE** de `0x402246DC ≈ Update.begin()` : **ces deux motifs CALL0 n'ont pas encore été décodés comme instructions atteignables dans les fenêtres V10**, et le corps de `0x402246DC` n'a pas été désassemblé.
 
 **Prochaine investigation bornée :** (1) décoder le trou `0x402143E4..0x40214420` pour trouver la provenance du booléen d'autorisation ; (2) décoder les deux frontières `0x40214481` et `0x402144B2` et `0x402246DC` pour confirmer BEGIN ; (3) étudier le **dispatch / préconditions** de la lambda d'upload avant de déclarer une garantie ou une faille. **Aucune modification SmallTV, UART, OTA, Wi-Fi, flash, firmware SHINO, Codex ou B5.3**.
+
+
+## 8. Chronologie des callbacks dans le Core public : importance du contrôle pré-écriture
+
+**Comparaison à une source publique précise — ne constitue pas une mesure du firmware OEM.** Dans [`ESP8266WebServer/src/Parsing-impl.h` tag `3.1.2`](https://github.com/esp8266/Arduino/blob/3.1.2/libraries/ESP8266WebServer/src/Parsing-impl.h), la séquence de traitement d'un `multipart/form-data` est :
+
+1. `_parseRequest` sélectionne `_currentHandler` selon URI/méthode, puis **appelle `_parseForm(client,...)` avant de retourner** ;
+2. `_parseForm` crée `HTTPUpload`, fixe `UPLOAD_FILE_START` et appelle `_currentHandler->upload(...)` ;
+3. le parseur met le statut à `UPLOAD_FILE_WRITE`, traite les octets, et rappelle `upload(...)` en cours de transfert dans `_uploadWriteByte` ;
+4. à la fin, il rappelle `upload(...)` pour les derniers octets, puis avec `UPLOAD_FILE_END` ; en cas de problème, il peut appeler `UPLOAD_FILE_ABORTED` ;
+5. le serveur [`ESP8266WebServer-impl.h` du même tag](https://github.com/esp8266/Arduino/blob/3.1.2/libraries/ESP8266WebServer/src/ESP8266WebServer-impl.h) n'appelle `_handleRequest()` (gestionnaire de réponse POST final) **qu'après** le retour normal de `_parseRequest`.
+
+**Conséquence architecturale PROUVÉE POUR LE CODE PUBLIC :** la réponse HTTP 401 de la phase finale ne constitue **pas** une barrière *pré-body* : les appels d'upload ont lieu plus tôt. L'authentification doit donc soit filtrer avant ce dispatch, soit **empêcher tout `Update.begin/write/end` dans les callbacks non autorisés**. La version publique [`ESP8266HTTPUpdateServer-impl.h` 3.1.2](https://github.com/esp8266/Arduino/blob/3.1.2/libraries/ESP8266HTTPUpdateServer/src/ESP8266HTTPUpdateServer-impl.h) teste effectivement `_authenticated` dans les branches WRITE/END.
+
+**Limite appliquée à GeekMagic :** les octets OEM V10 montrent très fortement un stockage/test d'état `_authenticated` en START, et une branche WRITE où la lecture correspondante n'apparaît pas ; mais **la provenance exacte du serveur compilé, les contrôles supplémentaires avant dispatch, les préconditions du moteur Update et les chemins complets d'erreur restent non démontrés**. La différence statique justifie une revue de sécurité **HOLD**, pas une déclaration de vulnérabilité exploitable et pas une expérimentation réseau sur le SmallTV.
+
+**Décision pour SHINO :** conserver une autorisation indépendante, authentifiée et **effective avant toute écriture**, liée à chaque transaction, y compris ERROR, INTERRUPTION, RESTART et END ; ne jamais tenir le code HTTP final comme une garantie d'intégrité/accès. Cette préconisation est une règle de conception, **pas une modification du firmware effectuée dans cette recherche**.
