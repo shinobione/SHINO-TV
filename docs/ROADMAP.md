@@ -1,5 +1,31 @@
 # SHINO // TV — Roadmap
 
+## M3-I — Un seul listener TCP HOST : Digest métriques + HMAC contrôle (17 octobre 2026)
+
+**GO logiciel SHINO // LINK uniquement.** PR M3-I empilée sur #63
+M3-H (11/11 CI PASS à son HEAD exact avant fork).
+`experiments/link_m3i_single_listener/` regroupe **dans un seul serveur
+TCP localhost** les vraies routes télémétrie B5.3 via le banc
+M3-G (`FslessMetrics.cpp` et ArduinoJson 7.4.3 originaux, Digest
+de démonstration), et le vrai HMAC SHA-256 **pré-corps M3-C** pour
+`POST /api/v1/display/mode`, avec demi-fermeture TCP
+obligatoire côté client dédié, vérification du SHA du corps
+et ledger de revue sériel RAM-only. Une ligne HTTP plafonnée
+est lue octet par octet **avant dispatch**, sans prélecture
+du corps M3 dans le parseur legacy. Aucun changement d'écran :
+réponse M3 **202 `applied:false`** et aucune activation Windows.
+
+**Portée de la preuve : Linux HOST / 127.0.0.1, pas lwIP ni port 80
+ESP8266**. Les 20 GET/POST Legacy d'origine sont rejoués sur
+le même binaire que les 19 transactions alternées HMAC/Digest.
+Tous les writers OTA/OEM restent absents. Les vraies routes natives
+B5.3, le budget CONT/heap/stack/WDT, B5.4 météo de Codex, le
+rendu LCD et l'acceptation physique demeurent **HOLD**.
+
+Voir [M3-I — protocole et preuves](LINK_M3I_MIXED_SINGLE_LISTENER.md).
+Prochaine étape M3-J : migration/qualification du véritable
+propriétaire HTTP Xtensa, après preuve de parité complète.
+
 ## M3-H — Intégration HOST SHINO // LINK des priorités et modes (17 octobre 2026)
 
 **GO propriétaire : développement/test M3-H hors ligne uniquement**, PR Draft
