@@ -5,6 +5,7 @@ on:
     paths:
       - 'experiments/link_m3d_socket_lab/**'
       - 'docs/LINK_M3D_SINGLE_OWNER_SOCKET_LAB.md'
+      - 'docs/ROADMAP.md'
       - '.github/workflows/link-m3d-one-listener-loopback.yml'
 
 permissions:
