@@ -1,0 +1,48 @@
+name: LINK M3-H owner priority and one intent HOST integration (NO DEVICE)
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/link_m3h_host/**'
+      - 'docs/LINK_M3H_OWNER_PRIORITY.md'
+      - 'docs/ROADMAP.md'
+      - '.github/workflows/link-m3h-owner-priority.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  host-scheduler:
+    name: Real LINK engine + M1 policy + M3-A in-memory command timelines (NO HTTP)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      PYTHONPATH: companion:experiments/link_m3_control_contract:experiments/link_m3h_host
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Execute actual LINK telemetry scheduling and simulated mode sequence
+        run: python -m unittest discover -s experiments/link_m3h_host -p 'test_owner_priority.py' -v
+      - name: Regress M1 scene selection and 128-state truth table
+        run: python -m unittest discover -s companion -p 'test_link_display_modes.py' -v
+      - name: Regress M2 local Windows tray selection
+        run: python -m unittest discover -s companion -p 'test_link_mode_tray.py' -v
+      - name: Regress M3-A one intent and no-retry 26 cases
+        run: python -m unittest discover -s experiments/link_m3_control_contract -p 'test_*.py' -v
+      - name: Explicit scope guard no physical HTTP or Windows sender integration
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          lab=Path("experiments/link_m3h_host/owner_priority.py").read_text()
+          for forbidden in ("urllib.request", "WiFiServer(", "socket.socket(",
+                            "Update.begin(", "ESP.restart(", "send_sample("):
+              assert forbidden not in lab, f"Active bridge forbidden: {forbidden}"
+          assert "type(transport) is not LabTransport" in lab
+          print("M3H_PURE_HOST_NO_DEVICE_TRANSPORT_PASS")
+          PY
