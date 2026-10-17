@@ -20,8 +20,8 @@ et l'ordonnanceur/stack/heap/wifi réel restent HOLD.
 On ne peut pas transférer directement une connexion partiellement
 lue à `ESP8266WebServer` dont le listener est privé.
 Il faudra une architecture native complète, revue avec Codex B5.4,
-avant tout candidat flash/OTA. B5.3 installé et SHINO LINK Windows
-sont préservés. Voir [M3-F détails](LINK_M3F_NATIVE_PORT_PUMP.md).
+avant tout candidat flash/OTA. Aucune opération sur le SmallTV ni SHINO LINK Windows ; le firmware
+physiquement installé n'a pas été relu pendant ce jalon (NON VÉRIFIÉ). Voir [M3-F détails](LINK_M3F_NATIVE_PORT_PUMP.md).
 
 ## M3-E — Inventaire exact des routes B5.3, HOST/Xtensa inerte (17 octobre 2026)
 
