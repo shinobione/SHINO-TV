@@ -1,0 +1,67 @@
+name: LINK M3-F cooperative single-port compile lab (NO DEVICE)
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/link_m3f_native/**'
+      - 'docs/LINK_M3F_NATIVE_PORT_PUMP.md'
+      - 'docs/ROADMAP.md'
+      - '.github/workflows/link-m3f-cooperative-port.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  source-executed-host:
+    name: Real HMAC/sha256 + fake WiFiServer cooperative parity HOLD
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Compile strict native C++ fake-WiFiServer tests / real crypto
+        run: |
+          g++ -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \
+            -fno-exceptions -fno-rtti \
+            experiments/link_m3f_native/test_single_port_pump.cpp \
+            -lcrypto -o "${{ runner.temp }}/m3f_host"
+      - name: Execute cooperative one-owner socket API tests in HOST fake
+        run: "${{ runner.temp }}/m3f_host"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Protect B5.3 exact three Git source identities
+        run: python -m unittest discover -s experiments/link_m3e_legacy -p test_b53_source_pins.py -v
+      - name: Preserve M3-A one-intent and no-retry contract tests
+        run: python -m unittest discover -s experiments/link_m3_control_contract -p 'test_*.py' -v
+
+  inert-real-wificlient:
+    name: Real pinned Core 3.1.2 WiFiServer/WiFiClient BearSSL Xtensa link
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned build runner
+        run: python -m pip install 'platformio==6.1.18'
+      - name: Compile/link non-running borrowed WiFiServer transport pump (NEVER UPLOAD)
+        run: pio run -d experiments/link_m3f_native -e inert_real_wifi_types
+      - name: Print inert build artifact metadata, NOT owner firmware
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          root=Path('experiments/link_m3f_native/.pio/build/inert_real_wifi_types')
+          results={}
+          for item in ('firmware.elf','firmware.bin'):
+              raw=(root/item).read_bytes()
+              results[item]={'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()}
+          print(json.dumps({'scope':'M3F_INERT_REAL_WIFI_TYPES_ONLY','artifacts':results},sort_keys=True))
+          PY
