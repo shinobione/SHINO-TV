@@ -112,16 +112,24 @@ def check_status(s,identity):
     return s
 
 
-def install(binary,manifest,identity_path,confirm_sha,progress=lambda n,total:None,transport=None,clock=time.monotonic,sleep=time.sleep,notify=lambda text:None,expected_current_sha256=None,attempt_marker=None):
+def install(binary,manifest,identity_path,confirm_sha,progress=lambda n,total:None,transport=None,clock=time.monotonic,sleep=time.sleep,notify=lambda text:None,expected_current_sha256=None,attempt_marker=None,receipt_path=None):
+    # No caller may start a physical upload without all durable one-shot controls.
+    # Check before reading any credentials, opening a transport or inspecting a BIN.
+    if not expected_current_sha256 or attempt_marker is None or receipt_path is None:
+        raise UpdateError("Install requires exact running A SHA256, .attempt marker and receipt path")
+    receipt=Path(receipt_path)
+    if receipt.is_symlink() or receipt.exists() or not receipt.parent.is_dir():
+        raise UpdateError("Unique new receipt path required before any network access")
     # Exact offline inspection and consent BEFORE identity load or networking.
     m,raw=inspect(binary,manifest)
     if confirm_sha!=m["sha256"]:raise UpdateError("Explicit confirmation of this SHA256 is required")
     if expected_current_sha256 is not None and (not isinstance(expected_current_sha256,str) or not HEX.fullmatch(expected_current_sha256)):
         raise UpdateError("Exact running A SHA256 is required")
-    if attempt_marker is not None:
-        marker=Path(attempt_marker)
-        if marker.is_symlink() or marker.exists() or not marker.parent.is_dir():
-            raise UpdateError("OTA attempt marker exists or its directory is unavailable: no retry")
+    marker=Path(attempt_marker)
+    if marker.is_symlink() or marker.exists() or not marker.parent.is_dir():
+        raise UpdateError("OTA attempt marker exists or its directory is unavailable: no retry")
+    if marker.resolve()==receipt.resolve():
+        raise UpdateError("Receipt and attempt marker paths must differ")
     identity=load_identity(identity_path)
     if m["device"]!=identity["device"]:raise UpdateError("Release targets another device")
     io=transport or Transport(identity)
@@ -136,13 +144,12 @@ def install(binary,manifest,identity_path,confirm_sha,progress=lambda n,total:No
              "X-Shino-Proof":signature(identity,before["nonce"],m)}
     # Once this marker is durably created, the owner must never repeat an
     # upload based on an ambiguous response. No extra HTTP status read is made.
-    if attempt_marker is not None:
-        try:
-            with Path(attempt_marker).open("x",encoding="ascii") as marker_file:
-                marker_file.write("OTA_ONE_SHOT_STARTED_NO_AUTOMATIC_RETRY\n")
-                marker_file.flush();os.fsync(marker_file.fileno())
-        except OSError as error:
-            raise UpdateError("Could not atomically reserve one OTA attempt") from None
+    try:
+        with marker.open("x",encoding="ascii") as marker_file:
+            marker_file.write("OTA_ONE_SHOT_STARTED_NO_AUTOMATIC_RETRY\n")
+            marker_file.flush();os.fsync(marker_file.fileno())
+    except OSError:
+        raise UpdateError("Could not atomically reserve one OTA attempt") from None
     acknowledged=False
     try:acknowledged=io.upload(headers,raw,progress)
     except UpdateError:
@@ -214,7 +221,7 @@ def main():
             # controls. The GUI intentionally does not offer an upload action.
             if not (a.expected_current_sha256 and a.attempt_marker and a.receipt):
                 raise UpdateError("Install requires expected current SHA256, unique .attempt marker and receipt")
-            result=install(a.bin,a.manifest,a.identity,a.confirm_sha256,lambda n,total:print(f"{n}/{total}",flush=True),notify=lambda text:print(text,flush=True),expected_current_sha256=a.expected_current_sha256,attempt_marker=a.attempt_marker)
+            result=install(a.bin,a.manifest,a.identity,a.confirm_sha256,lambda n,total:print(f"{n}/{total}",flush=True),notify=lambda text:print(text,flush=True),expected_current_sha256=a.expected_current_sha256,attempt_marker=a.attempt_marker,receipt_path=a.receipt)
         save_receipt(a.receipt,result)
         print(json.dumps(result));return 0 if result["status"] in ("VERIFIED_OFFLINE","BOOT_AND_TELEMETRY_CONFIRMED") else 2
     except UpdateError as error:print(str(error)+" — no automatic retry",file=sys.stderr);return 2
