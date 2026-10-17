@@ -1,5 +1,11 @@
 # Audit OEM GeekMagic SmallTV-Ultra — synthèse canonique
 
+> **Point d'entrée opérationnel (17 octobre 2026) :** [**GUIDE — utiliser ces découvertes face à un problème SHINO**](USAGE_GUIDE_SHINO.md). Il classe les résultats V7→V10 par symptôme, sépare les faits prouvés des hypothèses et relie les sources SHINO pertinentes. Cette synthèse datée du **16 octobre** est conservée pour la provenance de l'audit initial.
+>
+> **Complément V7–V10 reçu le 17 octobre :** le défi HTTP Basic 401 est visible dans les fragments POST A ; les branches WRITE/END de POST B et les offsets Updater ont été analysés ; `UpdaterClass::write` possède une **forte attribution statique** ; START contient une écriture candidate de `_authenticated`, mais la branche WRITE directement décodée **ne prouve pas** un contrôle de cet état. L'appel BEGIN, les gardes amont, les effets flash et le boot OEM restent **HOLD**. Détails : [V7](POST_CALLBACK_V7.md) → [V8](POST_UPLOAD_STATIC_V8.md) → [V9](UPDATER_CALLTRACE_V9.md) → [V10](START_AUTH_BOUNDARY_V10.md).
+>
+> **Rappel produit :** B5.3 est confirmé fonctionnel par le propriétaire (mesures et date/heure, même PC éteint) ; son SHA physique et sa correspondance exacte au code ne sont **pas vérifiés ici**. La recherche OEM ne change ni B5.3 ni le travail Codex B5.4.
+
 **Date de consolidation : 16 octobre 2026** · **Périmètre :** firmware constructeur GeekMagic SmallTV-Ultra / ESP8266 Xtensa LX106 · **Nature :** rétro-ingénierie **en lecture seule**, indépendante du développement SHINO B5.3.
 
 > **ÉTAT : PARTIEL, MAIS AVANCÉ.** Deux véritables paquets OEM ont été inspectés, leur format interne et leurs checksums vérifiés, et quatre zones **candidates** du code Xtensa OEM V9.0.44 ont été désassemblées avec Capstone 6 sur Windows. **Aucune fonction OEM d'OTA n'est encore attribuée avec certitude, aucune décompilation C/C++ complète n'a été réalisée.**
@@ -77,6 +83,10 @@ Les kits de diagnostic et ZIP Windows restent **hors du dépôt**. Aucun BIN pro
 3. **Wi-Fi, horloge, LCD** : examiner ensuite si une pratique OEM améliore la résilience de SHINO, sans interrompre Codex/B5.3.
 
 **Critère d'arrêt :** si REA/Ghidra n'apportent pas de preuve exploitable dans un budget borné, conserver ce dossier de recherche sans lancer une nouvelle mission ouverte ni créer de complexité OTA.
+
+## Guide de réutilisation
+
+Pour un incident OTA, une incompatibilité flash, un retour OEM, un problème réseau, une horloge ou un LCD, commencer par le [**guide d'application aux problèmes SHINO**](USAGE_GUIDE_SHINO.md) avant de parcourir les rapports techniques. Les preuves historiques ne sont **pas** l'état physique de B5.3 ni une autorisation d'intervention.
 
 ## 7. Sources et traçabilité
 
