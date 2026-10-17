@@ -38,7 +38,7 @@ class PinnedHttpOrderTests(unittest.TestCase):
                         parser.index("while(1)", parser.index("//parse headers")))
         stream = self.source["stream"]
         self.assertIn("String Stream::readStringUntil(char terminator)", stream)
-        self.assertIn("String::concat", stream) if "String::concat" in stream else self.assertIn("concat", stream)
+        self.assertIn("ret += (char) c;", stream)
 
     def test_post_body_is_parsed_before_application_handler(self):
         parser = self.source[PARSER]
