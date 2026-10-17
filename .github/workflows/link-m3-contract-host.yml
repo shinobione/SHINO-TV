@@ -5,6 +5,7 @@ on:
     paths:
       - 'experiments/link_m3_control_contract/**'
       - 'docs/LINK_M3_CONTROL_CONTRACT.md'
+      - 'docs/ROADMAP.md'
       - '.github/workflows/link-m3-contract-host.yml'
 
 permissions:
