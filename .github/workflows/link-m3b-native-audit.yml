@@ -1,0 +1,40 @@
+name: LINK M3-B pinned native prebody research (NO DEVICE)
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/link_m3_native_prebody/**'
+      - 'docs/LINK_M3B_NATIVE_PREBODY_FINDINGS.md'
+      - '.github/workflows/link-m3b-native-audit.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  native-source-lab:
+    name: Exact pinned Core source + executed bounded C++ (no route)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install existing pinned PlatformIO Core 3.1.2 package
+        run: |
+          python -m pip install 'platformio==6.1.18'
+          pio pkg install --global --tool 'platformio/framework-arduinoespressif8266@3.30102.0'
+      - name: Assert exact six framework SHA256 and HTTP parse/auth order
+        run: python -m unittest discover -s experiments/link_m3_native_prebody -p 'test_pinned_http_order.py' -v
+      - name: Compile native C++ scanner in strict host mode (NOT Xtensa)
+        run: |
+          g++ -std=c++17 -O2 -Wall -Wextra -Werror -pedantic -fno-exceptions -fno-rtti \
+            experiments/link_m3_native_prebody/test_m3_prebody.cpp \
+            -o "${{ runner.temp }}/m3b_reject_only_lab"
+      - name: Execute header-only native scanner rejection cases (no HTTP)
+        run: "${{ runner.temp }}/m3b_reject_only_lab"
+      - name: Regression — M3-A pure HOST protocol
+        run: python -m unittest discover -s experiments/link_m3_control_contract -p 'test_*.py' -v
