@@ -41,6 +41,54 @@ class UpdaterTests(unittest.TestCase):
         return IO()
     def install(self,io,confirm=None):
         return update.install(self.binary,self.manifest,self.credentials,confirm or self.m["sha256"],transport=io,clock=lambda:self.ticks,sleep=self.sleep)
+    def test_cli_requires_all_one_shot_controls_before_network(self):
+        """No CLI upload without current-A SHA, attempt marker AND unique receipt."""
+        base=["shino_update.py","--bin",str(self.binary),"--manifest",str(self.manifest),
+              "--install","--confirm-sha256",self.m["sha256"]]
+        gates=["--expected-current-sha256",self.before["sha256"],
+               "--attempt-marker",str(self.binary.parent/"ota.attempt"),
+               "--receipt",str(self.binary.parent/"ota-receipt.json")]
+        for omitted in ("--expected-current-sha256","--attempt-marker","--receipt"):
+            with self.subTest(omitted=omitted):
+                argv=list(base)
+                for i in (0,2,4):
+                    if gates[i]!=omitted:argv+=gates[i:i+2]
+                with patch.object(sys,"argv",argv),patch.object(update,"install",side_effect=AssertionError("upload called")),\
+                     patch.object(update,"load_identity",side_effect=AssertionError("private identity touched")),\
+                     contextlib.redirect_stderr(io.StringIO()):
+                    self.assertEqual(update.main(),2)
+
+    def test_cli_exact_packet_controls_still_reach_install_once(self):
+        marker=self.binary.parent/"ota.attempt"
+        receipt=self.binary.parent/"ota-receipt.json"
+        argv=["shino_update.py","--bin",str(self.binary),"--manifest",str(self.manifest),
+              "--install","--confirm-sha256",self.m["sha256"],
+              "--expected-current-sha256",self.before["sha256"],
+              "--attempt-marker",str(marker),"--receipt",str(receipt)]
+        with patch.object(sys,"argv",argv),patch.object(update,"install",return_value={"status":"BOOT_AND_TELEMETRY_CONFIRMED"}) as install,\
+             patch.object(update,"save_receipt") as saved,contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(update.main(),0)
+        self.assertEqual(install.call_count,1)
+        self.assertEqual(install.call_args.kwargs["expected_current_sha256"],self.before["sha256"])
+        self.assertEqual(install.call_args.kwargs["attempt_marker"],marker)
+        saved.assert_called_once_with(receipt,{"status":"BOOT_AND_TELEMETRY_CONFIRMED"})
+
+    def test_general_gui_is_offline_only_even_if_install_requested(self):
+        import ast
+        import inspect
+        import textwrap
+        body=ast.parse(textwrap.dedent(inspect.getsource(update.gui)))
+        names={node.id for node in ast.walk(body) if isinstance(node,ast.Name)}
+        self.assertNotIn("install",names)
+        self.assertNotIn("Transport",names)
+        with patch.object(sys,"argv",["shino_update.py","--gui","--install"]),\
+             patch.object(update,"gui",side_effect=AssertionError("GUI opened for install")),\
+             contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(update.main(),2)
+        with patch.object(sys,"argv",["shino_update.py","--gui"]),patch.object(update,"gui") as gui:
+            self.assertEqual(update.main(),0)
+            gui.assert_called_once_with(None,None)
+
     def test_offline_does_not_load_credentials_or_network(self):
         with patch("socket.create_connection",side_effect=AssertionError("network")),patch.object(update,"load_identity",side_effect=AssertionError("credentials")):
             self.assertEqual(update.inspect(self.binary,self.manifest),(self.m,self.raw))
