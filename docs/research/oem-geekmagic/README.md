@@ -85,7 +85,8 @@ Les kits de diagnostic et ZIP Windows restent **hors du dépôt**. Aucun BIN pro
 - [Références croisées des routes HTTP et des fonctions candidates](HTTP_ROUTE_CROSS_REFERENCE.md) — 6 routes, 7 appels Xtensa recalculés, limites d'attribution et priorités.
 - [Pointeurs de callbacks GET/OPTIONS/POST et relais Xtensa](CALLBACK_POINTERS_V7.md) — dix mots vérifiés, cinq sauts indirects et cibles POST encore HOLD.
 - [Reçu V7 : analyse des fonctions POST et construction HTTP Basic 401](POST_CALLBACK_V7.md) — défi authentification repéré dans le code OEM, parcours d'upload/flash encore HOLD.
-- [Continuation POST B et sites CALL0 vérifiés dans les octets OEM (V8)](POST_UPLOAD_STATIC_V8.md) — 6 cibles calculées, 15 fenêtres Capstone ciblées en attente de reçu réel.
+- [Continuation POST B, reçus V8 et attribution WRITE/END](POST_UPLOAD_STATIC_V8.md) — machine d'états, arguments et appels rapprochés des sources du Core.
+- [Reçu V9 : identification statique de la fonction Updater WRITE](UPDATER_CALLTRACE_V9.md) — exacts offsets ABI, contrôle d'espace et code d'erreur ; END/auth/eboot toujours HOLD.
 - [Audit SHINO historique fabricant](../../FIRMWARE_AUDIT_01.md) et [layout comparatif](../../COMPARATIVE_FLASH_LAYOUT_AUDIT.md).
 - [Manifeste OEM V9.0.44 historiquement épinglé](../../../recovery/factory_ota_v9_0_44.json).
 - [Firmware officiel GeekMagic V9.0.44, commit épinglé](https://github.com/GeekMagicClock/smalltv-ultra/blob/55d7877fcba8b1cb7a66a0830d35d5b374bc8540/Ultra-V9.0.44/FW-Smalltv-Ultra-V9.0.44.zip).
