@@ -103,7 +103,7 @@ bool firstLine(int fd,std::string& line,Clock::time_point origin) {
     uint8_t byte=0;
     for(size_t i=0u;i<FIRST_LINE_CAP;++i) {
         if(one(fd,FIRST_LINE_MS,origin,byte)!=Read::Byte) return false;
-        if(byte=='\0'||byte=='\n'&&(i==0u||line.back()!='\r')) return false;
+        if(byte=='\0'||(byte=='\n'&&(i==0u||line.back()!='\r'))) return false;
         line.push_back(static_cast<char>(byte));
         if(line.size()>=2u&&line.substr(line.size()-2u)=="\r\n")
             return true;
