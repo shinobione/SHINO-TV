@@ -119,10 +119,11 @@ static void successAndCrossLanguageVector() {
     ensure(g.consumedHeaders()==p.header.size(),"body not prefetched");
     ensure(g.consumedBody()==0u,"body count prior proof");
     ensure(g.bodyReadingAllowed(),"body only after proof");
-    ensure(feedBody(g,p.body)==Phase::VerifiedFrame,"verified body");
-    ensure(g.verifiedNoSideEffect(),"verified frame");
+    ensure(feedBody(g,p.body)==Phase::BodyDigestMatched,"digest-matched body");
+    ensure(!g.verifiedNoSideEffect(),"cannot commit before FIN");
     ensure(g.finishAfterExactFraming(true,0u,150u)==Phase::VerifiedFrame,
            "verified frame and clean FIN");
+    ensure(g.verifiedNoSideEffect(),"verified review only after FIN");
     ensure(g.resultForOfflineReview().mode==ShinoM3C::Mode::Music,"mode bind");
     ensure(g.resultForOfflineReview().revision==0u,"revision bind");
     ensure(std::strcmp(g.resultForOfflineReview().transaction,TX)==0,"tx bind");
@@ -230,7 +231,7 @@ static void invalidOrInterruptedBody() {
     for (unsigned caseIndex=0u;caseIndex<3u;++caseIndex) {
         Gate g(ID,0u);
         ensure(feedHeader(g,p.header)==Phase::AuthenticatedHeader,"setup");
-        ensure(feedBody(g,p.body)==Phase::VerifiedFrame,"digest match");
+        ensure(feedBody(g,p.body)==Phase::BodyDigestMatched,"digest match");
         const Phase outcome=caseIndex==0u
             ?g.finishAfterExactFraming(false,0u,150u)
             :caseIndex==1u
