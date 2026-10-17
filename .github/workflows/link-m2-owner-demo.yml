@@ -1,0 +1,60 @@
+name: LINK M2 owner standalone Windows demo (OFFLINE)
+
+on:
+  pull_request:
+    paths:
+      - 'demo/**'
+      - '.github/workflows/link-m2-owner-demo.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  portable-tray-demo:
+    name: Package and self-test offline-only SHINO LINK M2 demo
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install tray dependencies and pinned Windows packager
+        run: |
+          python -m pip install -r companion/requirements-link.txt
+          python -m pip install pyinstaller==6.16.0
+      - name: Test offline simulation logic without opening a tray
+        run: python demo/link_m2_owner_preview.py --self-test
+      - name: Build one portable Windows EXE, no console, no installer
+        run: |
+          python -m PyInstaller --clean --noconfirm --onefile --windowed --paths companion --hidden-import pystray._win32 --name SHINO-LINK-M2-ESSAI demo/link_m2_owner_preview.py
+      - name: Test bundled executable without opening a tray
+        shell: pwsh
+        run: |
+          $exe = Join-Path $PWD 'dist\SHINO-LINK-M2-ESSAI.exe'
+          if (!(Test-Path -LiteralPath $exe -PathType Leaf)) { throw 'MISSING_EXECUTABLE' }
+          $process = Start-Process -FilePath $exe -ArgumentList '--self-test' -NoNewWindow -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "EXE_SELF_TEST_FAILED $($process.ExitCode)" }
+      - name: Write byte-derived SHA256 and source commit receipt
+        shell: pwsh
+        run: |
+          $exe = Join-Path $PWD 'dist\SHINO-LINK-M2-ESSAI.exe'
+          $hash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  SHINO-LINK-M2-ESSAI.exe" | Set-Content -LiteralPath 'dist\SHA256.txt' -Encoding ascii
+          $sha = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'GIT_IDENTITY_ERROR' }
+          "Source commit: $sha" | Set-Content -LiteralPath 'dist\SOURCE_COMMIT.txt' -Encoding ascii
+          Copy-Item -LiteralPath 'demo\README_M2_ESSAI_WINDOWS.md' -Destination 'dist\LISEZ-MOI-M2.md'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SHINO-LINK-M2-ESSAI-WINDOWS
+          path: |
+            dist/SHINO-LINK-M2-ESSAI.exe
+            dist/SHA256.txt
+            dist/SOURCE_COMMIT.txt
+            dist/LISEZ-MOI-M2.md
+          if-no-files-found: error
+          retention-days: 14
