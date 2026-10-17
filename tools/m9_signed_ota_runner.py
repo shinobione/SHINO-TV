@@ -36,6 +36,8 @@ def source_gate():
         'companion/shino_qualify.py': '69992a082d06b93c4a2b94ab1be14fb4c07c890a',
         'companion/test_shino_update.py': '7a8ecbd0df3bdd3e36874767d2932374caf0b201',
         'companion/SHINO-ONE-SHOT-B.ps1': '197ab9b8f71133fb27d8931a849eb6f5aff10d3a',
+        # Deliberate PC-only LINK update, exact Git blob; no wildcard exemption.
+        'companion/shino_link.py': '9c7826702bc8475a6287024ac7128942701fe4ec',
     }
     for name in subprocess.check_output(["git","ls-files","firmware","companion","tools/m9_single_attempt*"],cwd=ROOT,text=True).splitlines():
         if name in new_offline_script_pins:
@@ -44,6 +46,22 @@ def source_gate():
             continue
         # Issue43 adds only these offline installer paths. Every PREEXISTING
         # companion, firmware and physical-writer file retains exact identity.
+        # The B2 diagnostic scripts were introduced *after* this pinned
+        # signed/StageA baseline. They are PC read-only observability and
+        # have no deployed firmware, rescue, serial or OTA writer authority.
+        # Only these two exact paths are exempt; all historical source
+        # identities below are still compared byte-for-byte.
+        if name in ('companion/shino_http_observe.py',
+                    'companion/test_shino_http_observe.py'):
+            continue
+        # New Windows-side Digest coordination and alternative qualifier
+        # added after the historic signed/StageA freeze. Do not exempt any
+        # historical firmware or physical updater path.
+        if name in ('companion/shino_digest_coord.py',
+                    'companion/test_shino_digest_coord.py',
+                    'companion/shino_coordinated_qualify.py',
+                    'companion/test_shino_coordinated_qualify.py'):
+            continue
         if name in ('companion/shino_install.py','companion/test_shino_install.py','companion/SHINO-INSTALL.cmd','companion/SHINO_INSTALL.md','companion/SHINO-OFFLINE-CHECK.cmd','companion/shino_maintenance_control.py','companion/test_shino_maintenance_control.py'):
             continue
         # Phase S has no edits to any deployed graph, sender or physical writer.
