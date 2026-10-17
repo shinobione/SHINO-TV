@@ -1,6 +1,7 @@
 // M3-B host C++ source-executed, isolated from firmware and network.
 #include "M3ModePrebodySyntax.h"
 #include <cassert>
+#include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <string>
