@@ -1,6 +1,7 @@
 // Source-backed B5.3 legacy route identity tests. No sockets, no privileges.
 #include "M3ELegacyRouteGate.h"
 #include <cassert>
+#include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <string>
