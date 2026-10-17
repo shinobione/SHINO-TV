@@ -40,12 +40,13 @@ jobs:
           PY
       - name: Build actual unmodified FslessMetrics.cpp in Digest TCP lab
         run: |
-          g++ -std=c++17 -O1 -Wall -Wextra -Werror -pedantic \
+          g++ -std=c++17 -O1 -Wall -Wextra -Werror -pedantic -DPROGMEM= \
             -I tools/host_arduinojson_stubs \
             -I firmware/include \
             -I experiments/link_m3g_real/.pio/libdeps/deps_for_host/ArduinoJson/src \
             experiments/link_m3g_real/native_integrated_real_metrics.cpp \
-            firmware/src/boot/FslessMetrics.cpp -lcrypto \
+            firmware/src/boot/FslessMetrics.cpp \
+            firmware/src/boot/FslessWebUI.cpp -lcrypto \
             -o "${{ runner.temp }}/m3g_actual_metrics"
       - name: Execute exactly twenty real TCP localhost Digest+Cookie+Metrics requests
         env:
