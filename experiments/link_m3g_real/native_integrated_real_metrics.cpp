@@ -7,12 +7,19 @@
 // listener; exact native shadow ingress -> actual incoming legacy MD5 Digest
 // proof (OpenSSL with disposable fixtures) -> existing legacy session and
 // response PREVIEW objects. Not ESP8266WebServer, production authentication,
-// a general JSON decoder, live HTML/JS, LCD, OTA or device deployment.
+// firmware LCD, OTA, Wi-Fi or device deployment. Unlike the predecessor,
+// this HOST binary DOES decode arbitrary bounded telemetry JSON and DOES
+// serve the byte-for-byte original HTML/JS assets from firmware headers.
 // The pinned nonce and cookie entropy are deliberately deterministic HOST
 // test vectors, NEVER a pattern for a real challenge/session issuer.
 #include "boot/NativeOtaSingleIngressShadow.h"
 #include "boot/NativeOtaLegacySessionReview.h"
 #include "boot/NativeOtaLegacyResponsePreview.h"
+// Actual product dashboard header uses PROGMEM; the HOST-only shim has no
+// flash address space. Do not add this macro to any firmware source.
+#ifndef PROGMEM
+#define PROGMEM
+#endif
 #include "boot/FslessWebUI.h"
 #include "boot/FslessMetrics.h"
 #include <ArduinoJson.h>
