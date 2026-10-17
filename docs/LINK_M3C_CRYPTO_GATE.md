@@ -87,6 +87,19 @@ prélecture reste à implémenter/qualifier.
 
 ## Architecture critique encore manquante — HOLD
 
+**BLOCAGE PROTOCOLAIRE IDENTIFIÉ : FIN avant ACK.**
+Le prototype exige explicitement une fin d'envoi TCP propre et zéro
+octet en attente avant le statut `VerifiedFrame`. Un client HTTP/1.1
+ordinaire peut attendre l'ACK avant de fermer la connexion : exiger
+sa fermeture au préalable créerait alors une inter-attente.
+Le drapeau `peerClosed` est **injecté dans les tests**, pas observé
+sur un `WiFiClient` réel. **Ne pas brancher tel quel ce protocole
+sur LINK.** Un futur échange doit soit cadrer sans ambiguïté
+par une longueur et un traitement de connexion uniques avec garde
+explicite des octets excédentaires/retardataires, soit définir
+et tester une demi-fermeture d'écriture compatible des deux côtés.
+Cette décision et ses tests réels sont une condition M3-D séparée.
+
 **Ne pas enregistrer** `/api/v1/display/mode` via `server.on()`
 du WebServer épinglé : le corps serait bufferisé avant authentification
 du handler. Notre C++ `headerByte()` accepte l'injection d'un octet à la
