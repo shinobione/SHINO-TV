@@ -394,7 +394,9 @@ def run_tray(config: dict[str, str], observe=None, *, clock_b52_host=None) -> in
     from link_mode_tray import ModeTrayController, build_preview_menu, passive_link_signals
     engine = make_engine(config, diagnostics=observe is not None, clock_b52_host=clock_b52_host)
     # M2 is a HOST preview only. Do not add a second sender or device POST.
-    mode_controller = ModeTrayController(lambda: passive_link_signals(engine))
+    mode_controller = ModeTrayController(
+        lambda: passive_link_signals(engine, ttl_ms=METRICS_TTL_MS)
+    )
     stop = threading.Event()
     status = {"value": "WAITING"}
     picture = Image.new("RGB", (64, 64), "#141820")
