@@ -1,5 +1,29 @@
 # SHINO // TV — Roadmap
 
+## M3-G — Parité métier métriques source-exécutée en localhost (17 octobre 2026)
+
+**GO propriétaire : avancer en laboratoire logiciel, pas de GO physique.**
+PR M3-G empilée sur #61 M3-F (9/9 PASS vérifiés à son SHA avant fork).
+Un serveur unique HTTP Linux HOST exploite le banc Digest existant,
+mais exécute désormais le **vrai `FslessMetrics.cpp`** (source non
+modifiée) avec **ArduinoJson réel épinglé 7.4.3** sur des POST
+télémétrie acceptés. Le GET répond avec `FslessMetrics::describe`
+réel, ce qui teste la conservation RAM et les refus d'échantillons
+invalides, plutôt que deux exemples synthétiques figés.
+Vingt échanges TCP loopback valident le flux Digest de démonstration,
+cookie de lecture, succès/échecs de POST et absence de writers.
+
+**Limite technique conservée :** ce banc legacy lit jusqu'à 384 octets
+avant le Digest, et son authentification fonctionne avec fixtures
+publiques, non avec secrets propriétaires. La cryptographie M3-C
+avant corps n'est **pas** ici un handler actif. Il n'y a toujours pas
+de coexistence effective de B5.3 et de M3 sur un vrai serveur
+ESP8266 unique, ni de budget mémoire/stack/WDT de ce produit.
+La totalité des opérations matérielles/OTA restent **HOLD**.
+Météo Codex B5.4, B5.3 exécuté et LINK Windows non modifiés.
+
+Voir [M3-G : vraie télémétrie du firmware dans HTTP HOST](LINK_M3G_REAL_METRICS.md).
+
 ## M3-F — WiFiServer emprunté, lecture coopérative C++ (17 octobre 2026)
 
 **GO propriétaire logiciel uniquement, pas de GO matériel** ; branche M3-F
