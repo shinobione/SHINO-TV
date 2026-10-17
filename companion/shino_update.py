@@ -171,48 +171,30 @@ def save_receipt(path,result):
 
 
 def gui(initial_manifest=None,receipt=None):
+    """Offline-only inspector; physical installs use the prebound one-shot packet."""
     import tkinter as tk
-    from tkinter import ttk,filedialog,messagebox
-    import threading,queue
-    root=tk.Tk();root.title("SHINO // UPDATE");root.geometry("650x440")
+    from tkinter import ttk, filedialog
+    root=tk.Tk();root.title("SHINO // UPDATE - inspection hors ligne");root.geometry("690x300")
     frame=ttk.Frame(root,padding=20);frame.pack(fill="both",expand=True)
     ttk.Label(frame,text="SHINO // UPDATE",font=("Segoe UI",20,"bold")).pack(anchor="w")
-    ttk.Label(frame,text="Connectez le PC au Wi-Fi SHINO. Arrêtez LINK pendant le transfert,\npuis relancez-le pour confirmer les mesures. Gardez le SmallTV alimenté.").pack(anchor="w",pady=10)
-    selected={};queue_=queue.Queue();status=tk.StringVar(value="Choisissez release.json ; la vérification reste hors ligne.")
-    bar=ttk.Progressbar(frame,maximum=100);bar.pack(fill="x",pady=10)
+    ttk.Label(frame,text="Inspection locale du candidat : aucune connexion au SmallTV ni ecriture flash.").pack(anchor="w",pady=10)
+    status=tk.StringVar(value="Choisissez release.json ; verification hors ligne uniquement.")
     def choose(path=None):
         path=path or filedialog.askopenfilename(title="Choisir release.json",filetypes=[("Release SHINO","*.json")])
         if not path:return
         manifest=Path(path);binary=manifest.parent/".pio/build/esp12e_m9_4m2m_normal_qualification/firmware.bin"
         try:
-            m,_=inspect(binary,manifest);selected.update(binary=binary,manifest=manifest,m=m)
-            status.set(f'Vérifié : {m["bytes"]} octets\nSHA-256 : {m["sha256"]}');button.configure(state="normal")
-        except (ValueError,OSError):status.set("Release invalide ou BIN absent.");button.configure(state="disabled")
-    ttk.Button(frame,text="Choisir et vérifier la nouvelle version",command=choose).pack(anchor="w")
-    def run():
-        release=dict(selected);m=release["m"]
-        if receipt and Path(receipt).exists():status.set("Un résultat existe déjà : installation bloquée pour éviter un second essai.");return
-        if not messagebox.askyesno("Installer cette version exacte ?",f'SHA-256 : {m["sha256"]}\n\nCette action programme la flash par Wi-Fi puis redémarre le SmallTV.\nPas de rollback automatique. Autorisez-vous cette installation ?'):return
-        button.configure(state="disabled")
-        def work():
-            try:
-                result=install(release["binary"],release["manifest"],DEFAULT_IDENTITY,m["sha256"],lambda n,total:queue_.put(("progress",n*100/total)),notify=lambda text:queue_.put(("status",text)))
-                save_receipt(receipt,result);queue_.put(("result",result))
-            except UpdateError as error:queue_.put(("result",{"status":str(error)+" — no retry"}))
-            except (ValueError,OSError):queue_.put(("result",{"status":"FAILED_OR_UNKNOWN_NO_RETRY"}))
-        threading.Thread(target=work,daemon=True).start()
-    button=ttk.Button(frame,text="Installer par Wi-Fi",command=run,state="disabled");button.pack(anchor="w",pady=12)
-    ttk.Label(frame,textvariable=status,wraplength=600).pack(anchor="w")
-    def poll():
-        while not queue_.empty():
-            kind,value=queue_.get()
-            if kind=="progress":bar["value"]=value
-            elif kind=="status":status.set(value)
-            else:status.set(value["status"]+" — aucun nouvel upload automatique")
-        root.after(100,poll)
+            m,_=inspect(binary,manifest)
+            status.set(f'Verifie hors ligne : {m["bytes"]} octets\nSHA-256 : {m["sha256"]}')
+        except (ValueError,OSError,TypeError):
+            status.set("Release invalide ou BIN absent. Aucune installation autorisee.")
+    ttk.Button(frame,text="Choisir et verifier la nouvelle version",command=choose).pack(anchor="w")
+    ttk.Label(frame,text="INSTALLATION BLOQUEE dans cette interface generale.\n"
+                         "Utilisez uniquement UPDATE-B*.cmd du paquet A2/B2 prelie,\n"
+                         "avec SHA de A attendu, marqueur .attempt et recu uniques.").pack(anchor="w",pady=12)
+    ttk.Label(frame,textvariable=status,wraplength=630).pack(anchor="w")
     if initial_manifest:choose(initial_manifest)
-    poll();root.mainloop()
-
+    root.mainloop()
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument("--gui",action="store_true");p.add_argument("--bin",type=Path);p.add_argument("--manifest",type=Path)
@@ -221,11 +203,18 @@ def main():
     p.add_argument("--expected-current-sha256")
     p.add_argument("--attempt-marker",type=Path)
     a=p.parse_args()
-    if a.gui or not a.bin:gui(a.manifest,a.receipt);return 0
     try:
+        if a.gui or not a.bin:
+            if a.install:raise UpdateError("The general GUI is offline-only; use the exact prebound UPDATE-B packet")
+            gui(a.manifest,a.receipt);return 0
         if a.receipt and a.receipt.exists():raise UpdateError("Existing receipt: no further attempt")
         if not a.install:m,_=inspect(a.bin,a.manifest);result=dict(status="VERIFIED_OFFLINE",**m)
-        else:result=install(a.bin,a.manifest,a.identity,a.confirm_sha256,lambda n,total:print(f"{n}/{total}",flush=True),notify=lambda text:print(text,flush=True),expected_current_sha256=a.expected_current_sha256,attempt_marker=a.attempt_marker)
+        else:
+            # Every CLI physical path must supply all three independent one-shot
+            # controls. The GUI intentionally does not offer an upload action.
+            if not (a.expected_current_sha256 and a.attempt_marker and a.receipt):
+                raise UpdateError("Install requires expected current SHA256, unique .attempt marker and receipt")
+            result=install(a.bin,a.manifest,a.identity,a.confirm_sha256,lambda n,total:print(f"{n}/{total}",flush=True),notify=lambda text:print(text,flush=True),expected_current_sha256=a.expected_current_sha256,attempt_marker=a.attempt_marker)
         save_receipt(a.receipt,result)
         print(json.dumps(result));return 0 if result["status"] in ("VERIFIED_OFFLINE","BOOT_AND_TELEMETRY_CONFIRMED") else 2
     except UpdateError as error:print(str(error)+" — no automatic retry",file=sys.stderr);return 2
