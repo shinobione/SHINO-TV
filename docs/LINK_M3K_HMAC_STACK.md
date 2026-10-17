@@ -63,6 +63,42 @@ de SHINO LINK Windows, de Freebox, de Codex B5.4 ou des branches
 concurrentes. Pas de clé de production, listener port 80 actif,
 reboot, OTA, LittleFS, flash, RTC, accès réseau SmallTV, merge.
 
+## Résultat mesuré sur le dernier exécutable CI (avant note documentaire)
+
+[CI M3-K #39070484065](https://github.com/shinobione/SHINO-TV/actions/runs/39070484065)
+a exécuté ses **deux jobs avec succès** au commit
+`96ae6fd91c4fe83728486f2316bbbba5e361c4ef`.
+
+| Mesure réelle Xtensa, **binaire inerte** | Original | Scratch sur `Gate` | Différence |
+| --- | ---: | ---: | ---: |
+| Frame `authenticateHeader<BearSslCrypto>` | 992 o | 640 o | **−352 o** |
+| Frame `bodyByte<BearSslCrypto>` | 352 o | 352 o | 0 |
+| ELF `.bss` | 27 392 o | 27 744 o | **+352 o** |
+| ELF `.data` | 1 556 o | 1 556 o | 0 |
+| ELF `.text` | 270 895 o | 270 895 o | 0 |
+| BIN | 276 544 o | 276 544 o | 0 |
+
+Les tests de parité HOST avec **le vrai OpenSSL HMAC/SHA256**
+sont également PASS dans les **deux variantes** :
+toutes les erreurs attendues et les acceptations sont identiques,
+et aucun cas de non-rejeu/FIN/body invalide n'a été supprimé.
+Le code expérimental ne modifie ni la clé ni le message signé.
+
+**Conclusion étroite :** le code M3-C compilé réduit
+la frame locale de 352 octets, **en échange des mêmes 352 octets
+réservés en RAM statique**. Les tailles BIN sont identiques
+pour les deux inertes dans cette expérience ; cela ne signifie
+ni marge mémoire libre accrue, ni sécurité mémoire certifiée
+dans une image complète B5.3. Les fichiers/empreintes de
+ces deux images sont disponibles dans l'artefact JSON dérivé.
+
+**Risque :** la BSS supplémentaire peut réduire la mémoire
+restante disponible au boot ; les 80 octets CONT rapportés
+sur la carte **ne constituent pas** un budget d'intégration.
+Mesurer l'occupation du graphe complet et les chemins
+d'appel reste obligatoire. Ne pas fusionner cette modification
+dans `firmware/` sans qualification dédiée.
+
 ## Limites et prochaine décision
 
 Même un résultat **Xtensa frame diminuée** prouve uniquement une
