@@ -7,6 +7,7 @@ ROOT=Path(__file__).resolve().parents[1]
 
 def run():
     from b52_source_compat import NEW_FILE_BLOBS, SCENE, predecessor
+    from link_m2_source_identity import LINK_M2_FILE_BLOBS, LINK_PATH, reviewed_link_predecessor
     previous=signed_gate();core=core_root()
     pins=json.loads((ROOT/'tools/m9_stagea_core_sources.json').read_text())
     for name,digest in pins.items():
@@ -41,10 +42,22 @@ def run():
         'companion/test_shino_b5_partial_preflight.py': '84adec2c7ce3ad49c9b0424afaa94af082019cb2',
     }
     new_offline_script_pins.update(NEW_FILE_BLOBS)
+    # M1/M2 are new PC-only sources; exact Git blobs, never wildcard bypasses.
+    # M2 LINK is also reconstructed against its immutable B5.2 predecessor.
+    new_offline_script_pins.update(LINK_M2_FILE_BLOBS)
+    # The verifier is new tooling outside the legacy firmware/companion set.
+    # Anchor its exact bytes too; otherwise editing it could weaken the gate.
+    verifier_blob = subprocess.check_output(
+        ["git", "hash-object", "--", "tools/link_m2_source_identity.py"],
+        cwd=ROOT, text=True,
+    ).strip()
+    assert verifier_blob == "959ee3c0de07a145f9a4654677c1c5cdf20be8f3", "M2 source verifier changed"
     for name in subprocess.check_output(['git','ls-files','firmware','companion','tools/m9_single_attempt*'],cwd=ROOT,text=True).splitlines():
         if name in new_offline_script_pins:
             digest=subprocess.check_output(['git','hash-object','--',name],cwd=ROOT,text=True).strip()
             assert digest==new_offline_script_pins[name],name
+            if name == LINK_PATH:
+                reviewed_link_predecessor((ROOT/name).read_bytes().replace(b'\r\n', b'\n'))
             continue
         # Explicit new issue43 installer files; old transport identities stay pinned.
         # The B2 diagnostic scripts were introduced *after* this pinned

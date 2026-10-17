@@ -29,7 +29,7 @@ def tracked_gate(module):
     # Include the actual reviewed-overlay import and pin-map update, while
     # continuing to exclude core_root/signing/SDK work before the assignment.
     imports = [node for node in function.body if isinstance(node, ast.ImportFrom)
-               and node.module == 'b52_source_compat']
+               and node.module in ('b52_source_compat', 'link_m2_source_identity')]
     start, end = function.body.index(assignment), function.body.index(loop)
     block = ast.Module(body=imports + function.body[start:end+1], type_ignores=[])
     exec(compile(block, module.__file__, "exec"), {"ROOT": ROOT, "subprocess": subprocess})
@@ -109,6 +109,32 @@ class OfflineSourcePinsTests(unittest.TestCase):
             with self.subTest(clock_file=name), patch.object(subprocess, "check_output", side_effect=changed):
                 with self.assertRaisesRegex(AssertionError, "offline launcher changed"):
                     tracked_gate(signed)
+
+    def test_each_new_m1_m2_source_requires_exact_reviewed_git_blob(self):
+        from link_m2_source_identity import LINK_M2_FILE_BLOBS
+        original = subprocess.check_output
+        for name in LINK_M2_FILE_BLOBS:
+            def changed(command, *args, **kwargs):
+                if command == ["git", "hash-object", "--", name]:
+                    return "0"*40 + "\n"
+                return original(command, *args, **kwargs)
+            with self.subTest(file=name), patch.object(subprocess, "check_output", side_effect=changed):
+                with self.assertRaises(AssertionError):
+                    tracked_gate(signed)
+                with self.assertRaises(AssertionError):
+                    tracked_gate(stagea)
+
+    def test_identity_verifier_is_itself_pinned_before_sdk(self):
+        original = subprocess.check_output
+        def changed(command, *args, **kwargs):
+            if command == ["git", "hash-object", "--", "tools/link_m2_source_identity.py"]:
+                return "0"*40 + "\n"
+            return original(command, *args, **kwargs)
+        for gate in (signed, stagea):
+            with self.subTest(gate=gate.__name__), \
+                 patch.object(subprocess, "check_output", side_effect=changed):
+                with self.assertRaisesRegex(AssertionError, "M2 source verifier changed"):
+                    tracked_gate(gate)
 
     def test_preexisting_companion_remains_frozen(self):
         original = Path.read_bytes
