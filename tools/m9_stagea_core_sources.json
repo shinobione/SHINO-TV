@@ -1,0 +1,10 @@
+{
+  "cores/esp8266/WString.cpp": "f1138e424d7fa31d8ac14871e9e17aa3668cdef675dcc5c714a47dcabadd3c2d",
+  "cores/esp8266/WString.h": "851c343105a9b7f956ec5a3915ff22b9578a04a7efd13396a07c4e31c5084072",
+  "cores/esp8266/cont.h": "30fbb1720956b3f2bb4a91312f1d4322f7825a007cfc8c5bde6d123b9181676e",
+  "cores/esp8266/Esp.cpp": "2b6dc6631fd9e0bdfb7c4bf39aa6e4fa90c3b3482af26130b564c9a8bf4075ac",
+  "libraries/ESP8266WiFi/src/WiFiClient.cpp": "b766b52f307c8cdff24b8192fbd526520978c297eee934058af457704f45afc6",
+  "libraries/ESP8266WiFi/src/WiFiClient.h": "e98887322abcbd5794583cbffc1c8d395aed82ac8789a9aeb28f5a5cf15af099",
+  "libraries/ESP8266WiFi/src/WiFiServer.cpp": "8c4daeb7e4468265f3df2d98562c79188acdc8e17a3e84b3d6387277b00190a9",
+  "libraries/ESP8266WiFi/src/WiFiServer.h": "b4ac47e27c621b4275a65246e191ad03434dbc6d5d913d061b59b6d461570754"
+}

@@ -25,6 +25,26 @@
 #include "config/SecureStorage.h"
 
 ConfigManager::ConfigManager(const char* filename) : filename(filename), secure() {}
+// M9_PHASE_N_BEGIN
+#include "boot/ShinoBootProfile.h"
+#if SHINO_M9_NORMAL_QUALIFICATION == 1
+#include "boot/M9StageAConfig.h"
+#include "boot/M9ProbeManifest.h"
+bool ConfigManager::loadMountedReadOnly(bool mountedAndValidated) {
+    if (!mountedAndValidated || filename != "/config.json") return false;
+    File file = LittleFS.open("/config.json", "r");
+    if (!file) return false;
+    const bool exact = M9StageAConfig::validate(file, [](size_t offset) {
+        return static_cast<uint8_t>(pgm_read_byte(M9ProbeManifest::CONFIG_SEED + offset));
+    });
+    file.close();
+    if (!exact) return false;
+    ssid.clear(); password.clear(); api_token.clear(); ntp_server.clear();
+    lcd_rotation = 0;
+    return true;
+}
+#endif
+// M9_PHASE_N_END
 
 /**
  * @brief Loads the configuration from a file stored in SPIFFS

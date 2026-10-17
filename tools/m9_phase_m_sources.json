@@ -1,0 +1,31 @@
+{
+  "esptool_version": "5.4.0",
+  "loader_sha256_lf": "0422e31127c8769c4a9486a28d5d668246fee143ab38320de7bbf6d6c11767aa",
+  "functions": {
+    "command": {
+      "start_line": 571,
+      "end_line": 651,
+      "sha256_lf": "ce76206378dde14de02620000c23f7eab67556d88c20c8b54535b34db63e02f4"
+    },
+    "sync": {
+      "start_line": 708,
+      "end_line": 722,
+      "sha256_lf": "a43e3d5c01483aadc1c3b18841efe85beda370d23ce160ba9324a845ce94890e"
+    },
+    "_connect_attempt": {
+      "start_line": 748,
+      "end_line": 800,
+      "sha256_lf": "079e8e4213ea95f8415253f32b716e3e823f3de2bab245b3719812bc57ad6971"
+    },
+    "connect": {
+      "start_line": 856,
+      "end_line": 984,
+      "sha256_lf": "e65e9e7189342527c47007595c0a30eb92711bd5560cf3e1e0fb0404cd26c9d5"
+    },
+    "slip_reader": {
+      "start_line": 2211,
+      "end_line": 2309,
+      "sha256_lf": "106612950a4d316570642087694cd4855b21b1d269163f553443c5edbf4bd951"
+    }
+  }
+}

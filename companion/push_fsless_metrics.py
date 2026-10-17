@@ -1,4 +1,4 @@
-"""Explicit PC -> SHINO-FirstBoot AP telemetry sender (volatile RAM only).
+"""Explicit PC -> reviewed SHINO AP telemetry sender (volatile RAM only).
 
 No device flash/filesystem/OTA routes are used. Windows must be connected to
 SHINO's private AP (usually 192.168.4.1) or have a route to its actual IP.
@@ -24,6 +24,7 @@ ALLOWED_NETWORKS = tuple(ipaddress.ip_network(x) for x in (
     "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16",
 ))
 ENDPOINT = "/api/v1/bridge/metrics"
+DIGEST_REALMS = ("SHINO-FirstBoot", "SHINO-StageA")
 FIELDS = (
     "ok", "cpu_usage", "gpu_usage", "memory_used_gb", "memory_total_gb",
     "gpu_vram_mb", "gpu_temp_c", "gpu_power", "gpu_available",
@@ -143,7 +144,8 @@ def encode_sample(sample: dict) -> bytes:
 def make_opener(host: str, user: str, password: str):
     url = "http://" + validate_host(host) + ENDPOINT
     store = HTTPPasswordMgrWithDefaultRealm()
-    store.add_password("SHINO-FirstBoot", url, user, password)
+    for realm in DIGEST_REALMS:
+        store.add_password(realm, url, user, password)
     return build_opener(ProxyHandler({}), NoRedirect(), TelemetryDigestAuthHandler(store, url))
 
 

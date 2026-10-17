@@ -16,6 +16,26 @@ BRIDGE=ROOT/"firmware/src/boot/FirstBootBridge.cpp"
 NATIVE_PUMP=ROOT/"firmware/src/boot/NativeOtaDevicePumpCompileProbe.cpp"
 
 
+def probe_route_block(source):
+    """Fail closed on the sole audited opt-in route; never widen legacy parity."""
+    blocks=re.findall(r'^#if SHINO_BOOT_PROFILE == 2\n'
+                      r'(    server\.on\("/api/v1/m9/fs-probe/status",.*?^    \}\);\n)'
+                      r'#endif\n',source,re.M|re.S)
+    assert len(blocks)==1,"Probe route must have its own exact profile-2 guard"
+    body=blocks[0]
+    assert re.findall(r'server\.on\("([^"]+)",\s*(HTTP_GET|HTTP_POST)',body)==[
+        ("/api/v1/m9/fs-probe/status","HTTP_GET")]
+    assert body.startswith('    server.on("/api/v1/m9/fs-probe/status", HTTP_GET, []() {\n'
+                           '        if (!requireAuth()) return;')
+    assert 'char body[M9LittleFsMountProbe::STATUS_JSON_BYTES];' in body
+    assert 'M9LittleFsMountProbe::json(body, sizeof(body))' in body
+    assert 'respond(500,' in body and 'respond(200, body);' in body
+    for forbidden in ('browserSessionValid', 'LittleFS.', 'Update.', 'ESP.restart(',
+                      'server.begin(', 'HTTP_POST'):
+        assert forbidden not in body
+    return '#if SHINO_BOOT_PROFILE == 2\n'+body+'#endif\n'
+
+
 class OwnerPort80MigrationPlanTests(unittest.TestCase):
     def test_route_classification_builds_and_runs_without_a_listener(self):
         compiler=shutil.which("g++")
@@ -36,7 +56,8 @@ class OwnerPort80MigrationPlanTests(unittest.TestCase):
     def test_exact_legacy_bridge_route_parity_is_documented_without_activation(self):
         original=BRIDGE.read_text(encoding="utf-8")
         plan=HEADER.read_text(encoding="utf-8")
-        actual=set(re.findall(r'server\.on\("([^"]+)",\s*(HTTP_GET|HTTP_POST)',original))
+        legacy=original.replace(probe_route_block(original),"")
+        actual=set(re.findall(r'server\.on\("([^"]+)",\s*(HTTP_GET|HTTP_POST)',legacy))
         expected={
             ("/","HTTP_GET"),("/ui.js","HTTP_GET"),
             ("/api/v1/bridge/metrics","HTTP_GET"),
@@ -72,6 +93,27 @@ class OwnerPort80MigrationPlanTests(unittest.TestCase):
                               "Update.begin(", "Update.write(", "Update.end(",
                               "ESP.restart(", "LittleFS.", "EEPROM."):
                 self.assertNotIn(forbidden,without_comments)
+
+    def test_profile2_probe_route_is_get_only_digest_and_bounded_on_same_owner(self):
+        original=BRIDGE.read_text(encoding="utf-8")
+        block=probe_route_block(original)
+        self.assertEqual(original.count('server.on("/api/v1/m9/fs-probe/status"'),1)
+        self.assertNotIn('/api/v1/m9/fs-probe/status',original.replace(block,''))
+        self.assertEqual(original.count("ESP8266WebServer server(80)"),1)
+        self.assertEqual(original.count("server.handleClient()"),1)
+
+    def test_probe_route_guard_auth_method_and_bound_mutations_fail_audit(self):
+        original=BRIDGE.read_text(encoding="utf-8")
+        block=probe_route_block(original)
+        for old,new in (('#if SHINO_BOOT_PROFILE == 2','#if SHINO_BOOT_PROFILE == 0'),
+                        ('HTTP_GET','HTTP_POST'),
+                        ('if (!requireAuth()) return;',
+                         'if (!browserSessionValid() && !requireAuth()) return;'),
+                        ('if (!requireAuth()) return;',''),
+                        ('STATUS_JSON_BYTES','4096')):
+            with self.subTest(mutation=old):
+                with self.assertRaises(AssertionError):
+                    probe_route_block(original.replace(block,block.replace(old,new)))
 
 if __name__=="__main__":
     unittest.main()

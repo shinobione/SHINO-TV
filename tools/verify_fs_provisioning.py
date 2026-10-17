@@ -21,6 +21,7 @@ SHINO_FS_END = 0x3FA000
 OEM_INFERRED_FS_START = 0x100000
 SHINO_FS_BYTES = SHINO_FS_END - SHINO_FS_START
 SECTOR_BYTES = 4096
+DEFAULT_ENVIRONMENT = "env:esp12e"
 DISALLOWED_ASSET_SNIPPETS = (
     b"/api/v1/ota/fw", b"/api/v1/ota/fs", b"/legacyupdate",
     b"otaUploadHandler(", b"firmware/data/config.json",
@@ -71,11 +72,13 @@ def validate_source(root: Path) -> dict:
     return {"source_files": files, "source_file_count": len(files)}
 
 
-def check_platformio(path: Path) -> None:
+def check_platformio(path: Path, environment: str = DEFAULT_ENVIRONMENT) -> None:
     cfg = ConfigParser(interpolation=None)
     with Path(path).open(encoding="utf-8") as source:
         cfg.read_file(source)
-    section = cfg["env:esp12e"] if "env:esp12e" in cfg else {}
+    if environment not in cfg:
+        raise FsInspectionError(f"Missing PlatformIO environment: {environment}")
+    section = cfg[environment]
     required = {
         "board": "esp12e",
         "board_build.flash_size": "4MB",
@@ -83,13 +86,35 @@ def check_platformio(path: Path) -> None:
         "board_build.filesystem": "littlefs",
         "board_build.ldscript": "eagle.flash.4m2m.ld",
     }
+
+    # Mission 9's opt-in environment extends env:esp12e, so values not repeated
+    # locally are resolved from the parent. ConfigParser does not implement
+    # PlatformIO's "extends" semantics; resolve this one reviewed inheritance
+    # chain explicitly for offline validation.
+    inherited = None
+    parent = section.get("extends")
+    if parent:
+        if parent not in cfg:
+            raise FsInspectionError(f"Missing PlatformIO parent environment: {parent}")
+        inherited = cfg[parent]
+
     for key, expected in required.items():
-        if section.get(key) != expected:
-            raise FsInspectionError(f"Unreviewed PlatformIO filesystem geometry: {key}")
+        actual = section.get(key)
+        if actual is None and inherited is not None:
+            actual = inherited.get(key)
+        if actual != expected:
+            raise FsInspectionError(
+                f"Unreviewed PlatformIO filesystem geometry: {environment}:{key}"
+            )
 
 
-def inspect(image_path: Path, source_root: Path, ini_path: Path) -> dict:
-    check_platformio(ini_path)
+def inspect(
+    image_path: Path,
+    source_root: Path,
+    ini_path: Path,
+    environment: str = DEFAULT_ENVIRONMENT,
+) -> dict:
+    check_platformio(ini_path, environment)
     source = validate_source(source_root)
     image = Path(image_path)
     if not image.is_file() or image.is_symlink():
@@ -97,13 +122,13 @@ def inspect(image_path: Path, source_root: Path, ini_path: Path) -> dict:
     if image.stat().st_size != SHINO_FS_BYTES:
         raise FsInspectionError(f"Wrong LittleFS image length; expected exactly {SHINO_FS_BYTES} bytes")
     body = image.read_bytes()
-    # The raw filesystem image is not an ESP8266 0xE9 application image.
     sha = hashlib.sha256(body).hexdigest()
     md5 = hashlib.md5(body, usedforsecurity=False).hexdigest()
     stage_address_atomic = SHINO_FS_START - SHINO_FS_BYTES
     assert stage_address_atomic == 0x6000
     return {
         "status": "OFFLINE_IMAGE_INTEGRITY_ONLY__FS_WRITER_NOT_AUTHORIZED",
+        "platformio_environment": environment,
         "image_bytes": len(body),
         "image_sha256": sha,
         "image_md5_for_esp8266_updater": md5,
@@ -131,10 +156,20 @@ def main() -> int:
     parser.add_argument("--image", required=True, type=Path)
     parser.add_argument("--source-root", default=Path("firmware/data"), type=Path)
     parser.add_argument("--platformio", default=Path("firmware/platformio.ini"), type=Path)
+    parser.add_argument(
+        "--environment",
+        default=DEFAULT_ENVIRONMENT,
+        help="PlatformIO section to validate, e.g. env:esp12e_m9_4m2m",
+    )
     parser.add_argument("--out", type=Path, help="New local JSON report; existing files are not overwritten")
     args = parser.parse_args()
     try:
-        result = inspect(args.image, args.source_root, args.platformio)
+        result = inspect(
+            args.image,
+            args.source_root,
+            args.platformio,
+            environment=args.environment,
+        )
         message = json.dumps(result, indent=2) + "\n"
         if args.out:
             with args.out.open("x", encoding="utf-8") as dest:

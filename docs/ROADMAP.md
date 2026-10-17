@@ -1,5 +1,154 @@
 # SHINO // TV — Roadmap
 
+## Mandat courant — OTA Breakthrough, 10 octobre 2026
+
+La demande propriétaire de cette conversation autorise la correction et la
+qualification hors ligne du chemin HTTP/HMAC/Core Updater/eboot existant, puis
+une nouvelle paire privée A2/B2 sur la branche et la Draft PR42 actuelles.
+Conserver le serveur persistant, 4m2m, LittleFS, LINK, les quatre cartes,
+les seuils mémoire et les optimisations CI-OPT ; aucune nouvelle architecture.
+
+État propriétaire courant : A corrigé
+`5c1ce8a86766282d84547fe71e2f4bb19db5077442829e2c8526e376072aa964`
+reste actif après l'unique OTA B407376 octets
+`1effdaf7172f2ce7caebd44a64e840164c418ccde95477c88ea9a28b4166aa48`.
+Windows : UNKNOWN_NO_RETRY ; appareil : FAILED_NO_COMMIT, heap29376,
+stack historique2048, LittleFS OK, OTA enabled, LINK FRESH. Cette tentative
+est terminée et ne doit pas être répétée. Les anciens A/B et backups restent
+archivés sans modification ; les sections antérieures sont historiques.
+
+Livraison attendue : contrat flash Core3.1.2 vérifié, régression de l'ancien
+lecteur, octets exacts A2/B2 exécutés dans le receiver/Core et modèle flash/eboot,
+échecs sans commande de boot, analyse stack compilée avec limites explicites,
+paquet privé Windows prêt, commit et CI du HEAD exact. Le modèle RAM ne prouve
+ni la mémoire native simultanée ni une OTA physique réussie.
+
+Aucun contact SmallTV/COM8, readback, reset, flash, OTA réelle ou merge autorisé.
+L'installation A2 et l'OTA B2 nécessitent un nouvel accord propriétaire pour
+chaque opération et ses fichiers/hashes exacts. Ne pas promettre la fermeture
+du boîtier avant qualification physique A2→B2.
+
+Livraison logicielle : [OTA Breakthrough](SHINO_HTTP_OTA_BREAKTHROUGH.md).
+Le dernier contrôle a démontré puis corrigé l'entrée IRAM hors segment chargé ;
+la première préparation privée6bb6e747 est conservée et retirée de l'installation.
+Paire définitive source propre7bd6275b,407792 octets chaque :137 refus sûrs/
+122 coupures par image, receiver/Core/eboot et HTTP A2→B2 PASS hors ligne.
+Paquet `http-ota-breakthrough-20261010-a2-b2-final/` READY_FOR_OWNER_AUTHORIZATION.
+229 artefacts historiques inchangés ;
+mémoire native et preuve physique HOLD, toutes les nouvelles opérations appareil
+NOT_RUN. CI-OPT et Draft PR42 conservées.
+
+## Reprise propriétaire du 10 octobre 2026 — stack et diagnostics
+
+Lire intégralement [le dossier officiel du matin](SHINO_2026-10-10_MORNING_HANDOFF.md).
+A est désormais installé et fonctionnel selon les preuves propriétaire ; B n'a
+pas été tenté. Le blocage observé est stack1632 <2048, avec heap31912,
+bloc29744 et fragmentation7 ; sa cause technique exacte reste à démontrer.
+Le mandat courant autorise une correction minimale hors ligne, les builds/tests
+et des diagnostics précis du qualificateur. Ne pas abaisser les seuils, masquer
+le high-water, modifier les images/identifiants privés ni créer une architecture
+ou mission supplémentaire. Aucun contact SmallTV, COM8, reflash, OTA ou reboot
+sans nouvel accord exact. Préserver A installé et toutes les preuves historiques.
+Résultat hors ligne : [correction stack et diagnostics](SHINO_HTTP_OTA_STACK_FIX.md).
+Les buffers lourds sortent de la stack et les neuf caps de frames sont contrôlés
+au build ; réserve2048 inchangée. La qualification physique reste HOLD.
+
+## Décision propriétaire antérieure — Operation Break the Loop, 10 octobre 2026
+
+Le mandat joint à la conversation autorise une livraison concrète hors ligne sur
+la branche et la Draft PR42 existantes : diagnostic sans présumer les correctifs,
+choix d'une architecture minimale, firmware normal avec OTA, installateur Windows,
+tests/builds locaux, deux images privées distinctes A/B et une séquence physique
+unique à soumettre. Les anciennes étapes ARM/PROBE/INSTALL et les prototypes ne
+sont plus des prérequis produit. Conserver l'authentification, l'intégrité/identité,
+les limites 4m2m et LittleFS, les quatre mesures et les secrets locaux.
+
+Le propriétaire rapporte l'installation UART/readback et le démarrage du BIN
+411216 octets, SHA256 `9de1ffe3abbe039bc3ed0f8eb78d1336137a5d1caae74383443fa736d1b9764d`,
+le 9 octobre, puis des GET authentifiés retournant `STAGE_A_PREBODY`/404. Cette
+observation n'établit pas une cause racine ni la qualification des correctifs
+postérieurs. Ne jamais remplacer une preuve matérielle par une simulation.
+
+**Limite actuelle : aucun contact appareil, COM8, flash ou reboot sans accord
+explicite pour l'action et les fichiers/hashes exacts.** Préparer la solution
+entière avant cette demande. Succès final uniquement après A stable, vraie OTA
+A→B, boot/identité/mesures et LittleFS vérifiés, B capable d'une autre OTA.
+Le boîtier reste ouvert jusque-là. Pas de merge ni publication des BIN/secrets.
+
+Les sections et résultats datés ci-dessous restent des preuves historiques.
+
+**Préparation unique UART/Wi-Fi (9 octobre)** : lire [le dossier de transition matérielle](SHINO_FINAL_TRANSITION_PREP.md) AVANT tout nouveau travail. But : un firmware combinant essai réseau/mémoire **sans écriture** et récepteur Wi-Fi dormant, si cela est faisable sans perdre les garde-fous, pour éviter de réouvrir le boîtier. Ce dossier est une **consigne d'implémentation hors ligne**, pas un binaire validé ni une permission de toucher l'appareil. Revoir le HEAD/CI et exiger une autorisation séparée pour un fichier exact avant tout UART/flash.
+
+## Priorité matérielle urgente — propriétaire, 9 octobre 2026
+
+**Résultat de la passe mémoire bornée : NO_GO.** Maintenance callable compilée,
+HTTP détruit avant upload, abandon/reconnexion testés hors ligne. Payload HTTP
+connu libéré724 B, delta statique+1260 B; marge illustrative1016 B après crédit,
+sans borne SDK/socket/allocateur. Les planchers simultanés restent non prouvés.
+[Résultat et arrêt](SHINO_WIFI_MAINTENANCE_RESULT.md). Installateur désactivé;
+aucune autorisation matérielle, fermeture du boîtier ou nouvelle phase.
+
+**But immédiat : REFERMER LE BOÎTIER SmallTV-ULTRA AU PLUS VITE, en rendant les futures mises à jour SHINO possibles par Wi-Fi, SANS rebrancher les pinces/UART.** Cette décision supplante l'idée de passer maintenant à la cosmétique du LCD. **Aucun travail sur les polices/couleurs/horloge/musique ne doit retarder la fermeture.**
+
+Le premier vrai jalon est « une mise à jour SHINO → SHINO réussie par Wi-Fi après la transition », pas « 38 jobs PASS » ni une étude supplémentaire. L'actuel StageA n'a aucun récepteur Wi-Fi d'installation. La dernière installation initiale peut donc nécessiter **une fois** le CH340 tant qu'une autre voie n'est pas prouvée. **Ne pas retirer les pinces/fermer définitivement avant la preuve de mise à jour, ou accepter expressément de renoncer au Wi-Fi.**
+
+**Chemin critique le plus court :** partir du petit récepteur app-only de l'issue #43 et traiter **uniquement** son NO-GO mémoire. Chercher d'abord à désactiver temporairement les fonctions non indispensables **durant une mise à jour en mode maintenance** (HTTP/dashboard/telemetry/ressources inutiles) pour réduire le pic dynamique ; conserver le Wi-Fi privé, l'authentification, l'intégrité de l'image, les protections LittleFS et les seuils mémoire. Mesurer sur **un graphe réellement actif**, pas seulement sur des pointeurs de fonctions conservés pour le linker. Si l'architecture ne peut pas maintenir les seuils sans risque, conclure NO-GO rapidement ; ne pas revenir automatiquement à la grosse implémentation S/T ni créer de nouvelles phases.
+
+Si un **candidat fermé et borné** existe : d'abord les tests/builds hors ligne et l'inspection des ressources ; ensuite soumettre un paquet unique de qualification physique et une demande d'**autorisation explicite portant sur l'image exacte** pour **une** dernière intervention UART. Installer, vérifier le boot/les quatre cartes/LINK, effectuer **une vraie mise à jour suivante via Wi-Fi**, revérifier boot + identités + LittleFS préservé, **puis seulement retirer les pinces et refermer le boîtier**. L'absence de rollback automatique ESP8266 reste un risque explicite ; aucune garantie « zéro brick ».
+
+**État constaté, non modifié :** issue #43 terminée hors ligne en NO-GO (mémoire simultanée non démontrée, scénario prudent seulement +116 B de marge), logiciel d'installation désactivé, StageA d'origine fonctionnel et immuable, PR #42 Draft. Cette priorité ne valide **aucune** écriture, reflash, redémarrage, accès réseau ou opération physique par l'agent. La prochaine intervention doit produire **du code exploitable ou un motif d'arrêt**, pas une nouvelle roadmap de sécurité.
+
+---
+
+## Priorités produit — décision du 9 octobre 2026 (LIRE EN PREMIER)
+
+**Issue43 — résultat de la passe unique : NO-GO.** Le petit prototype et
+l'installateur Windows hors ligne sont livrés; le budget simultané natif ne
+prouve pas les planchers mémoire inchangés. Installation désactivée, StageA
+inchangé, aucun contact matériel. [Preuves et arrêt](SHINO_WIFI_INSTALL_RESULT.md).
+Conformément au choix propriétaire, pas de nouvelle phase OTA automatique;
+reprendre ensuite le produit visuel uniquement sur demande explicite.
+
+**Choix technique prioritaire (9 octobre) :** [SHINO // INSTALL — candidat Wi-Fi simple](SHINO_WIFI_INSTALL.md). Évaluer en premier un récepteur **application-only** inspiré de l'ArduinoOTA existant (pas U_FS, pas de formatage FS, sécurité privée appropriée), plus un installateur Windows avec choix du BIN et vérification exacte. L'approche RSA S/T reste une référence, **pas le chemin obligatoire**. La prochaine livraison demandée est **un prototype compilé + un verdict mémoire GO/NO-GO**, pas de nouvelles phases documentaires. Aucun upload physique autorisé.
+
+> **Règle du propriétaire :** SHINO // TV doit devenir un petit écran utile et agréable. Le besoin de maintenance est simple : **installer les futures mises à jour SHINO depuis Windows, par Wi-Fi, sans avoir à reconnecter l'UART/CH340**. « OTA » (over the air) signifie seulement *mise à jour sans câble de données* dans ce projet ; ce n'est **pas** une demande d'usine à gaz de signatures, de gestion d'entreprise, de multiples serveurs ou de phases infinies.
+>
+> **Cette section est la priorité courante.** Les phases historiques, rapports de sécurité et objectifs de recherche ci-dessous sont conservés comme traces techniques, **pas comme un backlog obligatoire à exécuter avant de livrer un produit**. Toute consigne qui ferait passer le développement de l'infrastructure OTA avant l'expérience utilisateur sans besoin démontré doit être réexaminée.
+
+### Résultat attendu par le propriétaire (critère de réussite, pas une phase de laboratoire)
+
+1. Le SmallTV affiche son interface SHINO, avec ses quatre métriques fonctionnelles.
+2. Sur le PC, l'utilisateur choisit **un BIN SHINO compatible et vérifié** depuis une interface simple (page locale ou outil Windows), lance **une mise à jour Wi-Fi**, voit succès/échec sans ambiguïté, puis retrouve le SmallTV démarré avec la **nouvelle version**.
+3. Cette mise à jour ordinaire **n'utilise plus COM8/CH340/UART**, ne nécessite pas le firmware GeekMagic comme étape intermédiaire et **préserve les données LittleFS**.
+4. Quelques opérations expliquées simplement, pas de commandes cryptiques ni de marathon de captures, prompts Codex et validations répétées. Un essai encadré, une preuve de résultat, puis on passe aux fonctionnalités.
+
+### État réel à ne pas embellir
+
+- **Fonctionnel physiquement :** firmware SHINO StageA normal 4m2m déjà installé, démarrage confirmé, quatre cartes CPU/GPU/RAM/GPU TEMP, SHINO // LINK, LittleFS monté en lecture seule (24 fichiers / 181 402 octets) et travail LINK >= 180 s sans reboot/corruption, avec stale/recovery. Relevé ultérieur /status = HTTP 200 et ressources PASS.
+- **Pas encore fonctionnel :** l'actuel StageA **n'a aucun récepteur de mise à jour Wi-Fi activé**. On ne peut donc pas prétendre qu'il sait déjà recevoir une nouvelle application.
+- **Recherche conservée mais non livrée :** les preuves hors ligne des phases S/T démontrent une intégration signée/HTTP en simulation, pas une mise à jour sur le vrai SmallTV. Mémoire et abandon sûr du Core ESP8266 restent bloquants pour **cette implémentation lourde** ; ne pas en déduire sans examen qu'aucune solution plus simple n'existe.
+- **Point de transition incontournable :** avant de pouvoir effectuer *toutes les mises à jour suivantes* par Wi-Fi, il faut installer **une fois** un firmware contenant un mécanisme de mise à jour réellement opérationnel. Puisque StageA n'en possède pas, ce premier passage ne doit **pas** être promis « 100 % Wi-Fi » ; examiner une voie existante prouvée, sinon prévoir une unique installation de transition explicitement autorisée. Aucun flash n'est autorisé par cette roadmap.
+- **Récupération :** le backup privé complet 4 MiB reste la référence de secours par méthode matérielle. Une coupure au mauvais moment peut rendre un ESP8266 non démarrable par Wi-Fi ; ne jamais promettre un rollback automatique ou une sécurité absolue.
+
+### Plan de livraison, sans nouvelles phases alphabétiques
+
+| Ordre | Livrable concret | Terminé quand… |
+| --- | --- | --- |
+| **1 — Choisir la voie la plus simple** | Comparer brièvement un petit uploader authentifié compatible 4m2m, les capacités réellement disponibles sur le StageA, et l'approche signée S/T. **Rejeter la complexité inutile** ; une solution plus simple n'autorise ni image arbitraire ni écriture incontrôlée. | Une décision **GO / NO-GO** avec coûts mémoire, risque de coupure, point de transition initial et commande/UI prévue ; pas une autre architecture de recherche ouverte. |
+| **2 — Faire fonctionner la mise à jour Wi-Fi** | Un seul récepteur sur le réseau SHINO existant, validation stricte de l'identité/format/tailles du BIN, transfert borné, préservation de LittleFS, échec fermé, statut clair et redémarrage uniquement après validation. Sécurité proportionnée au besoin, sans abandonner authentification et intégrité. | Une démonstration bout-en-bout sur un **candidat de test hors ligne**, puis une seule installation/qualification physique séparément approuvée ; la **mise à jour suivante réussit par Wi-Fi sans UART**. |
+| **3 — Faire un beau SHINO // TV** | Conserver la page des quatre valeurs et améliorer lisibilité/contraste/polices ; ajouter progressivement horloge, météo locale configurable et musique/pochette depuis SHINO // LINK, selon la place réelle en mémoire. | Fonctions visibles, stables sur le LCD 240×240, approuvées par le propriétaire, sans perdre le fonctionnement existant. |
+| **4 — Usage quotidien** | Paramétrage simple, démarrage et reconnexion LINK fiables, comportement PC absent, aide courte pour mise à jour et récupération. | Le boîtier est refermé ; l'utilisateur profite de l'écran et ne ressort plus l'UART pour une mise à jour normale. |
+
+### Règles de pilotage anti-usine-à-gaz
+
+- **Une itération = un résultat visible ou un verdict définitif.** Pas de multiplication automatique de « Mission 9 Phase X/Y/Z » pour prolonger une approche qui bloque.
+- **L'outil doit servir le produit.** Les signatures, la protection anti-rejeu, le streaming et les tests ne sont des objectifs que s'ils protègent concrètement la mise à jour choisie ; aucun « cadre OTA professionnel » n'est un livrable demandé par le propriétaire.
+- **Garde-fous conservés :** pas de flash sans autorisation explicite pour un fichier exact, pas de formatage LittleFS, pas d'exposition Internet, pas de déclassement silencieux de la sécurité, pas d'activation d'un writer non vérifié ni de fausse promesse de récupération.
+- **Si le petit updater sûr n'est pas faisable maintenant :** conclure **NO-GO**, préserver le StageA, **revenir aux améliorations visuelles et fonctionnelles**. Ne pas consommer une nouvelle soirée à produire uniquement des preuves supplémentaires de la même impasse.
+- **Codex doit commencer par cette section et résumer le prochain bénéfice utilisateur en une phrase avant d'entreprendre une tâche.** Une roadmap n'autorise ni merge, ni flash, ni redémarrage, ni contact matériel.
+
+---
+
 > **Active product status — 1 October 2026.** This section supersedes the 28 September status claims preserved further below for historical traceability. One owner SmallTV-Ultra, exact 240×240 LCD, Wi-Fi-only maintenance (USB-C power; no UART/JTAG/solder). This is planning, not permission to flash, merge, provision a production key or deploy.
 
 ## 1 October 2026 — Canonical agent handoff and square design references
@@ -13,6 +162,624 @@
 **Visual direction only, not a claimed native LCD screenshot.** Use native font/driver previews and measured ESP8266 resource tests to finalize. The [marquee overflow reference](design-reference/marquee-scrolled.svg) illustrates a long title moving *inside its own clipped line*, not shrinking the whole UI. The previous PR #40 96×96 cover + four metrics scene is a validated offline integration **test fixture only**; it is not the intended shipped mixed mode. Do not mistake the dated "native media BLOCKED" claims in the historical 28 September text for today's physically qualified 32×32 RAM receiver.
 
 ## Product contract — owner clarification, 1 October 2026
+
+**Phase T single-owner integration — owner decision, 8 October 2026:**
+[Exact instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6067111422)
+authorizes one bounded offline engineering pass from `b59964af43b555b75d415e6d063580945e6d99f7`
+on the existing branch/Draft PR42. Execute real StageA handlers and bounded OTA
+ingress on one host loopback listener with inert credentials/RAM staging;
+pair actual public StageA Xtensa baseline/integrated graphs without activating
+an OTA route or supplying a deployable key. Preserve frozen StageA, firmware,
+physical writer and prior evidence. Owner reports heap30224/block30008/runtime
+continuation3248 minima, 1% fragmentation, 445 samples/0 rejects; these are
+not simultaneous OTA high-water measurements. S admission31544/22584/4096
+and physical floors20480/16384/2048 remain unchanged. Runtime gate HOLD/PARTIAL,
+mount PASS. Measure memory and document nonreusable poison/recovery limits;
+stop after exact-head CI with explicit HTTP/native/memory/production gates.
+No private input, device contact, flash, RTC/FS write, reboot or merge.
+
+**Phase S signed OTA substrate — owner decision, 8 October 2026:**
+[Exact owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6065735151)
+authorizes offline implementation/qualification from clean
+`7455f6b353f1733a78f2a6d25503edb063f7befb`, existing branch/Draft PR42.
+Implement a separately opted-in, unwired4m2m signed SHINO release contract,
+stream/consent state machine, native RSA/Core adapter and real pinned Xtensa
+compile proof. Preserve the StageA static_assert, default/profile0/profile2/
+normal source/byte identity, active physical writer, frozen image and FS.
+No owner private key/credentials/BIN/backup read, test-key deployable image,
+live OTA route, updater execution on a device or physical promotion. Preserve
+the critical signed-Updater/OEM unsigned-MD5 mutual exclusion. Source-executed
+host/Core simulations, interrupted/negative tests, resource deltas and exact-
+head CI precede STOP. Six device counters0; no flash/reboot/merge/contact.
+Owner reports Phase R status200 and resource floors PASS; mount gate PASS,
+runtime HOLD/PARTIAL and intermittent404 unattributed remain unchanged.
+
+**Phase S offline result:** [Integration receipt](M09_PHASE_S_SIGNED_OTA_INTEGRATION.md).
+Separate4m2m verifier/consent/stream state and dedicated signed-only native
+Updater adapter are implemented and unwired.11 release regressions,250 actual
+Core/RSA transactions,197 interrupted stream and32 RTC boundaries PASS;
+zero post-failure boot dispatches.392 normal GETs/49 four-metric samples during
+196-chunk host upload model; pinned Xtensa baseline/proof both link. Static RAM
+delta+920 B/.noinit0; original resource floors retained. Production integration
+HOLD: trust/network/writer lifetime/cleanup/antirollback/resource timing and
+postcommit power-loss recovery unresolved. SIGNED_OTA_OFFLINE_GATE=PASS_UNWIRED_ONLY;
+all Phase S production/physical execution NOT_RUN. Firmware/companion/writer/
+frozen identity unchanged, owner private inputs unread. Six counters0, same
+Draft PR42; exact-head CI then STOP, no contact/flash/reboot/merge.
+
+**Phase R sanitized StageA status helper — owner decision, 8 October 2026:**
+[Exact owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6065184600)
+authorizes host-only implementation from clean
+`62a28324aac58e0628e9dd61f473ca91802e09b4`, same branch/Draft PR42.
+Prepare one short future owner command for the exact StageA status GET using
+strict private LINK config/credentials and closed SHINO-StageA Digest. Default
+and audit modes remain offline; bounded responses and fixed sanitized output
+only. Codex must never execute the live option. Validate with in-memory urllib
+fixtures and relevant companion regressions, commit/push/exact-head CI, then
+STOP before device contact. Preserve Phase Q sources/evidence, firmware,
+frozen images, writer binding, LINK sender and resource floors. Normal mount
+PASS remains owner evidence; runtime HOLD/PARTIAL and intermittent404 root
+cause unresolved. No physical promotion or merge; all device counters0.
+
+**Phase R offline result:** [Focused receipt](M09_PHASE_R_STATUS_PROBE.md) and
+[one-command operator README](../companion/M9_STAGEA_STATUS_PROBE.md).
+Sanitized exact-route helper,13 guarded in-memory urllib tests and47 sender/
+LINK regressions PASS. Broader companion run180 PASS with4 existing local
+C++/OpenSSL dependency skips (exact-head Linux CI supplies those dependencies).
+Firmware, tools/writer, LINK sender, Phase Q sources and both frozen image
+hashes unchanged. Codex never executes the live option. Mount PASS is prior
+owner evidence; runtime HOLD/PARTIAL,404 unresolved. STOP before device contact.
+
+**Phase Q GET control-plane repair — owner decision, 8 October 2026:**
+[Exact owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6064567041)
+authorizes offline reproduction/root cause first from clean
+`061b5a844c00776e71a5a7803a2559b7500a4ce7`, existing branch/Draft PR42.
+Extend the actual StageA-patched pinned Core parser/Digest lab: initial status
+GET, >=100 accepted telemetry POSTs, stale/recovery-equivalent state, fresh
+authenticated final status aliases/resources on one server lifetime. Attribute
+404 to policy/parser/route/auth/cleanup before the smallest correct fix; retain
+all authentication, pre-body, route, no-write and Phase P constraints. Owner
+reports exact399264 B StageA installed, full PRE/POST/padding/protected range
+preserved, RTC already0/0, mount/config exact24 files/181402 B, sustained LINK,
+stale/recovery and no reboot/corruption, but final GET404. Thus
+NORMAL_PROFILE_LITTLEFS_MOUNT_GATE=PASS (owner evidence),
+NORMAL_PROFILE_RUNTIME_GATE=HOLD/PARTIAL. Preserve historical receipts.
+If firmware changes, at most one replacement local freeze after offline gates;
+writer rebind is a separate owner step. Otherwise no rebuild/refreeze. Frozen
+LittleFS unchanged. Commit/push/exact-head CI; no merge. Six agent device
+counters0; STOP before any device operation.
+
+**Phase Q offline result:** [Focused receipt](M09_PHASE_Q_GET_CONTROL_PLANE.md).
+Actual patched pinned parser/Core Digest plus unchanged StageA controller,
+status serializer, telemetry and dashboard:202 accepted POSTs across stock and
+Phase P cached clients, virtual2 s cadence, stale/recovery and12 final fresh
+GETs across both clients/all three status-resource paths PASS/200. Owner's exact
+GET headers/credentials-loader represented with public synthetic credentials;
+natural peer close, policy/handler/args/plain/auth-presence tracing.233 raw parser
+checks and244 relevant regressions plus47 Phase P companion tests PASS.
+Owner404 remains **NOT REPRODUCED / ROOT CAUSE UNRESOLVED**; no unsupported
+firmware/client change. All113 firmware pins/writer binding and retained
+StageA/LittleFS hashes unchanged; no build/freeze/rebind. Normal mount PASS is
+owner evidence only; runtime HOLD/PARTIAL. Exact-head CI in PR42 after push.
+Six device counters0; STOP/no device operation/merge.
+
+**Phase P LINK Digest compatibility — owner decision, 7 October 2026:**
+[Exact owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6047604159)
+authorizes a host-only hotfix from clean
+`e0aeedbb928c0a8bb90ace341dc55a9f42891188`, same branch and Draft PR42.
+Owner-reported StageA status authentication and a one-shot controlled comparison
+isolate LINK's legacy-only realm registration. Register the same existing private
+Digest user/password for the closed pair `SHINO-FirstBoot` and `SHINO-StageA`.
+Preserve endpoint, credential format, Digest handler/cache, payload, cadence,
+backoff and opener recovery. No realm configuration, arbitrary realm, Basic,
+proxy, redirect or alternate endpoint. Verify real urllib Digest with in-memory
+host transport only; no network/device request during this pass. Firmware,
+writer binding, frozen BIN, physical receipts and normal gate verdicts remain
+unchanged. Six device counters0; STOP before device operation/reboot/flash/merge.
+
+**Phase O writer rebind — owner decision, 7 October 2026:**
+[Exact owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6044586614)
+accepts Phase N offline qualification and authorizes a targeted OFFLINE binding
+review/rebind from clean `f53de10e2aea6825b53c164eb3cc9b2e7156f654`, same branch
+and Draft/open/unmerged PR42. Select only retained normal StageA399264 B,
+SHA-256 `78a8d2d50409974fc775dd3dc9f3dbec4ac8eda839f6d9b338cadf35aab2467c`,
+target0, payload end0x0617A0/rounded0x062000;98 unique4096 B packets0..97,
+last1952 B payload/2144 B FF padding. No firmware/private policy/linker/FS change,
+candidate rebuild or substitution. Preserve Phase M acquisition and the exact
+single-attempt transaction classes; only binding/receipt metadata may change.
+Old successor/J hashes and GO, altered normal bytes must fail before acquisition.
+Fresh private full4MiB PRE and independent POST before first normal boot remain
+mandatory; exact candidate at zero and POST[0x062000:0x400000]==PRE continuously.
+RTC-neutralization/boot transition remain separate later physical gates. Installed
+profile2 probe PASS remains historical owner evidence; both normal physical gates
+NOT_RUN. Future packet PRINT ONLY/not authorized. Six device counters0. STOP;
+DO NOT FLASH/REBOOT/MERGE. [Focused Phase O receipt](M09_PHASE_O_WRITER_REBIND.md).
+**Offline result:** retained image/size/SHA/CRC and all113 unchanged firmware
+pins PASS; exact transaction-class source preserved, runner changed only numeric
+success receipt.248 regressions PASS/0 failures/errors/skips, both404-position/
+exception fault matrices PASS; default runner audit opens no port. Normal gates
+NOT_RUN, six counters0; exact-head CI/final commit in existing PR42 after push.
+
+**Phase N StageA implementation — owner decision, 7 October 2026:**
+[Owner instruction](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6043431763)
+authorizes OFFLINE implementation from exact clean
+`2bd225ad21e8e0839b7757c7092a227a1fb81de1`, same branch/Draft PR #42.
+Implement true profile1 `esp12e_m9_4m2m_normal_qualification`, exact opt-in,
+application-only target guard, normal main/services (no FirstBootBridge delegation),
+single proven read-only4m2m mount/inventory/hash/blank-seed owner, bounded mounted
+ConfigManager read-only API, private Digest and volatile AP, RAM-only four-value
+telemetry with6 s stale behavior, cached scalar setup/FS-config/runtime resources.
+No legacy API list, SecureStorage/EEPROM/RTC/token/SDK persistence, STA onboarding,
+FS mutation, generic/native OTA writer or signed media ingress in StageA. Media
+and full scenes are explicitly deferred by this owner decision; existing running
+profile0/profile2 media/product evidence is not rewritten. Defaults/profile0/2
+unchanged except narrowly reviewed shared refactors with regression/paired proof.
+Retain frozen FS/tail and installed successor; physical writer NOT rebound.
+All requested host/regression/profile0/profile2/profile1 build/link/resource gates,
+focused receipt, same-branch commit/push/exact-head CI; freeze one ignored local
+StageA candidate only after offline gates pass. Both normal physical gates stay
+NOT_RUN. Six agent device counters ZERO. STOP; DO NOT FLASH/REBIND/MERGE.
+
+**Phase N implementation checkpoint:** [focused StageA receipt](M09_PHASE_N_STAGE_A.md).
+Real profile1 normal services, one read-only mounted FS owner, bounded blank
+ConfigManager load, private Digest pre-body parser and RAM four-card telemetry;
+no bridge delegation/persistence/legacy writers/media/OTA. Public default/profile0/
+profile2 paired BINs byte-identical; public StageA source/link/ABI/resource PASS,
+395115B linked/39736B static RAM/56B noinit. Final candidate/test/CI checkpoint is
+recorded in the receipt: one ignored399264B normal freeze from cleanf12a0fe,
+SHA-256`78a8d2d50409974fc775dd3dc9f3dbec4ac8eda839f6d9b338cadf35aab2467c`,
+payload end0x0617A0/rounded0x062000,private linked395107B/static39736B/noinit56B;
+238 regressions/29 real-parser Digest loopback checks PASS. Offline GO; both
+normal physical gates NOT_RUN; writer stays bound
+to installed profile2 successor. Six counters0; no physical operation/rebind/merge.
+
+**Normal-profile readiness pass — owner decision, 7 October 2026:**
+continue current PR #42 head `1b696e530d6d2b0d1bfa6503b5fe320214ac621f`,
+same branch/Draft/open/unmerged PR. [Latest owner comment](https://github.com/shinobione/SHINO-TV/pull/42#issuecomment-6042956937)
+supplies physical acceptance of the exact 411152 B successor
+`e1852e56d99801b694f37d235b08a201188cf36d5a25f3f6f59d059a129bc27e`:
+**MOUNT_PROBE_RESOURCE_PHYSICAL_GATE PASS; MOUNT_PROBE_PHYSICAL_GATE PASS**,
+dedicated profile 2 only. Both normal-profile gates remain **NOT_RUN**.
+First record the [owner-supplied receipt](M09_SUCCESSOR_PHYSICAL_ACCEPTANCE.md),
+then audit/design normal 4m2m startup offline; implement/freeze a true normal
+candidate only if defensible and all offline gates pass. Separate intentional
+persistence from accidental mounts/migration/EEPROM/token/RTC/SDK mutation;
+reserve the 24 KiB tail, preserve frozen FS and OTA-disabled policy, retain
+probe resource floors and justify any distinct normal policy. Require exact
+source hazards/design/files/build geometry/resources/tests/exact-head CI and a
+PRINT ONLY future packet. All six agent device counters ZERO. STOP after
+offline qualification; DO NOT FLASH; DO NOT MERGE. Older dated receipts below
+retain their original HOLD/NOT_RUN results and are historical evidence.
+
+**7 October normal readiness result:** [Focused source/design receipt](M09_NORMAL_PROFILE_READINESS.md).
+Design-only GO; normal candidate HOLD.20 source hazard anchors,103 unchanged
+firmware files,staged real-normal read-only integration/persistence separation.
+EEPROM commit would touch reserved0x3FB000; legacy normal authentication/route/
+scene/metrics graph cannot preserve current product by removing one guard.
+Proposed normal environment/profile is not implemented; no normal candidate
+freeze. Public-fixture profile0 reference4m2m build399168 B,linked395011 B,
+static40344 B,noinit56 B; expected profile1 rejection PASS. Normal build/resource
+gates HOLD and physical normal gates NOT_RUN; physical probe PASS is owner scope
+only. All six agent counters0; exact-head CI required; STOP/no flash/no merge.
+
+**Targeted physical-writer rebind — owner decision, 7 October 2026:**
+continue exact HEAD `849d430f6736f349a089cbac7acf2c9648e9b887`, existing branch
+and Draft/open/unmerged PR #42. Authorize OFFLINE rebind of the qualified
+single-attempt writer to retained
+`research-local/m9-mount-stack/frozen-successor-resource-probe.bin`, exactly
+411152 B / SHA-256
+`e1852e56d99801b694f37d235b08a201188cf36d5a25f3f6f59d059a129bc27e`.
+Target0, payload end0x064610, rounded end0x065000; protect0x065000..0x3FFFFF.
+Rehash only, no rebuild/substitution or firmware changes. Update candidate
+constants/dependent pins/tests/docs; preserve Phase M bounded ROM acquisition,
+post-stub4 MiB gate, one Begin/101 unique DATA/one Finish/one MD5 barrier,
+zero flash retry/reconnect/reset/reopen after transaction start and zero recovery
+write. Full independent4 MiB POST before boot remains mandatory; heap>=20480,
+largest block>=16384, fragmentation<=25%, continuation stack>=2048 unchanged.
+Run affected tests/Mission9 regressions, commit/push and exact-head CI only.
+All six device-operation counters0; no physical authority. STOP. DO NOT FLASH.
+
+**7 October writer-rebind offline result:** [Focused receipt](M09_PHYSICAL_WRITER_REBIND.md).
+Retained successor rehash/image inspection PASS; active writer selects411152 B /
+e1852e56...9bc27e, historical J recorded separately.101 unique4096 B blocks,
+last1552 payload/2544 padding.223 local checks PASS (196 Mission9+27 related),
+zero failure/error/skip; approved interpreter/package/source gates PASS. Default
+runner audit `AUDIT_PRINT_ONLY_NO_PORT_OPEN`; no firmware build/change. Phase M
+runner, both transaction classes and resource policy unchanged. Full POST before
+boot mandatory; physical successor NOT_RUN, installed resource HOLD, normal
+gates NOT_RUN. Six agent counters0. Same-branch exact-head CI required; STOP.
+
+**Targeted Resource Probe mount-stack remediation — owner decision, 7 October 2026:**
+continue clean `96c5804f5435a71fc1e3cd7b04004af438a650ac`, same branch and
+Draft/open/unmerged PR #42. Owner reports exact 411136-byte J candidate
+`2ce2fa8da00de5c60109d0675c7bcf58ab41df2138d913b607fde25994e5a835`
+installed and booted: mount/inventory/config exact, 24 files/181402 bytes,
+zero blocked writes/rejected samples. Mount continuation minimum **1776 B**
+fails unchanged **2048 B** floor by272 B; runtime minimum3296 B passes.
+Physical resource gate **HOLD**, never reinterpret1776 as PASS.
+Authorize OFFLINE profile-2 bounded validation scratch remediation, host fault
+tests, paired uninstrumented/instrumented builds and exact frame/RAM/flash audit,
+one new local successor freeze only after offline gates pass, focused receipt,
+same-branch commit/push and exact-head CI. Prefer one fixed workspace, no scratch
+heap allocation; target linked mount-path frame reduction>=384 B, static RAM
+delta<=512 B, linked flash delta<=4096 B, no new frame>1024 B. Preserve single
+no-autoformat read-only mount/inventory/hash/seed/256-byte stream semantics,
+instrumentation windows/thresholds and Phase M physical runner. Installed J
+candidate remains separate historical evidence, never rebuilt/substituted.
+Future replacement packet PRINT ONLY; no device contact, serial I/O, flash/RTC/
+FS writes, reboot, normal activation or merge. Both normal gates remain NOT_RUN.
+
+**7 October mount-stack offline result:** [Focused receipt](M09_MOUNT_STACK_REMEDIATION.md).
+One408 B BSS profile2 workspace; guard rejects nested validation before scratch/
+reader/hash/counter mutation. No scratch heap allocation or semantics change.
+Final clean paired mount own frames848->272 B (**-576**); checkPayloads/validate
+inline into begin272 B, new startup initializer0 B. Both profiles static RAM
+**+408**, linked flash **+16**, noinit56 B /0 delta; no new frame>1024 B.
+All222 checks PASS, no failure/error/skip; source/Core/package/link/image gates
+PASS. Clean source9f86a73d999168d052e2037a4fcb999cfe9a2e2c, one frozen local
+instrumented successor **411152 B**, SHA256
+`e1852e56d99801b694f37d235b08a201188cf36d5a25f3f6f59d059a129bc27e`;
+rounded0x065000, margins634880/1683456 B. BIN/ELF ignored, historical installed
+J retained exact, M runner/transaction/observer/thresholds unchanged. Exact-head
+CI receipt in PR #42; agent six counters0. Owner's installed mount1776 remains
+FAIL/HOLD at unchanged2048 floor; successor physical NOT_RUN. PRINT ONLY future
+replacement packet, current writer remains pinned to historical J and cannot
+accept new bytes without separate reviewed binding/authority. STOP; no flash,
+reboot, merge or normal activation.
+
+**Mount-stack CI reporting followup:** at e24df9e both layout builds succeeded,
+but the historical H parser rejected the now-inlined checkPayloads SU entry.
+Accept that form only with linked absence/one bounded workspace/>=384 B frame
+reduction proof; capture symbol sizes. No safety bound, firmware or frozen
+candidate changed. Final223 local checks PASS (220+3), zero failures/errors/skips;
+exact H CLI passes. Failed runs and correction retained in the focused receipt;
+new exact-head CI required in existing PR #42. Source freeze9f86a73 and candidate
+e1852e56...9bc27e remain exact; physical HOLD, six agent counters0, STOP.
+
+**Phase M targeted physical-compatibility addendum — owner decision, 7 October 2026:**
+continue clean `d4052a842b0faa5f11184c03375ca0557621d8cd`, same branch and
+Draft/open/unmerged PR #42. Owner no-flash diagnostic passed bounded fresh SYNC,
+chip magic and pinned-v2 RAM upload/geometry: raw ROM capacity byte0x00,
+post-stub capacity byte0x16, Begin/DATA sent0. Earlier independent readback
+proved unchanged PRE, zero app/protected/total changed bytes and exact FS.
+Authorize OFFLINE removal ONLY of the pre-stub ROM capacity assertion, with
+targeted/regression tests, necessary source-pin/docs updates, commit/push and
+exact-head CI. Keep fresh ROM/magic/v2/no-plugin/exact stub checks and the measured
+post-stub0x16 gate BEFORE Begin; no inferred capacity assertion. Keep M SYNC,
+firmware/frozen candidate and one Begin/101 DATA/Finish/MD5 unchanged.
+No device contact, physical writes, reboot, rollback, merge or normal activation.
+RAW_ROM_FLASH_CAPACITY_GATE=REJECTED_BY_PHYSICAL_EVIDENCE;
+POST_STUB_4MIB_CAPACITY_GATE=REQUIRED. STOP after this small addendum.
+
+**7 October offline result:** exact one-line raw-ROM assertion removal,
+sole helper pin refreshed, M runner/transaction/103 firmware sources unchanged.
+Retained411136-byte J candidate rehash PASS, no rebuild/substitution. All218
+checks PASS (215 suite +3 scoped source), no failure/error/skip; includes new
+capacity cases, all five SYNC positions and full416 fault matrix. Package/source
+pins PASS; default audit opens no port. [Small addendum](M09_PHASE_L_SYNC_HOTFIX.md#small-physical-compatibility-addendum--7-october-2026)
+and PR #42 carry validation/CI receipts. All six agent device counters0;
+resource physical HOLD/NOT_RUN, overall PARTIAL/HOLD, both normal gates NOT_RUN.
+
+**Mission 9 Phase M owner decision, 6 October 2026:** continue existing
+Draft/open/unmerged PR #42 from clean `2ea22809028f1b1e11ffecd3dbc471079d04b547`
+on the same branch. Authorize OFFLINE acquisition-only hotfix, fake tests,
+source/version/candidate checks, documentation, commit/push and exact-head CI.
+Owner reports a physical L attempt stopped at fresh SYNC with conservative
+UNKNOWN; immediate independent full 4 MiB readback proved PRE==POST, zero changed
+bytes, FS/tail/protected preservation and no app boot before readback. Candidate
+was not installed. RX purge did not fix single-shot SYNC; stock no-reset
+connect(attempts=1, detecting=True, warnings=False) passed without stub/flash.
+Reject PHASE_L_SINGLE_SYNC_ASSUMPTION by physical evidence. Implement at most
+five pre-stub SYNC requests on one open handle with global 5 s/16384 B/256-read
+budgets and 50 ms retry delay; no reset/DTR/RTS/reopen/reconnect. Preserve all
+firmware, exact frozen 411136-byte candidate and K transaction. No device contact
+or physical operations in M; resource physical HOLD/NOT_RUN, overall PARTIAL/HOLD,
+normal gates NOT_RUN. Preserve L history. STOP after M; no flash/reboot/merge.
+
+**Mission 9 Phase M offline result, 6 October 2026:**
+[SYNC hotfix receipt](M09_PHASE_L_SYNC_HOTFIX.md) records the owner failed-attempt
+readback and exact pinned source review. Acquisition-only hotfix allows at most
+five pre-stub SYNC requests on the same port under one global 5 s/16384 B/256-read
+budget, 50 ms retry delay, fresh SLIP state and whole-sequence classification.
+No physical operations, firmware/candidate rebuild, K transaction change,
+post-Begin retries, resets, reopen/reconnect or rollback. M root-cause/source/
+regression/frozen-identity gates PASS/OFFLINE; resource physical HOLD/NOT_RUN,
+overall PARTIAL/HOLD, both normal gates NOT_RUN. All six M counters zero.
+Owner physical evidence does not claim successful installation/resource PASS.
+L historical lines below remain retained. STOP after M, Draft PR #42 unmerged.
+
+**Mission 9 Phase L owner decision, 6 October 2026:** continue existing
+Draft/open/unmerged PR #42 from clean `c7ddb45c3ddc0702c7d7a191268f7634a3c5550d`
+on the existing Mission 9 branch. Authorize OFFLINE implementation/qualification
+of one explicit-port, manually established fresh-ROM session runner using the
+unchanged Phase K executor, with fake serial tests, documentation, commit/push
+and exact-head CI. Require approved Python 3.12.x, existing exact package/source
+pins, disabled DTR/RTS before open, one bounded reset-free sync, every execution
+latch and no flash retry/reconnect/reset/recovery. Preserve all firmware bytes
+and the exact frozen J candidate; no rebuild/substitution. A qualified future
+command is PRINT ONLY, requiring separate physical authority. ZERO device
+contact, serial I/O, flash/RTC/FS writes or reboots; normal gates remain NOT_RUN.
+STOP after Phase L; no normal-profile activation or merge. Preserve K history.
+
+**Mission 9 Phase L offline result, 6 October 2026:**
+[Physical runner receipt](M09_SINGLE_ATTEMPT_PHYSICAL_RUNNER.md) supplies the
+separate one-port/manual fresh-ROM acquisition layer for unchanged K execution.
+Source, supported-API port control and single-transaction integration gates
+PASS/OFFLINE; tests use fake serial. DTR/RTS false before open, bounded one SYNC,
+exact local interpreter/package/source/candidate latches, pinned v2 handoff,
+no flash retry/reconnect/reset/recovery. OS/adapter electrical isolation is
+unproved and still a separate physical prerequisite. All103 firmware files and
+411136-byte frozen J candidate/hash unchanged. Resource physical HOLD/NOT_RUN,
+overall PARTIAL/HOLD; both normal gates NOT_RUN. All six operation counters zero.
+Future command PRINT ONLY; existing Draft PR #42 remains unmerged. STOP after L.
+
+**Mission 9 Phase K owner decision, 6 October 2026:** continue existing
+Draft/open/unmerged PR #42 from clean
+`063553fd70772527edc13168e59c83088453dd1a` on the existing Mission 9 branch.
+Authorize OFFLINE resource-policy/source review and single-attempt application
+executor qualification with fake transport, tests, documentation, commit/push
+and exact-head CI. Preserve frozen J firmware source and exact 411136-byte BIN;
+no rebuild/substitution or firmware change. Scope any defensible acceptance
+policy to the instrumented profile-2 probe alone; unresolved numeric criteria
+must STOP without preparing physical authorization. Audit pinned esptool 5.4.0
+and stub v2 whole-write/block retries. Future physical packet is PRINT ONLY,
+conditional on both offline prerequisite gates and separate exact-operation GO.
+No SmallTV contact, serial I/O, flash/RTC/FS write, reboot, normal-profile
+activation, automatic retry/rollback or merge. STOP after Phase K.
+Phase J and older dated gates/evidence below remain unchanged.
+
+**Mission 9 Phase K offline result, 6 October 2026:**
+[Resource-policy/executor receipt](M09_RESOURCE_POLICY_AND_EXECUTOR_QUALIFICATION.md)
+defines explicit conservative criteria for **M9_PROFILE2_INSTRUMENTED_MOUNT_PROBE_ONLY**:
+heap >=20480 B, largest block >=16384 B, Core fragmentation <=25%, continuation
+free >=2048 B; exact reserves/evidence/rationale are recorded, not universal floors.
+Pinned esptool 5.4.0 whole-write and packet retries are bypassed by a one-shot
+direct-command core: 1 Begin/101 unique 4096-byte data packets/1 Finish, no automatic
+flash retry/reconnect/reset/rollback. CLI audits/prints only, requiring a future
+separately qualified fresh ROM session/owner GO for any physical execution.
+Resource-policy/executor/frozen-identity gates **PASS/OFFLINE**; retained 411136 B
+J BIN rehashed exact, all 103 firmware files unchanged, no local firmware rebuild.
+**189 local tests PASS**, exact-head CI tracked in existing Draft PR #42. Physical
+resource gate **HOLD / NOT_RUN**, overall physical **PARTIAL / HOLD**, both normal
+gates **NOT_RUN**. All six K device counters **0**. Future packet PRINT ONLY;
+STOP after K without current-unit modification, activation or merge.
+
+**Mission 9 Phase J owner decision, 6 October 2026:** continue existing
+Draft/open/unmerged PR #42 from clean
+`9029df6cb40b0f3714fead05247c1411226dfde6` on the existing Mission 9 branch.
+Authorize one OFFLINE instrumented profile-2 successor, deterministic tests,
+default/uninstrumented/instrumented application builds, pinned Core/source/link/
+image/resource qualification, documentation, commit/push and exact-head CI.
+Use a separate explicit resource environment/flag; preserve the existing probe's
+mount/inventory/blank-config/read-only adapter, telemetry/authentication and all
+ConfigManager/SecureStorage/EEPROM/STA/OTA/FS-writer exclusions. Keep profile 0
+and defaults unchanged; profile 1 prohibited. Two explicit continuation-stack
+watermark windows (mount, runtime); no runtime reset, timer/ISR or HTTP-handler
+resource sampling. Keep scalar observation and response buffers bounded.
+Audit applicable existing physical thresholds; do not invent a passing floor.
+**MOUNT_PROBE_PHYSICAL_GATE PARTIAL / HOLD;
+MOUNT_PROBE_RESOURCE_PHYSICAL_GATE HOLD / NOT_RUN;
+NORMAL_PROFILE_LITTLEFS_MOUNT_GATE NOT_RUN;
+NORMAL_PROFILE_RUNTIME_GATE NOT_RUN.** No SmallTV contact, serial, flash/RTC/FS
+operation, reboot, installation, full normal-profile activation or merge.
+Future physical packet is PRINT ONLY, separately authorized; stop after J.
+Phase I physical evidence below remains exact dated history and current installed
+candidate identity; no reconstruction/replacement of that frozen candidate.
+
+**Mission 9 Phase J offline result, 6 October 2026:**
+[Resource-instrumentation receipt](M09_MOUNT_PROBE_RESOURCE_INSTRUMENTATION.md)
+records clean firmware freeze `7779248082975472ce5f62edf1613d8288b75b6e`,
+**411136 B**, SHA-256
+`2ce2fa8da00de5c60109d0675c7bcf58ab41df2138d913b607fde25994e5a835`.
+Separate opt-in environment adds +3708 B linked flash, +80 B static RAM,
+0 .noinit delta; largest new individual frame 944 B. All review budgets,
+source/Core/image gates, default and paired probe builds and 165 local tests
+PASS offline. Rounded extent **0x065000 / 413696 B**; no overlap with application
+ceiling or FS. Original probe semantics and retained installed H/frozen FS bytes
+unchanged. Mount/runtime watermark windows and cached Digest status add
+observability only. **PHYSICAL_RESOURCE_THRESHOLD REVIEW_REQUIRED**; physical
+and normal-profile gates remain as above. Six J device counters **0**.
+Future physical packet PRINT ONLY; no installation/reboot/activation/merge.
+
+**Mission 9 Phase I owner decision, 6 October 2026:** continue existing
+Draft/open/unmerged PR #42 from clean
+`5ea433b2e72455a93c0a8fca80903c8c8acffbd4` on the existing Mission 9 branch.
+Authorize documentation of the supplied owner-performed mount-probe run,
+documentation consistency checks, commit/push and exact-head CI only.
+No executable changes, local rebuild, SmallTV contact, serial I/O, flash/RTC/FS
+operation or reboot in this pass. Preserve all dated Phase H HOLD/NOT_RUN
+statements; do not retroactively remove its physical block/stack requirements.
+STOP after Phase I documentation; no current-unit modification/reboot,
+full normal-profile activation or merge. Future instrumentation is planning
+only and has no physical authorization from Phase I.
+
+**Mission 9 Phase I owner-provided physical evidence, 6 October 2026:**
+[Mount-probe physical receipt](M09_MOUNT_PROBE_PHYSICAL_EVIDENCE.md) records
+installed profile **2** / `esp12e_m9_4m2m_mount_probe`, exact **407440 B**,
+SHA-256 `ca92cc2f4a8a67f70bd305875bd37be90d0cdff74bf7b338339856407dceef8b`.
+Fresh full 4 MiB PRE/POST before first boot verified exact candidate at zero
+and continuous protected equality **0x064000..0x3FFFFF / 3784704 B**, including
+lower unused arena, frozen LittleFS and reserved tail. RTC was already 0/0;
+no RTC write required. Powered GPIO0 release/existing RST gave `(3,7)` /
+`v00063790` / `~ld`, no observed COPY path. Authenticated status proves
+autoformat disabled, mounted, exact **24 files / 181402 payload B**, canonical
+blank config and zero blocked writes. Heap after mount/inventory **36144 B**;
+sampled minimum **29744 B** initially, **27808 B** after 180-second stable
+telemetry/stale/recovery; no observed reboot, display corruption or FS mutation.
+
+**MOUNT_PROBE_FS_FUNCTIONAL_GATE, MOUNT_PROBE_RUNTIME_FUNCTIONAL_GATE,
+MOUNT_PROBE_APPLICATION_PRESERVATION_GATE,
+MOUNT_PROBE_FILESYSTEM_PRESERVATION_GATE and MOUNT_PROBE_NO_FS_WRITE_GATE:
+PASS within the supplied owner-evidence scope. MOUNT_PROBE_PHYSICAL_GATE:
+PARTIAL / HOLD** because physical largest-free-block and continuation-stack
+margin were not exposed/measured. **NORMAL_PROFILE_LITTLEFS_MOUNT_GATE NOT_RUN;
+NORMAL_PROFILE_RUNTIME_GATE NOT_RUN.** Profile 2 is not full normal profile;
+no P1/M8/Home-LAN/native-OTA/full-product promotion. Next bounded work is a
+separately reviewed offline instrumented profile-2 candidate preserving FS
+behavior, bypasses and writers policy, using pinned Core `ESP.getHeapStats(...)`,
+`ESP.getFreeContStack()` / `ESP.resetFreeContStack()` for read-only heap/block/
+fragmentation/continuation-stack evidence. Not implemented or physically
+authorized here. All six Phase I documentation-pass device counters **0**.
+Older statements below remain dated history, superseded only as expressly
+recorded by this receipt; Phase H's full physical gate remains unclosed.
+
+**Mission 9 Phase H owner decision, 6 October 2026:** continue existing
+Draft/open/unmerged PR #42 from clean
+`40b2d4c3c758b87150876d4e1878a5682568a347` on the existing Mission 9 branch.
+Authorize OFFLINE design, deterministic tests, application-only mount-probe
+and ordinary baseline builds, source/link/resource qualification, documentation,
+commit/push and exact-head CI. Add dedicated opt-in **SHINO_BOOT_PROFILE=2**;
+profile 0 stays unchanged and full normal profile 1 remains prohibited.
+Probe must disable autoformat before its single mount attempt, stream/validate
+the reviewed 24-file payload inventory without writes, and bypass ConfigManager,
+SecureStorage, EEPROM/migration, STA and OTA/FS writers. Existing normal path's
+duplicated mounts and credential migration/save make it unsuitable for this
+read-only probe. Reuse protected first-boot AP/Digest and RAM telemetry only.
+No local FS image rebuild/replacement; retained Stage-1/Stage-2 bytes unchanged.
+No SmallTV contact, serial I/O, flash/RTC/FS operation or reboot authorized.
+**MOUNT_PROBE_PHYSICAL_GATE HOLD / NOT_RUN;
+NORMAL_PROFILE_LITTLEFS_MOUNT_GATE NOT_RUN;
+NORMAL_PROFILE_RUNTIME_GATE NOT_RUN.** STOP after Phase H; no physical probe
+installation, full normal-profile activation or merge.
+
+**Mission 9 Phase H offline result, 6 October 2026:**
+[Dedicated mount-probe qualification](M09_LITTLEFS_MOUNT_PROBE_QUALIFICATION.md)
+**PASS offline**, 155 local tests, ordinary default/probe application builds,
+source/manifest/Core/link/image/resource gates. Clean implementation freeze
+`5f3db19e29398ef6498b08b02de29cae48f9b59a`: LOCAL application **407440 B**, SHA-256
+`ca92cc2f4a8a67f70bd305875bd37be90d0cdff74bf7b338339856407dceef8b`,
+linked **403283 B**, static RAM **40652 B +56 B .noinit**, +312 static RAM vs
+paired baseline. Future app extent **0x000000..0x063FFF / 409600 B**; preserve
+**0x064000..0x1FFFFF**, all installed FS **0x200000..0x3F9FFF** and reserved
+tail **0x3FA000..0x3FFFFF** against fresh PRE before first boot. Profile 2
+streams all 24 reviewed payloads / 181402 B with 256 B buffer and exact blank
+config, after one autoformat-disabled mount; denied physical prog/erase callbacks
+back the read-only contract. ConfigManager/SecureStorage/STA/writers bypassed;
+profile 0 unchanged, profile 1 compile-blocked. AP/Digest status and RAM telemetry
+reused. Candidate retained locally, not flashed; frozen Stage-1/Stage-2 unchanged.
+**MOUNT_PROBE_PHYSICAL_GATE HOLD / NOT_RUN;
+NORMAL_PROFILE_LITTLEFS_MOUNT_GATE NOT_RUN;
+NORMAL_PROFILE_RUNTIME_GATE NOT_RUN.** Physical state remains Phase G below;
+next work is a separately authorized physical probe, not full-normal activation.
+All six Phase H device-operation counters **0**; exact-head CI recorded in
+Draft/open/unmerged PR #42. **STOP after H; no SmallTV contact, flash or merge.**
+
+**Mission 9 Phase G owner decision and physical evidence, 6 October 2026:**
+continue existing Draft/open/unmerged PR #42 from verified clean
+`f92b42deaa87e3df7b6204f1010886a8ed343043` on
+`feature/shino-tv-m9-flash-layout-liberation`. Authorize documentation/evidence,
+documentation consistency checks, commit/push and exact-head CI only. The owner
+performed Stage 2 after Phase F and before this documentation pass: the exact
+frozen 2072576-byte LittleFS image was written at `0x200000`, independently
+verified against full physical PRE/POST before boot, followed by powered RTC
+0/0, existing-RST normal boot and 180-second four-metric runtime/stale/recovery
+without observed reboot. These are **OWNER-PROVIDED PHYSICAL EVIDENCE**, not
+agent-performed operations. [Stage-2 physical receipt](M09_STAGE2_PHYSICAL_EVIDENCE.md).
+
+**Stage-2 physical write, postwrite preservation, RTC/boot transition, first
+boot, runtime, FS-image installation and MISSION9_4M2M_PHYSICAL_LAYOUT_GATE:
+PASS.** Installed FS `0x200000..0x3F9FFF` equals the frozen image; lower
+`0x000000..0x1FFFFF` (**2097152 B**) and tail `0x3FA000..0x3FFFFF`
+(**24576 B**) equal fresh PRE across the write event before first post-Stage2
+boot. This establishes geometry/current contents, not physical qualification
+of all 1 MiB + 1 MiB OTA behavior or continuing tail immutability. Current
+399168-byte FIRST_BOOT_BRIDGE remains **FS-less**, PROGRAM_FLASH_ONLY UI /
+RAM_ONLY metrics; it did not mount, parse or use the installed LittleFS.
+Initial LINK RETRYING was Windows AP non-association; manual host reassociation
+gave CONNECTED without SmallTV reboot or firmware change.
+
+**NORMAL_PROFILE_LITTLEFS_MOUNT_GATE = NOT_RUN;
+NORMAL_PROFILE_RUNTIME_GATE = NOT_RUN.** Next unresolved work is normal-profile
+LittleFS mount/use qualification, requiring a separate bounded owner decision;
+no Stage-3/normal-profile activation is authorized here. P1/M8/full-product
+qualification, R3 PARTIAL / R10 BLOCKED, 6-second telemetry TTL and 8-second
+native-media deadline are unchanged. Phase F HOLD/NOT_RUN statements below
+remain correct dated history, superseded only for the named Stage-2 gates.
+No firmware/companion/tool/script/platform/workflow change or local app/FS
+rebuild; no private dumps/digests/paths/credentials/identifiers/binaries
+published. All six Phase G device-action counters **0**. **STOP after Phase G;
+do not touch the SmallTV, activate normal profile or merge PR #42.**
+
+**Mission 9 Phase F owner decision, 5 October 2026:** continue existing Draft
+PR #42 from verified clean `4fde7ba1c948e065accb5ac5540bb848abacf12a` on the
+existing Mission 9 branch. Authorize OFFLINE Stage-2 LittleFS package/executor
+qualification: pinned-source audit, reviewed non-secret source inventory,
+local-only exact 4m2m FS image freeze and independent verification, synthetic
+PRE/POST tools/tests, PRINT ONLY future command/rollback packet, documentation,
+commit/push and exact-head CI. Preserve the physically installed 399168-byte
+Stage-1 candidate without rebuild/replacement. No serial/device/network/RTC,
+flash/erase/FS upload, reset/reboot or physical Stage-2 operation is authorized.
+Stage 2 intentionally targets only `0x200000..0x3F9FFF`; lower arena and reserved
+tail must remain exact PRE/POST. Keep the current FS-less application and
+normal-profile hold; Stage-2 runtime remains NOT_RUN, physical write HOLD.
+Private full-chip snapshots and the local FS binary remain outside Git/CI.
+STOP after Phase F; no SmallTV contact, Stage 2 execution or merge.
+
+**Mission 9 Phase F offline result, 5 October:** executor/source bounds, exact
+2072576-byte local image freeze/inventory and synthetic readback gates **PASS**.
+[Exact geometry, digests, reviewed assets, root-clock nondeterminism, PRINT ONLY
+A-J packet and separate rollback authorities](M09_STAGE2_LITTLEFS_QUALIFICATION.md).
+Direct UART raw FS model selected; full-size atomic U_FS staging overlaps app.
+Root wall-clock variation isolated; universal reproducibility not established.
+Stage 2 remains **PHYSICAL WRITE HOLD / RUNTIME NOT_RUN / NOT PERFORMED**.
+Protected lower 2097152 B and tail 24576 B require fresh Stage-2 full PRE/POST.
+No firmware change, installed Stage-1 rebuild/replacement or SmallTV operation;
+all five Phase F physical counters **0**. Draft PR #42 unmerged; STOP after F.
+
+**Mission 9 Phase E owner decision and physical evidence, 5 October 2026:**
+continue existing Draft PR #42 from verified clean
+`e7163f8012be34d8a57ab55ca4b7d0f8632637a1`; authorize sanitized documentation,
+consistency checks, commit/push and exact-head CI only. No device/network/serial,
+RTC/flash/FS/reset operation, firmware/tool/workflow change or candidate rebuild.
+The owner reports completed Stage-1 application-only installation of the frozen
+399168-byte Mission 9 FS-less bridge at zero, full pre-first-boot PRE/POST
+preservation PASS, powered RTC-neutralization/existing-RST transition PASS and
+180-second LCD/AP/Digest/four-metric runtime with stale/recovery PASS. These are
+**OWNER-PROVIDED PHYSICAL EVIDENCE**, performed before this documentation pass;
+they supersede earlier installed-state claims for this unit, without promoting
+P1/M8/media/Home-LAN qualifications. Heap snapshot **33072 B**; largest free
+block and stack high-water unrecorded. Protected `0x062000..0x3FFFFF`
+(**3792896 B**) matched PRE exactly before first Stage-1 boot; later SDK/system
+tail changes are outside that proof. Historical cold-power gate stays HOLD.
+**Stage 2 LittleFS HOLD / NOT PERFORMED; no LittleFS provisioning.** Private
+dumps/digests/credentials stay outside Git. Phase E physical action counts **0**.
+See [Stage-1 physical evidence](M09_STAGE1_PHYSICAL_EVIDENCE.md). STOP after Phase E.
+
+**Mission 9 Phase D owner decision, 5 October 2026:** continue existing Draft
+PR #42 from clean `a702c90c285189eff7ee19ea8f1da8bbc0274fa0`. Authorize
+offline pinned-source RTC/eboot invalidation and RTC-retaining boot-transition
+audit, deterministic local models/tests, print-only commands, documentation and
+exact-head CI. Preserve the frozen Phase B candidate; no rebuild/replacement
+or firmware runtime change. No device/serial/memory/flash/FS operation, reset
+or reboot. Owner correction: existing header is **RST — GPIO0 — 3V3/VCC — RX — TX — GND**.
+RST/GPIO0/RX/TX/GND availability and prior same-unit UART ROM download/full
+4 MiB reads with reversible micro-hooks are established owner evidence. No
+soldering, new PCB access or photos are required. EN/CH_PD is not known/exposed.
+Qualify the existing RST pad's RTC-retaining EXT_RST transition from source;
+physical retention/runtime remain NOT_RUN and physical write HOLD.
+See [RTC neutralization](M09_RTC_EBOOT_NEUTRALIZATION.md).
+
+**Mission 9 Phase C owner decision, 5 October 2026:** continue existing Draft
+PR #42 from clean `02b4be4cd4c2e0651d376001c030f1505123adb6`; qualify the
+physical executor entirely offline. Audit pinned Core 3.1.2 / esptool 5.4.0,
+add local synthetic readback/identity/source gates, print-only commands,
+documentation and exact-head CI. Preserve the frozen Phase B LOCAL candidate
+without rebuilding it; no `firmware/**` change. No serial subprocess, device
+contact, discovery, reset/reboot, flash or filesystem operation. All modeled
+physical steps need later exact-operation owner approval; **physical write HOLD**.
+See [executor qualification](M09_PHYSICAL_EXECUTOR_QUALIFICATION.md).
+
+**Mission 9 Phase B owner decision, 5 October 2026:** continue existing Draft
+PR #42 on `feature/shino-tv-m9-flash-layout-liberation` from exact clean
+`1c39e2ac791145be9ef79dc6d98fd70526614d7f`. Authorize offline source audit,
+first-migration design, print-only esptool command rendering, synthetic tests,
+fresh opt-in `esp12e_m9_4m2m` build and exact-head CI. Evaluate application-only
+activation at offset zero before separately gated future LittleFS provisioning.
+No device contact, serial access, write/erase/upload/reboot, filesystem
+mount/format or physical action. Keep default 4m3m and disabled FS/native OTA
+writers. Keep private MASTER and owner digest outside Git/CI. Physical write
+HOLD; Stage 2 requires separate exact-operation owner approval.
+See [first physical migration design](M09_FIRST_PHYSICAL_MIGRATION.md).
 
 **One 240×240 (1:1) scene at a time. No mixed music + four-metric screen as the final product.** The PR #40 combined-artwork/four-card mock-up is a working *offline renderer/receiver integration pilot*, not accepted final interaction design. All future reference previews must be actual independently rendered 240×240-pixel PNGs (album covers square and not stretched), not wide illustration panels merely labelled 240×240.
 

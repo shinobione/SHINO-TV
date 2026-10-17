@@ -1,0 +1,123 @@
+name: Mission 9 Phase K policy and single attempt - OFFLINE only
+on:
+  push:
+    branches: ['feature/shino-tv-m9-flash-layout-liberation']
+    paths:
+      - 'tools/m9_resource_policy.py'
+      - 'tools/test_m9_resource_policy.py'
+      - 'tools/m9_single_attempt_app_write.py'
+      - 'tools/test_m9_single_attempt_app_write.py'
+      - 'tools/m9_phase_k_qualification.py'
+      - 'tools/m9_phase_k_sources.json'
+      - 'tools/m9_phase_o_qualification.py'
+      - 'tools/m9_phase_o_sources.json'
+      - 'tools/test_m9_phase_o.py'
+      - 'docs/M09_PHASE_O_WRITER_REBIND.md'
+      - 'docs/M09_RESOURCE_POLICY_AND_EXECUTOR_QUALIFICATION.md'
+      - '.github/workflows/m9-phase-k.yml'
+  pull_request:
+    paths:
+      - 'tools/m9_resource_policy.py'
+      - 'tools/test_m9_resource_policy.py'
+      - 'tools/m9_single_attempt_app_write.py'
+      - 'tools/test_m9_single_attempt_app_write.py'
+      - 'tools/m9_phase_k_qualification.py'
+      - 'tools/m9_phase_k_sources.json'
+      - 'tools/m9_phase_o_qualification.py'
+      - 'tools/m9_phase_o_sources.json'
+      - 'tools/test_m9_phase_o.py'
+      - 'docs/M09_PHASE_O_WRITER_REBIND.md'
+      - 'docs/M09_RESOURCE_POLICY_AND_EXECUTOR_QUALIFICATION.md'
+      - '.github/workflows/m9-phase-k.yml'
+concurrency:
+  # Separate push and PR groups: a branch push cannot cancel a required PR check.
+  # Manual runs have their own group and cannot be cancelled by new commits.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || (github.event.pull_request.number || github.ref) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref != 'refs/heads/main') }}
+
+permissions:
+  contents: read
+jobs:
+  phase-k:
+    name: Scoped resource policy and real pinned API fake transport (no device)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install exact pinned executor packages
+        run: python -m pip install 'esptool==5.4.0' 'esp-pylib==1.1.5' 'pyserial==3.5'
+      - uses: actions/checkout@v4
+        with:
+          repository: espressif/esp-flasher-stub
+          ref: 23959b780454adf885916d42f2274ec648e96a94
+          path: reference-k-stub
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: espressif/esp-stub-lib
+          ref: d61983fa4d1f66b9c088608c1f702ad877121279
+          path: reference-k-lib
+          persist-credentials: false
+      - name: Tests use synthetic evidence and fake serial only
+        run: |
+          python -m unittest discover -s tools -p 'test_m9_resource_policy.py' -v
+          python -m unittest discover -s tools -p 'test_m9_single_attempt_app_write.py' -v
+          python -m unittest discover -s tools -p 'test_m9_phase_o.py' -v
+      - name: Source and version pins; never read/rebuild retained candidate
+        run: |
+          python - <<'PY'
+          import os, shutil
+          from pathlib import Path
+          root=Path(os.environ['RUNNER_TEMP'])/'k-stub-audit'
+          root.mkdir()
+          for source,name in (
+              ('reference-k-stub/src/command_handler.c','src-command_handler.c'),
+              ('reference-k-stub/src/commands.h','src-commands.h'),
+              ('reference-k-stub/src/main.c','src-main.c'),
+              ('reference-k-lib/src/flash.c','lib-src-flash.c'),
+              ('reference-k-lib/src/target/common/src/flash.c','lib-src-target-common-src-flash.c'),
+              ('reference-k-lib/src/target/esp8266/src/flash.c','lib-src-target-esp8266-src-flash.c'),
+              ('reference-k-lib/src/target/esp8266/src/rom-patched.c','lib-src-target-esp8266-src-rom-patched.c')):
+              shutil.copyfile(source,root/name)
+          PY
+          python tools/m9_resource_policy.py > "${{ runner.temp }}/k-policy.json"
+          python tools/m9_phase_k_qualification.py --stub-audit-root "${{ runner.temp }}/k-stub-audit" > "${{ runner.temp }}/k-executor-source.json"
+          python tools/m9_phase_o_qualification.py > "${{ runner.temp }}/o-binding-source.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path(os.environ['RUNNER_TEMP'])
+          r=json.loads((root/'k-executor-source.json').read_text())
+          assert r['PHASE_K_RESOURCE_POLICY_GATE']==r['PHASE_K_SINGLE_ATTEMPT_EXECUTOR_GATE']=='PASS/OFFLINE'
+          assert r['PHASE_K_FROZEN_CANDIDATE_IDENTITY_GATE']=='NOT_READ_BY_THIS_RUN'
+          assert r['candidate']['bytes']==399264 and r['candidate']['sha256']=='78a8d2d50409974fc775dd3dc9f3dbec4ac8eda839f6d9b338cadf35aab2467c'
+          assert r['historical_j_candidate']['bytes']==411136 and r['historical_j_candidate']['sha256']=='2ce2fa8da00de5c60109d0675c7bcf58ab41df2138d913b607fde25994e5a835'
+          assert r['firmware_files_checked']==103 and r['firmware_files_unchanged']==101
+          assert len(r['firmware_mount_stack_changes'])==2 and r['installed_candidate_role']=='HISTORICAL_J_PREDECESSOR_ONLY'
+          assert not r['physical_authorization']
+          assert all(r[k]==0 for k in ('device_contacts','serial_io','flash_writes','rtc_writes','reboots','device_filesystem_writes'))
+          o=json.loads((root/'o-binding-source.json').read_text())
+          assert o['PHASE_O_BINDING_SOURCE_GATE']=='PASS/OFFLINE'
+          assert o['PHASE_O_RETAINED_CANDIDATE_IDENTITY_GATE']=='NOT_READ_BY_THIS_RUN'
+          assert o['firmware_files_checked']==113 and o['firmware_identity']=='RAW_PHASE_N_HEAD_EQUALITY'
+          assert o['candidate']['block_count']==98 and o['candidate']['rounded_end']==0x062000
+          assert o['candidate']['final_payload_bytes']==1952 and o['candidate']['final_ff_padding_bytes']==2144
+          assert o['transaction_classes_source_equivalent'] and o['runner_source_equivalent_except_numeric_receipt']
+          assert o['NORMAL_PROFILE_LITTLEFS_MOUNT_GATE']==o['NORMAL_PROFILE_RUNTIME_GATE']=='NOT_RUN'
+          assert not o['physical_authorization'] and not o['future_packet']['physical_authorization']
+          assert all(o[k]==0 for k in ('device_contacts','serial_io','flash_writes','rtc_writes','reboots','device_filesystem_writes'))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m9-phase-k-offline-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            ${{ runner.temp }}/k-policy.json
+            ${{ runner.temp }}/k-executor-source.json
+            ${{ runner.temp }}/o-binding-source.json
+          if-no-files-found: error

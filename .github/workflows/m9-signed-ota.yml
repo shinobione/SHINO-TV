@@ -1,0 +1,107 @@
+name: Mission 9 signed OTA offline
+on:
+  push:
+    branches: [feature/shino-tv-m9-flash-layout-liberation]
+  pull_request:
+  workflow_dispatch:
+concurrency:
+  # Separate push and PR groups: a branch push cannot cancel a required PR check.
+  # Manual runs have their own group and cannot be cancelled by new commits.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || (github.event.pull_request.number || github.ref) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref != 'refs/heads/main') }}
+
+permissions:
+  contents: read
+  pull-requests: read
+jobs:
+  changes:
+    name: Changed-path scope (always reported)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      relevant: ${{ steps.filter.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify the path filter itself
+        run: python -m unittest discover -s tools -p 'test_ci_scope.py' -q
+      - name: Evaluate changed files (fail open)
+        id: filter
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python tools/ci_scope.py --group signed
+  signed-unwired:
+    needs: changes
+    if: needs.changes.outputs.relevant == 'true'
+    name: Signed native Core + unwired transfer (offline only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/checkout@v4
+        with:
+          repository: bblanchon/ArduinoJson
+          ref: 77771d3c07668e01d8f52acb03910c1110bb373f
+          path: research-local/m9-signed-ci/arduinojson
+          persist-credentials: false
+      - name: Public pinned research dependencies
+        run: |
+          python -m pip install 'platformio==6.1.18'
+          pio pkg install -g -t 'platformio/framework-arduinoespressif8266@3.30102.0'
+      - name: Deterministic inert release verifier and geometry negatives
+        run: python -m unittest discover -s tools -p 'test_m9_signed_ota.py' -v
+      - name: Native signing, interrupted staging and corrupt RTC metadata in RAM
+        run: python tools/m9_signed_ota_runner.py > "${{ runner.temp }}/m9-signed-core.json"
+      - name: Real StageA parser and handlers under interleaved unwired upload model
+        env:
+          SHINO_ARDUINOJSON_SRC: research-local/m9-signed-ci/arduinojson/src
+        run: python tools/m9_signed_mixed_runner.py > "${{ runner.temp }}/m9-signed-mixed.json"
+      - name: Separate disconnected Xtensa API/link proof; no private candidate build
+        run: |
+          pio run -d experiments/m9_signed_ota -e inert_baseline -e signed_compile_only
+          python tools/m9_signed_ota_resources.py > "${{ runner.temp }}/m9-signed-resources.json"
+      - name: Exact-head no writer, no route, interrupted-transfer and resource gates
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path(os.environ['RUNNER_TEMP'])
+          core=json.loads((root/'m9-signed-core.json').read_text())
+          assert core['SIGNED_OTA_OFFLINE_GATE']=='PASS_UNWIRED_ONLY'
+          assert core['source']['firmware_LF_pins']==113 and not core['source']['stage_a_ota_route']
+          assert core['native_core']['precommit_failures_boot_dispatches']==0
+          assert core['native_core']['reset_boundaries']==197 and core['native_core']['rtc_interrupted_boundaries']==32
+          assert core['native_core']['postcommit_hold_demonstrated'] and core['production_integration']=='HOLD'
+          for field in ('device_contacts','serial_io','flash_writes','rtc_writes','reboots','device_filesystem_writes'):assert core[field]==0
+          mixed=json.loads((root/'m9-signed-mixed.json').read_text())['actual_stage_a_workload']
+          assert mixed['normal_gets']==392 and mixed['accepted_post_count']==49
+          assert mixed['model']['listeners_added']==0 and mixed['production_concurrency']=='HOLD'
+          resource=json.loads((root/'m9-signed-resources.json').read_text())
+          assert resource['admission']['continuation']==4096 and resource['floors']['continuation']==2048
+          assert resource['candidate']['proof_root_internal'] and resource['candidate']['no_exported_proof_endpoint']
+          assert resource['baseline']['raw_image_checks']['crc_valid'] and resource['candidate']['raw_image_checks']['crc_valid']
+          PY
+          git rev-parse HEAD
+          git diff --exit-code
+          git status --short
+          test -z "$(git status --porcelain)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m9-signed-offline-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/m9-signed-*.json
+          if-no-files-found: error

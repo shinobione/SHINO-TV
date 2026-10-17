@@ -1,5 +1,11 @@
 # Initial technical research
 
+
+> **Recherche réutilisable — 17 octobre 2026 :** démarrer par le **[guide pratique SHINO : quel diagnostic pour quel problème ?](research/oem-geekmagic/USAGE_GUIDE_SHINO.md)**, puis parcourir les reçus V7–V10 et leurs limites. Les découvertes concernent l'OTA OEM et le Core public, **pas** un nouveau pilote LCD/LINK ni la preuve de l'état du firmware installé. Aucune correction SHINO n'est attribuée à l'OEM sans comparaison et reproduction au commit exact.
+>
+> **Research update — 2026-10-16:** GeekMagic OEM firmware reverse engineering is now centrally documented in **[the OEM audit dossier](research/oem-geekmagic/README.md)** with **[the evidence matrix](research/oem-geekmagic/EVIDENCE_MATRIX.md)**. Official V9.0.44 is available in the manufacturer's pinned Git history; V9.0.44/V9.0.50 images, internal checksums and first Capstone Xtensa candidate disassemblies have been analyzed. The 2026-09 notes below are retained as **historical research**, not the current audit status. No OEM OTA authentication or physical behavior has been proven by this research. No changes to the B5.3 program or the owner's hardware.
+
+
 ## Manufacturer's firmware
 
 https://github.com/GeekMagicClock/smalltv-ultra

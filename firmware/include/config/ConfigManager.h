@@ -43,6 +43,10 @@ class ConfigManager {
    public:
     ConfigManager(const char* filename = "/config.json");
     bool load();
+// M9_PHASE_N_BEGIN
+    // Caller must own the validated read-only mount; this API never mounts.
+    bool loadMountedReadOnly(bool mountedAndValidated);
+// M9_PHASE_N_END
     bool save();
     void setWiFi(const char* newSsid, const char* newPassword);
     const char* getSSID() const;
