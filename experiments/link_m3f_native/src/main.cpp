@@ -21,5 +21,11 @@ m3f_compile_only_real_wifi_types(uint32_t now) {
     // Not called by setup() or loop(). Forces real Xtensa instantiation.
     (void)dormantPump.poll(now);
 }
+static volatile bool inertProofOptIn = false; // never set by any code
 void setup() {}
-void loop() { delay(1000); } // No Wi-Fi mode or listener activity.
+void loop() {
+    // Volatile false keeps the real WiFiClient/accept/read/write call graph
+    // linked for offline inspection; no normal execution can enable it.
+    if (inertProofOptIn) m3f_compile_only_real_wifi_types(millis());
+    delay(1000);
+}
