@@ -124,6 +124,18 @@ class OfflineSourcePinsTests(unittest.TestCase):
                 with self.assertRaises(AssertionError):
                     tracked_gate(stagea)
 
+    def test_identity_verifier_is_itself_pinned_before_sdk(self):
+        original = subprocess.check_output
+        def changed(command, *args, **kwargs):
+            if command == ["git", "hash-object", "--", "tools/link_m2_source_identity.py"]:
+                return "0"*40 + "\n"
+            return original(command, *args, **kwargs)
+        for gate in (signed, stagea):
+            with self.subTest(gate=gate.__name__), \
+                 patch.object(subprocess, "check_output", side_effect=changed):
+                with self.assertRaisesRegex(AssertionError, "M2 source verifier changed"):
+                    tracked_gate(gate)
+
     def test_preexisting_companion_remains_frozen(self):
         original = Path.read_bytes
         protected = ROOT/"companion/media_sessions.py"
