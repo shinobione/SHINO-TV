@@ -358,4 +358,34 @@ private:
     }
 };
 
+// In-memory transaction lab only; no renderer, filesystem or owner authority.
+// The caller MUST serialize application, bind the same verified boot and
+// revalidate the current revision without a concurrent writer. This class
+// does not provide either cross-thread exclusion or reboot persistence.
+class OfflineCasLedger final {
+public:
+    explicit OfflineCasLedger(uint32_t startRevision = 0u)
+        : revision_(startRevision) {}
+    bool acceptVerifiedForLab(const Gate& gate) {
+        if (!gate.verifiedNoSideEffect() || revision_ == 0xffffffffu)
+            return false;
+        const Result& candidate = gate.resultForOfflineReview();
+        if (candidate.revision != revision_ || !candidate.transaction[0])
+            return false;
+        uint8_t differs = 0u;
+        for (size_t i=0u;i<32u;++i)
+            differs |= static_cast<uint8_t>(
+                candidate.transaction[i]^lastTransaction_[i]);
+        if (!differs) return false;
+        for (size_t i=0u;i<33u;++i)
+            lastTransaction_[i]=candidate.transaction[i];
+        ++revision_;
+        return true;
+    }
+    uint32_t revision() const { return revision_; }
+private:
+    uint32_t revision_ = 0u;
+    char lastTransaction_[33]{};
+};
+
 } // namespace ShinoM3C
