@@ -10,8 +10,9 @@ from unittest.mock import patch
 
 from link_display_modes import DisplayMode, Scene, Signals
 from link_mode_tray import (
-    METRICS_TTL_MS, ModeTrayController, build_preview_menu, passive_link_signals,
+    ModeTrayController, build_preview_menu, passive_link_signals,
 )
+from shino_link import METRICS_TTL_MS
 
 
 class FakeMenuItem:
@@ -64,7 +65,7 @@ class PassiveLinkProbeTests(unittest.TestCase):
                     last_success=20.0 - age_ms / 1000,
                     clock=lambda: 20.0,
                 )
-                signal = passive_link_signals(engine)
+                signal = passive_link_signals(engine, ttl_ms=METRICS_TTL_MS)
                 self.assertEqual(signal.pc_connected, expected)
                 self.assertEqual(signal.metrics_fresh, expected)
                 self.assertFalse(signal.music_playing)
@@ -76,21 +77,21 @@ class PassiveLinkProbeTests(unittest.TestCase):
         for prior in (None, float("nan"), float("inf"), "20", True):
             with self.subTest(last_success=repr(prior)):
                 engine = SimpleNamespace(last_success=prior, clock=lambda: 20)
-                result = passive_link_signals(engine)
+                result = passive_link_signals(engine, ttl_ms=METRICS_TTL_MS)
                 self.assertEqual(result, Signals())
 
     def test_invalid_clock_does_not_claim_freshness(self):
         for now in (float("inf"), float("nan"), None, True):
             with self.subTest(now=now):
                 engine = SimpleNamespace(last_success=12.0, clock=lambda: now)
-                self.assertEqual(passive_link_signals(engine), Signals())
+                self.assertEqual(passive_link_signals(engine, ttl_ms=METRICS_TTL_MS), Signals())
 
     def test_passive_probe_does_not_use_engine_diagnostics_or_step(self):
         engine = SimpleNamespace(last_success=19.0, clock=lambda: 20.0,
             step=lambda: self.fail("telemetry send forbidden"),
             diagnostics=lambda: self.fail("diagnostics mutation forbidden"),
         )
-        self.assertTrue(passive_link_signals(engine).metrics_fresh)
+        self.assertTrue(passive_link_signals(engine, ttl_ms=METRICS_TTL_MS).metrics_fresh)
 
 
 class ModeMenuTests(unittest.TestCase):
