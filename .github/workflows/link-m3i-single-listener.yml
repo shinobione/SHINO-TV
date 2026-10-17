@@ -1,0 +1,66 @@
+name: LINK M3-I mixed single-listener source-executed HOST (NO DEVICE)
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/link_m3i_single_listener/**'
+      - 'docs/LINK_M3I_MIXED_SINGLE_LISTENER.md'
+      - 'docs/ROADMAP.md'
+      - '.github/workflows/link-m3i-single-listener.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  mixed-legacy-m3c:
+    name: Actual original B5.3 metrics + real Digest and M3-C prebody HMAC on ONE localhost socket
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Require pinned original B5.3 sources and original metric parser
+        run: |
+          python -m unittest discover -s experiments/link_m3g_real -p test_exact_source.py -v
+          python -m unittest discover -s experiments/link_m3e_legacy -p test_b53_source_pins.py -v
+      - name: Fetch real ArduinoJson 7.4.3 for HOST only
+        run: |
+          python -m pip install 'platformio==6.1.18'
+          pio pkg install -d experiments/link_m3g_real -e deps_for_host
+      - name: Pin actual installed header version (library, not device)
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          v=Path("experiments/link_m3g_real/.pio/libdeps/deps_for_host/ArduinoJson/src/ArduinoJson/version.hpp").read_text()
+          assert '#define ARDUINOJSON_VERSION "7.4.3"' in v
+          print("M3I_PINNED_ARDUINOJSON_SOURCE_VERIFIED")
+          PY
+      - name: Compile single-listener real TCP source + actual original FslessMetrics and FslessWebUI
+        run: |
+          g++ -std=c++17 -O1 -Wall -Wextra -Werror -pedantic -DPROGMEM= \
+            -I tools/host_arduinojson_stubs -I firmware/include \
+            -I experiments/link_m3g_real/.pio/libdeps/deps_for_host/ArduinoJson/src \
+            experiments/link_m3i_single_listener/single_listener_real_metrics_and_m3c.cpp \
+            firmware/src/boot/FslessMetrics.cpp firmware/src/boot/FslessWebUI.cpp \
+            -lcrypto -o "${{ runner.temp }}/m3i_single_listener"
+      - name: Legacy 20 actual TCP Digest/metrics/browser regressions on the SAME compiled mixed binary
+        env:
+          M3G_REAL_METRICS_BIN: ${{ runner.temp }}/m3i_single_listener
+        run: python -m unittest discover -s experiments/link_m3g_real -p test_live_metrics_loopback.py -v
+      - name: 19 true interleaved TCP Digest telemetry and M3-C prebody crypto requests
+        env:
+          M3I_MIXED_BINARY: ${{ runner.temp }}/m3i_single_listener
+        run: python -m unittest discover -s experiments/link_m3i_single_listener -p test_mixed_single_listener.py -v
+      - name: Retain M3-C pure real OpenSSL host crypto suite
+        run: |
+          g++ -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \
+            -fno-exceptions -fno-rtti experiments/link_m3c_crypto/test_crypto_ingress.cpp \
+            -lcrypto -o "${{ runner.temp }}/m3c_baseline"
+          "${{ runner.temp }}/m3c_baseline"
+      - name: Retain M3-A strict one-intent/no-repeat contract
+        run: python -m unittest discover -s experiments/link_m3_control_contract -p 'test_*.py' -v
