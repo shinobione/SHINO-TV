@@ -11,7 +11,14 @@ compilent le **vrai Core ESP8266 3.1.2** et le vrai
 sans jamais démarrer le serveur. La CI mesure les **différences
 réelles d'ELF text/data/bss**, les BIN/HASH des deux **inertes**,
 les symboles retenus et traces compilateur `-fstack-usage`.
-Aucun chiffre de coût n'est validé avant lecture des artefacts CI.
+Première preuve ciblée au SHA précédent de PR #65
+([run M3-J #39068885963](https://github.com/shinobione/SHINO-TV/actions/runs/39068885963))
+: 2/2 jobs PASS, **+16 784 octets de BIN inerte**, **+1 704 octets
+de BSS inerte**, et **992 octets de frame compilateur Xtensa**
+dans `Gate::authenticateHeader<BearSslCrypto>`. Recontrôler
+le dernier SHA après mise à jour documentaire. Les mesures
+ne sont ni celles du firmware installé ni celles de
+la CONT physique.
 
 Ce n'est **PAS une intégration sur FirstBootBridge/HomeLan**,
 une validation heap/CONT en fonctionnement ou un candidat OTA.
