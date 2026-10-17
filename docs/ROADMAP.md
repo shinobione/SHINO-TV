@@ -1,5 +1,28 @@
 # SHINO // TV — Roadmap
 
+## M3-F — WiFiServer emprunté, lecture coopérative C++ (17 octobre 2026)
+
+**GO propriétaire logiciel uniquement, pas de GO matériel** ; branche M3-F
+empilée sur M3-E PR #60 (source complète 8/8 PASS avant fork).
+Nouveauté : `experiments/link_m3f_native/M3FSinglePortPump.h`
+implémente un receveur C++ à **un seul Server emprunté**, sans
+appel `begin()` et avec **32 octets au maximum par poll**.
+Un test HOST utilise le vrai HMAC/SHA256 M3-C, le classifieur B5.3
+M3-E et des doubles `WiFiClient/WiFiServer`, couvrant délais,
+non-FIN, CAS/replay et files de clients.
+Un programme Xtensa **inerte** force la compilation des méthodes
+réelles du Core 3.1.2 et de BearSSL, mais n'ouvre aucun port.
+
+**Limite de sécurité : les handlers legacy répondent toujours 503
+dans le prototype**, aucun endpoint M3 sur le firmware, aucun LCD,
+aucun ACK appareil. Ce n'est **PAS** une parité serveur B5.3,
+et l'ordonnanceur/stack/heap/wifi réel restent HOLD.
+On ne peut pas transférer directement une connexion partiellement
+lue à `ESP8266WebServer` dont le listener est privé.
+Il faudra une architecture native complète, revue avec Codex B5.4,
+avant tout candidat flash/OTA. Aucune opération sur le SmallTV ni SHINO LINK Windows ; le firmware
+physiquement installé n'a pas été relu pendant ce jalon (NON VÉRIFIÉ). Voir [M3-F détails](LINK_M3F_NATIVE_PORT_PUMP.md).
+
 ## M3-E — Inventaire exact des routes B5.3, HOST/Xtensa inerte (17 octobre 2026)
 
 **GO propriétaire : poursuivre M3-E en code/tests hors ligne**, sans changer
