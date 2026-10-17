@@ -1,0 +1,63 @@
+name: LINK M3-C real crypto gate + inert Xtensa (NO DEVICE)
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/link_m3c_crypto/**'
+      - 'docs/LINK_M3C_CRYPTO_GATE.md'
+      - '.github/workflows/link-m3c-crypto-lab.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  host-crypto:
+    name: Real OpenSSL HMAC/SHA256 + rejection matrix (Linux HOST)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Compile actual crypto gate with real OpenSSL provider
+        run: |
+          g++ -std=c++17 -O2 -Wall -Wextra -Werror -pedantic -fno-exceptions -fno-rtti \
+            experiments/link_m3c_crypto/test_crypto_ingress.cpp -lcrypto \
+            -o "${{ runner.temp }}/m3c_real_crypto_host"
+      - name: Real HMAC/SHA256 prebody proof and body integrity / fail-closed tests
+        run: "${{ runner.temp }}/m3c_real_crypto_host"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Retain M3-A fail-closed policy contract
+        run: python -m unittest discover -s experiments/link_m3_control_contract -p 'test_*.py' -v
+
+  xtensa-inert:
+    name: Pinned ESP8266 3.1.2 / BearSSL real Xtensa static LINK (NO INSTALL)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install only pinned offline build orchestrator
+        run: python -m pip install 'platformio==6.1.18'
+      - name: Compile and link standalone inert Xtensa/BearSSL gate (NO UPLOAD)
+        run: pio run -d experiments/link_m3c_crypto -e inert_m3c_core_312
+      - name: Print file-derived inert ELF + BIN hashes/sizes (not real B5.3)
+        run: |
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          root=Path("experiments/link_m3c_crypto/.pio/build/inert_m3c_core_312")
+          rows={}
+          for name in ("firmware.elf","firmware.bin"):
+              data=(root/name).read_bytes()
+              rows[name]={"bytes":len(data),"sha256":hashlib.sha256(data).hexdigest()}
+          print(json.dumps({"profile":"INERT_M3C_NOT_OWNER_BIN","artifacts":rows},sort_keys=True))
+          PY
