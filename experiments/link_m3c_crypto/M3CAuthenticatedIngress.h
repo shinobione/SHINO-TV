@@ -272,16 +272,19 @@ private:
             seen=uint16_t(seen|bit);
             switch(field) {
                 case Host:
-                    if(!exact(value,id_.host))return false;break;
+                    if(!exact(value,id_.host)) return false;
+                    break;
                 case Type:
-                    if(!exact(value,"application/json"))return false;break;
+                    if(!exact(value,"application/json")) return false;
+                    break;
                 case Length: {
                     uint32_t n=0u;
                     if(!decimal(value,kBodyMax,n)||n==0u) return false;
                     declaredLength_=static_cast<uint16_t>(n);break;
                 }
                 case Connection:
-                    if(!exact(value,"close",true))return false;break;
+                    if(!exact(value,"close",true)) return false;
+                    break;
                 case Device:
                     if(!exact(value,id_.device)||value.n!=16u)return false;
                     for(size_t i=0u;i<value.n;++i) if(nibble(value.p[i])<0)return false;
@@ -298,13 +301,17 @@ private:
                 }
                 case ModeField:
                     modeLiteral_=literalFor(value,candidate_.mode);
-                    if(!modeLiteral_)return false;break;
+                    if(!modeLiteral_) return false;
+                    break;
                 case Tx:
-                    if(!saveHex(value,candidate_.transaction,32u))return false;break;
+                    if(!saveHex(value,candidate_.transaction,32u)) return false;
+                    break;
                 case BodyHash:
-                    if(!decodeHex(value,declaredBodyHash_,32u))return false;break;
+                    if(!decodeHex(value,declaredBodyHash_,32u)) return false;
+                    break;
                 case Proof:
-                    if(!saveHex(value,proofHex_,64u))return false;break;
+                    if(!saveHex(value,proofHex_,64u)) return false;
+                    break;
                 default:return false;
             }
             start=end+2u;
