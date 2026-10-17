@@ -45,21 +45,23 @@ static std::string hex(const uint8_t* buf,size_t n) {
     }
     return result;
 }
-static std::string body(const char* mode="MUSIC",unsigned revision=0) {
+static std::string body(const char* mode="MUSIC",unsigned revision=0,
+                        const char* transaction=TX) {
     return std::string("{\"boot\":\"")+BOOT+"\",\"device\":\""+DEVICE+
         "\",\"mode\":\""+mode+"\",\"protocol\":\"shino-display-control-1\","
-        "\"revision\":"+std::to_string(revision)+",\"tx\":\""+TX+"\"}";
+        "\"revision\":"+std::to_string(revision)+",\"tx\":\""+transaction+"\"}";
 }
 struct Packet{std::string header,body,hash,mac;};
-static Packet packet(const char* mode="MUSIC",unsigned revision=0) {
-    const std::string raw=body(mode,revision);
+static Packet packet(const char* mode="MUSIC",unsigned revision=0,
+                     const char* transaction=TX) {
+    const std::string raw=body(mode,revision,transaction);
     uint8_t digest[32]{},proof[32]{};
     assert(RealCrypto::sha256(reinterpret_cast<const uint8_t*>(raw.data()),
                               raw.size(),digest));
     const std::string digestHex=hex(digest,32u);
     const std::string sign=std::string("SHINO-M3-CONTROL-1\nPOST\n/api/v1/display/mode\n")
         +HOST+"\n"+DEVICE+"\n"+BOOT+"\n"+std::to_string(revision)
-        +"\n"+mode+"\n"+TX+"\n"+std::to_string(raw.size())
+        +"\n"+mode+"\n"+transaction+"\n"+std::to_string(raw.size())
         +"\n"+digestHex;
     assert(RealCrypto::hmac(KEY,
                reinterpret_cast<const uint8_t*>(sign.data()),sign.size(),proof));
@@ -74,7 +76,7 @@ static Packet packet(const char* mode="MUSIC",unsigned revision=0) {
         +"X-Shino-Boot: "+BOOT+"\r\n"
         +"X-Shino-Revision: "+std::to_string(revision)+"\r\n"
         +"X-Shino-Mode: "+mode+"\r\n"
-        +"X-Shino-Tx: "+TX+"\r\n"
+        +"X-Shino-Tx: "+transaction+"\r\n"
         +"X-Shino-Body-Sha256: "+digestHex+"\r\n"
         +"X-Shino-Proof: "+macHex+"\r\n\r\n";
     return Packet{header,raw,digestHex,macHex};
@@ -241,7 +243,47 @@ static void invalidOrInterruptedBody() {
     }
     // No state mutation anywhere in gate: it only yields an offline result.
 }
+static void replayAfterVerifiedFinRefusedByOfflineLedger() {
+    ShinoM3C::OfflineCasLedger ledger;
+    const Packet a=packet();
+    Gate first(ID,0u);
+    ensure(feedHeader(first,a.header)==Phase::AuthenticatedHeader,"first auth");
+    ensure(feedBody(first,a.body)==Phase::BodyDigestMatched,"first digest");
+    ensure(!ledger.acceptVerifiedForLab(first),"no commit before FIN");
+    ensure(first.finishAfterExactFraming(true,0u,150u)==Phase::VerifiedFrame,
+           "first complete");
+    ensure(ledger.acceptVerifiedForLab(first),"first CAS accepted");
+    ensure(ledger.revision()==1u,"first revision increment");
+    ensure(!ledger.acceptVerifiedForLab(first),"replay same verified frame rejected");
+
+    Gate concurrentOld(ID,0u);
+    ensure(feedHeader(concurrentOld,a.header)==Phase::AuthenticatedHeader,"old auth");
+    ensure(feedBody(concurrentOld,a.body)==Phase::BodyDigestMatched,"old digest");
+    ensure(concurrentOld.finishAfterExactFraming(true,0u,150u)==Phase::VerifiedFrame,
+           "old complete");
+    ensure(!ledger.acceptVerifiedForLab(concurrentOld),"stale CAS rejected");
+
+    const char* NEW_TX="00000000000000000000000000000002";
+    const Packet sameTxNextRev=packet("MUSIC",1u);
+    Gate sameId(ID,1u);
+    ensure(feedHeader(sameId,sameTxNextRev.header)==Phase::AuthenticatedHeader,"same tx auth");
+    ensure(feedBody(sameId,sameTxNextRev.body)==Phase::BodyDigestMatched,"same tx digest");
+    ensure(sameId.finishAfterExactFraming(true,0u,150u)==Phase::VerifiedFrame,
+           "same tx complete");
+    ensure(!ledger.acceptVerifiedForLab(sameId),"same tx new revision rejected");
+
+    const Packet next=packet("MONITORING",1u,NEW_TX);
+    Gate fresh(ID,1u);
+    ensure(feedHeader(fresh,next.header)==Phase::AuthenticatedHeader,"next auth");
+    ensure(feedBody(fresh,next.body)==Phase::BodyDigestMatched,"next digest");
+    ensure(fresh.finishAfterExactFraming(true,0u,150u)==Phase::VerifiedFrame,
+           "next complete");
+    ensure(ledger.acceptVerifiedForLab(fresh),"fresh tx+CAS accepted");
+    ensure(ledger.revision()==2u,"next revision increment");
+}
+
 int main() {
+    replayAfterVerifiedFinRefusedByOfflineLedger();
     successAndCrossLanguageVector();
     invalidHeaders();
     invalidOrInterruptedBody();
