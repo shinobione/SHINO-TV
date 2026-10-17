@@ -162,3 +162,21 @@ Identifier, dans les futurs listings Capstone, les instructions/branches réelle
 **Risque :** une mauvaise attribution peut mener à transposer des protections fictives vers SHINO ; aucune modification de sécurité SHINO ne sera fondée sur les seules similitudes OEM.
 
 **Aucune opération physique** (USB/UART, Wi-Fi, OTA, flash, reboot) et aucun changement du code firmware B5.3.
+
+## 7. Poursuite ciblée des corps WRITE/END/contrôle — préparation V9 (17 octobre)
+
+**Lecture indépendante des octets du firmware OEM V9.0.44**, depuis l'archive officielle épinglée (ZIP 349 377 octets ; application 494 144 octets). Vérification des premiers octets de trois cibles et des appels POST B du reçu V8 :
+
+| Cible OEM | Premiers octets observés | Interprétation limitée |
+|---|---|---|
+| `0x40224608` | `12 c1 d0 c2 61 0a e2 61 08` | Cible CALL0 probable de WRITE ; prologue présent, fonction non encore étudiée |
+| `0x40224830` | `92 a0 c0 90 11 c0 c2 61 2e` | Cible CALL0 probable de END ; frontière de fonction non établie |
+| `0x4022FD4C` | `3d 02 22 02 0b 77 e2 07` | Petit contrôle commun ; lecture octet +0x0B compatible avec gestion interne de String (HYPOTHÈSE) |
+
+Les sites `0x402144C9`, `0x402144EC`, `0x40214506`, `0x40214514` appellent respectivement `0x4022FD4C`, `0x40224608`, `0x4022FD4C`, `0x40224830` selon les octets réels `05 88 1B`, `85 11 10`, `45 84 1B`, `85 31 10` et l'encodage CALL0. Cela confirme les **adresses**, mais **pas** les noms C++ ou la sûreté OTA.
+
+Un outil privé `SHINO_OEM_UPDATER_CALLTRACE_V9` a été préparé : **12 fenêtres de lecture** ciblées sur les trois fonctions et un appelé START `0x4020B454` ; **6 ancres de bytes + 4 ancres CALL0** vérifiables ; contrôle strict SHA-256 du ZIP et BIN OEM ; refus de réécrire une sortie préexistante ; uniquement JSON et listings texte. **11/11 tests synthétiques PASS**, compilation Python PASS, archive de livraison ZIP intègre. **Exécution V9 avec Capstone Windows sur les vrais octets NON ENCORE EFFECTUÉE / NON VÉRIFIÉE**.
+
+**HOLD :** on n'a pas démontré l'identité des trois fonctions cibles, l'authentification effective avant écriture, le contrôle cryptographique constructeur, les conditions de staging/flash/eboot ni le postboot. Les analogies avec Arduino Core 3.1.2 ne sont pas des preuves d'exécution OEM. Aucune modification du firmware SHINO, du SmallTV, de l'OTA, du Wi-Fi, de Codex ou de B5.3.
+
+**Prochaine preuve :** recevoir le V9 Capstone, confirmer les corps des cibles et tracer leurs branches ; éviter toute modification matérielle à ce stade.
