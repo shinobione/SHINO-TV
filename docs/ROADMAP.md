@@ -1,5 +1,31 @@
 # SHINO // TV — Roadmap
 
+## M3-H — Intégration HOST SHINO // LINK des priorités et modes (17 octobre 2026)
+
+**GO propriétaire : développement/test M3-H hors ligne uniquement**, PR Draft
+empilée sur #62 M3-G, dont le HEAD `a1875beac5ffebdb154ebced85c2df4163c9530a`
+avait 10/10 CI SUCCESS avant cette étape.
+
+Le banc M3-H réunit les **véritables modules Python PC** `LinkEngine`,
+`link_display_modes.decide`, `link_mode_tray.passive_link_signals` avec
+le contrat **M3-A en mémoire uniquement**. Les mesures restent prioritaires
+toutes les 2s, le mode AUTO propose musique active puis cartes/horloge,
+les modes manuels exigent un clic explicite, les résultats de commande
+incertains restent HOLD sans retry. Les changements de musique ne déclenchent
+aucune commande; un ACK simulé n'est jamais un ACK SmallTV.
+
+**Frontière :** les tests réseau source-réels M3-G et les ordonnancements
+Python M3-H restent **deux bancs HOST distincts**, pas un serveur natif
+ESP8266 intégré. Les véritables routes Dashboard/Digest/Telemetry et le
+contrôle HMAC M3-C ne cohabitent **pas encore** en firmware.
+Version du SmallTV physiquement installé non relue ici.
+Aucun effet réseau/appareil, OTA/flash, Wi-Fi, LittleFS, RTC,
+Freebox, secrets ou modifications aux branches B5.4 Codex / LINK Windows.
+
+Voir [M3-H — priorités PC et limites](LINK_M3H_OWNER_PRIORITY.md).
+**M3 produit : HOLD** sur serveur natif unique, clé/boot, ACK/readback,
+budget mémoire, scheduler et validation 240×240.
+
 ## M3-G — Parité métier métriques source-exécutée en localhost (17 octobre 2026)
 
 **GO propriétaire : avancer en laboratoire logiciel, pas de GO physique.**
