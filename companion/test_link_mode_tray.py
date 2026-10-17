@@ -219,5 +219,89 @@ class ModeMenuTests(unittest.TestCase):
                 self.assertEqual(self.controller.decision().requested_mode, mode)
 
 
+    def test_actual_run_tray_wires_radio_menu_without_device(self):
+        # Exercise real run_tray assembly, not just the isolated menu builder.
+        # All Windows/PIL/worker components are fake. No UI or device.
+        import sys
+        from types import ModuleType
+        from shino_link import run_tray
+
+        observed = {"clicked": False, "stopped": False, "runs": 0}
+
+        class MockEngine:
+            host = "192.168.1.70"
+            last_success = 99.0
+
+            @staticmethod
+            def clock():
+                return 100.0
+
+            @staticmethod
+            def run(stop, report, observe, target_supplier):
+                observed["runs"] += 1
+                report("CONNECTED")
+                stop.wait(1.0)
+
+        class MockDraw:
+            @staticmethod
+            def rounded_rectangle(*args, **kwargs):
+                pass
+
+            @staticmethod
+            def line(*args, **kwargs):
+                pass
+
+        class MockTrayIcon:
+            def __init__(self, name, picture, title, menu):
+                self.menu = menu
+                self.title = title
+                self.updates = 0
+
+            def update_menu(self):
+                self.updates += 1
+
+            def run(self):
+                modes = self.menu.items[1].action.items
+                self.assert_mode_label(modes)
+                modes[2].action(self, modes[2])  # explicit manual Monitoring
+                self.ensure_selected(modes)
+                observed["clicked"] = True
+                self.menu.items[-1].action(self, self.menu.items[-1])
+
+            @staticmethod
+            def assert_mode_label(modes):
+                assert [m.label() for m in modes] == [
+                    "Automatique", "Horloge / Météo",
+                    "Monitoring PC", "Musique",
+                ]
+
+            @staticmethod
+            def ensure_selected(modes):
+                assert [m.is_checked() for m in modes] == [
+                    False, False, True, False,
+                ]
+
+            def stop(self):
+                observed["stopped"] = True
+
+        fake_pil = ModuleType("PIL")
+        fake_pil.Image = SimpleNamespace(new=lambda *a, **kw: object())
+        fake_pil.ImageDraw = SimpleNamespace(Draw=lambda pic: MockDraw())
+        fake_pystray = SimpleNamespace(
+            Menu=FakeMenu, MenuItem=FakeMenuItem, Icon=MockTrayIcon,
+        )
+        with patch.dict(sys.modules, {"pystray": fake_pystray, "PIL": fake_pil}), \
+             patch("shino_link.make_engine", return_value=MockEngine()), \
+             patch("shino_link.webbrowser.open",
+                   side_effect=AssertionError("unrequested web open")), \
+             patch.object(socket, "socket",
+                          side_effect=AssertionError("network")):
+            result = run_tray({"host": "192.168.1.70"})
+        self.assertEqual(result, 0)
+        self.assertTrue(observed["clicked"])
+        self.assertTrue(observed["stopped"])
+        self.assertEqual(observed["runs"], 1)
+
+
 if __name__ == "__main__":
     unittest.main()
