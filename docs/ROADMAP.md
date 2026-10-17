@@ -3,6 +3,16 @@
 ## Évolution planifiée — SHINO // LINK Control Center / modes d'affichage (17 octobre 2026)
 
 **Décision produit : PLANIFIÉE / NON IMPLÉMENTÉE ; qualification appareil NON VÉRIFIÉE.**
+**Validation UX propriétaire du 17 octobre 2026 : APPROUVÉE.**
+L'utilisateur a testé la simulation interactive Automatique / Horloge-Météo /
+Monitoring PC / Musique, les contextes « PC connecté » et « musique en lecture »,
+ainsi que le retour à Automatique, et confirme que le comportement correspond
+exactement à son besoin. Cette approbation verrouille les règles de priorité
+et de fallback du prototype pour M1/M2. Il s'agit d'une **validation du concept
+interactif**, pas d'un test Windows ↔ SmallTV ni d'une qualification physique.
+Détail des règles et portée dans
+[le contrat UX validé](SHINO_LINK_DISPLAY_MODES_ROADMAP.md#validation-ux-propriétaire--simulation-interactive-17-octobre-2026).
+
 Le propriétaire propose de faire évoluer le tray/compagnon Windows existant en un
 centre de contrôle léger : choix immédiat **Automatique**, **Horloge / Météo**,
 **Monitoring PC** ou **Musique**, avec override manuel prioritaire sur toute
