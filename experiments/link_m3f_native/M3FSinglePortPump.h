@@ -25,7 +25,7 @@ public:
     static constexpr uint32_t kBodyDeadlineMs = 2000u;
     SinglePortPump(Server& server, ShinoM3C::Identity id,
                    const uint8_t* publicTestKey, uint32_t revision=0u)
-        : server_(server), id_(id), key_(publicTestKey), revision_(revision) {}
+        : server_(server), id_(id), key_(publicTestKey), ledger_(revision) {}
     SinglePortPump(const SinglePortPump&)=delete;
     SinglePortPump& operator=(const SinglePortPump&)=delete;
     ~SinglePortPump() { if(active_) client_.stop(); drop(); }
@@ -58,7 +58,9 @@ public:
                         true,0u,static_cast<uint32_t>(now-bodyStart_))
                         !=ShinoM3C::Phase::VerifiedFrame)
                         return finish(Step::Rejected,403);
-                    // Only a lab receipt. NO CAS or actual mode mutation.
+                    // CAS is SERIAL in this memory-only lab; no LCD mutation.
+                    if(!ledger_.acceptVerifiedForLab(*gate_))
+                        return finish(Step::Rejected,409);
                     return finish(Step::CryptoReviewedOnly,202);
                 }
                 return Step::Pending;
@@ -108,7 +110,7 @@ private:
     Server& server_;
     const ShinoM3C::Identity id_;
     const uint8_t* key_;
-    uint32_t revision_;
+    ShinoM3C::OfflineCasLedger ledger_;
     Client client_{};
     bool active_=false;
     uint32_t start_=0u,bodyStart_=0u,accepted_=0u;
@@ -141,7 +143,7 @@ private:
             return finish(Step::Rejected,404);
         }
         if(!key_) return finish(Step::Rejected,403);
-        gate_=new(gateMemory_) ShinoM3C::Gate(id_,revision_);
+        gate_=new(gateMemory_) ShinoM3C::Gate(id_,ledger_.revision());
         for(size_t i=0u;i<lineUsed_;++i)
             if(gate_->headerByte<Crypto>(first_[i],now-start_,key_)
                 ==ShinoM3C::Phase::Reject)
@@ -156,7 +158,7 @@ private:
             ? "{\"lab\":\"LEGACY_NOT_PORTED\",\"applied\":false}"
             : "{\"lab\":\"REJECTED_NO_MUTATION\",\"applied\":false}";
         const char* reason=code==202?"Accepted":code==503?"Service Unavailable":
-          code==408?"Request Timeout":code==404?"Not Found":
+          code==408?"Request Timeout":code==409?"Conflict":code==404?"Not Found":
           code==400?"Bad Request":"Forbidden";
         char hdr[160]{};
         const int n=std::snprintf(hdr,sizeof(hdr),
