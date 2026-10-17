@@ -98,14 +98,14 @@ static void homeLanIsMoreRestricted() {
 static void malformedNeverDispatches() {
     std::string tooLong(97u,'x');tooLong[0]='/';
     for(const char* value:{"GET","get","POST","POST ","HEAD","PATCH","DELETE",""})
-        assert(!LegacyRouteGate::inspect(value,"/").allowedToDispatch);
+        assert(!LegacyRouteGate::inspect(value,"/",Peer::AccessPoint).allowedToDispatch);
     for(const char* uri:{"","/api/v1/bridge/status#anything",
             "/api/v1/bridge/status%2f","/api/v1/bridge/status\r\n",
             "/api/v1/bridge/status\\evil","/api/v1/bridge/status abc"})
-        assert(LegacyRouteGate::inspect("GET",uri).kind==Kind::Closed);
-    assert(LegacyRouteGate::inspect("GET",tooLong.c_str()).kind==Kind::Closed);
-    assert(LegacyRouteGate::inspect(nullptr,"/").kind==Kind::Closed);
-    assert(LegacyRouteGate::inspect("GET",nullptr).kind==Kind::Closed);
+        assert(LegacyRouteGate::inspect("GET",uri,Peer::AccessPoint).kind==Kind::Closed);
+    assert(LegacyRouteGate::inspect("GET",tooLong.c_str(),Peer::AccessPoint).kind==Kind::Closed);
+    assert(LegacyRouteGate::inspect(nullptr,"/",Peer::AccessPoint).kind==Kind::Closed);
+    assert(LegacyRouteGate::inspect("GET",nullptr,Peer::AccessPoint).kind==Kind::Closed);
 }
 int main() {
     apiOnAp();
