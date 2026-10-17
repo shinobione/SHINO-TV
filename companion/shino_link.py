@@ -391,7 +391,10 @@ def run_tray(config: dict[str, str], observe=None, *, clock_b52_host=None) -> in
         from PIL import Image, ImageDraw
     except ImportError as exc:
         raise LinkError("Tray dependencies missing. Install companion/requirements-link.txt") from exc
+    from link_mode_tray import ModeTrayController, build_preview_menu, passive_link_signals
     engine = make_engine(config, diagnostics=observe is not None, clock_b52_host=clock_b52_host)
+    # M2 is a HOST preview only. Do not add a second sender or device POST.
+    mode_controller = ModeTrayController(lambda: passive_link_signals(engine))
     stop = threading.Event()
     status = {"value": "WAITING"}
     picture = Image.new("RGB", (64, 64), "#141820")
@@ -414,11 +417,9 @@ def run_tray(config: dict[str, str], observe=None, *, clock_b52_host=None) -> in
         stop.set()
         icon_.stop()
 
-    menu = pystray.Menu(
-        pystray.MenuItem(lambda item: "State: " + status["value"],
-                         lambda icon_, item: None, enabled=False),
-        pystray.MenuItem("Open SHINO // TV", open_dashboard),
-        pystray.MenuItem("Exit SHINO // LINK", quit_app),
+    menu = build_preview_menu(
+        pystray, mode_controller, status_supplier=lambda: status["value"],
+        open_dashboard=open_dashboard, quit_app=quit_app,
     )
     icon = pystray.Icon("SHINO_LINK", picture, APP_NAME + " · WAITING", menu)
     worker = threading.Thread(target=engine.run, args=(stop, state_changed, observe, lambda: load_config(config_path())["host"]),
