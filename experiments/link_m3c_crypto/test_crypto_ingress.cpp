@@ -296,10 +296,10 @@ static void exactCanonicalSigningLengthBoundary() {
     for(size_t hostLength: {size_t(144),size_t(145)}) {
         std::string host(hostLength,'a');
         const Packet p=packet();
-        const std::string signedText=std::string("SHINO-M3-CONTROL-1\\nPOST\\n")
-            +"/api/v1/display/mode\\n"+host+"\\n"+DEVICE+"\\n"+BOOT
-            +"\\n0\\nMUSIC\\n"+TX+"\\n"+std::to_string(p.body.size())
-            +"\\n"+p.hash;
+        const std::string signedText=std::string("SHINO-M3-CONTROL-1\nPOST\n")
+            +"/api/v1/display/mode\n"+host+"\n"+DEVICE+"\n"+BOOT
+            +"\n0\nMUSIC\n"+TX+"\n"+std::to_string(p.body.size())
+            +"\n"+p.hash;
         ensure(signedText.size()==hostLength+205u,"canonical count fixture");
         uint8_t proof[32]{};
         ensure(RealCrypto::hmac(KEY,reinterpret_cast<const uint8_t*>(
