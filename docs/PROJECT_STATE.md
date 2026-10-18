@@ -4,6 +4,12 @@
 
 > **À lire avant toute mission** avec `AGENTS.md` et, sur les branches où ils existent, `docs/AGENT_HANDOFF.md` et `docs/ROADMAP.md`. L'état des fichiers sur `main` et les docs historiques peuvent être dépassés. La branche locale de Codex et l'appareil ne sont pas synchronisés automatiquement avec GitHub.
 
+## Source de vérité GitHub / Windows — publication en cours
+
+**Mission de synchronisation ouverte : [issue #71](https://github.com/shinobione/SHINO-TV/issues/71).** Lire [SOURCE_SYNC_POLICY.md](SOURCE_SYNC_POLICY.md). Le code local combiné P0+512/B5.4 reste **NON CONSULTABLE sur GitHub**, tant qu'une PR Draft source ne contient pas un HEAD distant relu, les sources et tests partageables et une provenance expurgée. Le rapport privé `DECISION.md` est utile mais n'autorise aucune assertion sur un code distant absent.
+
+La décision du propriétaire autorise la **synchronisation du code source non secret vers une PR Draft après audit du contenu et de tout l'historique poussable**, pas la publication de BIN/ELF/reçus/identifiants, ni la fusion des branches, ni des actes matériels. Les branches P0, B5.4 et intégration restent préservées. **Ne pas déclarer PASS_SYNC avant preuve du HEAD GitHub et lecture de son diff.**
+
 ## 0. Dernière livraison : combinaison B5.4 + P0+512 (19 octobre 2026)
 
 **Rapport Codex et dossier de décision fournis par le propriétaire** : `PASS_OFFLINE` pour compilation/intégration, tests HTTP/LINK/OTA simulée et réception météo. Le compte rendu annonce un **seul candidat privé combiné** avec un écart de **+5 136 octets BIN** et **+460 octets RAM statique** par rapport à P0+512, sans modification IRAM ou du sous-chemin OTA suivi. Les tests rapportés sont **69 HTTP + 9 météo intégrés + 6 Core/eboot + 2 interruptions OTA**, et les tests de provenance/publieur complémentaires. **Aucune relecture indépendante du BIN/ELF ou des logs locaux dans cette PR.** `PASS_OFFLINE` n'est pas un GO physique.
