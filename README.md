@@ -2,7 +2,7 @@
 
 An independent, experimental firmware and PC-companion project for the **GeekMagic SmallTV-Ultra (ESP8266)**.
 
-> **Status:** Phase 0 — research and recovery planning. No firmware has been flashed, extracted from the device, or validated on the owner's hardware.
+> **État du projet (checkpoint du 19 octobre 2026) :** le propriétaire a confirmé un firmware P0+Updater512 physiquement installé et fonctionnel, ainsi qu'une VM météo Freebox déjà installée et testée. Ce dépôt public n'est pas une preuve de l'état du matériel. **Avant toute intervention, lire [l'état opérationnel et le prochain travail](docs/PROJECT_STATE.md) et [les règles agent](AGENTS.md).** Cette branche principale conserve des notes historiques qui ne doivent pas être prises pour l'état courant.
 
 ## Target device
 
@@ -51,6 +51,6 @@ Upstream software will be evaluated **before** code reuse, with attribution and 
 
 ## Working method
 
-Start with read-only investigation and a PC-side simulator. Keep original firmware binaries, local credentials, backups, and personal data out of Git. Firmware and any update mechanism are out of scope until the safety gate is passed.
+Start with read-only investigation and a PC-side simulator. Keep original firmware binaries, local credentials, backups, and personal data out of Git. Toute opération physique ou sur la VM requiert un accord explicite propre à l'action concernée ; voir [les règles de reprise](AGENTS.md).
 
 See [ROADMAP](docs/ROADMAP.md) and [device baseline](docs/DEVICE_BASELINE.md) on the planning branch.
