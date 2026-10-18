@@ -13,10 +13,15 @@ pour GET/POST `/api/v1/bridge/metrics` avec
 ArduinoJson 7.4.3, autorisation legacy injectée obligatoire,
 entrée bornée, résultats HTTP et tampon de sortie fourni
 par l'appelant (pas de buffer massif sur la CONT du handler).
-Les tests HOST exerceraient vraiment refus 403/400/422,
-échantillon accepté, dernier bon préservé et TTL 6 s.
-La CI native compare deux builds Xtensa inertes A/B,
-sans ouvrir aucun listener Wi-Fi.
+Les tests HOST **exécutent réellement** refus
+403/400/422, échantillon accepté, dernier bon préservé et TTL 6 s.
+[Première CI M3-M #39134324424](https://github.com/shinobione/SHINO-TV/actions/runs/39134324424)
+**2/2 jobs PASS au SHA précédent** : deux
+builds Xtensa inertes A/B, **+4 336 o BIN** et **+896 o BSS**
+dans la fixture qui réserve un tampon de sortie fourni
+par l'appelant ; **pas** une réserve mémoire produit
+ni un candidat OTA. Revalider le HEAD final après
+mise à jour des documents. Aucun listener Wi-Fi démarré.
 
 **La vraie authentification Digest/cookie, le contrôle de peer
 AP/STA, la migration des autres routes, l'écriture HTTP,
