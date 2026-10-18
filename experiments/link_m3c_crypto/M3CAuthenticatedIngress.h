@@ -116,6 +116,10 @@ private:
         Host = 0, Type = 1, Length = 2, Connection = 3, Device = 4,
         Boot = 5, Revision = 6, ModeField = 7, Tx = 8, BodyHash = 9, Proof = 10
     };
+#if defined(SHINO_M3C_INCREMENTAL_HMAC) && SHINO_M3C_INCREMENTAL_HMAC == 1 && \
+    defined(SHINO_M3C_STACK_MEMBER_SCRATCH) && SHINO_M3C_STACK_MEMBER_SCRATCH == 1
+#error "M3-L incremental HMAC and M3-K member scratch are mutually exclusive"
+#endif
     // Eleven exact headers, no unknown fields.
     static constexpr uint16_t kRequiredMask = (1u<<11u)-1u;
     const Identity id_;
@@ -339,6 +343,39 @@ private:
             hash[i*2u]=hex[declaredBodyHash_[i]>>4];
             hash[i*2u+1u]=hex[declaredBodyHash_[i]&15u];
         }
+#if defined(SHINO_M3C_INCREMENTAL_HMAC) && SHINO_M3C_INCREMENTAL_HMAC == 1
+        // M3-L: immutable canonical wire sequence, delivered in bounded
+        // NUL-terminated segments straight into HMAC update. No full
+        // canonical message exists on stack, heap or persistent Gate RAM.
+        // Numeric decimal spellings must match the original snprintf.
+        char revisionDigits[11]{},lengthDigits[4]{};
+        const int revisionSize=std::snprintf(revisionDigits,sizeof(revisionDigits),
+            "%lu",static_cast<unsigned long>(candidate_.revision));
+        const int lengthSize=std::snprintf(lengthDigits,sizeof(lengthDigits),
+            "%u",static_cast<unsigned>(declaredLength_));
+        const bool lengthsOk=revisionSize>0 &&
+            static_cast<size_t>(revisionSize)<sizeof(revisionDigits) &&
+            lengthSize>0 &&
+            static_cast<size_t>(lengthSize)<sizeof(lengthDigits);
+        const char* const parts[]{
+            "SHINO-M3-CONTROL-1\nPOST\n",kRoute,"\n",id_.host,"\n",
+            id_.device,"\n",id_.boot,"\n",revisionDigits,"\n",
+            modeLiteral_,"\n",candidate_.transaction,"\n",
+            lengthDigits,"\n",hash
+        };
+        uint8_t actual[32]{},expected[32]{};
+        const bool decoded=decodeHex(Span{proofHex_,64u},expected,32u);
+        const bool computed=lengthsOk && decoded &&
+            Crypto::hmacFragments(key,parts,sizeof(parts)/sizeof(parts[0]),
+                                  actual);
+        const bool accepted=computed && constantTime(actual,expected,32u);
+        clear(hash,sizeof(hash));
+        clear(revisionDigits,sizeof(revisionDigits));
+        clear(lengthDigits,sizeof(lengthDigits));
+        clear(actual,sizeof(actual));clear(expected,sizeof(expected));
+        clear(proofHex_,sizeof(proofHex_));
+        return accepted;
+#else
         static constexpr size_t kSignedFieldBytes=350u;
 #if defined(SHINO_M3C_STACK_MEMBER_SCRATCH) && SHINO_M3C_STACK_MEMBER_SCRATCH == 1
         char* const signedFields=signedFieldsScratch_;
@@ -366,6 +403,7 @@ private:
         clear(actual,sizeof(actual));clear(expected,sizeof(expected));
         clear(proofHex_,sizeof(proofHex_));
         return accepted;
+#endif
     }
     bool exactCanonicalBody() const {
         char expected[kBodyMax+1u]{};
