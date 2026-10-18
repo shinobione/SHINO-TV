@@ -363,9 +363,21 @@ private:
             modeLiteral_,"\n",candidate_.transaction,"\n",
             lengthDigits,"\n",hash
         };
+        // Preserve the original snprintf(350) framing decision exactly:
+        // the terminating NUL required a canonical length < 350.
+        // Reject overlength before any keyed computation, without ever
+        // assembling a contiguous signed message.
+        size_t canonicalBytes=0u;
+        bool bounded=lengthsOk;
+        for(size_t i=0u;i<sizeof(parts)/sizeof(parts[0])&&bounded;++i) {
+            if(!parts[i]) {bounded=false;break;}
+            const size_t piece=std::strlen(parts[i]);
+            if(piece>=350u-canonicalBytes) {bounded=false;break;}
+            canonicalBytes+=piece;
+        }
         uint8_t actual[32]{},expected[32]{};
         const bool decoded=decodeHex(Span{proofHex_,64u},expected,32u);
-        const bool computed=lengthsOk && decoded &&
+        const bool computed=bounded && canonicalBytes!=0u && decoded &&
             Crypto::hmacFragments(key,parts,sizeof(parts)/sizeof(parts[0]),
                                   actual);
         const bool accepted=computed && constantTime(actual,expected,32u);
