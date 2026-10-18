@@ -78,6 +78,44 @@ dans ce laboratoire.
   pas couverts. Même un PASS de ces tests n'autorise
   aucune intégration sur B5.3.
 
+## Premier résultat de qualification Xtensa et OpenSSL
+
+**Premier run M3-L CI :** [workflow #39110097050](https://github.com/shinobione/SHINO-TV/actions/runs/39110097050)
+au commit `327d41738845f8d97898cbd60899dc7ec03de1bf`,
+**2/2 jobs SUCCESS**, avec les trois compilations Xtensa
+et les trois séries de tests OpenSSL. Les valeurs sont
+dérivées de **BIN et ELF réels et de `-fstack-usage`**
+dans la CI, non de mesures physiques.
+
+| Grandeur, uniquement laboratoire inerte | Original M3-C | M3-K membre | M3-L streaming |
+| --- | ---: | ---: | ---: |
+| Frame HMAC `authenticateHeader` | 992 o | 640 o | **704 o** |
+| Frame SHA `bodyByte` | 352 o | 352 o | 352 o |
+| ELF `.bss` | 27 392 o | 27 744 o | **27 392 o** |
+| ELF `.text` | 270 895 o | 270 895 o | 271 179 o |
+| ELF `.data` | 1 556 o | 1 556 o | 1 556 o |
+| BIN inerte | 276 544 o | 276 544 o | **276 832 o** |
+
+Par rapport à M3-C original : **−288 o dans la frame
+du signataire, 0 o de `.bss` supplémentaire**, en
+contrepartie de **+288 o de BIN**. Par rapport à M3-K :
+**+64 o de frame**, mais **−352 o de `.bss`**.
+
+Après cette mesure, les tests cryptographiques HOST ont
+été renforcés avec un **HMAC valide et une identité Host
+adaptée** pour tester précisément la frontière :
+**349 octets de message canonique acceptés** et
+**350 octets refusés avant lecture de corps**. La CI
+sur le dernier SHA doit **à nouveau PASS** pour
+qualifier ces tests additionnels ; le premier run
+ne suffit pas à les attester.
+
+Le résultat du fournisseur BearSSL peut être **inliné**.
+L'absence de frame fournisseur séparée dans les
+annotations compilateur n'est **pas une preuve de coût
+nul**. Aucune limite totale du chemin d'appel,
+heap, CONT ou WDT n'en est inférée.
+
 ## HOLD durable
 
 M3-L ne crée pas de propriétaire HTTP `WiFiServer(80)`
