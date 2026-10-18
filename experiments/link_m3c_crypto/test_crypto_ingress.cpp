@@ -3,6 +3,7 @@
 #include "M3CAuthenticatedIngress.h"
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
+#include "../link_m3l_incremental/M3LHostOpenSslFragments.h"
 #include <openssl/sha.h>
 #include <cassert>
 #include <cstdlib>
@@ -25,6 +26,11 @@ const uint8_t KEY[32] = {
 };
 
 struct RealCrypto {
+    static bool hmacFragments(const uint8_t key[32],
+                               const char* const* parts,size_t count,
+                               uint8_t out[32]) {
+        return ShinoM3LHost::hmacFragments(key,parts,count,out);
+    }
     static bool hmac(const uint8_t* key, const uint8_t* src,
                      size_t len, uint8_t out[32]) {
         unsigned length=0;
