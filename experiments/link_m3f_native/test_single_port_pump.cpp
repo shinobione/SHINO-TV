@@ -3,6 +3,7 @@
 #include "M3FSinglePortPump.h"
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
+#include "../link_m3l_incremental/M3LHostOpenSslFragments.h"
 #include <openssl/sha.h>
 #include <cassert>
 #include <cstdlib>
@@ -24,6 +25,11 @@ const uint8_t PUBLIC_KEY[32] = {
   17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32
 };
 struct Crypto {
+    static bool hmacFragments(const uint8_t key[32],
+                               const char* const* parts,size_t count,
+                               uint8_t out[32]) {
+        return ShinoM3LHost::hmacFragments(key,parts,count,out);
+    }
     static bool hmac(const uint8_t* key,const uint8_t* in,
                      size_t n,uint8_t out[32]){
         unsigned produced=0;

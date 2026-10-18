@@ -1,0 +1,121 @@
+name: LINK M3-L bounded incremental HMAC cryptography + native A-B-C (NO DEVICE)
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/link_m3c_crypto/M3CAuthenticatedIngress.h'
+      - 'experiments/link_m3c_crypto/M3CBearSslCrypto.h'
+      - 'experiments/link_m3c_crypto/test_crypto_ingress.cpp'
+      - 'experiments/link_m3f_native/test_single_port_pump.cpp'
+      - 'experiments/link_m3l_incremental/**'
+      - 'docs/LINK_M3L_INCREMENTAL_HMAC.md'
+      - 'docs/ROADMAP.md'
+      - '.github/workflows/link-m3l-incremental-hmac.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  host-openssl-crypto-equivalence:
+    name: Same real M3-C OpenSSL vectors + M3-F pump, three implementations
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Exact source pin and no forgotten B5.3 handler changes
+        run: |
+          python -m unittest discover -s experiments/link_m3g_real -p test_exact_source.py -v
+          python -m unittest discover -s experiments/link_m3e_legacy -p test_b53_source_pins.py -v
+      - name: Guard source default-off, no materialized M3-L signed message
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          source=Path('experiments/link_m3c_crypto/M3CAuthenticatedIngress.h').read_text()
+          native=Path('experiments/link_m3c_crypto/M3CBearSslCrypto.h').read_text()
+          assert 'SHINO_M3C_INCREMENTAL_HMAC' in source
+          assert 'Crypto::hmacFragments(key,parts' in source
+          assert 'const char* const parts[]' in source
+          assert 'br_hmac_update(&ctx,parts[i]' in native
+          assert 'br_hmac_out(&ctx,out)' in native
+          assert '#error "M3-L incremental HMAC and M3-K member scratch are mutually exclusive"' in source
+          print('M3L_SEGMENTED_HMAC_SOURCE_BINDINGS_PASS')
+          PY
+      - name: Compile and run same signed/invalid protocol OpenSSL cases 3 ways
+        run: |
+          for variant in original member streaming; do
+            case "$variant" in
+              original) scratch=0; increment=0 ;;
+              member) scratch=1; increment=0 ;;
+              streaming) scratch=0; increment=1 ;;
+            esac
+            for test in crypto pump; do
+              if test "$test" = crypto; then
+                source=experiments/link_m3c_crypto/test_crypto_ingress.cpp
+              else
+                source=experiments/link_m3f_native/test_single_port_pump.cpp
+              fi
+              g++ -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \
+                -fno-exceptions -fno-rtti \
+                -DSHINO_M3C_STACK_MEMBER_SCRATCH=$scratch \
+                -DSHINO_M3C_INCREMENTAL_HMAC=$increment \
+                "$source" -lcrypto -o "${{ runner.temp }}/m3l_${variant}_${test}"
+              "${{ runner.temp }}/m3l_${variant}_${test}" > "${{ runner.temp }}/m3l_${variant}_${test}.out"
+            done
+          done
+          for test in crypto pump; do
+            diff -u "${{ runner.temp }}/m3l_original_${test}.out" "${{ runner.temp }}/m3l_member_${test}.out"
+            diff -u "${{ runner.temp }}/m3l_original_${test}.out" "${{ runner.temp }}/m3l_streaming_${test}.out"
+          done
+          echo M3L_REAL_OPENSSL_HMAC_VECTOR_PARITY_PASS
+      - name: Preserve 26 transaction anti-replay/no retry tests
+        run: python -m unittest discover -s experiments/link_m3_control_contract -p 'test_*.py' -v
+
+  pinned-native-abc:
+    name: 3 exact Xtensa Core 3.1.2 builds and independently measured stack/BSS/BIN
+    runs-on: ubuntu-latest
+    timeout-minutes: 19
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Ensure no network boot/flash inside inert Xtensa app
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('experiments/link_m3l_incremental/src/main.cpp').read_text()
+          base=Path('experiments/link_m3j_native/src/main.cpp').read_text()
+          assert '#include "../../link_m3j_native/src/main.cpp"' in s
+          assert 'volatile bool inertLabProbeEnabled=false;' in base
+          for forbidden in ('WiFi.begin(', 'WiFi.mode(', 'Update.begin(', 'LittleFS.begin(', '.begin();'):
+            assert forbidden not in base
+          assert 'void setup(){}' in base
+          print('M3L_NATIVE_INERT_SOURCE_GATE_PASS')
+          PY
+      - name: Install pinned PlatformIO runner only
+        run: python -m pip install 'platformio==6.1.18'
+      - name: Build real unchanged B5.3 metrics and original M3-C HMAC
+        run: pio run -d experiments/link_m3l_incremental -e m3l_original
+      - name: Build M3-K control variant, same native graph
+        run: pio run -d experiments/link_m3l_incremental -e m3l_member_scratch
+      - name: Build incremental BearSSL HMAC stream on same real native graph
+        run: pio run -d experiments/link_m3l_incremental -e m3l_incremental
+      - name: Extract true sizes, hashes, stack frames; fail on BSS/frame regressions
+        run: |
+          python experiments/link_m3l_incremental/measure_three_variants.py
+          cat experiments/link_m3l_incremental/m3l_derived_three_variant_report.json >> "${GITHUB_STEP_SUMMARY}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m3l-xtensa-streaming-hmac-abc-receipt
+          path: experiments/link_m3l_incremental/m3l_derived_three_variant_report.json
+          if-no-files-found: error
+          retention-days: 7

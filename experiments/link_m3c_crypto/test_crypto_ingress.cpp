@@ -3,6 +3,7 @@
 #include "M3CAuthenticatedIngress.h"
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
+#include "../link_m3l_incremental/M3LHostOpenSslFragments.h"
 #include <openssl/sha.h>
 #include <cassert>
 #include <cstdlib>
@@ -25,6 +26,11 @@ const uint8_t KEY[32] = {
 };
 
 struct RealCrypto {
+    static bool hmacFragments(const uint8_t key[32],
+                               const char* const* parts,size_t count,
+                               uint8_t out[32]) {
+        return ShinoM3LHost::hmacFragments(key,parts,count,out);
+    }
     static bool hmac(const uint8_t* key, const uint8_t* src,
                      size_t len, uint8_t out[32]) {
         unsigned length=0;
@@ -282,7 +288,50 @@ static void replayAfterVerifiedFinRefusedByOfflineLedger() {
     ensure(ledger.revision()==2u,"next revision increment");
 }
 
+
+static void exactCanonicalSigningLengthBoundary() {
+    // These inputs are intentionally valid Host header values for their
+    // externally bound fixture identity. The old 350-byte snprintf accepts
+    // 349 signed bytes and rejects 350 even when the HMAC is valid.
+    for(size_t hostLength: {size_t(144),size_t(145)}) {
+        std::string host(hostLength,'a');
+        const Packet p=packet();
+        const std::string signedText=std::string("SHINO-M3-CONTROL-1\nPOST\n")
+            +"/api/v1/display/mode\n"+host+"\n"+DEVICE+"\n"+BOOT
+            +"\n0\nMUSIC\n"+TX+"\n"+std::to_string(p.body.size())
+            +"\n"+p.hash;
+        ensure(signedText.size()==hostLength+205u,"canonical count fixture");
+        uint8_t proof[32]{};
+        ensure(RealCrypto::hmac(KEY,reinterpret_cast<const uint8_t*>(
+                  signedText.data()),signedText.size(),proof),
+               "independent single-buffer HMAC oracle");
+        std::string header=replace(p.header,
+                "Host: "+std::string(HOST),"Host: "+host);
+        header=replace(header,"X-Shino-Proof: "+p.mac,
+                       "X-Shino-Proof: "+hex(proof,32u));
+        const Identity local{host.c_str(),DEVICE,BOOT};
+        Gate gate(local,0u);
+        const Phase result=feedHeader(gate,header);
+        if(hostLength==144u) {
+            ensure(signedText.size()==349u,"349 exact expected");
+            ensure(result==Phase::AuthenticatedHeader,
+                   "349-byte original canonical HMAC frame accepted");
+            ensure(feedBody(gate,p.body)==Phase::BodyDigestMatched,
+                   "349-byte signed header original SHA body intact");
+            ensure(gate.finishAfterExactFraming(true,0u,150u)
+                   ==Phase::VerifiedFrame,"349-byte signed FIN");
+        } else {
+            ensure(signedText.size()==350u,"350 exact expected");
+            ensure(result==Phase::Reject,
+                   "350-byte signed input is rejected before body");
+            ensure(gate.consumedBody()==0u,
+                   "overlimit must never read body");
+        }
+    }
+}
+
 int main() {
+    exactCanonicalSigningLengthBoundary();
     replayAfterVerifiedFinRefusedByOfflineLedger();
     successAndCrossLanguageVector();
     invalidHeaders();
