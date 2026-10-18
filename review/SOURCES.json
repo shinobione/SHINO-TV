@@ -1,0 +1,1762 @@
+{
+  "schema": 1,
+  "scope": "PUBLIC_SOURCE_ONLY_NOT_A_FIRMWARE_RELEASE",
+  "files": {
+    "LICENSE": {
+      "bytes": 34888,
+      "sha256": "f817886ee6bb65ed3098a7987b1e9781653d15c71f85589ce0d2af663c66d373"
+    },
+    "PROVENANCE.md": {
+      "bytes": 3385,
+      "sha256": "f38c06d5cb71a4151a0da7b3137605d30eda76b76e129e7c9857ed698c3a1834"
+    },
+    "README.md": {
+      "bytes": 3329,
+      "sha256": "746fb2f30f0653a3d0b606217d5fd6852dfc2ff3b6cf26825bbe8f77977202ce"
+    },
+    "run_tests.py": {
+      "bytes": 1584,
+      "sha256": "49bbda2f99e601d2cdfb626390bb02a9a69daeec51ab42311a2b666aef6fd0c7"
+    },
+    "verify_source.py": {
+      "bytes": 1142,
+      "sha256": "523fa9ad3fcfed7ccc0ecfe7395ab475c0aaa2a2f7bbf16a8190732f7d26dd52"
+    },
+    "clients/clock_sync.py": {
+      "bytes": 10979,
+      "sha256": "3835d51c940edbc3533eaf731138c22bbbe659f5ce720f2218261a36c10254e3"
+    },
+    "clients/provision_home_wifi.py": {
+      "bytes": 1117,
+      "sha256": "70a8d3ccd957fc781d7f11154dd58a302fda9a1076ff9d9f559d310c1ee2e79f"
+    },
+    "clients/push_fsless_metrics.py": {
+      "bytes": 250,
+      "sha256": "1d015b4b01b209ec8094bbf2a3b4ec99d9b3e5844d3f51d3b299930774d5563b"
+    },
+    "clients/shino_digest_coord.py": {
+      "bytes": 10524,
+      "sha256": "d9fc892928951a36be5dca9458b1ce1eac83b85f0db6aa493ae55c5e7526d504"
+    },
+    "core/c_types.h": {
+      "bytes": 13,
+      "sha256": "b3adf106d95b8934f690943f2921308b90be5b766c4c8ba250c792de56400201"
+    },
+    "core/eboot_command.c": {
+      "bytes": 1634,
+      "sha256": "a96ee5326b4a6d0d1c3e90c018d4d09bea25fb8a578e191bdd891f5e44a7ff04"
+    },
+    "core/eboot_command.h": {
+      "bytes": 873,
+      "sha256": "5448c0ba0ac6f178557354b25a7bddd454712915d49b048ae4222ee01376662a"
+    },
+    "core/eboot_plain.h": {
+      "bytes": 857,
+      "sha256": "3e059f1f7a8aa9a9fa5d95caa5ed34982708c7fb1e0b356f4558fc4017fcc0aa"
+    },
+    "core/spi_flash.h": {
+      "bytes": 13,
+      "sha256": "b3adf106d95b8934f690943f2921308b90be5b766c4c8ba250c792de56400201"
+    },
+    "core/Updater.cpp": {
+      "bytes": 18564,
+      "sha256": "635dd1db4e56851fe44b840cd87dcf597fe25f95ef66a537c0d4871033354c5f"
+    },
+    "core/Updater.h": {
+      "bytes": 7450,
+      "sha256": "aa99cf34fa33f707899bbe065cf118d4c115a8e359e4c68cd6ebadeabd461e0c"
+    },
+    "core/updater512.patch": {
+      "bytes": 605,
+      "sha256": "a2479760b54c7187602da335702e916a12c2bd92cf57b5de7b0edc149153b481"
+    },
+    "core/Updater_Signing.h": {
+      "bytes": 117,
+      "sha256": "8517749d1d28ab0cd76237b420aa69500d9f4beb33b324e82df37a981af59520"
+    },
+    "core/user_interface.h": {
+      "bytes": 1936,
+      "sha256": "04a86cf85933c15d45c6c71d9380d258a2cdfb36db74e2423041ea8c93d498a5"
+    },
+    "host/Arduino.h": {
+      "bytes": 6647,
+      "sha256": "ae5069201ebdd7a0af98263bcbc1fbb06e1b948a5abddf3ce1a6a009b8d8531a"
+    },
+    "host/ArduinoJson.h": {
+      "bytes": 297,
+      "sha256": "15ee2506ec7b940d7f6e244d18bb8e78ea129fc330877bd08ff75c19cec98177"
+    },
+    "host/ArduinoJson.hpp": {
+      "bytes": 2256,
+      "sha256": "c8018d51e397b96eb8ae772b05b663ea75303194ecca5c7d9070b0fb6c202b44"
+    },
+    "host/B52Clock.h": {
+      "bytes": 639,
+      "sha256": "fa9437f15d26c804662b8a8dfb11595d7c8dbf7912a5dcd599aee0181f81e923"
+    },
+    "host/B52ClockHttp.inc": {
+      "bytes": 3454,
+      "sha256": "f15b8e5063dfd6ddfe0731bc86011be2f3b7560628ecb6c93d63fd39d565c8d9"
+    },
+    "host/B52Clock_host.inc": {
+      "bytes": 3316,
+      "sha256": "ce38031d047c21836321ebeb496c8e4a7e619f1ddce6de4aa9d84863b6d1f909"
+    },
+    "host/B53Admission.h": {
+      "bytes": 2575,
+      "sha256": "bedd3acea739ac321f9f452bb0f643cef07435c952e443dcae05c82d53015f82"
+    },
+    "host/B53AutonomyPolicy.h": {
+      "bytes": 4059,
+      "sha256": "eb6932b9a6e9b2b36147143aada5eaf73f6521a5fade66f46983611a87119cc2"
+    },
+    "host/B53Diagnostic.h": {
+      "bytes": 5956,
+      "sha256": "817bf8fe694d603bd05dbdb06b6f4a6df93169058ceb7b8c5322ca687bda2b43"
+    },
+    "host/B53Integrated.h": {
+      "bytes": 401,
+      "sha256": "df8edd3e94ff3873cd5697b06f213e7dd71dfecdc4838c168826ba577f190127"
+    },
+    "host/B53Integrated_host.inc": {
+      "bytes": 6128,
+      "sha256": "2a1e2c2271f9c83f44e0a7b8b694be29c083d407aec6d98f14504465f65cbe6b"
+    },
+    "host/B53Layout.h": {
+      "bytes": 1878,
+      "sha256": "51d9b8c5489f6a910be066e632f6dc7e7f48cfc3474713bd21c0b32cc366549f"
+    },
+    "host/B53OffDiagnostic.h": {
+      "bytes": 2126,
+      "sha256": "202ab8355236cf4d520f326c7204996b6c6fde8064b833ace021c68876b12040"
+    },
+    "host/B53Sntp.h": {
+      "bytes": 268,
+      "sha256": "98c8eec6a074bae51efa4c104d6f843d1bb70c27904b84db1c660f7cd6f944d9"
+    },
+    "host/B53Sntp_host.inc": {
+      "bytes": 2704,
+      "sha256": "05d8f209893e6a44cd3361e65903b91eb43fc7e66e8e34de8c9c85638cc77ae7"
+    },
+    "host/B54LanHttp.inc": {
+      "bytes": 3774,
+      "sha256": "d10711343b57b9bde5c7999bd73bf4cce2133cd87469ae27f482d403e0e896a7"
+    },
+    "host/B54LanNative.h": {
+      "bytes": 423,
+      "sha256": "48c04ea8728902a68263b69c99eae51b98c49fbb7a68e264f5afb83f970bfb03"
+    },
+    "host/B54LanNative_host.inc": {
+      "bytes": 2945,
+      "sha256": "465b655c610d7ca3409348e0ef62b79449e152bae03229aa2e3f95c88d36011a"
+    },
+    "host/B54LanPrivate.h": {
+      "bytes": 293,
+      "sha256": "1ed094a4d7104afae0825f4b3603207cecbe355400ca878c077572749e0114e5"
+    },
+    "host/B54LanStatusPath.h": {
+      "bytes": 747,
+      "sha256": "13dbe0d1f43d1baa57579f35d2e7d788a80d87e2f91ac6ee77fc0155786e3f88"
+    },
+    "host/B54LanWeather.h": {
+      "bytes": 6199,
+      "sha256": "0cc1532cc53a9a391aa510f7388e02fe01d5887bb7417ade383ff2203405a717"
+    },
+    "host/B5Lan.h": {
+      "bytes": 1155,
+      "sha256": "9edb227f1310a1c698832bc468073fa26df02511cb4ea9f6ace46647ff0ecfd6"
+    },
+    "host/B5Lan_host.inc": {
+      "bytes": 12123,
+      "sha256": "4cf0c0b530b8d11ed480649c8a6d39764f40782a5a2792403a3cc1cb5716223b"
+    },
+    "host/ClockFreshness.h": {
+      "bytes": 4039,
+      "sha256": "561ffc088c4dc2528279e889437fbeace42ff8a84b4b969d5d3ad32b0f7d862d"
+    },
+    "host/coredecls.h": {
+      "bytes": 331,
+      "sha256": "e85317a368ac79a21f7fc56d9f770c00c8e13590b5627d6db2b3fc7d0ad6d5f1"
+    },
+    "host/ESP8266WebServer-impl.h": {
+      "bytes": 26889,
+      "sha256": "55555da9f7aa877831682fce003576eb8f8cc3f97e0f25c094a3d869aa2c4412"
+    },
+    "host/ESP8266WebServer.h": {
+      "bytes": 14399,
+      "sha256": "fd76a9e11f2a493ac37fdb07ad688459cdc88380b572d0f523af22202938668e"
+    },
+    "host/ESP8266WiFi.h": {
+      "bytes": 1102,
+      "sha256": "636dc76ab2667ecea5e3bff321e1da8420727e411e765953c704b5e84fa0ca6a"
+    },
+    "host/FS.h": {
+      "bytes": 58,
+      "sha256": "168de5516ef6b0e5bbf9b6a6c68aa151e311f7638ab08ed02d184bfc5dd4940f"
+    },
+    "host/FslessMetrics_host.inc": {
+      "bytes": 3169,
+      "sha256": "f3c58cedda2c49260b6c9dc23a110eda9bbd98ab84e1a9b46a4794333d0b3980"
+    },
+    "host/HostSocket.h": {
+      "bytes": 9184,
+      "sha256": "6ab452bc992d6efff759e3ae02370010d79d4ddca4c7491bb626bfc2a78e33a6"
+    },
+    "host/MD5Builder.h": {
+      "bytes": 37,
+      "sha256": "728885a970ecd651f7acd1dc9f3927847d4d6b0b20b744e1a57d74c645a2707d"
+    },
+    "host/network_composition.inc": {
+      "bytes": 298,
+      "sha256": "7c3911816396ad932ae2693d234543f5b6188d92bf88da75a922582a4da1a3e0"
+    },
+    "host/normal_host.inc": {
+      "bytes": 29382,
+      "sha256": "ee47b4c1640866f7765a008eb6f64a66891ef07a85812c082cd2965dd6557e4d"
+    },
+    "host/Parsing-impl.h": {
+      "bytes": 21544,
+      "sha256": "ab23bd46f76eaaa517e4f68f24a63076286f2b39dbf4d0c0db8432c2c99de6c7"
+    },
+    "host/pgmspace.h": {
+      "bytes": 331,
+      "sha256": "9d737cf9b014312cdcc31ca6eebf879d3b4794b2443dd80dd63845ab824ccf1b"
+    },
+    "host/pinned_stream.inc": {
+      "bytes": 205,
+      "sha256": "505ab0990101d9fc8daddd8643752c311eb2d9b09c84389137ecf8e7141028ae"
+    },
+    "host/ShinoHttpOta.h": {
+      "bytes": 12301,
+      "sha256": "63cdc7b5b6d7327ec680bf10620ad88bab780ebfbf7c4de72f529ad8569a9640"
+    },
+    "host/ShinoRelease.h": {
+      "bytes": 466,
+      "sha256": "8d60718c680c9860b50d9acfe6d44d071675ec082dac65616e8347301a371058"
+    },
+    "host/shino_private_policy.h": {
+      "bytes": 559,
+      "sha256": "e13f070fc0969aebb96f2ff2bbfeff59fb474c275b12d0d801342d0c958c4233"
+    },
+    "host/TZ.h": {
+      "bytes": 66,
+      "sha256": "d98bb84baeab28f1f7293822d4fa9a8e005f3748e6055240fa3788d6f50ec9bd"
+    },
+    "host/Uri.h": {
+      "bytes": 579,
+      "sha256": "8b9197eb9010bb7405cfa57f78bc7b86cb9b96f621879f1d636c7b0ef859b786"
+    },
+    "host/WString.h": {
+      "bytes": 34,
+      "sha256": "864573d28a46d3512d2759d9839baf120b5b10fb2d076162c38d94f8e54406eb"
+    },
+    "tests/build_host.py": {
+      "bytes": 3653,
+      "sha256": "5f0888a7628fa5cc8f7961aed4ce86ab41713aa9608c75b0624a9207c71007ec"
+    },
+    "tests/lab.cpp": {
+      "bytes": 3103,
+      "sha256": "1da08debd9e7337f13e76efeab55fe6cd0c5293fae8bac41129c2725cf560b75"
+    },
+    "tests/native_http.cpp": {
+      "bytes": 6429,
+      "sha256": "2f8360cfa86dd096da47d8358766cd2675e73ed0290bd34d5dfb526dcfbe7f70"
+    },
+    "tests/native_receiver.cpp": {
+      "bytes": 4150,
+      "sha256": "e01e478a265e4b713872077c44ebdab92acb662d59e125b7888812ee58e34a23"
+    },
+    "tests/network_lab.cpp": {
+      "bytes": 5929,
+      "sha256": "aba3220bcc665b7e35a76a4cb97486546db6260ce76edd5066b903530579776f"
+    },
+    "tests/ota_fixture.py": {
+      "bytes": 2019,
+      "sha256": "2aaa510ac2bfaef5364e3e2697a13dc17695657a8bca38086830a11912de80e4"
+    },
+    "tests/test_application.py": {
+      "bytes": 3359,
+      "sha256": "82596f4ce8d8c7d0ce18081094823db5fe417917ff49b51994606e035437e315"
+    },
+    "tests/test_source.py": {
+      "bytes": 1923,
+      "sha256": "844e6a9c389c7e52408a01c99fbba9894856158adbfbf51191dcfbd46b5d6acb"
+    },
+    "tests/test_weather.py": {
+      "bytes": 7767,
+      "sha256": "802ef6a03e9838c1d950fe6b0fc93e499f0b0ee665f02267bd6dec9a3e637e9e"
+    },
+    "vendor/ArduinoJson-LICENSE.txt": {
+      "bytes": 1117,
+      "sha256": "4a7ee9c96b28cbf30c5bf7c2d211a0ef57179f0328e68ad7b7fa7d754b7da1a2"
+    },
+    "vendor/esp8266-LICENSE": {
+      "bytes": 26529,
+      "sha256": "a1a33180d02960ab1c5de36cf20b1a2f0fe9888d83826ad263da5db52f1b183b"
+    },
+    "weather_vm/protocol.py": {
+      "bytes": 3024,
+      "sha256": "2237d3637a38ecb90aee63b0d925fe8a058e9a022a9eba0f540e07e955e5d5df"
+    },
+    "weather_vm/publisher.py": {
+      "bytes": 11721,
+      "sha256": "559e08622a85cec21edb9a5a38a8d1fdd123b1d89678632a9b87bfcfb04ecea3"
+    },
+    "weather_vm/test_protocol.py": {
+      "bytes": 719,
+      "sha256": "4e2fa688a425bfeb6d1e52c4d5ac6450b91feee71668fa69e62ea7ae2ff28ef4"
+    },
+    "weather_vm/test_publisher.py": {
+      "bytes": 16585,
+      "sha256": "707f22a09796b9eb6e6fb4f38f731bc74c728df842fe1ebd0f9e5632bcd3abb4"
+    },
+    "weather_vm/__init__.py": {
+      "bytes": 68,
+      "sha256": "2e4569783bacae856cf764fdd10da1d84959a0044429413a2b0b7332412695f6"
+    },
+    "host/ArduinoJson/compatibility.hpp": {
+      "bytes": 4233,
+      "sha256": "31f42efc5b42b66193c7383443713c25dcb930fc3b10733d367d8208da2e3ab3"
+    },
+    "host/ArduinoJson/Configuration.hpp": {
+      "bytes": 8264,
+      "sha256": "3b00b5d8b98f4922b60e2878bfc114bcdd958253f882af2620a4b85099953b62"
+    },
+    "host/ArduinoJson/Namespace.hpp": {
+      "bytes": 1553,
+      "sha256": "0a52bedfe4f311c54a1e472b3c6bf94f754211e6fb9b327a65ebe1c6653c9e21"
+    },
+    "host/ArduinoJson/version.hpp": {
+      "bytes": 300,
+      "sha256": "c22fe77402587c372bbe7487c1c937a74cacfa5d4e73f87891cba4fdbbc4f696"
+    },
+    "host/bearssl/bearssl.h": {
+      "bytes": 34,
+      "sha256": "3b76180e35475f380cca461f50f053d3baf9770ae1d8f1a47eb28f7a6afce927"
+    },
+    "host/boot/DashboardV2.h": {
+      "bytes": 2711,
+      "sha256": "350a93dea74bbd40c7b7e718ba9ed0d956f0399c108efbcdf795aa0ec719f679"
+    },
+    "host/boot/FirstBootBridge.h": {
+      "bytes": 301,
+      "sha256": "0a7ae98fd8afb694d3a00c694b600849993eb4d28d408893348a5e40e87bb299"
+    },
+    "host/boot/FslessMetrics.h": {
+      "bytes": 709,
+      "sha256": "cc95d0bc4be5c8cc7bfd89cd4f0f058fe4bcca5fdff5d760a1e7d9f69118c55e"
+    },
+    "host/boot/FslessWebUI.h": {
+      "bytes": 200,
+      "sha256": "d9c51b0be179f1392405b0c09111d1570654f4c0bc62cbc759df055c5f74ebc7"
+    },
+    "host/boot/HomeLan.h": {
+      "bytes": 815,
+      "sha256": "712a98a353600daca0087f651d04e4f3ad736a77d3695bbcc6b165bf5dc003b2"
+    },
+    "host/boot/HomeLanPolicy.h": {
+      "bytes": 6940,
+      "sha256": "81f62f299a3ed014c432c264a2236f24a84bce6b216703487c7a03f224c21322"
+    },
+    "host/boot/M9LittleFsMountProbe.h": {
+      "bytes": 1220,
+      "sha256": "14ebbb43f3d58b2c12a3f94f8205c2a3bb84341c7562005dfcfd7c11dece79ca"
+    },
+    "host/boot/M9MountProbeResources.h": {
+      "bytes": 312,
+      "sha256": "506ad2b29194c9fecf6bb4660d9ace8204e7a671070e555a3d03b5ffa8d02855"
+    },
+    "host/boot/M9NormalHttpPolicy.h": {
+      "bytes": 1008,
+      "sha256": "d09b067d4066dc22258b0181bbd64d25ef09e6f076740475801ff8039ccd26e2"
+    },
+    "host/boot/M9NormalResources.h": {
+      "bytes": 3845,
+      "sha256": "f930012acbb465f341ab0a68a7b53db743365796895826ae0ad728c38f54dd6c"
+    },
+    "host/boot/M9NormalStageA.h": {
+      "bytes": 223,
+      "sha256": "eed9ff8359cd3d6d59ca06bcfb544150fca43677ea0cbc17ce10518632564bf3"
+    },
+    "host/boot/M9NormalStatusJson.h": {
+      "bytes": 4503,
+      "sha256": "64cf0022dba582b0621c7270f68f808aa6210ad1ed4728c94259d23bacc79a97"
+    },
+    "host/boot/M9ProbeManifest.h": {
+      "bytes": 6222,
+      "sha256": "ba1bbd6221d60daef51b407e28f856b56257cc4cda4c23b405e089d90c318d3e"
+    },
+    "host/boot/M9ProbeStream.h": {
+      "bytes": 2370,
+      "sha256": "2146268bd3a2d20d8d1a1886c1361a67e351988535e393d90daf2f4fda63d658"
+    },
+    "host/boot/M9ResourceJson.h": {
+      "bytes": 3849,
+      "sha256": "9138a11df749167252670048b7c515f7844b70d440645eaa24f677274cb7d27e"
+    },
+    "host/boot/M9ResourceObserver.h": {
+      "bytes": 4831,
+      "sha256": "40f2065701bccf5d81d0f86f2ca3ec6bbbbffefa33b228f3177e5989cfe9d244"
+    },
+    "host/boot/M9StageAConfig.h": {
+      "bytes": 928,
+      "sha256": "199fbd1204e10205e4f3a05ccfd414b0c35042fa34cea0424853c6c9b28ffbdd"
+    },
+    "host/boot/NativeOtaDigestChallengeReview.h": {
+      "bytes": 2261,
+      "sha256": "96f5113f99545d3d3c2d602d9e1a25b1240dbea5a857e7c19e812c198de9f0bf"
+    },
+    "host/boot/NativeOtaEntropyReview.h": {
+      "bytes": 2105,
+      "sha256": "1b232c1f7b4b56544c936c9aeb0ce90e2a88f79ba299839363ab3452a9d3ed43"
+    },
+    "host/boot/NativeOtaHeapReview.h": {
+      "bytes": 3082,
+      "sha256": "5fa6ae33512ccdc4ad09056f7a0aae25aaaebd2ba9f7e996759228a40de5cce5"
+    },
+    "host/boot/NativeOtaHeapSampleCadence.h": {
+      "bytes": 1371,
+      "sha256": "d77e0d0267edfbead01a4f13e3a09447bba89f6fc391abfe4880840e63cbd0b1"
+    },
+    "host/boot/NativeOtaIntentGate.h": {
+      "bytes": 5846,
+      "sha256": "ba3396a648031be7c8f333b03cf08f04cd37fb624a686bf2aeff01d39b5c5e73"
+    },
+    "host/boot/NativeOtaLegacyResponsePreview.h": {
+      "bytes": 6132,
+      "sha256": "56fa34bef083021d13a8a8b557e4390a6d68425702773d1a6ebc2e91de4294d8"
+    },
+    "host/boot/NativeOtaLegacySessionReview.h": {
+      "bytes": 8441,
+      "sha256": "8e681aa6aa351cdc9b3497a1dcb17ed312e42f1ef718a484edc3da9aa6046200"
+    },
+    "host/boot/NativeOtaLegacyTelemetryReview.h": {
+      "bytes": 4017,
+      "sha256": "87e69e684626c8c10c3ef4bd1622e116f5a0547aae2b748e76f472ed38e0731c"
+    },
+    "host/boot/NativeOtaManualConsentGate.h": {
+      "bytes": 4985,
+      "sha256": "c86d2bcad7825e5c04cabfe2efa10267f4bc219b7d381cd10a3e7785067cc3b0"
+    },
+    "host/boot/NativeOtaNetworkPump.h": {
+      "bytes": 3593,
+      "sha256": "3dcdd8d541a2ee1d6cd286767c2da232f64d183c4b2db0d52c604098fa0d1469"
+    },
+    "host/boot/NativeOtaPort80Plan.h": {
+      "bytes": 7552,
+      "sha256": "5e55ce2a77a27ae9f5f4510558df9850fe1efa51cc73486cd47a50449fdfae69"
+    },
+    "host/boot/NativeOtaRawHeaderGate.h": {
+      "bytes": 9883,
+      "sha256": "715932a93479560e9d7b4b63e9efeaedb374bca216b170cf92f341900386f85b"
+    },
+    "host/boot/NativeOtaRequestPolicy.h": {
+      "bytes": 2912,
+      "sha256": "5fc672fde71a262d6841a3f8631cab9f4e49345edebd60afd6158b450d86ae0e"
+    },
+    "host/boot/NativeOtaSingleIngressShadow.h": {
+      "bytes": 16584,
+      "sha256": "a207f380d742805d1f0ec45d096cac6641f3c41cd79c7ebb7eeb028889b18ec3"
+    },
+    "host/boot/NativeOtaStreamingReview.h": {
+      "bytes": 11450,
+      "sha256": "7345c7ac2fdecce7c2997da189bcd2d6c806de933086b04aeacbe367ea35c28e"
+    },
+    "host/boot/NativeOtaStrictDigestGate.h": {
+      "bytes": 11052,
+      "sha256": "f6dd32c1e563a0214d8facb2e7a6d7a48a70e40ee4c9a293e0f2da5d6c37f79d"
+    },
+    "host/boot/RescueMode.h": {
+      "bytes": 1367,
+      "sha256": "59a7330337b1d1c872bbf3eb8e3caf8ac7f73558542a3c2920d92e1b32d12a3c"
+    },
+    "host/boot/ShinoBootProfile.h": {
+      "bytes": 1661,
+      "sha256": "ca595cdc556a97a3f4fadff5f5b7cdd903abb0727086a7aad4de545fb4411c79"
+    },
+    "host/boot/ShinoHeapDiagnosticCandidate.h": {
+      "bytes": 3537,
+      "sha256": "c5bd1ec0da0374f0183e864eebb2e204ec739fe618153c5b59bcd290c11c79b3"
+    },
+    "host/config/ConfigManager.h": {
+      "bytes": 207,
+      "sha256": "9cb6efe6e0d6f6964951fbcdec9bf5abf51d14d70a9e9d77d344e415f0762823"
+    },
+    "host/detail/mimetable.cpp": {
+      "bytes": 3763,
+      "sha256": "0ced8b156f62102a451be2d435b26fb98c2161d006f57eb922f60f1a475b03e6"
+    },
+    "host/detail/mimetable.h": {
+      "bytes": 576,
+      "sha256": "ef452d4f1e34bd0442353ff3350a1f98a3d71a1ee92b2f25046119b05f0b416f"
+    },
+    "host/detail/RequestHandler.h": {
+      "bytes": 1209,
+      "sha256": "fe83e7572b02f14bdb3ab7e052c3072d15bcdcdb5c0758a918faeb3a9407a4ab"
+    },
+    "host/detail/RequestHandlersImpl.h": {
+      "bytes": 1576,
+      "sha256": "003f288eaf1fbb4efc3d91909bb5443031c47356ca4df19c772b4155c6316037"
+    },
+    "host/display/ClockFoundation.h": {
+      "bytes": 3236,
+      "sha256": "820cbb9b23786550f526c170672de0a4019c664dc412b406ba24dd0731f394f8"
+    },
+    "host/display/DisplayManager.h": {
+      "bytes": 1195,
+      "sha256": "cca933b856fc94d1470dd0b6320f3147adc17d061580f116bbd2d811bdae2b6b"
+    },
+    "host/display/SceneEngine.h": {
+      "bytes": 27926,
+      "sha256": "5cf3aab8ff92eef9d697602402a73d41a376036fe94ad0d7d6d2855663b0d129"
+    },
+    "host/font/glcdfont.h": {
+      "bytes": 8894,
+      "sha256": "04d399ad4a25a132b52239b3c53c5638350845dfc3a2d036a0fb67bac353025e"
+    },
+    "host/wireless/WiFiManager.h": {
+      "bytes": 155,
+      "sha256": "7d4c69b61b13f117ec53cdcc3627579ecb21b2a6c217cc773cd115c80cbb7965"
+    },
+    "host/ArduinoJson/Array/ArrayData.hpp": {
+      "bytes": 1825,
+      "sha256": "ab5db7da0a9847300b838ee0dfe39a62a592136caaecb7563ff5aed16e35bd69"
+    },
+    "host/ArduinoJson/Array/ArrayImpl.hpp": {
+      "bytes": 2055,
+      "sha256": "6128745fd4b65e089eba4b3f04d2a01500bc5818eff5b78518c8a82491ba0122"
+    },
+    "host/ArduinoJson/Array/ElementProxy.hpp": {
+      "bytes": 1946,
+      "sha256": "ec709952b23f436cb90cc9af1ef668d5265c9968e82320ff76eec90db95a01c2"
+    },
+    "host/ArduinoJson/Array/JsonArray.hpp": {
+      "bytes": 6652,
+      "sha256": "fced701178d1d1bec0db0620cfd1ea817caaf7a54ffe0dc478dd9d690a9aab60"
+    },
+    "host/ArduinoJson/Array/JsonArrayConst.hpp": {
+      "bytes": 3768,
+      "sha256": "0647e218169b0bcc324112334b30e341b813cae639011914c423ce2e98638993"
+    },
+    "host/ArduinoJson/Array/JsonArrayIterator.hpp": {
+      "bytes": 2123,
+      "sha256": "da97e903548f766df762cb17eb0768261ee28cb230d201b87aad0db484a6a681"
+    },
+    "host/ArduinoJson/Array/Utilities.hpp": {
+      "bytes": 3730,
+      "sha256": "140533a30819db6f1f16d3f47dc1696993d13599514a8f27c6841b4b5492b994"
+    },
+    "host/ArduinoJson/Collection/CollectionData.hpp": {
+      "bytes": 2911,
+      "sha256": "adbdfdd1630d40ac3909ea9be9c31276d56694a2eec19b2fbb04ca44a945f987"
+    },
+    "host/ArduinoJson/Collection/CollectionImpl.hpp": {
+      "bytes": 3855,
+      "sha256": "2a9958f5e28404444e4fe435b223ca678e30b534bb3cd92439c0e616ad3a2aa4"
+    },
+    "host/ArduinoJson/Deserialization/DeserializationError.hpp": {
+      "bytes": 2959,
+      "sha256": "7affe59d270bd53ef7dcd8e98ab896f93ac18c560938756e3ab88d5504cd642f"
+    },
+    "host/ArduinoJson/Deserialization/DeserializationOptions.hpp": {
+      "bytes": 1004,
+      "sha256": "9d31393b6800b7d51e2eae13fee87b0786d238a3b4febc09b339a31956f1bd82"
+    },
+    "host/ArduinoJson/Deserialization/deserialize.hpp": {
+      "bytes": 2714,
+      "sha256": "11412c33e7c0bd4756293535f0d23cdef1d236c28f08b2af67f36b08a6e6ff4b"
+    },
+    "host/ArduinoJson/Deserialization/Filter.hpp": {
+      "bytes": 1551,
+      "sha256": "9227e1032216ebf1d26ce1bb869a1a7011e0d4281a28d7ab7162bd69bc74fc20"
+    },
+    "host/ArduinoJson/Deserialization/NestingLimit.hpp": {
+      "bytes": 703,
+      "sha256": "d83e6c9c9e2fcc02288fbc55ec43b1df9ebc8a89f0a7fa9f4c983d8276f8ae77"
+    },
+    "host/ArduinoJson/Deserialization/Reader.hpp": {
+      "bytes": 2001,
+      "sha256": "1c848a5663957fcf57de4aadb302212122b5ba929b587788b88856864948239e"
+    },
+    "host/ArduinoJson/Document/JsonDocument.hpp": {
+      "bytes": 14025,
+      "sha256": "6190235c97b03343acf8b57a1ea10c264d4dc4658e9a9ade0f991e3d8e652591"
+    },
+    "host/ArduinoJson/Json/EscapeSequence.hpp": {
+      "bytes": 831,
+      "sha256": "fc7ade664fe2bd1d324cf4859975d94c90bb58139dcaf3358a114f2bc95e6227"
+    },
+    "host/ArduinoJson/Json/JsonDeserializer.hpp": {
+      "bytes": 18054,
+      "sha256": "367f74a2cba52e04ca913bb89aa6657bc843f72cd40e49f538dc7a719a882a39"
+    },
+    "host/ArduinoJson/Json/JsonSerializer.hpp": {
+      "bytes": 3886,
+      "sha256": "9e174b87347e9715a57d6c4584997e17e4334643833d9cb4e55e3c6432bab832"
+    },
+    "host/ArduinoJson/Json/Latch.hpp": {
+      "bytes": 1044,
+      "sha256": "9eca1390adb7270567ba3ae3c951b16c42ea16cde96fc01a756381277d43c263"
+    },
+    "host/ArduinoJson/Json/PrettyJsonSerializer.hpp": {
+      "bytes": 3085,
+      "sha256": "6082def54101ca0ca60d9ae16a321293aa3ef2affa5f97c21cf1a043445a20ca"
+    },
+    "host/ArduinoJson/Json/TextFormatter.hpp": {
+      "bytes": 4251,
+      "sha256": "cc5f029778692345ff9e1c82cdbd42c997dfd8a6ae1367c580baddcffcbafd89"
+    },
+    "host/ArduinoJson/Json/Utf16.hpp": {
+      "bytes": 1457,
+      "sha256": "d502378eac3bfb31834d755e88ded3593182a77cc9a714ceaf5e941eb7255a0f"
+    },
+    "host/ArduinoJson/Json/Utf8.hpp": {
+      "bytes": 1209,
+      "sha256": "a8a3493bfc445ea59447893941e76d871808db3933166c14a263f38ae1005d37"
+    },
+    "host/ArduinoJson/Memory/Alignment.hpp": {
+      "bytes": 1163,
+      "sha256": "0bab46158a346e0b622814e73d0abc3fe9e9d03b7c3affbb115258fb2594b99d"
+    },
+    "host/ArduinoJson/Memory/Allocator.hpp": {
+      "bytes": 977,
+      "sha256": "c80328027cbe5e411316a60340e6aed0db568ca6b0ad5bd659dd60058c0a8cba"
+    },
+    "host/ArduinoJson/Memory/MemoryPool.hpp": {
+      "bytes": 2176,
+      "sha256": "71318d9faed9f536ddf9711f58ff3f52df2fe09c114e44e5c052f3acf39ad20a"
+    },
+    "host/ArduinoJson/Memory/MemoryPoolList.hpp": {
+      "bytes": 6048,
+      "sha256": "7f8688e0fc06db98ba97b55e66f51849227efda9bb622d7e35971ea3e927258d"
+    },
+    "host/ArduinoJson/Memory/ResourceManager.hpp": {
+      "bytes": 3112,
+      "sha256": "c5581e7541ffaac03ecd1044ebc15cb96351dc25be9ccc537ac0efb2b0d57723"
+    },
+    "host/ArduinoJson/Memory/ResourceManagerImpl.hpp": {
+      "bytes": 1435,
+      "sha256": "afe93bdffa7c8860dfb9e6359f814ece47897c6869882c9baf015bc7e397f159"
+    },
+    "host/ArduinoJson/Memory/StringBuffer.hpp": {
+      "bytes": 1926,
+      "sha256": "05de6bf2b0a7e6a98bfcdcaff9e52e1d5dd76c87a9c01fac048de5776f43bd55"
+    },
+    "host/ArduinoJson/Memory/StringBuilder.hpp": {
+      "bytes": 1953,
+      "sha256": "7084132558ffd8f42d56eeddc2a052d05cea99550aca1182a4aa500dbc14a93c"
+    },
+    "host/ArduinoJson/Memory/StringNode.hpp": {
+      "bytes": 2155,
+      "sha256": "b4f5619373b8249c6db60c4b466ba0a6e6d24d26e11855dbb313d0f43cd1fd2c"
+    },
+    "host/ArduinoJson/Memory/StringPool.hpp": {
+      "bytes": 2408,
+      "sha256": "f52e6d5f8da8b0fcf7db3a177b3e1ef9a242dc3fbd164de6cafaeefec565894f"
+    },
+    "host/ArduinoJson/Misc/SerializedValue.hpp": {
+      "bytes": 1428,
+      "sha256": "401ada9eeff6a719718f56bfe775a111d3ff349f1bf0e276f9dd96331f3f6ead"
+    },
+    "host/ArduinoJson/MsgPack/endianness.hpp": {
+      "bytes": 1054,
+      "sha256": "0dc8f94c61b9181e026c3c9fcb93614c2a478817954a8493be6bc1b006214def"
+    },
+    "host/ArduinoJson/MsgPack/ieee754.hpp": {
+      "bytes": 491,
+      "sha256": "f0bddd3629d4a6dcad2e23c962a82b8eb86764274e32519215c18d24da7b2dd2"
+    },
+    "host/ArduinoJson/MsgPack/MsgPackBinary.hpp": {
+      "bytes": 2789,
+      "sha256": "ac66968129fa0d537f4bcbf085c5b5c6c2a9076b7943361b12bce97ef849a8e5"
+    },
+    "host/ArduinoJson/MsgPack/MsgPackDeserializer.hpp": {
+      "bytes": 13232,
+      "sha256": "e0fe09ecd25a9aebb6dec6c98c72f53da8bf42a67ac4e21455f73b7b44cca212"
+    },
+    "host/ArduinoJson/MsgPack/MsgPackExtension.hpp": {
+      "bytes": 3165,
+      "sha256": "763501aee1773a80de806ded6ede3620f480959bdc0d3fb1cca5f726997e7147"
+    },
+    "host/ArduinoJson/MsgPack/MsgPackSerializer.hpp": {
+      "bytes": 6217,
+      "sha256": "b5cede3bae82787717172e088bb6d402f076db23265c10d242a42f8d7ed27543"
+    },
+    "host/ArduinoJson/Numbers/arithmeticCompare.hpp": {
+      "bytes": 3596,
+      "sha256": "372b7691d2fd359626942fc9af0eadd32bd651e6e1c37e0ceed895a453f42cc0"
+    },
+    "host/ArduinoJson/Numbers/convertNumber.hpp": {
+      "bytes": 4238,
+      "sha256": "2fc49dbf05560b429028e35e007e7d299557ceacbb3f1b75a75b029514087e88"
+    },
+    "host/ArduinoJson/Numbers/FloatParts.hpp": {
+      "bytes": 2423,
+      "sha256": "1ad6dc7d06e98ab32865fe72e7dcec73c36f000b5415a715d2371146baaf9a6b"
+    },
+    "host/ArduinoJson/Numbers/FloatTraits.hpp": {
+      "bytes": 6740,
+      "sha256": "6dc2fd1b44468cb1ff57d176ca6d6e90682358726638d177a7d2c2f2e4e28110"
+    },
+    "host/ArduinoJson/Numbers/JsonFloat.hpp": {
+      "bytes": 354,
+      "sha256": "eec65c43615e41a1bea2e1b5c7f51219987ec474276998b407227ff53f5eaccb"
+    },
+    "host/ArduinoJson/Numbers/JsonInteger.hpp": {
+      "bytes": 827,
+      "sha256": "ac753f875ad50873e9ee33ec43edc7e4096da66158d5afde74eededb3f7e1930"
+    },
+    "host/ArduinoJson/Numbers/parseNumber.hpp": {
+      "bytes": 5815,
+      "sha256": "529424d6ac10c08d36311cc7927c8970ca41ae7b8745d66412bb4fbc5b3b5eb2"
+    },
+    "host/ArduinoJson/Object/JsonObject.hpp": {
+      "bytes": 8220,
+      "sha256": "a043e5a5afc65fdc1196dd1a377c7b2bfe361542434ec7b221151faa72615120"
+    },
+    "host/ArduinoJson/Object/JsonObjectConst.hpp": {
+      "bytes": 5489,
+      "sha256": "793234ee43eb7c50a708a868a0d8adfbade976fe64be681e0eb098db6d94924c"
+    },
+    "host/ArduinoJson/Object/JsonObjectIterator.hpp": {
+      "bytes": 2023,
+      "sha256": "79096b1e5f398531e680e68d720037c268490aba47012cfa59cb71d4df651ed0"
+    },
+    "host/ArduinoJson/Object/JsonPair.hpp": {
+      "bytes": 1533,
+      "sha256": "a19ca975c897799efcacf174921edfb49f49d54493ff49291140995c3c076ece"
+    },
+    "host/ArduinoJson/Object/MemberProxy.hpp": {
+      "bytes": 2051,
+      "sha256": "cfbaeb47a6100a2d3b222b3ca06fb8e416410d0a5b03216fc4f45598e84993d5"
+    },
+    "host/ArduinoJson/Object/ObjectData.hpp": {
+      "bytes": 2029,
+      "sha256": "b5a799fe92962a479d7cd1898c790e01892caf3ddaf2425e94e43ac8c9b64db9"
+    },
+    "host/ArduinoJson/Object/ObjectImpl.hpp": {
+      "bytes": 2548,
+      "sha256": "94d7c8316216bcc851d8adc585c7bf686461a01ab573a9d5fec7254035763657"
+    },
+    "host/ArduinoJson/Polyfills/alias_cast.hpp": {
+      "bytes": 529,
+      "sha256": "48e659066ce221b826ad8f4d60f688abfdca11304287b77ce32c378ec74335c0"
+    },
+    "host/ArduinoJson/Polyfills/assert.hpp": {
+      "bytes": 297,
+      "sha256": "82c12cb67aea60a1e94c62051df6a45205555bec6fafc183d7bbda7b8a4861db"
+    },
+    "host/ArduinoJson/Polyfills/attributes.hpp": {
+      "bytes": 1110,
+      "sha256": "e0f328f65a6d52f932542293d48afdade2af7ec60326e2e37682c28bd302c89c"
+    },
+    "host/ArduinoJson/Polyfills/ctype.hpp": {
+      "bytes": 373,
+      "sha256": "88089fc159f63429953227cb35270a778df813d1eeacfa52b8c5e28e50dadd5b"
+    },
+    "host/ArduinoJson/Polyfills/integer.hpp": {
+      "bytes": 541,
+      "sha256": "f8fcb5caf0db8987451ace88613b8e634187c81a1d8e1a37dd2569db6eb997b9"
+    },
+    "host/ArduinoJson/Polyfills/limits.hpp": {
+      "bytes": 938,
+      "sha256": "760ba79159c45e9725a7201e4a708fd136c657a1910323b9f5e0b9f9d066b8bb"
+    },
+    "host/ArduinoJson/Polyfills/math.hpp": {
+      "bytes": 493,
+      "sha256": "0764608b41b47039a4a5f99fe0bff501aa0b63576f9c5cdb8fabe0c29956f36d"
+    },
+    "host/ArduinoJson/Polyfills/pgmspace.hpp": {
+      "bytes": 3409,
+      "sha256": "4e13ffbae18dc1541c4c74d19f014e5d958812816088e1b4cd02040602f66d0d"
+    },
+    "host/ArduinoJson/Polyfills/pgmspace_generic.hpp": {
+      "bytes": 1365,
+      "sha256": "a0550346560fb854952437b367a167247c072c6239d7217237112efbd100b8e3"
+    },
+    "host/ArduinoJson/Polyfills/preprocessor.hpp": {
+      "bytes": 1286,
+      "sha256": "357dbf19f27b5e74e01dbd3ba43f0099f9474dd490cf8ec0727d972ba8b47036"
+    },
+    "host/ArduinoJson/Polyfills/type_traits.hpp": {
+      "bytes": 926,
+      "sha256": "78fe03f8bc78ab64cb5d768001fcc4e1b497ce7b4fd7560457905dbb27c7309c"
+    },
+    "host/ArduinoJson/Polyfills/utility.hpp": {
+      "bytes": 685,
+      "sha256": "b76771105073736cac0f9ce7c115166efddba66378c1f5b8eb22d5393b3f43ce"
+    },
+    "host/ArduinoJson/Serialization/CountingDecorator.hpp": {
+      "bytes": 610,
+      "sha256": "fb57d12c08303665972569a172f12827965a9a6931dcdeccd515e42f376ca1a9"
+    },
+    "host/ArduinoJson/Serialization/measure.hpp": {
+      "bytes": 597,
+      "sha256": "650cb52fd8f78e3321b8ec65265458cf2b2ce14dfff910f532b3e5c467a1365d"
+    },
+    "host/ArduinoJson/Serialization/serialize.hpp": {
+      "bytes": 1936,
+      "sha256": "b5a76eed2ddf8bb6c29cd88ecc483cb6eb075e8aa1cc72f090ea0190dcfee5b8"
+    },
+    "host/ArduinoJson/Serialization/Writer.hpp": {
+      "bytes": 1128,
+      "sha256": "49d5277e371a0368f2acf66b5764461ecef7a81db09e84a2e3d9ec936e992a88"
+    },
+    "host/ArduinoJson/Strings/IsString.hpp": {
+      "bytes": 479,
+      "sha256": "f4b3e2b84ac96e46d6a40415a5f114807342c7419a0b4b1c6a9db75db8fc083c"
+    },
+    "host/ArduinoJson/Strings/JsonString.hpp": {
+      "bytes": 2480,
+      "sha256": "01eb27b3cf5738967cf0b843dbdede881709f2ce9ee25a648a32805a43d14200"
+    },
+    "host/ArduinoJson/Strings/StringAdapter.hpp": {
+      "bytes": 1352,
+      "sha256": "c584ade5fd03a05d6afa49ccb03354219801bb9056885a0eb86e3773db88cadd"
+    },
+    "host/ArduinoJson/Strings/StringAdapters.hpp": {
+      "bytes": 2122,
+      "sha256": "f1fae2b42cb50ff972d87942b78ada213612c8def5aa4d26749ae75671505a56"
+    },
+    "host/ArduinoJson/Strings/StringTraits.hpp": {
+      "bytes": 1804,
+      "sha256": "110718eaf40a1669317244909e0c1290ec9a32dc776b223a5493370b3a3aed9c"
+    },
+    "host/ArduinoJson/Variant/Converter.hpp": {
+      "bytes": 526,
+      "sha256": "d28182d9861070ad5c90c037a7671d60d05f4bd50cb444c54b90815806166e1b"
+    },
+    "host/ArduinoJson/Variant/ConverterImpl.hpp": {
+      "bytes": 11404,
+      "sha256": "15dd0f3089bce73dfa9fca501aa302c44456d7e5ca6d7e13b1377110f12ad0fc"
+    },
+    "host/ArduinoJson/Variant/JsonVariant.hpp": {
+      "bytes": 1873,
+      "sha256": "da3eaad7e4b61b4f6987889a60c331b53c234f2516b0d59c646ac31c723bc97f"
+    },
+    "host/ArduinoJson/Variant/JsonVariantConst.hpp": {
+      "bytes": 6916,
+      "sha256": "e43fcd92cd60e2c15fc925b05ffab4baf63ece0bc7ac5a67073e9606a96d7bc0"
+    },
+    "host/ArduinoJson/Variant/JsonVariantCopier.hpp": {
+      "bytes": 687,
+      "sha256": "3305d0edd420e33fde6e304352b33a73d838ac78b13ab00bfcdf28ad3090106a"
+    },
+    "host/ArduinoJson/Variant/JsonVariantVisitor.hpp": {
+      "bytes": 1602,
+      "sha256": "d07f7dc4b46012c4cae3897900c998c8580e91e17cb4ded92555f0c46ef94ce3"
+    },
+    "host/ArduinoJson/Variant/VariantAttorney.hpp": {
+      "bytes": 926,
+      "sha256": "6490957d4c17774cfb649a7260c96c8733ec3e39d870cce5a9b158e65269c117"
+    },
+    "host/ArduinoJson/Variant/VariantCompare.hpp": {
+      "bytes": 5102,
+      "sha256": "f251013915c684b731f6a09874d7142864376f964e79474a2f03560577ab7f86"
+    },
+    "host/ArduinoJson/Variant/VariantContent.hpp": {
+      "bytes": 1913,
+      "sha256": "9f2e4a0e95a4d69c378f14a4c4039d2f19a3863ad26f601a478f380ed2e377fd"
+    },
+    "host/ArduinoJson/Variant/VariantData.hpp": {
+      "bytes": 17142,
+      "sha256": "52a12e0ea94491ba037b5fd68fc20332a65d6db5b72890471cc2384c24908781"
+    },
+    "host/ArduinoJson/Variant/VariantDataVisitor.hpp": {
+      "bytes": 536,
+      "sha256": "238dcb5ceb908cc086502a6fcc34eb4f19a3a8b6fd58f71564dbd9ca25810c84"
+    },
+    "host/ArduinoJson/Variant/VariantImpl.hpp": {
+      "bytes": 4007,
+      "sha256": "596843a57293f810038b298d636786d4faf67255f3abcc38f5c6987b20921a4c"
+    },
+    "host/ArduinoJson/Variant/VariantOperators.hpp": {
+      "bytes": 6017,
+      "sha256": "5f2a6006efc686d8c00a4697ec6dc39fa9ea3d2269c78593855f14ed3536bff0"
+    },
+    "host/ArduinoJson/Variant/VariantRefBase.hpp": {
+      "bytes": 10615,
+      "sha256": "6ab756b7f6bac962b6b29de776f67b69fc22f20e45ebf9661ae47a83c66cedf1"
+    },
+    "host/ArduinoJson/Variant/VariantRefBaseImpl.hpp": {
+      "bytes": 5819,
+      "sha256": "6ae980490c8f39a6577c86c0bc9406c57eee5affdb0109e922fdf0ace849d003"
+    },
+    "host/ArduinoJson/Variant/VariantTag.hpp": {
+      "bytes": 318,
+      "sha256": "bccb43f82d11ab0e8c7b541af56cdb48ecc09148370cf391af5e068a97e1bfd7"
+    },
+    "host/ArduinoJson/Variant/VariantTo.hpp": {
+      "bytes": 698,
+      "sha256": "541ae2c148b6615a915bedd8eb5a0dfe2852d3649405b526e39d32d42474e1b3"
+    },
+    "host/ArduinoJson/Deserialization/Readers/ArduinoStreamReader.hpp": {
+      "bytes": 676,
+      "sha256": "0576eddbdd043e17dfcd019abc40f636d27ecefa270c30412727bfe2ef60d32f"
+    },
+    "host/ArduinoJson/Deserialization/Readers/ArduinoStringReader.hpp": {
+      "bytes": 446,
+      "sha256": "e963cb2bce3c225a3e6c1e812f0de758f1718d8cace6e44f8cf5018336870a47"
+    },
+    "host/ArduinoJson/Deserialization/Readers/FlashReader.hpp": {
+      "bytes": 1222,
+      "sha256": "e29fc2f09afa9e3e55a61dcabedbfccff7ad2044051c0dbd515552888bf7fc72"
+    },
+    "host/ArduinoJson/Deserialization/Readers/IteratorReader.hpp": {
+      "bytes": 1031,
+      "sha256": "642c9450225ea013a2c47220de9e7bab73b52fd64a7c5559c7fa8599cfd5ffe9"
+    },
+    "host/ArduinoJson/Deserialization/Readers/RamReader.hpp": {
+      "bytes": 1322,
+      "sha256": "1247e2a4b7f248cce689d357e5f7daee89ef48aa024bce57c9aa81f9afa2e004"
+    },
+    "host/ArduinoJson/Deserialization/Readers/StdStreamReader.hpp": {
+      "bytes": 642,
+      "sha256": "ad452bf0d25d9ee2cb9705b5958b4dd37cd03dbff26d180751c2a4342ef94590"
+    },
+    "host/ArduinoJson/Deserialization/Readers/VariantReader.hpp": {
+      "bytes": 508,
+      "sha256": "1369e805484e9cb79d33530eecffb7ee7bc3dc5b45994f4752947581d182e551"
+    },
+    "host/ArduinoJson/Polyfills/mpl/max.hpp": {
+      "bytes": 563,
+      "sha256": "203b21a6a14237a79e5452d272d6b0e3d4c3fa1ad7589c754cc37fbd064c4d3f"
+    },
+    "host/ArduinoJson/Polyfills/type_traits/conditional.hpp": {
+      "bytes": 600,
+      "sha256": "8fbce271918b983f91f3e16a905c37a3839650a9a916baf8320ad1769e7358e0"
+    },
+    "host/ArduinoJson/Polyfills/type_traits/decay.hpp": {
+      "bytes": 614,
+      "sha256": "537707246db77ac7a29b632efa7fbf4dfe4ce3588ea986ce02e1763bb5409c1d"
+    },
+    "host/ArduinoJson/Polyfills/type_traits/declval.hpp": {
+      "bytes": 261,
+      "sha256": "cc94cbf0c11807a22157c59f9bb06712a0b778df69ec5d33a1bfa3690949d8bc"
+    },
+    "host/ArduinoJson/Polyfills/type_traits/enable_if.hpp": {
+      "bytes": 532,
+      "sha256": "bb9604f318c51f42cec716d91f5cdfb76bde7e3079e11c97fa21cc577f49d574"
+    },
+    "host/ArduinoJson/Polyfills/type_traits/function_traits.hpp": {
+      "bytes": 633,
+      "sha256": "f0fca73c42179672c1c0ad34464ee78c270c0904c1f0ae654218cfa8703dab79"
+    },
+    "host/ArduinoJson/Polyfills/type_traits/integral_constant.hpp": {
+      "bytes": 459,
+      "sha256": "830053075b2279e2a3e217490f0defef369d1558bdb1a0de50a873b952b96808"
+    },
+    "host/ArduinoJson/Polyfills/type_traits/is_array.hpp": {
+      "bytes": 442,
+      "sha256": "f49ea44e41018b97df24be6228d61d02425a04497e01409d83dc8977f4b6d9d0"
+    },
+    "host/ArduinoJson/Polyfills/type_traits/is_base_of.hpp": {
+      "bytes": 686,
+      "sha256": "5b7fad177aebd586c4d5fa07cdebfe207256e2ab7766183e86f3ce859381ebcc"
+    },
+    "host/ArduinoJson/Polyfills/type_traits/is_class.hpp": {
+      "bytes": 516,
+      "sha256": "4e6aaff49ffa19e95ca5eacf12dcd40b01f6aaa2e8435ed6e8d554ee45d42314"
+    },
+    "host/ArduinoJson/Polyfills/type_traits/is_const.hpp": {
+      "bytes": 408,
+      "sha256": "7aad6dfc02e3bf3149c30d6bdef714744b308cedfbbf4ece961eb3eac37624f3"
+    },
+    "host/ArduinoJson/Polyfills/type_traits/is_convertible.hpp": {
+      "bytes": 967,
+      "sha256": "0f0370648cd3b3d393d4877ddb13219720662db7659574b1c06698c96b1cf077"
+    },
+    "host/ArduinoJson/Polyfills/type_traits/is_enum.hpp": {
+      "bytes": 568,
+      "sha256": "656e5d6b3af19cee54fdb20748ff4279bb4a8c781dc5b65f9df4c91bf61d8c3d"
+    },
+    "host/ArduinoJson/Polyfills/type_traits/is_floating_point.hpp": {
+      "bytes": 483,
+      "sha256": "dd93ac08889cee9b7a1b629e7b9ea6c8d9738d5dfe127a0dcc7c303ae1f79f14"
+    },
+    "host/ArduinoJson/Polyfills/type_traits/is_integral.hpp": {
+      "bytes": 1036,
+      "sha256": "59227b03d78a3182f7826e51d57ed26f28c50bb11766b2c5145406c65118e399"
+    },
+    "host/ArduinoJson/Polyfills/type_traits/is_pointer.hpp": {
+      "bytes": 338,
+      "sha256": "c63971002e6277011b5970652dc724ad09edbb4a22e56275f08ed549b723dcc4"
+    },
+    "host/ArduinoJson/Polyfills/type_traits/is_same.hpp": {
+      "bytes": 414,
+      "sha256": "d9e1a5b2910b4dd14dfc20df79bc430dcb9a60a438d0ed72eab291cef79c7dc5"
+    },
+    "host/ArduinoJson/Polyfills/type_traits/is_signed.hpp": {
+      "bytes": 769,
+      "sha256": "931cb2b4edd816ed90a2ef8883e6c46f3ee3f85db8c2380a20149d2ea8331052"
+    },
+    "host/ArduinoJson/Polyfills/type_traits/is_unsigned.hpp": {
+      "bytes": 690,
+      "sha256": "4f9caae84b9d1ce807b243e43151ac9365cb55c8dcc42a9964d349761bd69592"
+    },
+    "host/ArduinoJson/Polyfills/type_traits/make_unsigned.hpp": {
+      "bytes": 1259,
+      "sha256": "80a30642eaa69548e13bc7a040314d5f8dd0c2892c1ca401e95d88409b51843f"
+    },
+    "host/ArduinoJson/Polyfills/type_traits/remove_const.hpp": {
+      "bytes": 510,
+      "sha256": "0d1a5204a3fbecb06b56fb4f53ae932e5f59aee68cebee3880a3ca5f79db8994"
+    },
+    "host/ArduinoJson/Polyfills/type_traits/remove_cv.hpp": {
+      "bytes": 583,
+      "sha256": "defbf20b80a3b51fe1b15d728d5ebc483609b2f1dde18f46e05570c32b2da8bc"
+    },
+    "host/ArduinoJson/Polyfills/type_traits/remove_reference.hpp": {
+      "bytes": 526,
+      "sha256": "c97f21e4b9afe67e7fea92e366edc2187dadd17a8924eb68a594bbfa9ecb596b"
+    },
+    "host/ArduinoJson/Polyfills/type_traits/type_identity.hpp": {
+      "bytes": 286,
+      "sha256": "7b4d74bcbda601451f05ce8967ab3f0fc7b4137869d3b569cfa0f54c688479e9"
+    },
+    "host/ArduinoJson/Polyfills/type_traits/void_t.hpp": {
+      "bytes": 423,
+      "sha256": "49403a7bd55ce92d3db01b82b1d51289aba75aa09e0b6393239e1b597d9a2942"
+    },
+    "host/ArduinoJson/Serialization/Writers/ArduinoStringWriter.hpp": {
+      "bytes": 1191,
+      "sha256": "524568f4991a9bacd657a2c4799e3c7d24272bd8d2fae9197c2ca0a9f176a24f"
+    },
+    "host/ArduinoJson/Serialization/Writers/DummyWriter.hpp": {
+      "bytes": 362,
+      "sha256": "a1b2f4796361ea55a212b6d19fd76f9f72e476387c792d6ea2aaa35de5ea0606"
+    },
+    "host/ArduinoJson/Serialization/Writers/PrintWriter.hpp": {
+      "bytes": 578,
+      "sha256": "e4dc7a57d14db5d5125201e90ff656bb15e79a24319f13e4a020050729acbd8b"
+    },
+    "host/ArduinoJson/Serialization/Writers/StaticStringWriter.hpp": {
+      "bytes": 673,
+      "sha256": "eb4594bc5e3681a385261901ad2908f870c15d58b19691de4b5df0dab9b16484"
+    },
+    "host/ArduinoJson/Serialization/Writers/StdStreamWriter.hpp": {
+      "bytes": 680,
+      "sha256": "e8a0153d40382311d3b34cd307288b0314134ca3b2016025abd9c2faa89cd1b6"
+    },
+    "host/ArduinoJson/Serialization/Writers/StdStringWriter.hpp": {
+      "bytes": 975,
+      "sha256": "9662cbd541b6568b0577803ef5e6fe8856f473317a89ce4135d7066ff9103381"
+    },
+    "host/ArduinoJson/Strings/Adapters/FlashString.hpp": {
+      "bytes": 2245,
+      "sha256": "8fdc27c40c09c388f5719aadacdab4a4c1a9b44817ef3ba0007653778e98d215"
+    },
+    "host/ArduinoJson/Strings/Adapters/RamString.hpp": {
+      "bytes": 2796,
+      "sha256": "9221a0beccdb8a893894a7cd77b2a599c1231a7ef8b9e727cf47e1fb21c054b0"
+    },
+    "host/ArduinoJson/Strings/Adapters/StringObject.hpp": {
+      "bytes": 1245,
+      "sha256": "ef1a1ba161c10b5a1d76795fc30730ab565ed0557b873d337cdd574b699921a4"
+    },
+    "native/core/Updater.cpp": {
+      "bytes": 18564,
+      "sha256": "635dd1db4e56851fe44b840cd87dcf597fe25f95ef66a537c0d4871033354c5f"
+    },
+    "native/core/Updater.h": {
+      "bytes": 7450,
+      "sha256": "aa99cf34fa33f707899bbe065cf118d4c115a8e359e4c68cd6ebadeabd461e0c"
+    },
+    "native/core/Updater.upstream.cpp": {
+      "bytes": 18230,
+      "sha256": "b83b2ab4f5e3bee7eb7a558260f0ad6c9d9cec64c3c2b2188df8d87872a8ce0e"
+    },
+    "native/core/updater512.patch": {
+      "bytes": 605,
+      "sha256": "a2479760b54c7187602da335702e916a12c2bd92cf57b5de7b0edc149153b481"
+    },
+    "native/core/Updater_Signing.h": {
+      "bytes": 117,
+      "sha256": "8517749d1d28ab0cd76237b420aa69500d9f4beb33b324e82df37a981af59520"
+    },
+    "native/http/ESP8266WebServer-impl.h": {
+      "bytes": 27542,
+      "sha256": "19934c7352eea30acb6d30ab6314d1b794fa5311d88fd3cdc7edaa6cdb7bb150"
+    },
+    "native/http/ESP8266WebServer.h": {
+      "bytes": 14400,
+      "sha256": "5c92371c93c29d006e8956693dea3b13077c6382e6677de8c72c2d3679b04a79"
+    },
+    "native/http/ESP8266WebServerSecure.h": {
+      "bytes": 1111,
+      "sha256": "5ac9a506cc3837d47d9093141dc52ee1ccfb411d27c21c082690d0505a6f5dbf"
+    },
+    "native/http/Parsing-impl.h": {
+      "bytes": 21522,
+      "sha256": "e582ea0dae222e2491ece009ee4ff9539115cdf8b94b43adbe733cee7c0acb64"
+    },
+    "native/http/Uri.h": {
+      "bytes": 579,
+      "sha256": "8b9197eb9010bb7405cfa57f78bc7b86cb9b96f621879f1d636c7b0ef859b786"
+    },
+    "native/include/B52Clock.h": {
+      "bytes": 639,
+      "sha256": "fa9437f15d26c804662b8a8dfb11595d7c8dbf7912a5dcd599aee0181f81e923"
+    },
+    "native/include/B52ClockHttp.inc": {
+      "bytes": 3454,
+      "sha256": "f15b8e5063dfd6ddfe0731bc86011be2f3b7560628ecb6c93d63fd39d565c8d9"
+    },
+    "native/include/B53Admission.h": {
+      "bytes": 2575,
+      "sha256": "bedd3acea739ac321f9f452bb0f643cef07435c952e443dcae05c82d53015f82"
+    },
+    "native/include/B53AutonomyPolicy.h": {
+      "bytes": 4059,
+      "sha256": "eb6932b9a6e9b2b36147143aada5eaf73f6521a5fade66f46983611a87119cc2"
+    },
+    "native/include/B53Diagnostic.h": {
+      "bytes": 5956,
+      "sha256": "817bf8fe694d603bd05dbdb06b6f4a6df93169058ceb7b8c5322ca687bda2b43"
+    },
+    "native/include/B53Integrated.h": {
+      "bytes": 401,
+      "sha256": "df8edd3e94ff3873cd5697b06f213e7dd71dfecdc4838c168826ba577f190127"
+    },
+    "native/include/B53Integration.h": {
+      "bytes": 4339,
+      "sha256": "0cb0f94061bcdd9bce2aa0853d91f89e8545daafb40a6a7ace9ea4c05dab0e9d"
+    },
+    "native/include/B53Layout.h": {
+      "bytes": 1878,
+      "sha256": "51d9b8c5489f6a910be066e632f6dc7e7f48cfc3474713bd21c0b32cc366549f"
+    },
+    "native/include/B53OffDiagnostic.h": {
+      "bytes": 2126,
+      "sha256": "202ab8355236cf4d520f326c7204996b6c6fde8064b833ace021c68876b12040"
+    },
+    "native/include/B53Sntp.h": {
+      "bytes": 268,
+      "sha256": "98c8eec6a074bae51efa4c104d6f843d1bb70c27904b84db1c660f7cd6f944d9"
+    },
+    "native/include/B53WeatherChunked.h": {
+      "bytes": 2334,
+      "sha256": "cf74bf46e0f87bf74193a42dc0d1d6aed7acdf132d2b699ac370ad788b9533ac"
+    },
+    "native/include/B53WeatherDirect.h": {
+      "bytes": 11728,
+      "sha256": "84efa19de023f06235fd1615af64b69dc5becc83dd6cdc01ba9229200103e166"
+    },
+    "native/include/B53WeatherFrame.h": {
+      "bytes": 11288,
+      "sha256": "fd260b99815e6bc5d4c1c375c0e140e58b15d552fc8d17a740c259894947394f"
+    },
+    "native/include/B53WeatherLwip.h": {
+      "bytes": 11219,
+      "sha256": "bb20af4bc1c90c1246d43cc7f0145403ada29b6f209a8ff1543e4e2c19b8638e"
+    },
+    "native/include/B54LanHttp.inc": {
+      "bytes": 3774,
+      "sha256": "d10711343b57b9bde5c7999bd73bf4cce2133cd87469ae27f482d403e0e896a7"
+    },
+    "native/include/B54LanNative.h": {
+      "bytes": 423,
+      "sha256": "48c04ea8728902a68263b69c99eae51b98c49fbb7a68e264f5afb83f970bfb03"
+    },
+    "native/include/B54LanPrivate.h": {
+      "bytes": 211,
+      "sha256": "89a7dd8d686835f131265312c936313ae38c7bec9217488ce660f0a736692a64"
+    },
+    "native/include/B54LanStatusPath.h": {
+      "bytes": 747,
+      "sha256": "13dbe0d1f43d1baa57579f35d2e7d788a80d87e2f91ac6ee77fc0155786e3f88"
+    },
+    "native/include/B54LanWeather.h": {
+      "bytes": 6199,
+      "sha256": "0cc1532cc53a9a391aa510f7388e02fe01d5887bb7417ade383ff2203405a717"
+    },
+    "native/include/B5Lan.h": {
+      "bytes": 1155,
+      "sha256": "9edb227f1310a1c698832bc468073fa26df02511cb4ea9f6ace46647ff0ecfd6"
+    },
+    "native/include/ClockFreshness.h": {
+      "bytes": 4039,
+      "sha256": "561ffc088c4dc2528279e889437fbeace42ff8a84b4b969d5d3ad32b0f7d862d"
+    },
+    "native/include/project_version.h": {
+      "bytes": 108,
+      "sha256": "186c2b75083e105be1f809345c63429328e92531e2618421484ebf72346f03fd"
+    },
+    "native/include/ShinoHttpOta.h": {
+      "bytes": 12301,
+      "sha256": "63cdc7b5b6d7327ec680bf10620ad88bab780ebfbf7c4de72f529ad8569a9640"
+    },
+    "native/include/ShinoRelease.h": {
+      "bytes": 414,
+      "sha256": "520dee80f724106e6236969aec748de09ae432810a458ba670cffc4e786f1c0c"
+    },
+    "native/include/shino_private_policy.h": {
+      "bytes": 916,
+      "sha256": "9a3c6123fdf40d01ca5c9c165d3380b2ef265cbb2dd1e341c6b0b87be63f4d81"
+    },
+    "native/linker/eagle.flash.4m2m.ld": {
+      "bytes": 932,
+      "sha256": "0109b8f5acd746ff051444f5d0c99e85e519dff07ffa24d4fba7523384bea4c4"
+    },
+    "native/src/main.cpp": {
+      "bytes": 10560,
+      "sha256": "a50922e66b00a4c3efb7bb6d879667333a44140697c99995965ffba6990bc19d"
+    },
+    "native/http/detail/mimetable.cpp": {
+      "bytes": 3763,
+      "sha256": "0ced8b156f62102a451be2d435b26fb98c2161d006f57eb922f60f1a475b03e6"
+    },
+    "native/http/detail/mimetable.h": {
+      "bytes": 576,
+      "sha256": "ef452d4f1e34bd0442353ff3350a1f98a3d71a1ee92b2f25046119b05f0b416f"
+    },
+    "native/http/detail/RequestHandler.h": {
+      "bytes": 1209,
+      "sha256": "fe83e7572b02f14bdb3ab7e052c3072d15bcdcdb5c0758a918faeb3a9407a4ab"
+    },
+    "native/http/detail/RequestHandlersImpl.h": {
+      "bytes": 8604,
+      "sha256": "e539e1ccc58d3a745475cbe04164009e332842708386beb963063db01aebe358"
+    },
+    "native/http/uri/UriBraces.h": {
+      "bytes": 1803,
+      "sha256": "9b82cb916840cf55037e89fae9300cde2c6239d3a1863d38fe299b7c5940159c"
+    },
+    "native/http/uri/UriGlob.h": {
+      "bytes": 543,
+      "sha256": "9cb67fe773f7997f0b95d6e1db7c6abf4170c48a75c51f0acea38b5df50e1cb3"
+    },
+    "native/http/uri/UriRegex.h": {
+      "bytes": 1437,
+      "sha256": "2b3d38c57ef927084668e3f1102995ef3a5727529f0f937530c3c39e2a74d495"
+    },
+    "native/include/boot/DashboardV2.h": {
+      "bytes": 2711,
+      "sha256": "350a93dea74bbd40c7b7e718ba9ed0d956f0399c108efbcdf795aa0ec719f679"
+    },
+    "native/include/boot/FirstBootBridge.h": {
+      "bytes": 301,
+      "sha256": "0a7ae98fd8afb694d3a00c694b600849993eb4d28d408893348a5e40e87bb299"
+    },
+    "native/include/boot/FslessMetrics.h": {
+      "bytes": 709,
+      "sha256": "cc95d0bc4be5c8cc7bfd89cd4f0f058fe4bcca5fdff5d760a1e7d9f69118c55e"
+    },
+    "native/include/boot/FslessWebUI.h": {
+      "bytes": 200,
+      "sha256": "d9c51b0be179f1392405b0c09111d1570654f4c0bc62cbc759df055c5f74ebc7"
+    },
+    "native/include/boot/HomeLan.h": {
+      "bytes": 815,
+      "sha256": "712a98a353600daca0087f651d04e4f3ad736a77d3695bbcc6b165bf5dc003b2"
+    },
+    "native/include/boot/HomeLanPolicy.h": {
+      "bytes": 6940,
+      "sha256": "81f62f299a3ed014c432c264a2236f24a84bce6b216703487c7a03f224c21322"
+    },
+    "native/include/boot/M9LittleFsMountProbe.h": {
+      "bytes": 1220,
+      "sha256": "14ebbb43f3d58b2c12a3f94f8205c2a3bb84341c7562005dfcfd7c11dece79ca"
+    },
+    "native/include/boot/M9MountProbeResources.h": {
+      "bytes": 312,
+      "sha256": "506ad2b29194c9fecf6bb4660d9ace8204e7a671070e555a3d03b5ffa8d02855"
+    },
+    "native/include/boot/M9NormalHttpPolicy.h": {
+      "bytes": 1008,
+      "sha256": "d09b067d4066dc22258b0181bbd64d25ef09e6f076740475801ff8039ccd26e2"
+    },
+    "native/include/boot/M9NormalResources.h": {
+      "bytes": 3845,
+      "sha256": "f930012acbb465f341ab0a68a7b53db743365796895826ae0ad728c38f54dd6c"
+    },
+    "native/include/boot/M9NormalStageA.h": {
+      "bytes": 223,
+      "sha256": "eed9ff8359cd3d6d59ca06bcfb544150fca43677ea0cbc17ce10518632564bf3"
+    },
+    "native/include/boot/M9NormalStatusJson.h": {
+      "bytes": 4530,
+      "sha256": "ea1bf677382ed7d6c33797568546acd7f33d76fe9ed966179bde5662bffe9b43"
+    },
+    "native/include/boot/M9ProbeManifest.h": {
+      "bytes": 6222,
+      "sha256": "ba1bbd6221d60daef51b407e28f856b56257cc4cda4c23b405e089d90c318d3e"
+    },
+    "native/include/boot/M9ProbeStream.h": {
+      "bytes": 2370,
+      "sha256": "2146268bd3a2d20d8d1a1886c1361a67e351988535e393d90daf2f4fda63d658"
+    },
+    "native/include/boot/M9ResourceJson.h": {
+      "bytes": 3849,
+      "sha256": "9138a11df749167252670048b7c515f7844b70d440645eaa24f677274cb7d27e"
+    },
+    "native/include/boot/M9ResourceObserver.h": {
+      "bytes": 4831,
+      "sha256": "40f2065701bccf5d81d0f86f2ca3ec6bbbbffefa33b228f3177e5989cfe9d244"
+    },
+    "native/include/boot/M9StageAConfig.h": {
+      "bytes": 928,
+      "sha256": "199fbd1204e10205e4f3a05ccfd414b0c35042fa34cea0424853c6c9b28ffbdd"
+    },
+    "native/include/boot/NativeOtaDigestChallengeReview.h": {
+      "bytes": 2261,
+      "sha256": "96f5113f99545d3d3c2d602d9e1a25b1240dbea5a857e7c19e812c198de9f0bf"
+    },
+    "native/include/boot/NativeOtaEntropyReview.h": {
+      "bytes": 2105,
+      "sha256": "1b232c1f7b4b56544c936c9aeb0ce90e2a88f79ba299839363ab3452a9d3ed43"
+    },
+    "native/include/boot/NativeOtaHeapReview.h": {
+      "bytes": 3082,
+      "sha256": "5fa6ae33512ccdc4ad09056f7a0aae25aaaebd2ba9f7e996759228a40de5cce5"
+    },
+    "native/include/boot/NativeOtaHeapSampleCadence.h": {
+      "bytes": 1371,
+      "sha256": "d77e0d0267edfbead01a4f13e3a09447bba89f6fc391abfe4880840e63cbd0b1"
+    },
+    "native/include/boot/NativeOtaIntentGate.h": {
+      "bytes": 5846,
+      "sha256": "ba3396a648031be7c8f333b03cf08f04cd37fb624a686bf2aeff01d39b5c5e73"
+    },
+    "native/include/boot/NativeOtaLegacyResponsePreview.h": {
+      "bytes": 6132,
+      "sha256": "56fa34bef083021d13a8a8b557e4390a6d68425702773d1a6ebc2e91de4294d8"
+    },
+    "native/include/boot/NativeOtaLegacySessionReview.h": {
+      "bytes": 8441,
+      "sha256": "8e681aa6aa351cdc9b3497a1dcb17ed312e42f1ef718a484edc3da9aa6046200"
+    },
+    "native/include/boot/NativeOtaLegacyTelemetryReview.h": {
+      "bytes": 4017,
+      "sha256": "87e69e684626c8c10c3ef4bd1622e116f5a0547aae2b748e76f472ed38e0731c"
+    },
+    "native/include/boot/NativeOtaManualConsentGate.h": {
+      "bytes": 4985,
+      "sha256": "c86d2bcad7825e5c04cabfe2efa10267f4bc219b7d381cd10a3e7785067cc3b0"
+    },
+    "native/include/boot/NativeOtaNetworkPump.h": {
+      "bytes": 3593,
+      "sha256": "3dcdd8d541a2ee1d6cd286767c2da232f64d183c4b2db0d52c604098fa0d1469"
+    },
+    "native/include/boot/NativeOtaPort80Plan.h": {
+      "bytes": 7552,
+      "sha256": "5e55ce2a77a27ae9f5f4510558df9850fe1efa51cc73486cd47a50449fdfae69"
+    },
+    "native/include/boot/NativeOtaRawHeaderGate.h": {
+      "bytes": 9883,
+      "sha256": "715932a93479560e9d7b4b63e9efeaedb374bca216b170cf92f341900386f85b"
+    },
+    "native/include/boot/NativeOtaRequestPolicy.h": {
+      "bytes": 2912,
+      "sha256": "5fc672fde71a262d6841a3f8631cab9f4e49345edebd60afd6158b450d86ae0e"
+    },
+    "native/include/boot/NativeOtaSingleIngressShadow.h": {
+      "bytes": 16584,
+      "sha256": "a207f380d742805d1f0ec45d096cac6641f3c41cd79c7ebb7eeb028889b18ec3"
+    },
+    "native/include/boot/NativeOtaStreamingReview.h": {
+      "bytes": 11450,
+      "sha256": "7345c7ac2fdecce7c2997da189bcd2d6c806de933086b04aeacbe367ea35c28e"
+    },
+    "native/include/boot/NativeOtaStrictDigestGate.h": {
+      "bytes": 11052,
+      "sha256": "f6dd32c1e563a0214d8facb2e7a6d7a48a70e40ee4c9a293e0f2da5d6c37f79d"
+    },
+    "native/include/boot/RescueMode.h": {
+      "bytes": 1367,
+      "sha256": "59a7330337b1d1c872bbf3eb8e3caf8ac7f73558542a3c2920d92e1b32d12a3c"
+    },
+    "native/include/boot/ShinoBootProfile.h": {
+      "bytes": 1661,
+      "sha256": "ca595cdc556a97a3f4fadff5f5b7cdd903abb0727086a7aad4de545fb4411c79"
+    },
+    "native/include/boot/ShinoHeapDiagnosticCandidate.h": {
+      "bytes": 3537,
+      "sha256": "c5bd1ec0da0374f0183e864eebb2e204ec739fe618153c5b59bcd290c11c79b3"
+    },
+    "native/include/config/ConfigManager.h": {
+      "bytes": 2536,
+      "sha256": "99f3af93252dbcb61012e7eafd65f6118bffd76ea7952f664653b42a1d0a5187"
+    },
+    "native/include/config/SecureStorage.h": {
+      "bytes": 1382,
+      "sha256": "8e36c19353013d823af6bb42a982be223c42a95aeb3aef7a8270ea8965356b16"
+    },
+    "native/include/dashboard/DashboardManager.h": {
+      "bytes": 193,
+      "sha256": "d2cff2127f393f1ca7e2ec4493bcab8ec593dcfc8188990450349f665d5d4b49"
+    },
+    "native/include/display/ArtworkPilot.h": {
+      "bytes": 169,
+      "sha256": "c05aecdcc947b107f703446adfa984976be1d8e008bcd3d48f13338337d6027f"
+    },
+    "native/include/display/ClockFoundation.h": {
+      "bytes": 3236,
+      "sha256": "820cbb9b23786550f526c170672de0a4019c664dc412b406ba24dd0731f394f8"
+    },
+    "native/include/display/DisplayManager.h": {
+      "bytes": 2135,
+      "sha256": "42027b280a47f6054883726f250493f284c329170e678f7e98282f51030d6960"
+    },
+    "native/include/display/Gif.h": {
+      "bytes": 2598,
+      "sha256": "11af066acff8fb1ca4eef16eb287e336084c27437fc8a3021296c9eccae64c4a"
+    },
+    "native/include/display/SceneEngine.h": {
+      "bytes": 27926,
+      "sha256": "5cf3aab8ff92eef9d697602402a73d41a376036fe94ad0d7d6d2855663b0d129"
+    },
+    "native/include/ntp/NTPClient.h": {
+      "bytes": 1358,
+      "sha256": "0ad04aabf4969d577ee94a0038fc0f1fe5b4823161d52ccf20b521867bda84a8"
+    },
+    "native/include/recovery/FactoryRollback.h": {
+      "bytes": 387,
+      "sha256": "75f36302bad8267c08553c6ca04d49a4be0103bd3b63be96dfd6a91197d99b42"
+    },
+    "native/include/recovery/SignedOemCommitBarrier.h": {
+      "bytes": 4503,
+      "sha256": "4e106351d7e03f62e23012665599c51c37a165499b1c1ef69d2f78a56b870037"
+    },
+    "native/include/recovery/SignedOemPrecommitGate.h": {
+      "bytes": 6034,
+      "sha256": "cd9b5a27bf9985b13995a7c548d86726273174223056ff419078d88dfe25d833"
+    },
+    "native/include/scenes/SceneManager.h": {
+      "bytes": 582,
+      "sha256": "bb31d05e171d18c1a3f5a9343b76dd7bbb508805280c77bfa9a55bd3d5d05146"
+    },
+    "native/include/web/Api.h": {
+      "bytes": 1786,
+      "sha256": "c4d1cf7a37acc2949e425ffd90d92042ea63178df8d34f9a6e527776adaf4faf"
+    },
+    "native/include/web/Webserver.h": {
+      "bytes": 2223,
+      "sha256": "16aff448dc2f233eb09ae21e086ad3540451d0c5172b9301430e043b1c923100"
+    },
+    "native/include/wireless/WiFiManager.h": {
+      "bytes": 1522,
+      "sha256": "c8e4fd53ce5cb9ee0d1b868f3be5430b3c71f0abc18fc5d704376ef203087419"
+    },
+    "native/src/boot/B52Clock.cpp": {
+      "bytes": 3316,
+      "sha256": "ce38031d047c21836321ebeb496c8e4a7e619f1ddce6de4aa9d84863b6d1f909"
+    },
+    "native/src/boot/B53Integrated.cpp": {
+      "bytes": 6128,
+      "sha256": "2a1e2c2271f9c83f44e0a7b8b694be29c083d407aec6d98f14504465f65cbe6b"
+    },
+    "native/src/boot/B53Sntp.cpp": {
+      "bytes": 2704,
+      "sha256": "05d8f209893e6a44cd3361e65903b91eb43fc7e66e8e34de8c9c85638cc77ae7"
+    },
+    "native/src/boot/B54LanNative.cpp": {
+      "bytes": 2945,
+      "sha256": "465b655c610d7ca3409348e0ef62b79449e152bae03229aa2e3f95c88d36011a"
+    },
+    "native/src/boot/B5Lan.cpp": {
+      "bytes": 12173,
+      "sha256": "ae66986ceb7014d103767304feb1003ca75f26926a3fb4dd38e900581d35983b"
+    },
+    "native/src/boot/FirstBootBridge.cpp": {
+      "bytes": 25551,
+      "sha256": "f4411c3bd12561b805781650d7fbe5367aa181e858c7b5517c84434b71308f34"
+    },
+    "native/src/boot/FslessMetrics.cpp": {
+      "bytes": 3169,
+      "sha256": "f3c58cedda2c49260b6c9dc23a110eda9bbd98ab84e1a9b46a4794333d0b3980"
+    },
+    "native/src/boot/FslessWebUI.cpp": {
+      "bytes": 7945,
+      "sha256": "8af5c41931e25d1afd8fe0d085e751e6092f00783e8b8626dd2a1fba66401864"
+    },
+    "native/src/boot/HomeLan.cpp": {
+      "bytes": 10266,
+      "sha256": "101192623315f5d5e13b5474b4f4a59efa8e68c0adb16872292f0352a05642aa"
+    },
+    "native/src/boot/M9LittleFsMountProbe.cpp": {
+      "bytes": 9144,
+      "sha256": "735750e17efa539abef7942513b2514e40d82095e2c6fa89db6a027b6656f899"
+    },
+    "native/src/boot/M9MountProbeResources.cpp": {
+      "bytes": 1590,
+      "sha256": "b42065e0c4038a66ca5cedfef1bcc1bc4420d0aaa963f063127161fd5c07dd0f"
+    },
+    "native/src/boot/M9NormalDashboard.cpp": {
+      "bytes": 4414,
+      "sha256": "eea7c14199e2c1f8653b66fe227f03cd4d4fd385a0c4cfb1a92c192ddbac1609"
+    },
+    "native/src/boot/M9NormalStageA.cpp": {
+      "bytes": 29382,
+      "sha256": "ee47b4c1640866f7765a008eb6f64a66891ef07a85812c082cd2965dd6557e4d"
+    },
+    "native/src/boot/NativeOtaDevicePumpCompileProbe.cpp": {
+      "bytes": 6271,
+      "sha256": "851c80dc49f25dab2804d557e3a3e2b8edd27ef779015287664f68d816228857"
+    },
+    "native/src/boot/RescueMode.cpp": {
+      "bytes": 11782,
+      "sha256": "42888537808a230d6c0ab48ba2d7e55ee2a54feab77e91f2d5c724f971b474d5"
+    },
+    "native/src/config/ConfigManager.cpp": {
+      "bytes": 7079,
+      "sha256": "49acaa29d94803dbd2226895192f1382242c5f08cb3bbbd28023095788f25453"
+    },
+    "native/src/config/SecureStorage.cpp": {
+      "bytes": 7304,
+      "sha256": "ef6ff6a88b22c02b7d2e2272562de526f4f5871ad71bc02327ce494bb8b1e8a7"
+    },
+    "native/src/dashboard/DashboardManager.cpp": {
+      "bytes": 6137,
+      "sha256": "cf2cbf038e8f3ad147cd39243aa58941ef0761607ab901256c1251aa0e3d5d16"
+    },
+    "native/src/display/DisplayManager.cpp": {
+      "bytes": 23244,
+      "sha256": "ab4adbc8d777aeb01e8248beccaeffa768421cde4d3e409baeebbef322ed99a8"
+    },
+    "native/src/display/Gif.cpp": {
+      "bytes": 18899,
+      "sha256": "7836c9e721ed774c67c5c45c8e16ec630077734ab8b8b8a531154d4fd1e5e36e"
+    },
+    "native/src/ntp/NTPClient.cpp": {
+      "bytes": 5686,
+      "sha256": "556be5961a4ee9ccc1a9cc97d0940ad9babe26b750f2d662e626eec4bbae52d5"
+    },
+    "native/src/recovery/FactoryRollback.cpp": {
+      "bytes": 6670,
+      "sha256": "346be17993ef0f1333032b3c10f9a083458f198efb61a19c50534933a4c6e550"
+    },
+    "native/src/recovery/SignedOemPrecommitProbe.cpp": {
+      "bytes": 1097,
+      "sha256": "f506f9fbfaa6eb04bc3030d3cbf2a92961b48481efe007136dda778cbb2b17c7"
+    },
+    "native/src/scenes/SceneManager.cpp": {
+      "bytes": 10066,
+      "sha256": "6b966b49efdb3dceebe874a0d32b23e09afbe61712d9f835327eea63448de812"
+    },
+    "native/src/web/Api.cpp": {
+      "bytes": 40587,
+      "sha256": "fe1ad248ede4d4221ce535345373af09f58bbf527f7b35e38a739f129ddbd9fe"
+    },
+    "native/src/web/Webserver.cpp": {
+      "bytes": 12246,
+      "sha256": "438d218bb0d5d2eb3aa33433c638ea52268fbb755294d04048a76c0dde52272a"
+    },
+    "native/src/wireless/WiFiManager.cpp": {
+      "bytes": 6205,
+      "sha256": "f9dc7f5cc5fbb0a154732c5d7887e70e0da6473f93e9d3115aa44436b9ca4d30"
+    },
+    "seams/base/alloca.h": {
+      "bytes": 110,
+      "sha256": "813c315ed72ef1f32d1c32b14c857d3b7b55c5652e5c5559db57ad638bfea1fc"
+    },
+    "seams/base/pgmspace.h": {
+      "bytes": 262,
+      "sha256": "2a182b4bdc5b5c2903b383e461b10beac0b5f0e70f463163136a24f1570ce10f"
+    },
+    "seams/core/Arduino.h": {
+      "bytes": 3083,
+      "sha256": "e71ec823d3121867a762f79b471e2824697e518fef2fa25423656a79bbcb7051"
+    },
+    "seams/core/BearSSLHelpers.h": {
+      "bytes": 1627,
+      "sha256": "eab6af6570faa29241fe5e3a0b1403d16d0dea9aa27ce9d79e27ad311c450009"
+    },
+    "seams/core/esp8266_peri.h": {
+      "bytes": 34,
+      "sha256": "07c8c92e54ec64a0bcd9760acf75166f1e95ae6424e2af201841c44cd9bd847f"
+    },
+    "seams/core/flash_hal.h": {
+      "bytes": 69,
+      "sha256": "be862ec36cbf24618a8816bced9e1d034cefb7430c14348ccaea4889425d9c4b"
+    },
+    "seams/core/flash_utils.h": {
+      "bytes": 44,
+      "sha256": "7984270ed9665b04a21bf820dc6421a619f87b7c4931a3724a4a332c1faeccd6"
+    },
+    "seams/core/M9SignedMixed.h": {
+      "bytes": 5367,
+      "sha256": "555b0f6b8a2bd7f1d19afe5c0ac54ff6b71869f947b68bdf125379c7ce28156e"
+    },
+    "seams/core/MD5Builder.h": {
+      "bytes": 290,
+      "sha256": "01ce0f72e6ed4363d1a8a90644130556667f91fd2c3a4c84b93ba669acab9b39"
+    },
+    "seams/core/PolledTimeout.h": {
+      "bytes": 153,
+      "sha256": "e3d893758fa4a7fab8e54c99f62228ca93daab532d610891c79d729f75612142"
+    },
+    "seams/core/StackThunk.h": {
+      "bytes": 84,
+      "sha256": "e67d44c429b9cd38f6fd9b252cb43429a3325c35946894ca752fb89d7323d377"
+    },
+    "seams/wifi/ShinoArmGate.h": {
+      "bytes": 3956,
+      "sha256": "3ec15ca129d39f3fe43af401324fd3229a23bcaeb83a74648ac37b014b9e1b58"
+    },
+    "seams/wifi/ShinoMaintenance.h": {
+      "bytes": 5848,
+      "sha256": "0d2506c6994525497f13a78a9e443952ccef32a0eee482deb199e713031a4d9e"
+    },
+    "seams/wifi/ShinoMemoryTrace.h": {
+      "bytes": 1501,
+      "sha256": "017d0df7d27f6ed7fd5e7bd2729daf51eba19588050f384ade49897c0b54630c"
+    },
+    "seams/wifi/ShinoReclaimingHttp.h": {
+      "bytes": 995,
+      "sha256": "1aef339e730d59265b6f0ae4a94b66eef989e53ff6f1d672c3a917108f2d016d"
+    },
+    "seams/wifi/ShinoWifiNative.h": {
+      "bytes": 6858,
+      "sha256": "7cbb15b570fc45990510c79b32e0b3692a5140fd789776a5f6e0777e4fdfbd90"
+    },
+    "seams/wifi/ShinoWifiPolicy.h": {
+      "bytes": 449,
+      "sha256": "1d7064772f4bf38345a842582320bcd0a7a85925e33d7221edb3dfe82b4a90e3"
+    },
+    "seams/wifi/ShinoWifiUpdate.h": {
+      "bytes": 10455,
+      "sha256": "bd7a26f47e662afd29b8f1703707ffd018336e75eeff7f041af2a1ed221850a2"
+    },
+    "vendor/bearssl/LICENSE.txt": {
+      "bytes": 1080,
+      "sha256": "771bf18c8633ea69ec9b07d2e604c4b99b7bef41b0f5ce6385d24df4448f61ca"
+    },
+    "vendor/bearssl/inc/bearssl.h": {
+      "bytes": 7219,
+      "sha256": "8543ceb43850a5121782ebb0cff767a610ea7d215b1ad57ff9866deca214e92f"
+    },
+    "vendor/bearssl/inc/bearssl_aead.h": {
+      "bytes": 41036,
+      "sha256": "9d90afbc65535335517c028817ac0704af6b58971f2c262a65eb26e0b4099201"
+    },
+    "vendor/bearssl/inc/bearssl_block.h": {
+      "bytes": 89199,
+      "sha256": "a00b4a48c42c824f2ec4ee775672df9cec86ad455b08cb8ae7eb8c89e63d082a"
+    },
+    "vendor/bearssl/inc/bearssl_ec.h": {
+      "bytes": 33770,
+      "sha256": "6e9eb7490b5b256f9a98bea86906e008bd0d5f2bf1423c9c2eeb7af29ad1e9df"
+    },
+    "vendor/bearssl/inc/bearssl_hash.h": {
+      "bytes": 44872,
+      "sha256": "d31186fcdfe224965d1028592d1df78e1a10cb61fb8830fdafac847921e26572"
+    },
+    "vendor/bearssl/inc/bearssl_hmac.h": {
+      "bytes": 8413,
+      "sha256": "a40c14a7a71d5b4fa21f8485d7ad3975d3a37b9cd8b9f72cd0fa032af8105614"
+    },
+    "vendor/bearssl/inc/bearssl_kdf.h": {
+      "bytes": 10049,
+      "sha256": "e4cf36cab1c4692e4bba034c9e257c630e8e370c8e40d38b8fa106c7b4dbf8d5"
+    },
+    "vendor/bearssl/inc/bearssl_pem.h": {
+      "bytes": 10442,
+      "sha256": "ef36260e8568e5927178e92c2aab849be71bc07414c01baeb1d12a3a51a82c3e"
+    },
+    "vendor/bearssl/inc/bearssl_prf.h": {
+      "bytes": 5465,
+      "sha256": "0162e674d6c49425bfa0e8e9c79b3d850530e7928288930284fb7ac940a12b17"
+    },
+    "vendor/bearssl/inc/bearssl_rand.h": {
+      "bytes": 14023,
+      "sha256": "968335e8a2957e5bf64cb0b6b1f916e53bc330e8c66d5f2d2f658f415a56dd44"
+    },
+    "vendor/bearssl/inc/bearssl_rsa.h": {
+      "bytes": 58923,
+      "sha256": "2d4ee476ce67c6361c0e3792e192a12297dd29c039272c03dd0ab4225ed534c1"
+    },
+    "vendor/bearssl/inc/bearssl_ssl.h": {
+      "bytes": 151725,
+      "sha256": "1cfb2aeb7607d2ad21c53596b2dab80e49b9affb6da6811a909321257ac6c16e"
+    },
+    "vendor/bearssl/inc/bearssl_x509.h": {
+      "bytes": 55580,
+      "sha256": "7073ccb104c4568d6cf6292fffd90f0b4d99e7a5c8392e9cd3b119acdcc5ab2f"
+    },
+    "vendor/bearssl/inc/pgmspace.h": {
+      "bytes": 1955,
+      "sha256": "a1f8fec5e7c8723d5d7f87055fb92a4a8e36984d244ef2fbf31ac761fcd9e70e"
+    },
+    "vendor/bearssl/src/config.h": {
+      "bytes": 9126,
+      "sha256": "019ce140ceb8f08eb54c42b52557a82db57a0d8b34fbfcfefa71de9daee7f09b"
+    },
+    "vendor/bearssl/src/inner.h": {
+      "bytes": 81477,
+      "sha256": "05b82123263b23fea5d45ef47522a896b0b94b532d94dfc3d3439fdd18c7340c"
+    },
+    "vendor/bearssl/src/codec/ccopy.c": {
+      "bytes": 1420,
+      "sha256": "5163871149faa35a4ba026a915743065238fc94cc4312f02867a4f50ff2631f8"
+    },
+    "vendor/bearssl/src/codec/dec16be.c": {
+      "bytes": 1358,
+      "sha256": "5538c3181136c61fde4118d90c90a8c40e4e77b59d2bd338ecad53c54715e564"
+    },
+    "vendor/bearssl/src/codec/dec16le.c": {
+      "bytes": 1358,
+      "sha256": "fd20817fb65a30cf0c7a443360104e8aba0252a4b31ff6b0b3e91fc5dd6e354e"
+    },
+    "vendor/bearssl/src/codec/dec32be.c": {
+      "bytes": 1358,
+      "sha256": "ebd7bf469655a9e4de4b3d1d01d4c54f19117def3e3b918242629c150979bd9c"
+    },
+    "vendor/bearssl/src/codec/dec32le.c": {
+      "bytes": 1358,
+      "sha256": "fb45ce9e370d72c495dfbb08267e2fd32dcf5215c28df5d2db24f842b2d2d43a"
+    },
+    "vendor/bearssl/src/codec/dec64be.c": {
+      "bytes": 1358,
+      "sha256": "7197b141800ed2748550c274d2539147a1fd0ce50f25b848dd7bf41c5a9d826e"
+    },
+    "vendor/bearssl/src/codec/dec64le.c": {
+      "bytes": 1358,
+      "sha256": "4cce8fda962a1fd18176d7a52d69e0c269502e401f1c68d79b7fcb5ac9cd3409"
+    },
+    "vendor/bearssl/src/codec/enc16be.c": {
+      "bytes": 1351,
+      "sha256": "868a5407b71a065f4cb9e7551637830135205abf60f0381993cfa6555593135d"
+    },
+    "vendor/bearssl/src/codec/enc16le.c": {
+      "bytes": 1351,
+      "sha256": "2543412d0f934156d4fd3d718148dbca54a4e09c58d0207474e1242dfe6160b6"
+    },
+    "vendor/bearssl/src/codec/enc32be.c": {
+      "bytes": 1351,
+      "sha256": "8090b5bd6959586e769814e9d3698ac1c454e31ee4dfd5a2b2eb95a805063ae4"
+    },
+    "vendor/bearssl/src/codec/enc32le.c": {
+      "bytes": 1351,
+      "sha256": "7faa71643fc74570fd4c550974a075ec05485a0b3805cbdc826d662cb347e79b"
+    },
+    "vendor/bearssl/src/codec/enc64be.c": {
+      "bytes": 1351,
+      "sha256": "a80ad043abcdee0f156c04add94819a1b25a27d58d71d5bcc19ebb5cc24143a3"
+    },
+    "vendor/bearssl/src/codec/enc64le.c": {
+      "bytes": 1351,
+      "sha256": "404faa50058d1da349810bd6d8035f5e1258d4b601b4cb7b98d81250a97942f5"
+    },
+    "vendor/bearssl/src/codec/pemdec.c": {
+      "bytes": 12646,
+      "sha256": "7b0f046b7e3e88c576d2ea2416b71082c4871eacb235eddda1a47b35721f6c3c"
+    },
+    "vendor/bearssl/src/codec/pemenc.c": {
+      "bytes": 4233,
+      "sha256": "4893f8ce2f39868fa5c68302ae790f11436f567604be04210165992ead6964ff"
+    },
+    "vendor/bearssl/src/hash/md5.c": {
+      "bytes": 6080,
+      "sha256": "9121970a47c35cee6c5a2f617adccc7450a3df32b662857a5b6b6e2c11443e3b"
+    },
+    "vendor/bearssl/src/hash/sha2small.c": {
+      "bytes": 9486,
+      "sha256": "60a711eec9ff8e2ecbd64d1cab3040c35fd7afb1331d4a4620625793039f4e98"
+    },
+    "vendor/bearssl/src/mac/hmac.c": {
+      "bytes": 3360,
+      "sha256": "2c10c0e19dbfc168acd8493e555b0fdbcca37491cde049007d62bdae6f9ef4ee"
+    }
+  }
+}
