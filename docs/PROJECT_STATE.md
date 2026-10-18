@@ -39,7 +39,7 @@ au sens du critère « main documente la PR » avant sa revue/acceptation propri
 Le firmware installé reste P0+Updater512 (OBSERVÉ PROPRIÉTAIRE), B5.4 NON INSTALLÉ,
 VM existante déjà installée/testée et publication signée rapportée OFF.
 Aucun contact appareil/VM, flash, OTA, UART, reboot, déploiement ou merge.
-**Une prochaine action : revue humaine de la Draft source #72.**
+**REVUE DU CODE SOURCE GITHUB #72 EFFECTUÉE le 19 octobre 2026 :** [revue propriétaire sur le HEAD exact](https://github.com/shinobione/SHINO-TV/pull/72) déposée en commentaire GitHub ; publication/consultabilité source **PASS dans la portée HOST**. Le chemin source météo → `B52Clock::setWeather()` → `ArtworkPilot::Renderer` → Canvas LCD existe et gère frais/périmé. **HOLD** : pas de test bout-en-bout vérifiant les commandes de dessin météo après POST et expiration sur le graphe combiné ; mémoire/OTA/récupération physiques non qualifiées, BIN privé non attesté par le code public. **Prochaine action technique : un test HOST ciblé du rendu météo fresh/stale avec les quatre cartes, sans VM ni appareil.** La PR #70 reste non fusionnée et `main` inchangé.
 
 ## 0. Dernière livraison : combinaison B5.4 + P0+512 (19 octobre 2026)
 
