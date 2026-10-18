@@ -1,5 +1,37 @@
 # SHINO // TV — Roadmap
 
+## M3-L — HMAC SHA256 streaming sans message complet, variante HOST/Xtensa (18 octobre 2026)
+
+**GO propriétaire uniquement pour logiciel isolé M3-L.** Branche
+empilée sur Draft PR #66 (HEAD exact `d299cf262e90bc2cf8f7fd40c50fa2519175c620`,
+15/15 workflows PASS au fork).
+
+M3-L expérimente `SHINO_M3C_INCREMENTAL_HMAC=1`
+dans le **code M3-C du laboratoire uniquement**.
+Les segments canoniques de HMAC sont transmis dans leur
+ordre original au même contexte OpenSSL `EVP_MAC_update`
+ou BearSSL `br_hmac_update`, sans construire le
+message signé complet. La limite de format historique
+**< 350 octets** est conservée, ainsi que HMAC, SHA,
+auth avant corps, FIN et CAS. M3-K scratch et M3-L
+streaming sont mutuellement exclusifs.
+
+La CI compare 3 variantes **original/M3-K/M3-L** avec
+les mêmes véritables vecteurs OpenSSL M3-C/M3-F et
+3 builds Xtensa **inertes**, en mesurant automatiquement
+BIN/ELF `.text/.data/.bss`, frames `-fstack-usage`
+et les empreintes des seuls BINs de laboratoire.
+**FAIL si la pile signature ne baisse pas ou si BSS
+augmente par rapport à l'original.** Les chiffres ne
+sont validés qu'après lecture des artefacts CI finaux.
+Voir [M3-L : conception/qualification](LINK_M3L_INCREMENTAL_HMAC.md).
+
+**M3 produit : HOLD** — B5.3 physique et CONT toujours
+non qualifiées pour intégration, ancienne parité HTTP
+native non implémentée, pas de contrôle d'écran actif.
+Aucune OTA/flash/Wi-Fi/Freebox, aucun changement aux
+branches Codex, à `firmware/` ou `companion/`.
+
 ## M3-K — Optimisation HMAC CONT sans changer le contrat (17 octobre 2026)
 
 **GO propriétaire : code/test SHINO // LINK HOST/Xtensa inerte uniquement.**
