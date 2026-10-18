@@ -263,8 +263,8 @@
       "sha256": "2f8360cfa86dd096da47d8358766cd2675e73ed0290bd34d5dfb526dcfbe7f70"
     },
     "tests/native_receiver.cpp": {
-      "bytes": 4150,
-      "sha256": "e01e478a265e4b713872077c44ebdab92acb662d59e125b7888812ee58e34a23"
+      "bytes": 8111,
+      "sha256": "9b7dd9bac9600c526fde91f5745c39fc7d26a78ec7b38c6743f1c39d1c85ec01"
     },
     "tests/network_lab.cpp": {
       "bytes": 5929,
