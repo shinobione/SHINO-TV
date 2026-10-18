@@ -4,11 +4,42 @@
 
 > **À lire avant toute mission** avec `AGENTS.md` et, sur les branches où ils existent, `docs/AGENT_HANDOFF.md` et `docs/ROADMAP.md`. L'état des fichiers sur `main` et les docs historiques peuvent être dépassés. La branche locale de Codex et l'appareil ne sont pas synchronisés automatiquement avec GitHub.
 
-## Source de vérité GitHub / Windows — publication en cours
+## Source de vérité GitHub / Windows — export source vérifié le 19 octobre 2026
 
-**Mission de synchronisation ouverte : [issue #71](https://github.com/shinobione/SHINO-TV/issues/71).** Lire [SOURCE_SYNC_POLICY.md](SOURCE_SYNC_POLICY.md). Le code local combiné P0+512/B5.4 reste **NON CONSULTABLE sur GitHub**, tant qu'une PR Draft source ne contient pas un HEAD distant relu, les sources et tests partageables et une provenance expurgée. Le rapport privé `DECISION.md` est utile mais n'autorise aucune assertion sur un code distant absent.
+**PR source canonique : [Draft #72](https://github.com/shinobione/SHINO-TV/pull/72).**
+HEAD GitHub relu : `91969aceb45e0c43d44f93a702a3997b57e8f89e`.
+Base : `main`, `8425dd7f2526c29e6c53b4294909a4bf03d3112f`.
+445 fichiers : graphe source applicatif combiné, Core HTTP/Updater512/linker,
+laboratoire HOST complet, protocole/publieur et dépendances source non secrètes.
+Voir [le guide de lecture](https://github.com/shinobione/SHINO-TV/blob/91969aceb45e0c43d44f93a702a3997b57e8f89e/review/README.md)
+et [la provenance publique/privée](https://github.com/shinobione/SHINO-TV/blob/91969aceb45e0c43d44f93a702a3997b57e8f89e/review/PROVENANCE.md).
 
-La décision du propriétaire autorise la **synchronisation du code source non secret vers une PR Draft après audit du contenu et de tout l'historique poussable**, pas la publication de BIN/ELF/reçus/identifiants, ni la fusion des branches, ni des actes matériels. Les branches P0, B5.4 et intégration restent préservées. **Ne pas déclarer PASS_SYNC avant preuve du HEAD GitHub et lecture de son diff.**
+**PROUVÉ GITHUB :** HEAD/arbre complet et445 fichiers/deltas vérifiés après push.
+443 patches identiques ;2 patches volumineux vérifiés par lecture complète des
+sources. L'endpoint diff global limite à300 fichiers ; API paginée et arbre complet
+permettent la revue de l'ensemble. Sources clés lues directement depuis GitHub.
+
+**TEST HOST/CI :**41 tests PASS,0 FAIL/ERROR/SKIPPED, sur ce SHA exact :
+[run push](https://github.com/shinobione/SHINO-TV/actions/runs/39175173484),
+[run PR](https://github.com/shinobione/SHINO-TV/actions/runs/39175222820).
+Reproduction autonome : `python3 -B review/run_tests.py`, Python standard + GCC/G++
+C++20 ou MSVC ; réseau127.0.0.1 seulement, flash/RTC/radio/SNTP/LCD simulés.
+
+**PROVENANCE / CONFIDENTIALITÉ :** export allowlisté à nouvelle histoire depuis
+la base publique, pas les commits privés. Audit local de tous les objets poussables,
+y compris historique ; identités/clefs/localisation privées remplacées par fixtures
+HOST explicitement interdites sur ESP8266. Correspondance vers la source compilée
+conservée dans un reçu privé local. Aucun BIN/ELF/manifeste/reçu/dump/clé/identité
+matérielle/marqueur privé publié ; aucune équivalence binaire privé/public annoncée.
+Anciens guards et branches/worktrees/artefacts privés intacts.
+
+**ÉTAT : PUBLICATION SOURCE VÉRIFIÉE.** La mise à jour du checkpoint main est
+proposée par cette Draft #70, encore NON MERGÉE : ne pas annoncer PASS_SYNC global
+au sens du critère « main documente la PR » avant sa revue/acceptation propriétaire.
+Le firmware installé reste P0+Updater512 (OBSERVÉ PROPRIÉTAIRE), B5.4 NON INSTALLÉ,
+VM existante déjà installée/testée et publication signée rapportée OFF.
+Aucun contact appareil/VM, flash, OTA, UART, reboot, déploiement ou merge.
+**Une prochaine action : revue humaine de la Draft source #72.**
 
 ## 0. Dernière livraison : combinaison B5.4 + P0+512 (19 octobre 2026)
 
