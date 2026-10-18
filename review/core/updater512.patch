@@ -1,0 +1,17 @@
+--- pinned/Updater.cpp
++++ isolated/Updater.cpp
+@@ -169,6 +169,14 @@
+   _startAddress = updateStartAddress;
+   _currentAddress = _startAddress;
+   _size = size;
++#if defined(SHINO_UPDATER_FLASH_BUFFER_512) && SHINO_UPDATER_FLASH_BUFFER_512 != 0 && SHINO_UPDATER_FLASH_BUFFER_512 != 1
++#error "SHINO_UPDATER_FLASH_BUFFER_512 must be 0 or 1"
++#endif
++#if defined(SHINO_UPDATER_FLASH_BUFFER_512) && SHINO_UPDATER_FLASH_BUFFER_512 == 1
++  if (command == U_FLASH) {
++    _bufferSize = 512;
++  } else
++#endif
+   if (ESP.getFreeHeap() > 2 * FLASH_SECTOR_SIZE) {
+     _bufferSize = FLASH_SECTOR_SIZE;
+   } else {
