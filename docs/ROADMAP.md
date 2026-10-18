@@ -1,5 +1,40 @@
 # SHINO // TV — Roadmap
 
+## M3-M — Première extraction native des handlers métriques B5.3 (18 octobre 2026)
+
+**GO uniquement logiciel SHINO // LINK**. Base PR #67 M3-L
+`986e6a59d4f7035dff203ac0185df792b216658b` au
+**16/16 CI SUCCESS** vérifié avant fork.
+
+`experiments/link_m3m_native/M3MActualMetricsHandler.h`
+implémente une **brique indépendante du transport réseau**
+pour GET/POST `/api/v1/bridge/metrics` avec
+`FslessMetrics::apply/describe` **réels, source non modifiée**,
+ArduinoJson 7.4.3, autorisation legacy injectée obligatoire,
+entrée bornée, résultats HTTP et tampon de sortie fourni
+par l'appelant (pas de buffer massif sur la CONT du handler).
+Les tests HOST **exécutent réellement** refus
+403/400/422, échantillon accepté, dernier bon préservé et TTL 6 s.
+[Première CI M3-M #39134324424](https://github.com/shinobione/SHINO-TV/actions/runs/39134324424)
+**2/2 jobs PASS au SHA précédent** : deux
+builds Xtensa inertes A/B, **+4 336 o BIN** et **+896 o BSS**
+dans la fixture qui réserve un tampon de sortie fourni
+par l'appelant ; **pas** une réserve mémoire produit
+ni un candidat OTA. Revalider le HEAD final après
+mise à jour des documents. Aucun listener Wi-Fi démarré.
+
+**La vraie authentification Digest/cookie, le contrôle de peer
+AP/STA, la migration des autres routes, l'écriture HTTP,
+le redessin LCD et le serveur natif unique ne sont PAS
+implémentés : M3 produit HOLD.** L'adaptateur reçoit
+un `Request` déjà borné : sa vérification d'auth interne
+ne prouve pas une authentification avant la lecture du
+TCP legacy. Le nouveau code est **hors de `firmware/` et
+`companion/`**, sans aucune action SmallTV/Freebox,
+OTA/flash/LittleFS/Wi-Fi/RTC, ni B5.4 Codex.
+
+Voir [M3-M : extraction réelle et blocages](LINK_M3M_NATIVE_METRICS.md).
+
 ## M3-L — HMAC SHA256 streaming sans message complet, variante HOST/Xtensa (18 octobre 2026)
 
 **GO propriétaire uniquement pour logiciel isolé M3-L.** Branche
