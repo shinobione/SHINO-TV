@@ -22,8 +22,14 @@ les mêmes véritables vecteurs OpenSSL M3-C/M3-F et
 BIN/ELF `.text/.data/.bss`, frames `-fstack-usage`
 et les empreintes des seuls BINs de laboratoire.
 **FAIL si la pile signature ne baisse pas ou si BSS
-augmente par rapport à l'original.** Les chiffres ne
-sont validés qu'après lecture des artefacts CI finaux.
+augmente par rapport à l'original.** Première mesure source-exécutée [CI M3-L #39110097050](https://github.com/shinobione/SHINO-TV/actions/runs/39110097050)
+(avant dernier SHA documentaire) : **frame HMAC 992→704 o
+(−288), BSS inchangée à 27 392 o, BIN inerte
+276 544→276 832 o (+288)**. M3-K demeure plus faible
+en frame (640 o) mais ajoute 352 o de BSS. Les
+tests ont ensuite été renforcés à la frontière HMAC
+signée **349 o acceptés / 350 o refusés**, ce
+qui exige une nouvelle CI au HEAD final.
 Voir [M3-L : conception/qualification](LINK_M3L_INCREMENTAL_HMAC.md).
 
 **M3 produit : HOLD** — B5.3 physique et CONT toujours
