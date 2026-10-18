@@ -4,6 +4,14 @@
 
 > **À lire avant toute mission** avec `AGENTS.md` et, sur les branches où ils existent, `docs/AGENT_HANDOFF.md` et `docs/ROADMAP.md`. L'état des fichiers sur `main` et les docs historiques peuvent être dépassés. La branche locale de Codex et l'appareil ne sont pas synchronisés automatiquement avec GitHub.
 
+## 0. Dernière livraison : combinaison B5.4 + P0+512 (19 octobre 2026)
+
+**Rapport Codex et dossier de décision fournis par le propriétaire** : `PASS_OFFLINE` pour compilation/intégration, tests HTTP/LINK/OTA simulée et réception météo. Le compte rendu annonce un **seul candidat privé combiné** avec un écart de **+5 136 octets BIN** et **+460 octets RAM statique** par rapport à P0+512, sans modification IRAM ou du sous-chemin OTA suivi. Les tests rapportés sont **69 HTTP + 9 météo intégrés + 6 Core/eboot + 2 interruptions OTA**, et les tests de provenance/publieur complémentaires. **Aucune relecture indépendante du BIN/ELF ou des logs locaux dans cette PR.** `PASS_OFFLINE` n'est pas un GO physique.
+
+**HOLD** : heap/CONT/SDK/IRQ physiques, comportement et récupération après flash, réception effective depuis la VM, affichage météo réel sur ST7789, voie UART autorisée pour ce candidat. **Le fichier local Codex `DECISION.md` dit encore à tort « B5.3 installé / buffer 4096 » : c'est P0+Updater512 qui est actuellement installé d'après les essais propriétaires.** Corriger ce constat dans le travail Codex sans changer le firmware.
+
+**Prochaine action prioritaire :** conclure une revue ciblée du chemin *trame météo acceptée → valeur rendue sur LCD* et du dossier de récupération/mémoire, avant toute demande séparée d'autorisation d'installation. Ne pas reconstruire la VM `SHINO-WEATHER`, déjà installée/testée ; publication HMAC toujours OFF selon dernier constat.
+
 ## 1. Acquis à préserver (dernier constat propriétaire : 18 octobre 2026)
 
 | Sous-système | Dernier état constaté | Nature de preuve / limite |
@@ -20,7 +28,7 @@
 ## 2. Travail existant, NON équivalent à une fonctionnalité physique livrée
 
 - **P0+Updater512 :** le binaire privé installé est distinct des branches GitHub publiques. Taille/empreinte, layout exact et reçus à lire **dans les véritables fichiers privés** avant nouvelle opération. Updater à tampon 512 octets présent dans le candidat installé, mais **aucune OTA post-P0+512 physiquement acceptée n'a été prouvée**.
-- **B5.4 météo LAN :** branche de travail locale rapportée `codex/b54-lan-weather`, dernier HEAD *historique* rapporté `b242dbd4bffb5b97468c0f07d2ebc2f736557a45`. Récepteur météo signé `SHINO-WX/1`, SAMPLE 80 octets, publieur VM existant. Un candidat isolé a été préparé, **non installé**. Vérifier le HEAD et les sources actuels avant toute intégration.
+- **B5.4 météo LAN :** branche source locale `codex/b54-lan-weather`, HEAD de départ **rapporté** `b242dbd4bffb5b97468c0f07d2ebc2f736557a45`. Récepteur `SHINO-WX/1` et publieur VM existants. **Nouveau candidat combiné P0+Updater512+B5.4 produit hors ligne le 19/10**, non installé ; source compilée **rapportée** `2c7d50c99ab3f6b95fedfcda7aedbb0c28829f79` sur `codex/p0-512-b54-integration` (commit absent du GitHub distant au contrôle). Artefacts et reçu demeurent locaux privés. Voir [revue du candidat](B54_P0_REVIEW_2026-10-19.md).
 - **Stabilisation P0 :** branche locale rapportée `codex/tv-stabilization-p0`, dernier HEAD *historique* rapporté `e78a95f7b30ba0a1b98a974daf9eca8ba6294907`. **Non synchronisée automatiquement avec GitHub**.
 - **Mode control Windows / musique :** UX et plusieurs laboratoires HOST existent sur PR Draft séparées ; ne pas confondre prévisualisation/menu HOST avec contrôle natif déjà actif sur le SmallTV.
 - **Diagnostics HTTP P0 :** tentative de lecture authentifiée terminée avec `UNEXPECTED_HTTP_STATUS` le 18 octobre. **Cause non établie ; aucun retry automatique**. L'identité HTTP courante et les minima mémoire physiques P0 restent **NON VÉRIFIÉS/HOLD**. Cet échec n'annule pas l'observation écran/LINK.
