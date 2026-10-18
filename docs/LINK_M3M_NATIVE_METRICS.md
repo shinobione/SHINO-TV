@@ -80,6 +80,40 @@ text/data/bss, BIN et SHA calculés depuis les fichiers
 produits par CI, frames de pile `-fstack-usage`.
 **Aucun nombre inventé avant résultat au SHA exact.**
 
+## Mesure initiale native : véritable sortie CI, mais build inerte
+
+[Workflow M3-M #39134324424](https://github.com/shinobione/SHINO-TV/actions/runs/39134324424)
+au commit `fd19152b4eb9a12ecf6edad7fea62978e9920fad` :
+**2/2 jobs SUCCESS**, avec tests B5.3 source-exécutés
+et deux builds Xtensa liés.
+
+| Sortie de laboratoire Xtensa | A : code M3-L existant + FslessMetrics | B : même graphe avec adaptateur M3-M | Différence |
+|---|---:|---:|---:|
+| Taille du BIN **inerte** | 276 784 o | 281 120 o | **+4 336 o** |
+| ELF `.text` | 271 131 o | 275 475 o | **+4 344 o** |
+| ELF `.bss` | 27 392 o | 28 288 o | **+896 o** |
+| ELF `.data` | 1 556 o | 1 556 o | **0 o** |
+
+Les **896 octets supplémentaires de BSS** proviennent
+du tampon `replyStorage` de la fixture native,
+fourni par l'appelant ; il évite une allocation
+de réponse massive sur la pile de l'adaptateur,
+mais **consomme tout de même de la RAM statique**.
+Ce tampon n'est PAS identifié comme existant ou
+réutilisable dans le firmware B5.3 complet :
+réemploi sans preuve serait dangereux. Le coût
+est celui de la combinaison compilée, pas une
+prévision du budget libre sur appareil.
+
+Le chiffre BIN de cette fixture n'est ni le BIN B5.3
+physique de 426 752 octets, ni un candidat OTA.
+Les deux processus HOST utilisés comme témoins
+authentifient avec des politiques de **laboratoire**,
+non le Digest réel du SmallTV.
+
+Les 2 jobs devront être **rejoués sur le HEAD final**
+après ces notes ; aucun PASS global n'est présumé.
+
 ## BLOQUAGES ET RISQUES
 
 **M3-M n'est pas une migration complète de FirstBootBridge.**
