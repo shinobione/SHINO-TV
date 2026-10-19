@@ -125,6 +125,15 @@ jobs:
           assert 'ShinoM3P::readFirstLine' in (local/"Parsing-impl.h").read_text()
           print("M3P_ACTUAL_PINNED_CORE_CLONE_BYTE_PARITY_PASS")
           PY
+      - name: Inspect symbol resolution without hiding an unpatched link
+        run: |
+          echo "== PATCHED SOURCE OBJECT SYMBOLS =="
+          xtensa_nm="$HOME/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-nm"
+          "$xtensa_nm" -C experiments/link_m3p_parser/.pio/build/bounded_core_inert/src/main.cpp.o | grep -E 'ShinoM3P|parseRequest|handleClient|m3p_link_actual_parser' | head -35 || true
+          echo "== FINAL ELF PARSER SYMBOLS =="
+          "$xtensa_nm" -C experiments/link_m3p_parser/.pio/build/bounded_core_inert/firmware.elf | grep -E 'ShinoM3P|parseRequest|handleClient|m3p_link_actual_parser' | head -35 || true
+          echo "== BUILT LOCAL LIBRARY =="
+          find experiments/link_m3p_parser/.pio/build/bounded_core_inert -name '*ESP8266WebServer*' -type f | head -15
       - name: Derive real ELF/BIN sizes and retained bounded-reader symbol
         run: |
           python experiments/link_m3p_parser/report_cost.py
