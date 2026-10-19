@@ -255,8 +255,8 @@
       "sha256": "5f0888a7628fa5cc8f7961aed4ce86ab41713aa9608c75b0624a9207c71007ec"
     },
     "tests/lab.cpp": {
-      "bytes": 3955,
-      "sha256": "40be505d0b8073ea64bedf505fb4e05a2550ee486dad6397518756270888d2f4"
+      "bytes": 4666,
+      "sha256": "0227858a17c44e8286e082c3265104c4e6956e4329fd62e986ce2296c89b0ef7"
     },
     "tests/native_http.cpp": {
       "bytes": 6429,
@@ -283,8 +283,8 @@
       "sha256": "844e6a9c389c7e52408a01c99fbba9894856158adbfbf51191dcfbd46b5d6acb"
     },
     "tests/test_weather.py": {
-      "bytes": 9314,
-      "sha256": "106a9b15b97474ecd48c521675ed090c19ab12d4af9fb303224d0933128b4c04"
+      "bytes": 10385,
+      "sha256": "8fdb9bef663b7db5d8dcf80d9dd1212eb301b4f59270748ce17ea35993bf4da4"
     },
     "vendor/ArduinoJson-LICENSE.txt": {
       "bytes": 1117,
