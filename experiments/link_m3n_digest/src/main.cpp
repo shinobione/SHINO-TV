@@ -5,9 +5,9 @@
 #include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 #include "boot/FslessMetrics.h"
-#include "../link_m3m_native/M3MActualMetricsHandler.h"
-#include "../link_m3c_crypto/M3CBearSslCrypto.h"
-#include "../link_m3f_native/M3FSinglePortPump.h"
+#include "../../link_m3m_native/M3MActualMetricsHandler.h"
+#include "../../link_m3c_crypto/M3CBearSslCrypto.h"
+#include "../../link_m3f_native/M3FSinglePortPump.h"
 #ifndef M3N_NATIVE_AUTH_ENABLE
 #error "Explicit M3N A/B native variant required"
 #endif
