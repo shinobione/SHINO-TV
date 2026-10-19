@@ -123,7 +123,7 @@ class ActualDigestTransportTests(unittest.TestCase):
                 with self.assertRaises(DiagnosticStop):
                     reader.identity()
                 self.assertLessEqual(len(server.requests),2)
-                self.assertTrue(all(req[0]=="GET" and req[1]==ENDPOINT for req in server.requests))
+                self.assertTrue(all(req["method"]=="GET" and req["path"]==ENDPOINT for req in server.requests))
 
     def test_unknown_or_wrong_device_output_does_not_claim_receipt(self):
         self.server.payloads[ENDPOINT]=dict(update_payload(),

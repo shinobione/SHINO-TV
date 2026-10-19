@@ -5,6 +5,7 @@ import subprocess
 import unittest
 from unittest.mock import patch
 
+from link_83_source_identity import LINK83_BLOBS, reviewed_m2_source
 from link_m2_source_identity import (
     LINK_PATH, LINK_B52_PREDECESSOR_BLOB, LINK_M2_FILE_BLOBS,
     LINK_M2_REVIEWED_BLOB, LinkSourceIdentityError,
@@ -16,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class LinkM2ExactIdentityTests(unittest.TestCase):
     def test_exact_current_and_immutable_predecessor_reconstruction(self):
-        current = (ROOT / LINK_PATH).read_bytes().replace(b"\r\n", b"\n")
+        current = reviewed_m2_source((ROOT / LINK_PATH).read_bytes().replace(b"\r\n", b"\n"), LINK_PATH)
         self.assertEqual(git_blob_sha1(current), LINK_M2_REVIEWED_BLOB)
         old = reviewed_link_predecessor(current)
         self.assertEqual(git_blob_sha1(old), LINK_B52_PREDECESSOR_BLOB)
@@ -36,13 +37,15 @@ class LinkM2ExactIdentityTests(unittest.TestCase):
                     subprocess.check_output(
                         ["git", "rev-parse", "HEAD:" + name],
                         cwd=ROOT, text=True,
-                    ).strip(), sha,
+                    ).strip(), LINK83_BLOBS.get(name,sha),
                 )
                 current = (ROOT / name).read_bytes()
+                if name in LINK83_BLOBS:
+                    current = reviewed_m2_source(current,name)
                 self.assertEqual(git_blob_sha1(current), sha)
 
     def test_any_extra_change_in_link_or_foreign_source_rejected(self):
-        current = (ROOT / LINK_PATH).read_bytes()
+        current = reviewed_m2_source((ROOT / LINK_PATH).read_bytes(), LINK_PATH)
         prior = reviewed_link_predecessor(current)
         for variant in (
             current + b"\n# accidental extra change\n",
@@ -56,7 +59,7 @@ class LinkM2ExactIdentityTests(unittest.TestCase):
 
     def test_no_network_or_device_required(self):
         import socket
-        current = (ROOT / LINK_PATH).read_bytes()
+        current = reviewed_m2_source((ROOT / LINK_PATH).read_bytes(), LINK_PATH)
         with patch.object(socket, "socket", side_effect=AssertionError("NO NETWORK")):
             self.assertEqual(git_blob_sha1(reviewed_link_predecessor(current)),
                              LINK_B52_PREDECESSOR_BLOB)

@@ -26,6 +26,11 @@ jobs:
         run: python -m compileall -q companion/link_firmware_identity.py companion/link_mode_tray.py companion/shino_link.py
       - name: Inspect host-only fake transport and tray
         run: python -m unittest discover -s companion -p test_link_firmware_identity.py -v
+      - name: Preserve exact M2 and predecessor source identities
+        run: |
+          python -m unittest discover -s tools -p test_link_83_source_identity.py -v
+          python -m unittest discover -s tools -p test_link_m2_source_identity.py -v
+          python -m unittest discover -s tools -p test_m9_b5_offline_source_pins.py -v
       - name: Retain M1 M2 LINK regressions
         run: |
           python -m unittest discover -s companion -p test_link_display_modes.py -v
