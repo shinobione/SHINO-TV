@@ -17,6 +17,13 @@ L'émulation cryptographique HOST utilise vrai OpenSSL MD5 ;
 le graphe Xtensa compile le véritable BearSSL MD5
 avec ESP8266 Core 3.1.2. **Aucun MD5 accepté pour M3** :
 commande d'écran exclusivement HMAC-SHA256 M3-C.
+[Première CI M3-N #39254265939](https://github.com/shinobione/SHINO-TV/actions/runs/39254265939)
+**2/2 jobs PASS au SHA précédent** ; dans
+deux builds inertes comparables, ajout du noyau
+Digest : **+18 880 o BIN, +224 o BSS, +4 o data**.
+Coût trop important pour une activation immédiate ;
+ne pas cumuler directement avec les deltas
+de bancs non identiques. Requalifier au HEAD final.
 
 **HOLD** : ni listener natif du produit, ni vérification
 d'identité peer depuis vraie socket, ni challenge RNG réel,
