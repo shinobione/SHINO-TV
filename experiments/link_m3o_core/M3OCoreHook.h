@@ -16,7 +16,7 @@ inline uint32_t ip32(const IPAddress& ip) {
     return (uint32_t(ip[0])<<24u)|(uint32_t(ip[1])<<16u)|
            (uint32_t(ip[2])<<8u)|uint32_t(ip[3]);
 }
-inline bool authenticatedNetworkBoundary(const WiFiClient& client) {
+inline bool authenticatedNetworkBoundary(WiFiClient& client) {
     // No accepted socket data is trusted as peer/local identity; only
     // actual WiFiClient metadata. AP fallback is deliberately forbidden.
     if(WiFi.status()!=WL_CONNECTED)return false;
