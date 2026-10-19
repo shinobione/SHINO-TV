@@ -4,6 +4,12 @@
 
 > **À lire avant toute mission** avec `AGENTS.md` et, sur les branches où ils existent, `docs/AGENT_HANDOFF.md` et `docs/ROADMAP.md`. L'état des fichiers sur `main` et les docs historiques peuvent être dépassés. La branche locale de Codex et l'appareil ne sont pas synchronisés automatiquement avec GitHub.
 
+## OBSERVATION PROPRIÉTAIRE — SmallTV redémarré et affichage restauré (19 octobre 2026)
+
+**[Observation consignée #81](https://github.com/shinobione/SHINO-TV/issues/81#issuecomment-6275027781) :** après l'unique OTA signée de 431920 octets (ACK `STAGED_PENDING_BOOT`), le propriétaire confirme **reboot de l'appareil** et **affichage effectif des quatre cartes avec mesures, date et heure**. **OBSERVÉ** : système d'affichage fonctionnel, et non scénario LCD définitivement noir. **NON VÉRIFIÉ** : identité exacte du build *actuellement* exécuté (B5.4 vs une autre image), SHA/sketch bytes/boot-id, LittleFS/météo postboot, état VM. Le premier GET postboot lancé trop tôt a expiré, avec 0 GET enregistré comme envoyé ; cette expiration ne démontre pas un boot défectueux.
+
+**Écriture : STOP_UNKNOWN_NO_RETRY toujours actif**, aucune reprise OTA ni effacement des reçus/marqueurs/backup. Prochaine opération seulement **sur nouveau GO spécifique du propriétaire** : une lecture authentifiée GET unique de `/api/v1/update/status`, client adapté pour valider l'identité B5.4 attendue depuis les vrais reçus privés (ne pas figer l'ancien P0), pour confirmer l'exécution du build. Aucun nouveau POST, flash, redémarrage, COM/UART ni activation du publisher météo VM. L'ancien état « boot inconnu » ci-dessous est un snapshot historique avant l'observation LCD.
+
 ## URGENT — OTA B5.4 physiquement tentée, BOOT INCONNU (19 octobre 2026)
 
 **Source la plus récente :** [reçu Codex #81](https://github.com/shinobione/SHINO-TV/issues/81#issuecomment-6274872177) et [revue propriétaire #81](https://github.com/shinobione/SHINO-TV/issues/81#issuecomment-6274986913). **Une seule OTA LAN réelle** de **431920 octets** avec le client one-shot corrigé a reçu `STAGED_PENDING_BOOT`. **BOOT B5.4 NON CONFIRMÉ** : première tentative de contrôle 8 s plus tard, timeout client 3 s, **0 GET postboot comptabilisé comme émis**. On ne peut donc affirmer ni B5.4 démarré ni appareil briqué. P0+512 est la dernière identité physique **avant** l'OTA, pas une identité actuelle. **`STOP_UNKNOWN_NO_RETRY` actif, GO one-shot consommé**, tous marqueurs, reçus et backups conservés ; aucune réexécution ni nouvelle lecture autorisée par la présente revue.
