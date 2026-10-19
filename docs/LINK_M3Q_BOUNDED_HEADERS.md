@@ -40,8 +40,9 @@ protégées par le présent validateur M3-Q.
 
 ## Observations, incidents et limites
 
-- Tests locaux HOST C++ et ASan/UBSan exécutés le 19 octobre 2026 :
-  PASS. Scénarios : fragmentation, slowloris et millis wrap, erreur EOF,
+- Tests C++ HOST vérifiés dans la CI GitHub du 19 octobre 2026 :
+  PASS. Exécution indépendante ASan/UBSan locale : **NON VÉRIFIÉE**.
+  Scénarios : fragmentation, slowloris et millis wrap, erreur EOF,
   NUL, CR/LF, headers dupliqués, valeurs/content length ambiguës,
   320 accepté / 321 refusé, body strictement non consommé.
 - Incident initial du laboratoire : le validateur bloquait par erreur CR/LF
@@ -49,7 +50,7 @@ protégées par le présent validateur M3-Q.
   Correction : exception explicite CR/LF dans le contrôle des octets,
   puis tests recompilés. Premier essai des tests a aussi eu une erreur
   de compilation HOST : argument de tick non exploité ; corrigé.
-- **CI vérifiée le 19 octobre 2026**, commit de code \`56f0fb671d891c3bf18808fbd05950c75006030e\`, [run #39279419973](https://github.com/shinobione/SHINO-TV/actions/runs/39279419973) : **2/2 jobs ciblés SUCCESS** (HOST + Xtensa inert).
+- **CI vérifiée le 19 octobre 2026**, commit de code `56f0fb671d891c3bf18808fbd05950c75006030e`, [run #39279419973](https://github.com/shinobione/SHINO-TV/actions/runs/39279419973) : **2/2 jobs ciblés SUCCESS** (HOST + Xtensa inert).
   Le journal de job Xtensa affiche ces mesures directement dérivées des images **INERTES** :
 
   | Mesure | M3-P inerte | M3-P + M3-Q inerte | Différence |
@@ -59,15 +60,15 @@ protégées par le présent validateur M3-Q.
   | ELF .data | 1 552 B | 1 552 B | **0 B** |
   | ELF .bss | 25 984 B | 26 320 B | **+336 B** |
 
-  BIN inerte de référence SHA-256 : \`4fdeddee5596669b6afef906afe6f2580df7763a2e9cdac543812f33c202c59f\` ;
-  BIN inerte M3-Q SHA-256 : \`225cbeb00d2550b2516d2e265175ec80e4c43f7e1ba252c041d9c9f35a0fd9b3\`.
+  BIN inerte de référence SHA-256 : `4fdeddee5596669b6afef906afe6f2580df7763a2e9cdac543812f33c202c59f` ;
+  BIN inerte M3-Q SHA-256 : `225cbeb00d2550b2516d2e265175ec80e4c43f7e1ba252c041d9c9f35a0fd9b3`.
   Ce ne sont **pas** les empreintes du firmware installé ni un candidat OTA.
   Le symbole du lecteur est retenu dans l'ELF modifié, absent du témoin.
-  Codegen GCC : lecteur 48 B de frame, \`validLine\` 64 B, \`decimal\` 64 B ;
+  Codegen GCC : lecteur 48 B de frame, `validLine` 64 B, `decimal` 64 B ;
   ces frames ne sont PAS des mesures de la marge CONT physique ou du callgraph complet.
   Au même SHA, l'ensemble GitHub affiche **30 SUCCESS, 32 SKIPPED et 4 CANCELLED** parmi 66 checks :
   ne pas réduire ce résultat à « toutes les CI PASS ».
-- **Conséquence de conception :** le garde M3-Q ne conserve pas les valeurs d'en-têtes ; M3-C dispose déjà d'un \`Gate::headerByte\` borné, qui conserve et authentifie le message avant le corps.
+- **Conséquence de conception :** le garde M3-Q ne conserve pas les valeurs d'en-têtes ; M3-C dispose déjà d'un `Gate::headerByte` borné, qui conserve et authentifie le message avant le corps.
   Hypothèse M3-R à TESTER : ne garder qu'un chemin de parsing réellement utilisé (en réintroduisant dans M3-C la ligne exacte déjà validée par M3-P), au lieu de cumuler une instance M3-Q + le buffer de M3-C. Nécessite preuve de framing, identité, HMAC, zéro lecture de body pré-auth, EOF/reconnexion, mémoire de l'application entière et parité legacy. **Pas encore implémenté.**
 - Le profil normal 4m2m, Digest B5.3, LittleFS, OTA, Wi-Fi Freebox, LCD
   et SHINO LINK Windows restent intacts. Aucun build laboratoire n'est

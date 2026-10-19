@@ -9,9 +9,9 @@ Lecteur de headers M3 uniquement, 320 caractères par ligne,
 960 octets cumulés, 11 champs obligatoires, délai absolu 1000 ms,
 un octet par read, rejet de doublons, TE, Origin, framing ambigu ;
 ne consomme jamais le corps. ReadyForAuth n'autorise rien.
-Tests C++ HOST et ASan/UBSan locaux rapportés PASS.
+Tests C++ HOST GitHub PASS ; ASan/UBSan local : NON VÉRIFIÉ.
 CI [M3-Q #39279419973](https://github.com/shinobione/SHINO-TV/actions/runs/39279419973) :
-**2/2 ciblés PASS** sur code \`56f0fb671d891c3bf18808fbd05950c75006030e\`.
+**2/2 ciblés PASS** sur code `56f0fb671d891c3bf18808fbd05950c75006030e`.
 Deux images **inertes** donnent : +1 440 B BIN, +1 436 B .text,
 +336 B .bss, +0 B .data. Pas de preuve mémoire produit/CONT.
 Architecture suivante M3-R en hypothèse : éviter double parser M3-Q/M3-C
