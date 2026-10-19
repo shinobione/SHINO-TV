@@ -25,6 +25,21 @@ Coût trop important pour une activation immédiate ;
 ne pas cumuler directement avec les deltas
 de bancs non identiques. Requalifier au HEAD final.
 
+**Correction de revue Core 3.1.2** : le hook
+`ESP8266WebServer::addHook` reçoit `WiFiClient*`
+après lecture de la ligne HTTP, **avant les headers
+et le corps**, et peut rendre `CLIENT_IS_GIVEN`.
+Cela pourrait conserver **le véritable serveur B5.3
+avec ses handlers Digest** tout en transférant la
+seule route M3 pré-corps. Ce mécanisme **n'est pas
+encore testé en trafic réel**, et la ligne HTTP
+`String` non plafonnée avant hook reste un **risque
+mémoire bloquant**. Vérification de l'ordre
+source ajoutée à CI épinglée M3-N. Prochaine étape
+M3-O : test de conservation/copie de client,
+ordre des hooks, et garde de longueur ; ne pas
+poursuivre la réécriture complète de Digest par défaut.
+
 **HOLD** : ni listener natif du produit, ni vérification
 d'identité peer depuis vraie socket, ni challenge RNG réel,
 ni parité de toutes les routes/clients historiques (Basic,
