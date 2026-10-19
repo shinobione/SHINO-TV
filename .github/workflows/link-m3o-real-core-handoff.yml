@@ -1,0 +1,114 @@
+name: LINK M3-O original ESP8266WebServer client handoff (INERT NO DEVICE)
+on:
+  pull_request:
+    paths:
+      - 'experiments/link_m3o_core/**'
+      - 'docs/LINK_M3O_CLIENT_HANDOFF.md'
+      - 'docs/ROADMAP.md'
+      - '.github/workflows/link-m3o-real-core-handoff.yml'
+permissions:
+  contents: read
+jobs:
+  host-lifecycle:
+    name: One borrowed client, legacy unaffected, STOP and no body read
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Compile strict C++ fake-client lifetime tests
+        run: |
+          g++ -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \
+            -fno-exceptions -fno-rtti \
+            -I experiments/link_m3o_core \
+            experiments/link_m3o_core/test_client_handoff.cpp \
+            -o "${{ runner.temp }}/m3o_host"
+      - name: Run deterministic ownership, close-once, timeout and abort tests
+        run: "${{ runner.temp }}/m3o_host"
+      - name: Verify pinned real B5.3 legacy HTTP route and order
+        run: |
+          python -m unittest discover -s experiments/link_m3e_legacy -p 'test_b53_source_pins.py' -v
+          python - <<'PY'
+          from pathlib import Path
+          s=Path("firmware/src/boot/FirstBootBridge.cpp").read_text()
+          assert 'ESP8266WebServer server(80);' in s
+          assert 'server.setHomeLanPrebody(' in s
+          assert 'server.addHook(' in s
+          assert 'HomeLan::registerRoutes(' in s
+          assert 'server.on("/api/v1/bridge/metrics", HTTP_POST, acceptMetrics);' in s
+          assert 'server.on("/api/v1/bridge/metrics", HTTP_GET, sendMetrics);' in s
+          assert 'server.handleClient();' in s
+          assert "M3OCoreHook" not in s
+          print("M3O_OLD_SERVER_ROUTES_UNTOUCHED_PASS")
+          PY
+
+  pinned-xtensa-actual-hook:
+    name: Pinned native Core 3.1.2 addHook and CLIENT_IS_GIVEN build + memory costs
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Inert-only no begin, no OTA, no real keys
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path("experiments/link_m3o_core/src/main.cpp").read_text()
+          h=Path("experiments/link_m3o_core/M3OCoreHook.h").read_text()
+          assert 'volatile bool unreachableTestEnable=false;' in s
+          assert 'void setup(){}' in s
+          assert 'dormantOriginalServer(80)' in s
+          for forbidden in ("server.begin(", "WiFi.begin(", "WiFi.mode(",
+                            "Update.begin(", "LittleFS.begin(", "ESP.restart("):
+              assert forbidden not in s+h, forbidden
+          assert 'return S::CLIENT_IS_GIVEN;' in h
+          assert 'return S::CLIENT_MUST_STOP;' in h
+          assert 'return S::CLIENT_REQUEST_CAN_CONTINUE;' in h
+          print("M3O_DEFAULT_INERT_NO_NETWORK_PASS")
+          PY
+      - name: Install pinned toolchain
+        run: python -m pip install 'platformio==6.1.18'
+      - name: Build original server object Xtensa baseline
+        run: pio run -d experiments/link_m3o_core -e core_baseline
+      - name: Compile and link real ESP8266WebServer addHook copied WiFiClient path
+        run: pio run -d experiments/link_m3o_core -e core_hook_inert
+      - name: Pin Core 3.1.2 handoff lifecycle, hook order and long-line blocker
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          source=Path.home()/".platformio/packages/framework-arduinoespressif8266/libraries/ESP8266WebServer/src"
+          parsing=(source/"Parsing-impl.h").read_text()
+          impl=(source/"ESP8266WebServer-impl.h").read_text()
+          hdr=(source/"ESP8266WebServer.h").read_text()
+          first=parsing.index("String req = client.readStringUntil('\\r')")
+          hook=parsing.index("_hook(methodStr, url, &client, mime::getContentType)")
+          further=parsing.index("req = client.readStringUntil('\\r')",first+1)
+          assert first<hook<further
+          assert 'case CLIENT_IS_GIVEN:' in impl
+          assert 'client must not be stopped but must not be handled here anymore' in impl
+          assert impl.index('case CLIENT_IS_GIVEN:')<impl.index('_currentClient = ClientType();')
+          assert 'void addHook' in hdr and 'auto previousHook = _hook;' in hdr
+          assert 'auto whatNow = previousHook(' in hdr
+          assert 'if (whatNow == CLIENT_REQUEST_CAN_CONTINUE)' in hdr
+          print("M3O_CORE_3_1_2_TRUE_HOOK_ORDER_PASS")
+          print("M3O_UNBOUNDED_REQUEST_LINE_STILL_HOLD")
+          print("PINNED_PARSER_SHA256",hashlib.sha256((source/"Parsing-impl.h").read_bytes()).hexdigest())
+          PY
+      - name: Derive actual inert ELF BIN BSS and compiler stack traces
+        run: |
+          python experiments/link_m3o_core/report_native_cost.py
+          cat experiments/link_m3o_core/m3o_inert_handoff_cost.json >> "${GITHUB_STEP_SUMMARY}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m3o-inert-esp8266core-client-handoff
+          path: experiments/link_m3o_core/m3o_inert_handoff_cost.json
+          if-no-files-found: error
+          retention-days: 7
