@@ -253,6 +253,7 @@ public:
         while(at<bytes){
             size_t end=at;
             while(end<bytes && cookie[end]!=';')++end;
+            const size_t next=end<bytes?end+1u:bytes;
             while(at<end && cookie[at]==' ')++at;
             while(end>at && cookie[end-1u]==' ')--end;
             const size_t len=end-at;
@@ -261,7 +262,7 @@ public:
                 ++hits;
                 found={cookie+at+sizeof(marker)-1u,len-(sizeof(marker)-1u)};
             }
-            at=end<bytes?end+1u:bytes;
+            at=next;
         }
         if(hits!=1u||!lowerHex(found,32u))return false;
         for(const auto& s:slots_){
