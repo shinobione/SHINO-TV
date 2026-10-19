@@ -15,10 +15,19 @@ validation CRLF et rejet exact des variantes M3 non conformes,
 Même serveur B5.3 historique en conception, pas de
 réécriture du Digest ni second serveur.
 
-La CI doit prouver le code exécuté dans la compilation
-Xtensa (symbole du lecteur borné, vraie source Core clone)
-et sa différence BIN/BSS, ainsi que la résistance à
-ligne trop longue, connexion lente et LF malformé en HOST.
+La CI a prouvé sur le commit de code
+`7d0dbb78f48e689468a3a72996a1a6d43debb647`
+([run M3-P #39261356802](https://github.com/shinobione/SHINO-TV/actions/runs/39261356802))
+**2/2 jobs PASS** : symboles du lecteur effectivement
+présents dans l'ELF, vrai Core source épinglé et
+requêtes longues/lentes/malformées refusées sur HOST.
+Coût comparatif de ces **deux programmes inertes** :
+**+448 octets de BIN, +452 octets ELF text,
+0 octet de BSS/data ajouté**. Pas une mesure de
+heap ou de CONT physique. Les échecs initiaux,
+leurs causes et leurs correctifs sont consignés
+dans le journal de bord M3-P. Revalider le nouveau
+SHA après les mises à jour documentaires.
 Voir [Journal de bord M3-P](LINK_M3P_BOUNDED_CORE.md).
 
 **HOLD inchangé :** les anciens en-têtes Core sont
