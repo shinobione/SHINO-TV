@@ -90,7 +90,7 @@ jobs:
           hdr=(source/"ESP8266WebServer.h").read_text()
           first=parsing.index("String req = client.readStringUntil('\\r')")
           hook=parsing.index("_hook(methodStr, url, &client, mime::getContentType)")
-          further=parsing.index("req = client.readStringUntil('\\r')",first+1)
+          further=parsing.index("req = client.readStringUntil('\\r')",hook+1)
           assert first<hook<further
           assert 'case CLIENT_IS_GIVEN:' in impl
           assert 'client must not be stopped but must not be handled here anymore' in impl
