@@ -83,6 +83,54 @@ class IntegratedWeather(unittest.TestCase):
   with ThreadPoolExecutor(max_workers=2) as pool:codes=list(pool.map(lambda _:self.post(frame)[0],range(2)))
   self.command('disarm nested');self.assertLessEqual(codes.count(200),1)
   self.assertIn(self.status()['sequence'],(0,1));stats=self.command('stats');self.assertEqual(stats['sdk_writes'],0);self.assertEqual(stats['flash_writes'],0)
+ def until_drawn(self,criterion,description,seconds=3):
+  deadline=time.monotonic()+seconds
+  last={}
+  while time.monotonic()<deadline:
+   last=self.command('display')
+   if criterion(last):return last
+   time.sleep(.012)
+  self.fail('LCD HOST '+description+': '+repr(last))
+ def test_http_signed_weather_reaches_lcd_when_pc_off(self):
+  # Actual HTTP POST -> native B54 receiver -> B52Clock/renderer -> HOST GFX print.
+  self.command('display reset')
+  self.assertEqual(self.post(self.sample())[0],200)
+  frame=self.until_drawn(lambda d:d['temp'] and d['condition'],'autonomous weather')
+  self.assertFalse(any(frame[x] for x in ('cpu','gpu','ram','gpu_temp')))
+  self.command('display reset')
+  self.command('advance 2701000')
+  stale=self.until_drawn(lambda d:d['stale'],'expired weather')
+  self.assertFalse(stale['temp'] or stale['condition'])
+  self.assertEqual(self.command('stats')['sdk_writes'],0)
+ def test_http_weather_and_link_share_actual_lcd(self):
+  self.command('display reset')
+  raw=json.dumps(dict(ok=True,gpu_available=True,cpu_usage=22.5,gpu_usage=34.5,
+   memory_used_gb=8,memory_total_gb=16,gpu_vram_mb=2048,gpu_temp_c=56,gpu_power=120)).encode()
+  self.assertEqual(self.auth('/api/v1/bridge/metrics',raw)[0],200)
+  self.assertEqual(self.post(self.sample())[0],200)
+  frame=self.until_drawn(lambda d:d['temp'] and d['condition'] and
+   all(d[x] for x in ('cpu','gpu','ram','gpu_temp')),'combined weather + four cards')
+  self.assertGreater(frame['operations'],0)
+  self.assertEqual(self.command('stats')['flash_writes'],0)
+ def refuse_under_resource(self,case):
+  # Real deferred HTTP handler; all resource injection stays inside HOST.
+  frame=self.sample()
+  self.command('display reset')
+  self.assertTrue(self.command('resource '+case)['ok'])
+  self.assertEqual(self.wire(STATUS+NONCE.hex())[0],503,case)
+  self.assertEqual(self.post(frame)[0],503,case)
+  writes=self.command('stats')
+  self.assertEqual([writes[k] for k in ('sdk_writes','flash_writes','restarts')],[0,0,0],case)
+  screen=self.command('display')
+  self.assertFalse(screen['temp'] or screen['condition'],case)
+ def test_weather_refuses_low_heap_without_flash_or_draw(self):
+  self.refuse_under_resource('heap-low') # native floor 20480
+ def test_weather_refuses_smallest_block_without_flash_or_draw(self):
+  self.refuse_under_resource('block-low') # native floor 16384
+ def test_weather_refuses_low_cont_without_flash_or_draw(self):
+  self.refuse_under_resource('cont-low') # native floor 2048
+ def test_weather_refuses_fragmentation_without_flash_or_draw(self):
+  self.refuse_under_resource('frag-high') # native ceiling 25
  def publisher(self,lost=False):
   owner=self
   class Loopback(pub.LanTransport):

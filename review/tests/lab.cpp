@@ -7,11 +7,17 @@
 static unsigned nestedCalls=0;
 static void stats(){
  const auto m=FslessMetrics::snapshot();
+ eboot_command boot{};
+ const bool rtcPending=eboot_command_read(&boot)==0;
+ bool fsPreserved=true;
+ for(size_t at=0x200000;at<ESP.flash.size();++at)if(ESP.flash[at]!=0xff){fsPreserved=false;break;}
  std::cout<<"{\"sdk_writes\":"<<testWrites<<",\"flash_writes\":"<<ESP.writeCalls
  <<",\"restarts\":"<<ESP.restarts<<",\"nested_calls\":"<<nestedCalls
  <<",\"samples\":"<<M9NormalStageA::diagnosticJournal.control.word[B53Diagnostic::Samples]
  <<",\"cpu\":"<<m.cpu<<",\"gpu\":"<<m.gpu<<",\"ram\":"<<m.memoryGb<<",\"temperature\":"<<m.gpuTempC
- <<",\"lcd_operations\":"<<DisplayManager::gfx.operations<<"}"<<std::endl;
+ <<",\"lcd_operations\":"<<DisplayManager::gfx.operations
+ <<",\"rtc_pending\":"<<(rtcPending?"true":"false")
+ <<",\"fs_preserved\":"<<(fsPreserved?"true":"false")<<"}"<<std::endl;
 }
 int main(){
 #ifdef _WIN32
@@ -33,9 +39,41 @@ int main(){
   std::string command;{std::lock_guard<std::mutex> lock(mutex);if(!commands.empty()){command=commands.front();commands.pop_front();}}
   if(!command.empty()){
    if(command=="sntp"){if(sntpCallback)sntpCallback(true);std::cout<<"{\"ok\":true}"<<std::endl;continue;}
+   if(command=="display reset"){DisplayManager::gfx.clearPrinted();std::cout<<"{\"ok\":true}"<<std::endl;continue;}
+   if(command=="display"){
+    const auto& gfx=DisplayManager::gfx;
+    std::cout<<"{\"temp\":"<<(gfx.has("18.2")?"true":"false")
+             <<",\"condition\":"<<(gfx.has("Cloudy")?"true":"false")
+             <<",\"stale\":"<<(gfx.has("WEATHER STALE")?"true":"false")
+             <<",\"unavailable\":"<<(gfx.has("WEATHER --")?"true":"false")
+             <<",\"cpu\":"<<(gfx.has("CPU")?"true":"false")
+             <<",\"gpu\":"<<(gfx.has("GPU")?"true":"false")
+             <<",\"ram\":"<<(gfx.has("RAM")?"true":"false")
+             <<",\"gpu_temp\":"<<(gfx.has("GPU temp")?"true":"false")
+             <<",\"text_count\":"<<gfx.printed.size()
+             <<",\"operations\":"<<gfx.operations<<"}"<<std::endl;
+    continue;
+   }
+   // RAM-only synthetic Core flash fault injection, never a device action.
+   if(command=="fault erase"){ESP.failErase=true;std::cout<<"{\"ok\":true}"<<std::endl;continue;}
+   if(command=="fault write"){ESP.failWrite=true;std::cout<<"{\"ok\":true}"<<std::endl;continue;}
+   if(command=="fault read"){ESP.failRead=true;std::cout<<"{\"ok\":true}"<<std::endl;continue;}
+   if(command=="fault clear"){ESP.failErase=ESP.failWrite=ESP.failRead=false;std::cout<<"{\"ok\":true}"<<std::endl;continue;}
    if(command=="stats"){stats();continue;}
    if(command=="stop"){stop=true;continue;}
    if(command=="mode lan"){WiFi.wifiStatus=WL_CONNECTED;WiFi.sta=IPAddress(10,23,42,82);testLocal=WiFi.sta;testPeer=IPAddress(10,23,42,10);}
+   // Synthetic HOST-only resource failure injection. Never changes the
+   // native admission floors and never touches any ESP/device register.
+   if(command=="resource nominal"){ESP.heap=60000;hostBlock=50000;hostStack=3248;hostFrag=1;
+    std::cout<<"{\"ok\":true}"<<std::endl;continue;}
+   if(command=="resource heap-low"){ESP.heap=20479;
+    std::cout<<"{\"ok\":true}"<<std::endl;continue;}
+   if(command=="resource block-low"){hostBlock=16383;
+    std::cout<<"{\"ok\":true}"<<std::endl;continue;}
+   if(command=="resource cont-low"){hostStack=2044;
+    std::cout<<"{\"ok\":true}"<<std::endl;continue;}
+   if(command=="resource frag-high"){hostFrag=26;
+    std::cout<<"{\"ok\":true}"<<std::endl;continue;}
    if(command=="heap low")ESP.heap=20479;
    if(command=="heap normal")ESP.heap=60000;
    if(command=="mode ap"){testLocal=IPAddress(192,168,4,1);testPeer=IPAddress(192,168,4,2);}

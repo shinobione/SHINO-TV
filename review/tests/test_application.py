@@ -33,6 +33,25 @@ class Application(unittest.TestCase):
   raw=fixture();code,body=self.wire('/api/v1/update','POST',raw,self.headers(raw));self.assertEqual(code,200,body)
   self.assertEqual(json.loads(body)['status'],'STAGED_PENDING_BOOT');stats=self.command('stats')
   self.assertGreater(stats['flash_writes'],0);self.assertEqual(stats['sdk_writes'],0);self.assertEqual(stats['restarts'],1)
+  self.assertTrue(stats['rtc_pending']);self.assertTrue(stats['fs_preserved'])
+ def faulted_transfer(self,fault):
+  # Synthetic RAM flash; no real UART/RTC/flash or real firmware file.
+  raw=fixture()
+  headers=self.headers(raw)
+  self.assertTrue(self.command('fault '+fault)['ok'])
+  code,body=self.wire('/api/v1/update','POST',raw,headers)
+  self.assertEqual(code,422,(fault,body))
+  stats=self.command('stats')
+  self.assertFalse(stats['rtc_pending'],fault) # no eboot switch command
+  self.assertTrue(stats['fs_preserved'],fault) # all protected sectors remain untouched
+  self.assertEqual(stats['restarts'],0,fault)
+  self.assertEqual(stats['sdk_writes'],0,fault)
+ def test_core_erase_failure_no_eboot_commit_or_fs_write(self):
+  self.faulted_transfer('erase')
+ def test_core_write_failure_no_eboot_commit_or_fs_write(self):
+  self.faulted_transfer('write')
+ def test_core_readback_failure_no_eboot_commit_or_fs_write(self):
+  self.faulted_transfer('read')
  def test_wrong_hmac_refused_before_ram_flash_write(self):
   raw=fixture();self.assertEqual(self.wire('/api/v1/update','POST',raw,self.headers(raw,True))[0],503)
   stats=self.command('stats');self.assertEqual(stats['flash_writes'],0);self.assertEqual(stats['sdk_writes'],0);self.assertEqual(stats['restarts'],0)

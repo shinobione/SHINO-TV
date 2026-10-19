@@ -23,6 +23,88 @@ static void setup(Receiver& r){
 static std::string hex(const uint8_t* p,size_t n){
  static const char alphabet[]="0123456789abcdef";std::string s;for(size_t i=0;i<n;++i){s+=alphabet[p[i]>>4];s+=alphabet[p[i]&15];}return s;
 }
+// The same pure renderer used by native B52Clock, with an instrumented LCD
+// canvas. This is a HOST drawing contract, never a hardware LCD assertion.
+#include <display/SceneEngine.h>
+struct WxDrawProbe final : ArtworkPilot::Canvas {
+ struct Label { std::string value; int x,y; uint8_t scale; };
+ std::vector<Label> labels;
+ unsigned cardWrites=0;
+ void fill(int x,int y,int w,int h,uint16_t) override {
+  assert(x>=0&&y>=0&&w>=0&&h>=0&&x+w<=240&&y+h<=240);
+  if(y>=106)++cardWrites;
+ }
+ void text(int x,int y,const char* s,uint16_t,uint8_t scale=1) override {
+  assert(x>=0&&x<240&&y>=0&&y<240&&s&&scale>=1);
+  labels.push_back({s,x,y,scale});
+ }
+ uint8_t glyphColumn(uint8_t,unsigned) override {return 0;}
+ void row(int x,int y,uint16_t* pixels,int count,int repeats) override {
+  assert(pixels&&x>=0&&y>=0&&count>=0&&repeats>=0&&x+count<=240&&y+repeats<=240);
+ }
+ bool has(const char* text) const {
+  for(const auto& label:labels)if(label.value==text)return true;
+  return false;
+ }
+ void clear(){labels.clear();cardWrites=0;}
+};
+static void paintWeatherToIdle(ArtworkPilot::Renderer& renderer,WxDrawProbe& probe,uint32_t now){
+ bool done=false;
+ for(unsigned i=0;i<100;++i)if(!renderer.step(probe,{},now)){done=true;break;}
+ assert(done); // bounded cooperative progress; no drawing starvation.
+}
+static void renderWeatherGate(const std::vector<uint8_t>& wire){
+ B54LanWeather::Receiver receiver;setup(receiver);
+ assert(receiver.receive(wire.data(),wire.size(),1791955392,true,1000,key)==B54LanWeather::Result::Accepted);
+ const auto& state=receiver.state();
+ ArtworkPilot::WeatherData fresh{};
+ fresh.valid=state.have;fresh.synthetic=false;fresh.tenthsC=state.tenths;
+ fresh.wmoCode=state.wmo;fresh.observedMs=state.acceptedMs;fresh.validForMs=state.leaseMs;
+ assert(fresh.valid&&fresh.tenthsC==182&&fresh.wmoCode==3&&fresh.validForMs>0);
+
+ ArtworkPilot::ClockData clock{};
+ clock.valid=true;clock.year=2026;clock.month=10;clock.day=19;
+ clock.hour=12;clock.minute=34;clock.observedMs=1000;
+ clock.validForMs=86400000;clock.source=ArtworkPilot::ClockSource::Sntp;
+
+ // PC connected: actual renderer draws signed weather plus all four metrics.
+ ArtworkPilot::Renderer online;WxDrawProbe lcd;
+ online.setClock(clock);online.setMetrics({22,34,8,16,56,true,false});
+ online.setWeather(fresh);paintWeatherToIdle(online,lcd,1000);
+ for(const char* label:{"CPU","GPU","RAM","GPU temp","18.2","Cloudy","12:34"})
+  assert(lcd.has(label));
+ assert(lcd.cardWrites>0);
+
+ // Trust loss: the receiver latches stale; the renderer must erase the
+ // temperature and must not overwrite existing metric-card pixels.
+ receiver.poll(1791955392,false,1002);
+ assert(!receiver.state().fresh);
+ ArtworkPilot::WeatherData stale=fresh;stale.validForMs=0;
+ lcd.clear();online.setWeather(stale);paintWeatherToIdle(online,lcd,1002);
+ assert(lcd.has("WEATHER STALE")&&!lcd.has("18.2")&&!lcd.has("Cloudy"));
+ assert(lcd.cardWrites==0);
+
+ // PC absent: autonomous time and weather remain, but stale PC metrics
+ // cannot be presented as live readings.
+ ArtworkPilot::Renderer offline;WxDrawProbe unplugged;
+ offline.setClock(clock);offline.setMetrics({22,34,8,16,56,true,true});
+ offline.setWeather(fresh);paintWeatherToIdle(offline,unplugged,1000);
+ assert(unplugged.has("12:34")&&unplugged.has("18.2")&&unplugged.has("Cloudy"));
+ for(const char* label:{"CPU","GPU","RAM","GPU temp"})
+  assert(!unplugged.has(label));
+
+ unplugged.clear();offline.setWeather(stale);
+ paintWeatherToIdle(offline,unplugged,1002);
+ assert(unplugged.has("WEATHER STALE")&&!unplugged.has("18.2"));
+
+ // No accepted sample must show an explicit unavailable state.
+ ArtworkPilot::Renderer noSample;WxDrawProbe empty;
+ noSample.setClock(clock);noSample.setMetrics({0,0,0,0,0,false,true});
+ paintWeatherToIdle(noSample,empty,1000);
+ assert(empty.has("WEATHER --")&&!empty.has("18.2"));
+ std::puts("B54_WEATHER_RENDER_HOST_PASS signed_sample/cards/pc_off/trust_loss/stale/absent");
+}
+
 int main(int argc,char**){
  if(argc>1){
   Receiver receiver;setup(receiver);std::string line;
@@ -68,5 +150,6 @@ int main(int argc,char**){
  for(size_t n=0;n<80;++n){Receiver cut;setup(cut);assert(cut.receive(frame.data(),n,1791955392,true,0,key)==Result::Framing);}
  r.poll(1791955392,false,1002);assert(!r.state().fresh);
  r.poll(1791955392,true,1003);assert(!r.state().fresh); // Trust loss cannot revive.
+ renderWeatherGate(frame);
  std::printf("B54_LAN_NATIVE_HOST_PASS corrupt_bytes=80 truncations=80 replay/no-mutation/clock-trust sizeof(State)=%zu sizeof(Workspace)=%zu\n",sizeof(State),sizeof(Workspace));
 }

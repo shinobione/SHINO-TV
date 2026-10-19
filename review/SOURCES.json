@@ -255,16 +255,16 @@
       "sha256": "5f0888a7628fa5cc8f7961aed4ce86ab41713aa9608c75b0624a9207c71007ec"
     },
     "tests/lab.cpp": {
-      "bytes": 3103,
-      "sha256": "1da08debd9e7337f13e76efeab55fe6cd0c5293fae8bac41129c2725cf560b75"
+      "bytes": 5465,
+      "sha256": "9ea1ea490048f340d2911cc72a56b71ac8ba11b86e4281c6d4f92cd94389c774"
     },
     "tests/native_http.cpp": {
       "bytes": 6429,
       "sha256": "2f8360cfa86dd096da47d8358766cd2675e73ed0290bd34d5dfb526dcfbe7f70"
     },
     "tests/native_receiver.cpp": {
-      "bytes": 4150,
-      "sha256": "e01e478a265e4b713872077c44ebdab92acb662d59e125b7888812ee58e34a23"
+      "bytes": 8111,
+      "sha256": "9b7dd9bac9600c526fde91f5745c39fc7d26a78ec7b38c6743f1c39d1c85ec01"
     },
     "tests/network_lab.cpp": {
       "bytes": 5929,
@@ -275,16 +275,16 @@
       "sha256": "2aaa510ac2bfaef5364e3e2697a13dc17695657a8bca38086830a11912de80e4"
     },
     "tests/test_application.py": {
-      "bytes": 3359,
-      "sha256": "82596f4ce8d8c7d0ce18081094823db5fe417917ff49b51994606e035437e315"
+      "bytes": 4321,
+      "sha256": "8a95e95c9a33547db042e20c54ef567b501ebfaccecbb7e7960702d9cb3f7957"
     },
     "tests/test_source.py": {
       "bytes": 1923,
       "sha256": "844e6a9c389c7e52408a01c99fbba9894856158adbfbf51191dcfbd46b5d6acb"
     },
     "tests/test_weather.py": {
-      "bytes": 7767,
-      "sha256": "802ef6a03e9838c1d950fe6b0fc93e499f0b0ee665f02267bd6dec9a3e637e9e"
+      "bytes": 10385,
+      "sha256": "8fdb9bef663b7db5d8dcf80d9dd1212eb301b4f59270748ce17ea35993bf4da4"
     },
     "vendor/ArduinoJson-LICENSE.txt": {
       "bytes": 1117,
@@ -503,8 +503,8 @@
       "sha256": "820cbb9b23786550f526c170672de0a4019c664dc412b406ba24dd0731f394f8"
     },
     "host/display/DisplayManager.h": {
-      "bytes": 1195,
-      "sha256": "cca933b856fc94d1470dd0b6320f3147adc17d061580f116bbd2d811bdae2b6b"
+      "bytes": 1724,
+      "sha256": "45654c7b934c797d3475ea98e61d2c03e6451a00c2a7afff6da73aec1e564f1f"
     },
     "host/display/SceneEngine.h": {
       "bytes": 27926,
