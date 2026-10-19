@@ -2,7 +2,14 @@
 // Uses one original server, never .begin(), never enables a command.
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
+#if SHINO_M3P_BOUNDED==1
+// Select the isolated SOURCE-PATCHED header explicitly: the bundled
+// framework library can win PlatformIO's normal <ESP8266WebServer.h>
+// resolution even when an alternate library has been compiled.
+#include "../.pio/m3p-venv/ESP8266WebServer/src/ESP8266WebServer.h"
+#else
 #include <ESP8266WebServer.h>
+#endif
 #include "../../link_m3o_core/M3OCoreHook.h"
 #ifndef SHINO_M3P_BOUNDED
 #error explicit A/B Core3.1.2 parser profile required
