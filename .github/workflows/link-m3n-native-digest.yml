@@ -90,6 +90,33 @@ jobs:
         run: |
           python experiments/link_m3n_digest/report_native_delta.py
           cat experiments/link_m3n_digest/m3n_inert_digest_resource_receipt.json >> "${GITHUB_STEP_SUMMARY}"
+      - name: Verify REAL PINNED ESP8266 3.1.2 hook gives borrowed client before headers/body
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          packages=Path.home()/".platformio/packages"
+          paths=list(packages.glob("framework-arduinoespressif8266*/libraries/ESP8266WebServer/src/Parsing-impl.h"))
+          assert len(paths)==1, paths
+          parsing=paths[0].read_bytes()
+          s=parsing.decode("utf-8")
+          hook=s.index("_hook(methodStr, url, &client, mime::getContentType)")
+          first=s.index("client.readStringUntil('\\r')")
+          headers=s.index("//parse headers")
+          body=s.index("readBytesWithTimeout<ServerType>(client, contentLength")
+          assert first < hook < headers < body
+          impl=paths[0].with_name("ESP8266WebServer-impl.h").read_text()
+          assert "case CLIENT_IS_GIVEN:" in impl
+          assert "client must not be stopped but must not be handled here anymore" in impl
+          assert "_currentClient = ClientType();" in impl
+          assert impl.index("case CLIENT_IS_GIVEN:") < impl.index("_currentClient = ClientType();")
+          header=paths[0].with_name("ESP8266WebServer.h").read_text()
+          assert "CLIENT_IS_GIVEN" in header and "void addHook" in header
+          print("M3N_ESP8266_3_1_2_PREHEADER_CLIENT_GIVE_SOURCE_CONFIRMED")
+          print("PINNED_PARSING_SOURCE_SHA256",hashlib.sha256(parsing).hexdigest())
+          print("WARNING: request line still has uncapped String allocation BEFORE hook")
+          print("NOT RUNTIME SOCKET HANDOFF OR PRODUCT ACCEPTANCE")
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: m3n-inert-digest-xtensa-abc
