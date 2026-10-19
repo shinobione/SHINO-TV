@@ -263,8 +263,8 @@
       "sha256": "2f8360cfa86dd096da47d8358766cd2675e73ed0290bd34d5dfb526dcfbe7f70"
     },
     "tests/native_receiver.cpp": {
-      "bytes": 8111,
-      "sha256": "9b7dd9bac9600c526fde91f5745c39fc7d26a78ec7b38c6743f1c39d1c85ec01"
+      "bytes": 10050,
+      "sha256": "414297386af853581e6d3955cadca8403423999947a09c153d67cd9ce36d5d5a"
     },
     "tests/network_lab.cpp": {
       "bytes": 5929,
@@ -507,8 +507,8 @@
       "sha256": "45654c7b934c797d3475ea98e61d2c03e6451a00c2a7afff6da73aec1e564f1f"
     },
     "host/display/SceneEngine.h": {
-      "bytes": 27926,
-      "sha256": "5cf3aab8ff92eef9d697602402a73d41a376036fe94ad0d7d6d2855663b0d129"
+      "bytes": 28905,
+      "sha256": "75b5714df04ff901ec46df785444dd1aec9a8ad56671e326f605a32dc07c2edf"
     },
     "host/font/glcdfont.h": {
       "bytes": 8894,
@@ -1403,8 +1403,8 @@
       "sha256": "11af066acff8fb1ca4eef16eb287e336084c27437fc8a3021296c9eccae64c4a"
     },
     "native/include/display/SceneEngine.h": {
-      "bytes": 27926,
-      "sha256": "5cf3aab8ff92eef9d697602402a73d41a376036fe94ad0d7d6d2855663b0d129"
+      "bytes": 28905,
+      "sha256": "75b5714df04ff901ec46df785444dd1aec9a8ad56671e326f605a32dc07c2edf"
     },
     "native/include/ntp/NTPClient.h": {
       "bytes": 1358,

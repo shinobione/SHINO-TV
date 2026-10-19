@@ -102,6 +102,40 @@ static void renderWeatherGate(const std::vector<uint8_t>& wire){
  noSample.setClock(clock);noSample.setMetrics({0,0,0,0,0,false,true});
  paintWeatherToIdle(noSample,empty,1000);
  assert(empty.has("WEATHER --")&&!empty.has("18.2"));
+
+ // Product mode: owner may request clock/weather even with PC telemetry
+ // still fresh. This is a renderer API only, not an unauthenticated HTTP route.
+ ArtworkPilot::Renderer selectable;WxDrawProbe modes;
+ selectable.setClock(clock);selectable.setWeather(fresh);
+ selectable.setMetrics({22,34,8,16,56,true,false});
+ assert(selectable.currentDisplayMode()==ArtworkPilot::DisplayMode::Auto);
+ paintWeatherToIdle(selectable,modes,1000);
+ for(const char* label:{"CPU","GPU","RAM","GPU temp"}) assert(modes.has(label));
+ assert(modes.has("18.2")&&modes.has("12:34"));
+ modes.clear();
+ selectable.setDisplayMode(ArtworkPilot::DisplayMode::ClockWeather);
+ paintWeatherToIdle(selectable,modes,1001);
+ assert(!selectable.telemetryStale()); // Switch must not falsify LINK freshness.
+ assert(modes.has("18.2")&&modes.has("Cloudy")&&modes.has("12:34"));
+ for(const char* label:{"CPU","GPU","RAM","GPU temp"}) assert(!modes.has(label));
+ modes.clear();
+ selectable.setDisplayMode(ArtworkPilot::DisplayMode::Auto);
+ paintWeatherToIdle(selectable,modes,1002);
+ for(const char* label:{"CPU","GPU","RAM","GPU temp"}) assert(modes.has(label));
+ assert(modes.has("18.2"));
+ assert(!selectable.telemetryStale());
+
+ // A manually selected clock/weather scene overrides PLAYING/cover, but
+ // AUTO restores music priority without modifying the music status.
+ ArtworkPilot::Caption playing{};playing.state=ArtworkPilot::State::Playing;
+ ArtworkPilot::View view{};view.caption=&playing;view.revision=9;
+ selectable.setDisplayMode(ArtworkPilot::DisplayMode::ClockWeather);
+ for(unsigned i=0;i<100;++i)if(!selectable.step(modes,view,1003))break;
+ assert(selectable.currentScene()==ArtworkPilot::Scene::Idle);
+ selectable.setDisplayMode(ArtworkPilot::DisplayMode::Auto);
+ selectable.step(modes,view,1004);
+ assert(selectable.currentScene()==ArtworkPilot::Scene::NoArtwork);
+ std::puts("SHINO_DISPLAY_MODE_HOST_PASS auto/manual/pc_fresh/music_priority/return");
  std::puts("B54_WEATHER_RENDER_HOST_PASS signed_sample/cards/pc_off/trust_loss/stale/absent");
 }
 
