@@ -69,7 +69,9 @@ int main() {
     check(parse(split,result,now),"split CRLF under deadline");
     check(now>before,"yield expected for fragmented input");
     check(split.bytes.substr(split.used)=="Host: x\r\n","no header read under split");
-    Client silent{"GET / HTTP/1.1\r\n"};
+    // A truly silent peer sends ZERO bytes; the fake scheduler must
+    // not reveal a complete line while testing the timeout.
+    Client silent{""};
     silent.exposed=0;
     silent.stayConnected=true;
     const uint32_t t0=now;
