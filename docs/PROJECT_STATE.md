@@ -12,6 +12,12 @@
 
 **NON INSTALLÉ / NON INTÉGRÉ :** pas de bouton dans l'exécutable Windows actuel, pas de route authentifiée de sélection à distance, pas de changement de BIN privé P0+512/B5.4, ni nouvelle validation des budgets Xtensa. **Prochaine action produit :** raccordement sur le vrai SHINO LINK Windows avec un protocole authentifié et une politique de retour au mode AUTO, après revue du code compagnon. Les HALT physiques et l'observation ROM ne sont pas des dépendances pour poursuivre ce développement hors ligne.
 
+## Vers le premier test météo VM → SmallTV B5.4 (19 octobre 2026)
+
+**Prévol [issue #78](https://github.com/shinobione/SHINO-TV/issues/78) ouvert, NON EXÉCUTÉ** : qualification **en lecture seule** de l'OTA depuis le P0+Updater512 actuellement installé : identité/état `/api/v1/update/status` sous authentification Digest, `ota_enabled`, `fs_ok`, mémoire (`heap` ≥ 25 600 à l'admission, `block` ≥ 16 384, `stack` ≥ 2 048, `frag` ≤ 25 %), staging `4m2m` et BIN privé exact de #74. Aucun nouveau firmware, aucun changement de limites. Une lecture LAN physique, même GET, n'a pas encore été effectuée dans cette conversation : contrat et consentement restent à vérifier par Codex local. Les ressources au repos ne prouvent pas le comportement OTA pendant transfert.
+
+**Séquence produit contrôlée proposée, non autorisée à ce stade :** prévol GET seul → **nouvel accord pour UNE OTA** avec candidat privé et risque de récupération UART non qualifiée → contrôle boot+LINK+LCD après OTA → **accord VM distinct** pour activer la publication signée déjà développée (dernier état OFF) → lecture de la vraie météo LAN sur ST7789. **HOLD** sur tout flash/RTC/reboot matériel, OTA effective et activation VM. L'exécuteur UART P0 existant et ses manques ROM/clé #75 restent inchangés. Ne pas demander de nouveau démontage.
+
 ## Source de vérité GitHub / Windows — export source vérifié le 19 octobre 2026
 
 **PR source canonique : [Draft #72](https://github.com/shinobione/SHINO-TV/pull/72).**
