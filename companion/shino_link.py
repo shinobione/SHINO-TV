@@ -392,12 +392,16 @@ def run_tray(config: dict[str, str], observe=None, *, clock_b52_host=None) -> in
     except ImportError as exc:
         raise LinkError("Tray dependencies missing. Install companion/requirements-link.txt") from exc
     from link_mode_tray import ModeTrayController, build_preview_menu, passive_link_signals
+    from link_firmware_identity import FirmwareMenuAction, read_firmware_identity
     engine = make_engine(config, diagnostics=observe is not None, clock_b52_host=clock_b52_host)
     # M2 is a HOST preview only. Do not add a second sender or device POST.
     mode_controller = ModeTrayController(
         lambda: passive_link_signals(engine, ttl_ms=METRICS_TTL_MS)
     )
     stop = threading.Event()
+    firmware_action = FirmwareMenuAction(lambda: read_firmware_identity(
+        engine.host, Path(config["credentials_file"]), config_path().parent,
+    ))
     status = {"value": "WAITING"}
     picture = Image.new("RGB", (64, 64), "#141820")
     draw = ImageDraw.Draw(picture)
@@ -416,12 +420,14 @@ def run_tray(config: dict[str, str], observe=None, *, clock_b52_host=None) -> in
         webbrowser.open("http://" + engine.host + "/")
 
     def quit_app(icon_, item) -> None:
+        firmware_action.close()
         stop.set()
         icon_.stop()
 
     menu = build_preview_menu(
         pystray, mode_controller, status_supplier=lambda: status["value"],
         open_dashboard=open_dashboard, quit_app=quit_app,
+        firmware_action=firmware_action,
     )
     icon = pystray.Icon("SHINO_LINK", picture, APP_NAME + " · WAITING", menu)
     worker = threading.Thread(target=engine.run, args=(stop, state_changed, observe, lambda: load_config(config_path())["host"]),
@@ -430,6 +436,7 @@ def run_tray(config: dict[str, str], observe=None, *, clock_b52_host=None) -> in
     try:
         icon.run()
     finally:
+        firmware_action.close()
         stop.set()
         # Keep the process/instance lock until its one worker has really stopped.
         # No replacement sender can overlap an in-flight metric/clock request.
