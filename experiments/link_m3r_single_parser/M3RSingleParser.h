@@ -34,6 +34,7 @@ __attribute__((noinline)) Phase readAuthenticatedHeaders(
             return gate.closeOrTimeout();
     }
     size_t wireUsed=0u;
+    bool pendingCR=false; // a single framing bit; NEVER a second parser/buffer
     while (gate.phase()==Phase::Header) {
         const uint32_t elapsed=static_cast<uint32_t>(clock()-started);
         if (elapsed >= Gate::kHeaderDeadlineMs)
@@ -46,8 +47,11 @@ __attribute__((noinline)) Phase readAuthenticatedHeaders(
         if (wireUsed>=kWireHeadersMax)return gate.closeOrTimeout();
         const int value=client.read(); // EXACTLY ONE received byte
         if (value<0 || value>126 ||
-            (value<32 && value!='\r' && value!='\n'))
+            (value<32 && value!='\r' && value!='\n') ||
+            (pendingCR && value!='\n') ||
+            (value=='\n' && !pendingCR))
             return gate.closeOrTimeout();
+        pendingCR=(value=='\r');
         ++wireUsed;
         const Phase result=gate.headerByte<Crypto>(
             static_cast<char>(value),

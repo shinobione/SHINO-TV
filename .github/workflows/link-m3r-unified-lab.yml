@@ -102,9 +102,12 @@ jobs:
           matching=[line for line in symbols.splitlines()
                     if "ShinoM3R" in line or "ShinoM3P" in line or "m3r_link_single_gate" in line]
           print("M3R_NATIVE_SYMBOL_DIAGNOSTIC", "\n".join(matching[:32]))
-          assert "ShinoM3R::readAuthenticatedHeaders" in symbols
-          assert "ShinoM3P::readFirstLine" in symbols
-          assert "ShinoM3C::Gate" in symbols
+          assert "_ZN8ShinoM3R24readAuthenticatedHeadersIN8ShinoM3C13BearSslCrypto" in symbols
+          assert "_ZN8ShinoM3P13readFirstLine" in symbols
+          # GCC Xtensa -Os/LTO may inline Gate::headerByte into the M3-R
+          # templated symbol; independently pin the Gate source call.
+          assert "gate.headerByte<Crypto>" in (root/"M3RSingleParser.h").read_text()
+          assert "gate.bodyByte<Crypto>" in (root/"M3RSingleParser.h").read_text()
           report={"scope":"INERT_ESP8266_ONLY_NOT_OWNER_FIRMWARE",
                   "elf_bytes":elf.stat().st_size,
                   "bin_bytes":binary.stat().st_size,

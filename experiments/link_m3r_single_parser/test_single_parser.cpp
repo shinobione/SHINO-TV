@@ -141,7 +141,11 @@ static void negativeCases() {
         Peer peer(headers+p.body);
         uint32_t now=0;
         need(read(gate,peer,now,0u)==Phase::Reject,label);
-        need(peer.pos<=headers.size(),"never read body on invalid auth");
+        // A malformed header ending with CR but missing LF needs one
+        // wire octet to detect the framing error. It must NEVER reach
+        // Gate::bodyByte before authentication; all further bytes remain.
+        need(peer.pos<=headers.size()+1u,
+             "malformed header bounded to one offending lookahead octet");
         need(gate.consumedBody()==0u,"no body on auth rejection");
     };
     auto change=[&](std::string what,std::string into,const char* why) {
