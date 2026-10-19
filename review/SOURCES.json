@@ -255,8 +255,8 @@
       "sha256": "5f0888a7628fa5cc8f7961aed4ce86ab41713aa9608c75b0624a9207c71007ec"
     },
     "tests/lab.cpp": {
-      "bytes": 4666,
-      "sha256": "0227858a17c44e8286e082c3265104c4e6956e4329fd62e986ce2296c89b0ef7"
+      "bytes": 5465,
+      "sha256": "9ea1ea490048f340d2911cc72a56b71ac8ba11b86e4281c6d4f92cd94389c774"
     },
     "tests/native_http.cpp": {
       "bytes": 6429,
@@ -275,8 +275,8 @@
       "sha256": "2aaa510ac2bfaef5364e3e2697a13dc17695657a8bca38086830a11912de80e4"
     },
     "tests/test_application.py": {
-      "bytes": 3359,
-      "sha256": "82596f4ce8d8c7d0ce18081094823db5fe417917ff49b51994606e035437e315"
+      "bytes": 4321,
+      "sha256": "8a95e95c9a33547db042e20c54ef567b501ebfaccecbb7e7960702d9cb3f7957"
     },
     "tests/test_source.py": {
       "bytes": 1923,
