@@ -33,6 +33,21 @@ int main(){
   std::string command;{std::lock_guard<std::mutex> lock(mutex);if(!commands.empty()){command=commands.front();commands.pop_front();}}
   if(!command.empty()){
    if(command=="sntp"){if(sntpCallback)sntpCallback(true);std::cout<<"{\"ok\":true}"<<std::endl;continue;}
+   if(command=="display reset"){DisplayManager::gfx.clearPrinted();std::cout<<"{\"ok\":true}"<<std::endl;continue;}
+   if(command=="display"){
+    const auto& gfx=DisplayManager::gfx;
+    std::cout<<"{\"temp\":"<<(gfx.has("18.2")?"true":"false")
+             <<",\"condition\":"<<(gfx.has("Cloudy")?"true":"false")
+             <<",\"stale\":"<<(gfx.has("WEATHER STALE")?"true":"false")
+             <<",\"unavailable\":"<<(gfx.has("WEATHER --")?"true":"false")
+             <<",\"cpu\":"<<(gfx.has("CPU")?"true":"false")
+             <<",\"gpu\":"<<(gfx.has("GPU")?"true":"false")
+             <<",\"ram\":"<<(gfx.has("RAM")?"true":"false")
+             <<",\"gpu_temp\":"<<(gfx.has("GPU temp")?"true":"false")
+             <<",\"text_count\":"<<gfx.printed.size()
+             <<",\"operations\":"<<gfx.operations<<"}"<<std::endl;
+    continue;
+   }
    if(command=="stats"){stats();continue;}
    if(command=="stop"){stop=true;continue;}
    if(command=="mode lan"){WiFi.wifiStatus=WL_CONNECTED;WiFi.sta=IPAddress(10,23,42,82);testLocal=WiFi.sta;testPeer=IPAddress(10,23,42,10);}
