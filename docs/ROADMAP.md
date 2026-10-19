@@ -1,5 +1,22 @@
 # SHINO // TV — Roadmap
 
+## M3-Q — En-têtes bornés après la prise de socket LINK (19 octobre 2026)
+
+**GO propriétaire : logiciel et journal d'observations, aucun GO physique.**
+Branche isolée empilée sur M3-P PR #80, base
+025c62400b21d981dea9baa24627e9c319aa75c6.
+Lecteur de headers M3 uniquement, 320 caractères par ligne,
+960 octets cumulés, 11 champs obligatoires, délai absolu 1000 ms,
+un octet par read, rejet de doublons, TE, Origin, framing ambigu ;
+ne consomme jamais le corps. ReadyForAuth n'autorise rien.
+Tests C++ HOST et ASan/UBSan locaux PASS ; attendre CI native de
+ce commit avant tout statut de qualification Xtensa.
+Legacy B5.3 inchangé et en-têtes Core historiques encore non bornés.
+CONT physique : marge précédente 80 B. **HOLD firmware, LINK,
+Wi-Fi, OTA, HMAC et commandes d'affichage**.
+Voir [journal M3-Q](LINK_M3Q_BOUNDED_HEADERS.md).
+
+
 ## M3-P — Protéger la ligne HTTP des commandes LINK dans une copie du Core (19 octobre 2026)
 
 **GO propriétaire : progression logicielle et journal de bord obligatoires.**

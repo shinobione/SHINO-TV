@@ -1,0 +1,92 @@
+name: LINK M3-Q bounded handed-off HTTP headers (NO DEVICE)
+on:
+  pull_request:
+    paths:
+      - 'experiments/link_m3q_headers/**'
+      - 'docs/LINK_M3Q_BOUNDED_HEADERS.md'
+      - 'docs/ROADMAP.md'
+      - '.github/workflows/link-m3q-bounded-headers.yml'
+permissions:
+  contents: read
+jobs:
+  host-headers:
+    name: HOST fragmented M3 header validation, framing and no-body-read
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Real C++ grammar and resource guard
+        run: |
+          g++ -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \
+            -fno-exceptions -fno-rtti \
+            -Iexperiments/link_m3q_headers \
+            experiments/link_m3q_headers/test_headers.cpp \
+            -o "${{ runner.temp }}/m3q_headers"
+          "${{ runner.temp }}/m3q_headers"
+      - name: Confirm isolated scope and unchanged M3-P, B5.3 routes
+        run: |
+          python -m unittest discover -s experiments/link_m3e_legacy -p 'test_b53_source_pins.py' -v
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('experiments/link_m3q_headers/src/main.cpp').read_text()
+          assert 'void setup(){}' in s
+          assert 'volatile bool probeEnabled=false' in s
+          assert 'dormantWebServer.handleClient();' in s
+          for x in ('.begin();','WiFi.begin(', 'WiFi.mode(', 'Update.begin(',
+                    'LittleFS.begin(', 'ESP.restart('):
+              assert x not in s
+          guard=Path('experiments/link_m3q_headers/M3QBoundedHeaders.h').read_text()
+          assert 'client.read()' in guard and 'readStringUntil' not in guard
+          assert 'ReadyForAuth' in guard and 'Authenticated' not in guard
+          orig=Path('firmware/src/boot/FirstBootBridge.cpp').read_text()
+          assert 'ESP8266WebServer server(80);' in orig
+          assert 'server.on("/api/v1/bridge/metrics", HTTP_GET, sendMetrics);' in orig
+          assert 'server.on("/api/v1/bridge/metrics", HTTP_POST, acceptMetrics);' in orig
+          print('M3Q_EXISTING_B53_AND_NO_DEVICE_PASS')
+          PY
+  inert-native:
+    name: pinned ESP8266 Core M3-P + header reader, inert Xtensa A/B
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install exact PlatformIO
+        run: python -m pip install 'platformio==6.1.18'
+      - name: Build original M3-P-only inert native graph
+        run: pio run -d experiments/link_m3q_headers -e m3p_only_inert
+      - name: Build original M3-P + M3-Q header intake inert native graph
+        run: pio run -d experiments/link_m3q_headers -e m3q_headers_inert
+      - name: Pin exact clone and original files, no global Core modifications
+        run: |
+          python - <<'PY'
+          import hashlib,sys
+          from pathlib import Path
+          sys.path.insert(0,'experiments/link_m3p_parser')
+          from patch_core_parser import PINS,patch_parser
+          original=Path.home()/'.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266WebServer/src'
+          clone=Path('experiments/link_m3q_headers/.pio/m3q-venv/ESP8266WebServer/src')
+          for name,sha in PINS.items():
+              a=(original/name).read_bytes();b=(clone/name).read_bytes()
+              assert hashlib.sha256(a).hexdigest()==sha, name
+              assert b==(patch_parser(a.decode()).encode() if name=='Parsing-impl.h' else a),name
+          print('M3Q_EXACT_M3P_SOURCE_PIN_AND_CLONE_PASS')
+          PY
+      - name: Derive ELF, BIN and linked symbols from actual inert build
+        run: |
+          python experiments/link_m3q_headers/report_cost.py
+          cat experiments/link_m3q_headers/m3q_inert_elf_receipt.json >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m3q-inert-native-resource-receipt
+          path: experiments/link_m3q_headers/m3q_inert_elf_receipt.json
+          if-no-files-found: error
+          retention-days: 7
