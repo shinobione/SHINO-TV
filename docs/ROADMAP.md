@@ -1,5 +1,32 @@
 # SHINO // TV — Roadmap
 
+## M3-N — Auth Digest Core 3.1.2 et politique HOME LAN sources réelles (19 octobre 2026)
+
+**GO logiciel SHINO // LINK uniquement.** Base Draft PR #68 M3-M
+`a73eca178fd04ac805a09f8dd19389535c45c232` au
+**16/16 workflows SUCCESS** avant fork.
+
+`experiments/link_m3n_digest/` livre un noyau réel d'autorisation
+**pour le seul GET/POST métriques héritées** : preuve
+Digest MD5 en état borné (nonce/opaque/qop/nonce-count/replay),
+sessions navigateur GET-only à deux emplacements liées
+au client/port local, TTL 2 heures, vraie politique source
+`HomeLan::authority/peerOnSubnet/endpoint`, puis
+handler M3-M `FslessMetrics::apply/describe` source B5.3.
+L'émulation cryptographique HOST utilise vrai OpenSSL MD5 ;
+le graphe Xtensa compile le véritable BearSSL MD5
+avec ESP8266 Core 3.1.2. **Aucun MD5 accepté pour M3** :
+commande d'écran exclusivement HMAC-SHA256 M3-C.
+
+**HOLD** : ni listener natif du produit, ni vérification
+d'identité peer depuis vraie socket, ni challenge RNG réel,
+ni parité de toutes les routes/clients historiques (Basic,
+RFC2069 et nonces), ni budgets heap/CONT/WDT.
+B5.3 physique toujours STOP/HOLD, marge CONT 80 octets
+au dernier préflight communiqué. Aucune OTA/flash/RTC/Wi-Fi,
+Freebox, LINK Windows installé ni branche Codex modifiée.
+Voir [M3-N — source et qualification](LINK_M3N_NATIVE_DIGEST.md).
+
 ## M3-M — Première extraction native des handlers métriques B5.3 (18 octobre 2026)
 
 **GO uniquement logiciel SHINO // LINK**. Base PR #67 M3-L
