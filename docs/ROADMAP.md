@@ -1,5 +1,32 @@
 # SHINO // TV — Roadmap
 
+## M3-O — Conserver le serveur B5.3, qualifier la reprise d'une connexion SHINO // LINK (19 octobre 2026)
+
+**GO propriétaire : logiciel et CI seulement**, sur une branche isolée
+empilée sur PR #77 `82bb3ce3fc476cec361d707695e41f1ec5fefd24`
+(CI 16/17 PASS au fork, audit hors ligne encore en cours).
+
+Le véritable Core ESP8266 3.1.2 permet via
+`ESP8266WebServer::addHook` + `CLIENT_IS_GIVEN`
+de céder **une seule connexion** avant les en-têtes et le corps.
+`experiments/link_m3o_core/` compile cette interface avec
+le vrai `WiFiClient` et la politique `HomeLan::peerOnSubnet`,
+conserve une copie de connexion et la **refuse systématiquement**
+en laboratoire. Les anciennes routes du produit sont inchangées.
+La CI vérifie l'ordre des hooks source, la copie/fermeture du
+client en simulation et deux vrais ELF Xtensa **inertes**.
+
+**HOLD — pas encore de contrôle d'écran :** le Core construit
+un `String` de longueur non plafonnée pour la ligne HTTP
+**avant le hook** ; le hook n'expose pas la version HTTP
+brute exigée par M3-C ; `Host`, `Origin`, HMAC et état
+d'écran réels non validés. Aucune preuve de mémoire
+CONT/heap/WDT/boot ni comportement lwIP physique.
+Pas de changement de `firmware/`, `companion/`,
+de Windows LINK installé, des travaux B5.4 Codex,
+de la Freebox ou du SmallTV. Aucune OTA/flash/Wi-Fi
+ni merge. Voir [M3-O : handoff du serveur original](LINK_M3O_CLIENT_HANDOFF.md).
+
 ## M3-N — Auth Digest Core 3.1.2 et politique HOME LAN sources réelles (19 octobre 2026)
 
 **GO logiciel SHINO // LINK uniquement.** Base Draft PR #68 M3-M
