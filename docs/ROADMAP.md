@@ -1,5 +1,36 @@
 # SHINO // TV — Roadmap
 
+## M3-R — Branche unique SHINO // LINK + contrôle HTTP expérimental (19 octobre 2026)
+
+**GO propriétaire : « combine tout ça […] une seule branche en direction de M3-R ».**
+Branche GitHub isolée `feature/link-m3r-unified-integration-20261019`
+partant du HEAD de M3-Q PR #82 `7adb17e37c580f7e37d27d6cb02e79dc1ea7045c`,
+avec 12 fichiers **Git blobs exacts** importés du HEAD Windows
+PR #84/issue #83 `47044b61107f55f7bf4c21d7fa947d6d46b75006`.
+Ancêtre commun : M2 PR #54 `88f2163c512429e804e96aabbc8b60b71602936b`.
+Aucune fusion des PR sources, aucune écriture sur leurs branches.
+
+**M3-R LAB (nouveau, non livré)** : réintroduire la première ligne
+strictement validée par le Core M3-P dans **un seul** `M3C::Gate`
+qui parse et authentifie directement les en-têtes lus octet par octet ;
+puis vérification SHA du corps et FIN **sans commande écran**.
+Le second `M3Q::HeaderGuard` est laissé au laboratoire comparatif,
+**non instancié** dans ce chemin. Compiler/tester sur HOST avec vrai
+OpenSSL, puis Core ESP8266 3.1.2/BearSSL sur ELF Xtensa **inerte**.
+Aucun résultat CI de cette nouvelle branche n'est implicite.
+
+**Windows** : menu M2 et GET Digest manuel de l'identité #83
+conservés, mais **HOLD activation** tant que le client OTA #81 et
+le même état de verrou/marqueurs ne sont pas prouvés coordonnés.
+Nom de version uniquement par reçu privé vérifié, sinon « Inconnue ».
+La PR #84 reste source historique, pas branche à poursuivre.
+
+**HOLD strict :** pas de programmation SmallTV, OTA/UART, Wi-Fi,
+modification VM Freebox, LINK installé, fusion GitHub, commande M3
+ou claim de boot. CONT/heap et régression B5.3 sur vrai appareil
+NON VÉRIFIÉS. [Journal et prochaines preuves](LINK_M3R_UNIFIED_BRANCH.md).
+
+
 ## M3-Q — En-têtes bornés après la prise de socket LINK (19 octobre 2026)
 
 **GO propriétaire : logiciel et journal d'observations, aucun GO physique.**
