@@ -2,6 +2,14 @@
 
 **Première lecture obligatoire : [état opérationnel daté](docs/PROJECT_STATE.md).** Ensuite consulter les instructions/guards plus détaillés de la branche active (`docs/AGENT_HANDOFF.md`, `docs/ROADMAP.md`, code et tests). Les documents historiques ne décrivent pas nécessairement le firmware installé.
 
+## Publication des sources et reprise entre outils
+
+- Pour les tâches P0+Updater512 / B5.4, lire **[la politique de synchronisation source](docs/SOURCE_SYNC_POLICY.md)** et **[la mission Codex #71](https://github.com/shinobione/SHINO-TV/issues/71)** avant de demander des captures ou d'inférer l'état local depuis GitHub.
+- Une PR Draft GitHub inspectable n'existe **pas encore** pour le commit local combiné au checkpoint. Un rapport Codex ne remplace pas la relecture de sa source.
+- Publier uniquement les sources et tests non secrets après audit du **contenu et de tout l'historique poussable** ; s'il y a un secret ancestral, ne pas pousser l'historique local, préparer un export public assaini et déclarer ses limites de correspondance au candidat privé.
+- **Ne jamais** synchroniser BIN/ELF, secrets, identité de l'appareil, reçus, sauvegardes, `research-local/` ou marqueurs privés dans le repo public.
+- Préserver les worktrees/branches Codex et les PR existantes ; aucune fusion/force-push. Une fois une PR de source réellement publiée, lier HEAD/CI/base exacts au checkpoint et utiliser cette PR comme référence pour les revues distantes.
+
 ## Source de vérité
 - Identifier séparément **GitHub**, **worktree Windows**, **binaire privé/manifeste/reçu** et **matériel/VM**. Aucune synchronisation implicite.
 - Vérifier branche, HEAD, working tree, PR actives, dépendances et CI du commit exact **avant toute modification**. Respecter le travail parallèle de Codex.
