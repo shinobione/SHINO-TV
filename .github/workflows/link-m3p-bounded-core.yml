@@ -1,0 +1,148 @@
+name: LINK M3-P pinned Core HTTP first-line cap (NO DEVICE)
+on:
+  pull_request:
+    paths:
+      - 'experiments/link_m3p_parser/**'
+      - 'docs/LINK_M3P_BOUNDED_CORE.md'
+      - 'docs/ROADMAP.md'
+      - '.github/workflows/link-m3p-bounded-core.yml'
+permissions:
+  contents: read
+jobs:
+  host-parser:
+    name: C++ segmented request line, exact 256 cap, timeout and source pins
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: C++ fixed request line slowloris and reject vectors
+        run: |
+          g++ -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \
+            -fno-exceptions -fno-rtti \
+            -Iexperiments/link_m3p_parser \
+            experiments/link_m3p_parser/test_bounded_line.cpp \
+            -o "${{ runner.temp }}/m3p_lines"
+          "${{ runner.temp }}/m3p_lines"
+      - name: Ensure vendor PIN is exact and all other legacy parsing unchanged
+        run: |
+          python - <<'PY'
+          import ast,sys
+          from pathlib import Path
+          sys.path.insert(0,"experiments/link_m3p_parser")
+          from patch_core_parser import patch_parser
+          source=Path("firmware/scripts/m9_normal_webserver.py").read_text()
+          tree=ast.parse(source)
+          pins=next(n.value for n in tree.body
+                    if isinstance(n,ast.Assign) and any(
+                       isinstance(t,ast.Name) and t.id=="PINS" for t in n.targets))
+          approved=ast.literal_eval(pins)
+          from patch_core_parser import PINS
+          assert PINS==approved
+          # Source fixture is artificial: exercise only strict replace and
+          # ensure accidental unpinned parser shape fails CLOSED.
+          fixture=("namespace esp8266webserver {\n"
+           "  String req = client.readStringUntil('\\r');\n"
+           "  client.readStringUntil('\\n');\n  //reset header value\n"
+           "  String url = req.substring(addr_start + 1, addr_end);\n"
+           "  if (_hook)\n  req = client.readStringUntil('\\r');\n")
+          patched=patch_parser(fixture)
+          assert "ShinoM3P::readFirstLine" in patched
+          assert 'POST /api/v1/display/mode HTTP/1.1' in patched
+          assert "req = client.readStringUntil('\\r');" in patched
+          assert "String req = client.readStringUntil('\\r');" not in patched
+          try:patch_parser(fixture.replace("String req =", "String incoming ="))
+          except ValueError:pass
+          else:raise AssertionError("Parser drift must fail closed")
+          print("M3P_PINNED_SOURCE_OVERLAY_ONLY_FIRSTLINE_GATE_PASS")
+          PY
+      - name: Original B5.3 metric, Digest and HomeLAN route inventory untouched
+        run: |
+          python -m unittest discover -s experiments/link_m3e_legacy -p 'test_b53_source_pins.py' -v
+          python - <<'PY'
+          from pathlib import Path
+          s=Path("firmware/src/boot/FirstBootBridge.cpp").read_text()
+          assert 'ESP8266WebServer server(80);' in s
+          assert 'server.on("/api/v1/bridge/metrics", HTTP_GET, sendMetrics);' in s
+          assert 'server.on("/api/v1/bridge/metrics", HTTP_POST, acceptMetrics);' in s
+          print("M3P_LEGACY_APP_UNCHANGED_PASS")
+          PY
+
+  pinned-xtensa-copy:
+    name: Core 3.1.2 source-clone patched, original vs bounded native ELF
+    runs-on: ubuntu-latest
+    timeout-minutes: 19
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Prevent action on SmallTV and package-global modification
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path("experiments/link_m3p_parser/src/main.cpp").read_text()
+          pre=Path("experiments/link_m3p_parser/use_pinned_overlay.py").read_text()
+          assert "volatile bool nativeProbeEnabled=false" in s
+          assert "void setup(){}" in s
+          assert "ESP8266WebServer untouchedListener(80);" in s
+          assert "untouchedListener.handleClient();" in s
+          assert "if(nativeProbeEnabled)m3p_link_actual_parser();" in s
+          for forbidden in (".begin();","WiFi.begin(", "WiFi.mode(",
+                            "Update.begin(", "LittleFS.begin(", "ESP.restart("):
+            assert forbidden not in s
+          assert 'if env.subst("$PIOENV")!="bounded_core_inert":' in pre
+          assert '("upload","erase","buildfs","program")' in pre
+          print("M3P_INERT_AND_OVERLAY_SCOPE_PASS")
+          PY
+      - name: Install exact PlatformIO 6.1.18
+        run: python -m pip install 'platformio==6.1.18'
+      - name: Build original pinned 3.1.2 WebServer native
+        run: pio run -d experiments/link_m3p_parser -e unpatched_core_control
+      - name: Build local library clone with first-line cap and original server hook
+        run: pio run -d experiments/link_m3p_parser -e bounded_core_inert
+      - name: Validate original files pinned and single patched line region
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,sys
+          sys.path.insert(0,"experiments/link_m3p_parser")
+          from patch_core_parser import PINS,patch_parser
+          base=Path.home()/".platformio/packages/framework-arduinoespressif8266/libraries/ESP8266WebServer/src"
+          local=Path("experiments/link_m3p_parser/.pio/m3p-venv/ESP8266WebServer/src")
+          assert local.is_dir()
+          for name,sha in PINS.items():
+            raw=(base/name).read_bytes()
+            assert hashlib.sha256(raw).hexdigest()==sha, name
+            altered=(local/name).read_bytes()
+            if name=="Parsing-impl.h":
+              assert altered.decode()==patch_parser(raw.decode())
+              assert altered!=raw
+            else:assert altered==raw, name
+          assert 'ShinoM3P::readFirstLine' in (local/"Parsing-impl.h").read_text()
+          print("M3P_ACTUAL_PINNED_CORE_CLONE_BYTE_PARITY_PASS")
+          PY
+      - name: Inspect symbol resolution without hiding an unpatched link
+        run: |
+          echo "== PATCHED SOURCE OBJECT SYMBOLS =="
+          xtensa_nm="$HOME/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-nm"
+          "$xtensa_nm" -C experiments/link_m3p_parser/.pio/build/bounded_core_inert/src/main.cpp.o | grep -E 'ShinoM3P|parseRequest|handleClient|m3p_link_actual_parser' | head -35 || true
+          echo "== FINAL ELF PARSER SYMBOLS =="
+          "$xtensa_nm" -C experiments/link_m3p_parser/.pio/build/bounded_core_inert/firmware.elf | grep -E 'ShinoM3P|parseRequest|handleClient|m3p_link_actual_parser' | head -35 || true
+          echo "== BUILT LOCAL LIBRARY =="
+          find experiments/link_m3p_parser/.pio/build/bounded_core_inert -name '*ESP8266WebServer*' -type f | head -15
+      - name: Derive real ELF/BIN sizes and retained bounded-reader symbol
+        run: |
+          python experiments/link_m3p_parser/report_cost.py
+          cat experiments/link_m3p_parser/m3p_bounded_core_elf_receipt.json >> "${GITHUB_STEP_SUMMARY}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m3p-inert-source-clone-resource-receipt
+          path: experiments/link_m3p_parser/m3p_bounded_core_elf_receipt.json
+          if-no-files-found: error
+          retention-days: 7
