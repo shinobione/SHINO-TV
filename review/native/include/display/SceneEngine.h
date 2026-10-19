@@ -27,6 +27,8 @@ constexpr uint16_t BARS[4] = {
 };
 enum class State : uint8_t { Playing, Paused, Stopped, NoSession, Unavailable };
 enum class Scene : uint8_t { Idle, Playing, Paused, NoArtwork, Offline };
+// Local rendering intent only: transport/authenticated menu binding is separate.
+enum class DisplayMode : uint8_t { Auto, ClockWeather };
 inline State stateFrom(const char* s) {
     if (!strcmp(s, "PLAYING")) return State::Playing;
     if (!strcmp(s, "PAUSED")) return State::Paused;
@@ -176,6 +178,7 @@ class Renderer {
     uint32_t revision = 0, stateSince = 0, clockMinute = 0, weatherMinute = 0, clockAgeMinute = 0;
     Cover cover = Cover::None;
     Scene scene = Scene::Offline;
+    DisplayMode displayMode = DisplayMode::Auto;
     State observedState = State::NoSession;
     uint16_t titleOffset = 0, artistOffset = 0;
     uint8_t clearY = 0, headerTask = 0, artRow = 32, titleRow = 8, artistRow = 8, dirty = 15;
@@ -184,6 +187,7 @@ class Renderer {
     bool pauseExpired = false;
     bool clockWasFresh = false, weatherWasFresh = false;
     static bool idleScene(Scene s) { return s == Scene::Idle || s == Scene::Offline; }
+    bool clockOnly() const { return stale || displayMode == DisplayMode::ClockWeather; }
     static unsigned monthDays(unsigned year, unsigned month) {
         static const uint8_t days[] = {31,28,31,30,31,30,31,31,30,31,30,31};
         if (month < 1 || month > 12) return 0;
@@ -202,6 +206,9 @@ class Renderer {
             weather.tenthsC >= -1000 && weather.tenthsC <= 1000;
     }
     Scene targetScene(uint32_t now) const {
+        // Manual clock/weather suppresses artwork while preserving LINK metrics.
+        if (displayMode == DisplayMode::ClockWeather)
+            return clockFresh(now) ? Scene::Idle : Scene::Offline;
         const bool image = cover == Cover::Image32;
         if (caption.state == State::Playing) return image ? Scene::Playing : Scene::NoArtwork;
         if (caption.state == State::Paused &&
@@ -342,11 +349,11 @@ class Renderer {
         if(headerTask==0) {
             c.fill(0,0,240,24,BG);
         } else if(headerTask==1) {
-            c.fill(0,stale?64:26,240,stale?48:32,BG);
+            c.fill(0,clockOnly()?64:26,240,clockOnly()?48:32,BG);
         } else if(headerTask==2) {
-            c.fill(0,stale?126:60,240,stale?16:8,BG);
+            c.fill(0,clockOnly()?126:60,240,clockOnly()?16:8,BG);
         } else if(headerTask==3) {
-            c.fill(0,stale?166:73,240,stale?40:31,BG);
+            c.fill(0,clockOnly()?166:73,240,clockOnly()?40:31,BG);
         } else if(headerTask==4) {
             c.text(87,10,"SHINO // TV",LABEL);
             if(clock.synthetic || weather.synthetic)
@@ -364,7 +371,7 @@ class Renderer {
                     snprintf(value,sizeof value,"%02lu:%02lu",
                         (unsigned long)(seconds/3600U)%24U,
                         (unsigned long)(seconds/60U)%60U);
-                    c.text(stale?30:60,stale?64:26,value,WHITE,stale?6:4);
+                    c.text(clockOnly()?30:60,clockOnly()?64:26,value,WHITE,clockOnly()?6:4);
                 } else {
                     unsigned year=clock.year,month=clock.month,day=clock.day;
                     // The validated clock lease is <=24h; at most one rollover.
@@ -372,29 +379,29 @@ class Renderer {
                         day=1;if(++month>12){month=1;++year;}
                     }
                     snprintf(value,sizeof value,"%02u/%02u/%04u",day,month,year);
-                    c.text(stale?60:90,stale?126:60,value,LABEL,stale?2:1);
+                    c.text(clockOnly()?60:90,clockOnly()?126:60,value,LABEL,clockOnly()?2:1);
                 }
             } else if(headerTask==5)
-                c.text(30,stale?80:32,"TIME NOT SYNCED",WHITE,2);
-            else c.text(72,stale?126:60,"DATE UNAVAILABLE",LABEL);
+                c.text(30,clockOnly()?80:32,"TIME NOT SYNCED",WHITE,2);
+            else c.text(72,clockOnly()?126:60,"DATE UNAVAILABLE",LABEL);
         } else if(headerTask==7) {
-            if(weatherFresh(now)) paintWeatherIcon(c,stale?58:46,stale?166:73);
+            if(weatherFresh(now)) paintWeatherIcon(c,clockOnly()?58:46,clockOnly()?166:73);
         } else if(headerTask==8) {
             if(weatherFresh(now)) {
                 const int magnitude=weather.tenthsC<0?-weather.tenthsC:weather.tenthsC;
                 char degrees[16];
                 snprintf(degrees,sizeof degrees,"%s%d.%d",
                     weather.tenthsC<0?"-":"",magnitude/10,magnitude%10);
-                c.text(stale?100:88,stale?168:76,degrees,WHITE,2);
-                const int unit=(stale?100:88)+int(strlen(degrees))*12+2,uy=stale?168:76;
+                c.text(clockOnly()?100:88,clockOnly()?168:76,degrees,WHITE,2);
+                const int unit=(clockOnly()?100:88)+int(strlen(degrees))*12+2,uy=clockOnly()?168:76;
                 c.fill(unit+1,uy,2,1,WHITE);c.fill(unit+1,uy+3,2,1,WHITE);
                 c.fill(unit,uy+1,1,2,WHITE);c.fill(unit+3,uy+1,1,2,WHITE);
                 c.text(unit+6,uy,"C",WHITE,2);
                 const char* label=weatherLabel();
-                c.text(stale?100:88,stale?190:96,label?label:"ICON UNKNOWN",LABEL);
+                c.text(clockOnly()?100:88,clockOnly()?190:96,label?label:"ICON UNKNOWN",LABEL);
             } else {
                 const char* label=weather.valid?"WEATHER STALE":"WEATHER --";
-                c.text((240-int(strlen(label))*6)/2,stale?180:82,label,LABEL);
+                c.text((240-int(strlen(label))*6)/2,clockOnly()?180:82,label,LABEL);
             }
         } else {
             headerDirty=false;
@@ -432,6 +439,14 @@ class Renderer {
 public:
     Scene currentScene() const { return scene; }
     bool telemetryStale() const { return stale; }
+    DisplayMode currentDisplayMode() const { return displayMode; }
+    void setDisplayMode(DisplayMode mode) {
+        if (mode == displayMode) return;
+        displayMode = mode;
+        // Full transition erases either the cards or the previous artwork.
+        clearing = true; clearY = 0; dirty = 15;
+        headerDirty = true; headerTask = 0;
+    }
     uint16_t currentTitleOffset() const { return titleOffset; }
     uint16_t currentArtistOffset() const { return artistOffset; }
     void setPolicy(Policy p) {
@@ -487,7 +502,7 @@ public:
         }
         if (idleScene(scene)) {
             if (headerDirty) { paintHeader(c,now); return true; }
-            if(stale) { dirty=0; return false; }
+            if(clockOnly()) { dirty=0; return false; }
             for (unsigned i=0;i<4;++i) if (dirty & (1U<<i)) {
                 paintCard(c,i); dirty &= uint8_t(~(1U<<i)); return true;
             }
