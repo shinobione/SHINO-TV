@@ -106,6 +106,55 @@ migration du propriétaire HTTP, et mesurer le
 graphe firmware complet au lieu d'accumuler
 des objets d'authentification expérimentaux.
 
+## Correction architecturale : le Core 3.1.2 permet un handoff ciblé
+
+Une seconde inspection **du véritable code source ESP8266
+Arduino Core 3.1.2 épinglé** montre un chemin important
+que nos audits M3-B/M3-M avaient traité trop pessimiste :
+
+1. `Parsing-impl.h::_parseRequest()` lit la ligne
+   HTTP puis **invoque `_hook(methodStr,url,&client,...)`
+   AVANT la boucle de lecture des en-têtes et du POST body** ;
+2. Le hook peut retourner
+   `ESP8266WebServer::CLIENT_IS_GIVEN`, et
+   `ESP8266WebServer-impl.h::handleClient()` ne
+   ferme alors pas volontairement ce client, avant de
+   libérer sa propre référence ;
+3. La bibliothèque expose `addHook` et un
+   `WiFiClient*` permettant **en principe** à un
+   composant dédié de prendre une copie conservée
+   de la connexion et de lire lui-même les en-têtes
+   et le corps HMAC, pendant que **toutes les autres
+   routes conservent l'ancien serveur et son Digest**.
+
+**Ce n'est PAS encore une preuve de handoff opérationnel.**
+La copie/référence `WiFiClient`, les interruptions,
+l'ordre des deux hooks (HomeLan refuserait M3 LAN
+avant reprise s'il s'exécutait en premier), les
+réponses TCP partielles et la non-réentrance restent
+à tester en natif et en HOST. Le parseur Core alloue
+en outre **une ligne HTTP dans un `String` non
+plafonné avant le hook** : risque mémoire réel,
+inacceptable sans garde supplémentaire ou preuve
+de borne amont. Le fait que les en-têtes et le corps
+ne soient pas encore lus ne suffit pas à garantir
+l'absence de DoS mémoire sur ligne longue.
+
+**Décision pour M3-O :** tester d'abord **ce handoff
+ciblé sur le serveur d'origine** plutôt que
+poursuivre le remplacement complet de Digest et
+des routes B5.3. Ce mécanisme préserverait
+potentiellement le vrai serveur et réduirait le
+coût énorme (+18 880 octets BIN inerte) du
+noyau M3-N. Si une de ces hypothèses échoue,
+le mécanisme reste HOLD. Ne rien installer.
+
+La CI M3-N vérifie maintenant l'ordre des appels
+directement dans les fichiers de bibliothèque
+installés par **le Core 3.1.2 épinglé**, affiche
+leur empreinte calculée et **n'assimile pas**
+l'inspection statique à un test de handoff TCP.
+
 ## Limites obligatoires : pas de changement de statut physique
 
 Ce composant **ne prend pas possession de la vraie connexion TCP**,
