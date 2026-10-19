@@ -1,5 +1,54 @@
 # SHINO // TV — Roadmap
 
+## M3-N — Auth Digest Core 3.1.2 et politique HOME LAN sources réelles (19 octobre 2026)
+
+**GO logiciel SHINO // LINK uniquement.** Base Draft PR #68 M3-M
+`a73eca178fd04ac805a09f8dd19389535c45c232` au
+**16/16 workflows SUCCESS** avant fork.
+
+`experiments/link_m3n_digest/` livre un noyau réel d'autorisation
+**pour le seul GET/POST métriques héritées** : preuve
+Digest MD5 en état borné (nonce/opaque/qop/nonce-count/replay),
+sessions navigateur GET-only à deux emplacements liées
+au client/port local, TTL 2 heures, vraie politique source
+`HomeLan::authority/peerOnSubnet/endpoint`, puis
+handler M3-M `FslessMetrics::apply/describe` source B5.3.
+L'émulation cryptographique HOST utilise vrai OpenSSL MD5 ;
+le graphe Xtensa compile le véritable BearSSL MD5
+avec ESP8266 Core 3.1.2. **Aucun MD5 accepté pour M3** :
+commande d'écran exclusivement HMAC-SHA256 M3-C.
+[Première CI M3-N #39254265939](https://github.com/shinobione/SHINO-TV/actions/runs/39254265939)
+**2/2 jobs PASS au SHA précédent** ; dans
+deux builds inertes comparables, ajout du noyau
+Digest : **+18 880 o BIN, +224 o BSS, +4 o data**.
+Coût trop important pour une activation immédiate ;
+ne pas cumuler directement avec les deltas
+de bancs non identiques. Requalifier au HEAD final.
+
+**Correction de revue Core 3.1.2** : le hook
+`ESP8266WebServer::addHook` reçoit `WiFiClient*`
+après lecture de la ligne HTTP, **avant les headers
+et le corps**, et peut rendre `CLIENT_IS_GIVEN`.
+Cela pourrait conserver **le véritable serveur B5.3
+avec ses handlers Digest** tout en transférant la
+seule route M3 pré-corps. Ce mécanisme **n'est pas
+encore testé en trafic réel**, et la ligne HTTP
+`String` non plafonnée avant hook reste un **risque
+mémoire bloquant**. Vérification de l'ordre
+source ajoutée à CI épinglée M3-N. Prochaine étape
+M3-O : test de conservation/copie de client,
+ordre des hooks, et garde de longueur ; ne pas
+poursuivre la réécriture complète de Digest par défaut.
+
+**HOLD** : ni listener natif du produit, ni vérification
+d'identité peer depuis vraie socket, ni challenge RNG réel,
+ni parité de toutes les routes/clients historiques (Basic,
+RFC2069 et nonces), ni budgets heap/CONT/WDT.
+B5.3 physique toujours STOP/HOLD, marge CONT 80 octets
+au dernier préflight communiqué. Aucune OTA/flash/RTC/Wi-Fi,
+Freebox, LINK Windows installé ni branche Codex modifiée.
+Voir [M3-N — source et qualification](LINK_M3N_NATIVE_DIGEST.md).
+
 ## M3-M — Première extraction native des handlers métriques B5.3 (18 octobre 2026)
 
 **GO uniquement logiciel SHINO // LINK**. Base PR #67 M3-L
