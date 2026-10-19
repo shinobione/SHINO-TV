@@ -4,6 +4,14 @@
 
 > **À lire avant toute mission** avec `AGENTS.md` et, sur les branches où ils existent, `docs/AGENT_HANDOFF.md` et `docs/ROADMAP.md`. L'état des fichiers sur `main` et les docs historiques peuvent être dépassés. La branche locale de Codex et l'appareil ne sont pas synchronisés automatiquement avec GitHub.
 
+## Avancement PRODUIT — modes d'affichage manuels (19 octobre 2026)
+
+**[PR Draft #76](https://github.com/shinobione/SHINO-TV/pull/76), HEAD public `0086e7ccdd004c17a298430cd50fb5ae2c4df116` :** ajout isolé d'une API pure `ArtworkPilot::Renderer::setDisplayMode(DisplayMode::Auto | DisplayMode::ClockWeather)` dans les deux copies identiques du moteur 240×240. **AUTO par défaut inchangé** : métriques LINK fraîches → quatre cartes CPU/GPU/RAM/GPU temp + horloge/météo ; musique active → priorité pochette. **ClockWeather** : grand affichage horloge/météo même quand le PC envoie toujours ses métriques, sans falsifier `telemetryStale()` ; retour AUTO restaure les quatre cartes et la priorité musicale. Transition avec effacement coopératif, sans écriture réseau ou flash.
+
+**[CI GitHub #39252911490](https://github.com/shinobione/SHINO-TV/actions/runs/39252911490) SUCCESS sur le HEAD #76 :** 50 tests Python HOST existants PASS (0 FAIL/ERROR/SKIP) et nouveau marqueur natif `SHINO_DISPLAY_MODE_HOST_PASS auto/manual/pc_fresh/music_priority/return`. **Attention :** les 50 tests n'incluent pas un test Python supplémentaire, la nouvelle validation est une assertion C++ dans l'exécutable natif. Les sources sont publiques/synthétiques et les fixtures `HOST_MOCK` ne peuvent devenir des identifiants de production.
+
+**NON INSTALLÉ / NON INTÉGRÉ :** pas de bouton dans l'exécutable Windows actuel, pas de route authentifiée de sélection à distance, pas de changement de BIN privé P0+512/B5.4, ni nouvelle validation des budgets Xtensa. **Prochaine action produit :** raccordement sur le vrai SHINO LINK Windows avec un protocole authentifié et une politique de retour au mode AUTO, après revue du code compagnon. Les HALT physiques et l'observation ROM ne sont pas des dépendances pour poursuivre ce développement hors ligne.
+
 ## Source de vérité GitHub / Windows — export source vérifié le 19 octobre 2026
 
 **PR source canonique : [Draft #72](https://github.com/shinobione/SHINO-TV/pull/72).**
