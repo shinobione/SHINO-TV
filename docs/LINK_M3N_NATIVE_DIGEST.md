@@ -66,6 +66,46 @@ et des véritables blobs B5.3, **pas d'un navigateur simulé**.
   calculés des fichiers CI effectifs. Aucun budget produit
   inféré, aucun seuil abaissé.
 
+## Première preuve CI source et Xtensa (binaire INERTE)
+
+[Workflow ciblé M3-N #39254265939](https://github.com/shinobione/SHINO-TV/actions/runs/39254265939)
+au commit pré-documentaire
+`fb3d6e466fb4e2b2eef90e8eefeb977fa1ff4bc2` :
+**2/2 jobs SUCCESS**. Le test HOST a réellement exécuté
+OpenSSL MD5 Digest contre le code C++ original
+`FslessMetrics.cpp`, avec les fonctions de politique
+`HomeLan`. Il n'a pas utilisé le vrai mot de passe
+propriétaire ni le réseau SmallTV.
+
+| Grandeur calculée depuis ELF/BIN inertes | A : M3-M + M3-L | B : A + noyau Digest/BearSSL M3-N | B − A |
+|---|---:|---:|---:|
+| BIN | 274 400 o | 293 280 o | **+18 880 o** |
+| ELF `.text` | 268 751 o | 287 623 o | **+18 872 o** |
+| ELF `.bss` | 28 256 o | 28 480 o | **+224 o** |
+| ELF `.data` | 1 552 o | 1 556 o | **+4 o** |
+
+**Coût élevé.** Il ne faut pas cumuler ce chiffre
+directement avec les deltas d'autres bancs : leurs
+graphes et options ne sont pas tous identiques.
+Il ne s'agit pas non plus d'une mesure du firmware
+physiquement installé, de sa marge libre, d'un dump
+ou d'un BIN à flasher. Le rapport JSON CI contient
+les SHA-256 calculés sur les **deux inertes**.
+
+Une nouvelle CI **sur le HEAD final documentaire**
+est nécessaire avant de déclarer l'ensemble M3-N
+qualifié au dernier commit. Même avec CI PASS,
+la parité de comportement de vrais clients Digest,
+leur politique de compteur `nc` et les cookies
+émis par le serveur natif unique restent HOLD.
+
+**Décision technique :** ne pas intégrer ce noyau tel
+quel à B5.3 pour l'instant ; rechercher la
+réutilisation du chemin Digest existant dans la
+migration du propriétaire HTTP, et mesurer le
+graphe firmware complet au lieu d'accumuler
+des objets d'authentification expérimentaux.
+
 ## Limites obligatoires : pas de changement de statut physique
 
 Ce composant **ne prend pas possession de la vraie connexion TCP**,
