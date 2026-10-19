@@ -7,11 +7,17 @@
 static unsigned nestedCalls=0;
 static void stats(){
  const auto m=FslessMetrics::snapshot();
+ eboot_command boot{};
+ const bool rtcPending=eboot_command_read(&boot)==0;
+ bool fsPreserved=true;
+ for(size_t at=0x200000;at<ESP.flash.size();++at)if(ESP.flash[at]!=0xff){fsPreserved=false;break;}
  std::cout<<"{\"sdk_writes\":"<<testWrites<<",\"flash_writes\":"<<ESP.writeCalls
  <<",\"restarts\":"<<ESP.restarts<<",\"nested_calls\":"<<nestedCalls
  <<",\"samples\":"<<M9NormalStageA::diagnosticJournal.control.word[B53Diagnostic::Samples]
  <<",\"cpu\":"<<m.cpu<<",\"gpu\":"<<m.gpu<<",\"ram\":"<<m.memoryGb<<",\"temperature\":"<<m.gpuTempC
- <<",\"lcd_operations\":"<<DisplayManager::gfx.operations<<"}"<<std::endl;
+ <<",\"lcd_operations\":"<<DisplayManager::gfx.operations
+ <<",\"rtc_pending\":"<<(rtcPending?"true":"false")
+ <<",\"fs_preserved\":"<<(fsPreserved?"true":"false")<<"}"<<std::endl;
 }
 int main(){
 #ifdef _WIN32
@@ -48,6 +54,11 @@ int main(){
              <<",\"operations\":"<<gfx.operations<<"}"<<std::endl;
     continue;
    }
+   // RAM-only synthetic Core flash fault injection, never a device action.
+   if(command=="fault erase"){ESP.failErase=true;std::cout<<"{\"ok\":true}"<<std::endl;continue;}
+   if(command=="fault write"){ESP.failWrite=true;std::cout<<"{\"ok\":true}"<<std::endl;continue;}
+   if(command=="fault read"){ESP.failRead=true;std::cout<<"{\"ok\":true}"<<std::endl;continue;}
+   if(command=="fault clear"){ESP.failErase=ESP.failWrite=ESP.failRead=false;std::cout<<"{\"ok\":true}"<<std::endl;continue;}
    if(command=="stats"){stats();continue;}
    if(command=="stop"){stop=true;continue;}
    if(command=="mode lan"){WiFi.wifiStatus=WL_CONNECTED;WiFi.sta=IPAddress(10,23,42,82);testLocal=WiFi.sta;testPeer=IPAddress(10,23,42,10);}
