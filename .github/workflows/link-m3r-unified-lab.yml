@@ -27,7 +27,7 @@ jobs:
           core=Path("experiments/link_m3p_parser/patch_core_parser.py").read_text()
           adapter=Path("experiments/link_m3r_single_parser/M3RSingleParser.h").read_text()
           host=Path("companion/link_firmware_identity.py").read_text()
-          assert 'req != F(\\"POST /api/v1/display/mode HTTP/1.1\\")' in core
+          assert 'if(req != F("POST /api/v1/display/mode HTTP/1.1"))' in core
           assert 'POST /api/v1/display/mode HTTP/1.1' in adapter
           assert 'gate.headerByte<Crypto>' in adapter
           assert 'gate.bodyByte<Crypto>' in adapter
@@ -99,6 +99,9 @@ jobs:
           tool=Path.home()/".platformio/packages/toolchain-xtensa/bin/"
           symbols=subprocess.check_output([str(tool/"xtensa-lx106-elf-nm"),"-C",str(elf)],text=True)
           assert "m3r_link_single_gate" in symbols
+          matching=[line for line in symbols.splitlines()
+                    if "ShinoM3R" in line or "ShinoM3P" in line or "m3r_link_single_gate" in line]
+          print("M3R_NATIVE_SYMBOL_DIAGNOSTIC", "\n".join(matching[:32]))
           assert "ShinoM3R::readAuthenticatedHeaders" in symbols
           assert "ShinoM3P::readFirstLine" in symbols
           assert "ShinoM3C::Gate" in symbols
