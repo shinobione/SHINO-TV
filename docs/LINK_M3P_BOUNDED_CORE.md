@@ -87,6 +87,72 @@ installé ou le firmware du propriétaire.**
   soit **80 octets de marge seulement**. Une frame locale
   compilateur n'est pas une mesure physique de CONT.
 
+
+## Campagne M3-P — chronologie et observations vérifiées
+
+Les résultats ci-dessous sont vérifiés sur le **commit de code**
+`7d0dbb78f48e689468a3a72996a1a6d43debb647`,
+CI ciblée [run #39261356802](https://github.com/shinobione/SHINO-TV/actions/runs/39261356802),
+**2/2 jobs SUCCESS**. Aucun autre programme ni appareil installé
+n'est concerné.
+
+### Incidents rencontrés, corrections et enseignements
+
+1. **Premier test HOST en échec** sur « client silencieux » :
+   la fixture dévoilait à chaque `yield()` un nouvel octet et
+   finissait par transmettre une ligne valide. Ce n'était
+   pas un client silencieux. **Correction :** n'exposer
+   aucun octet à partir d'une fixture vraiment vide.
+   Les tests de temps et de compteur `millis` sont
+   désormais réussis.
+2. **Première mesure de linkage en échec** : la copie du
+   serveur modifié existait, mais le compilateur
+   sélectionnait encore l'en-tête de la bibliothèque
+   ESP8266 standard. **Correction :** inclure explicitement
+   l'en-tête de la copie locale *uniquement* dans la
+   variante Xtensa de laboratoire.
+3. **Deuxième mesure de linkage en échec** : la fonction
+   était bien dans l'ELF, mais GCC Xtensa l'avait émise
+   avec un nom local `.isra` non démanglé par
+   `nm -C`. **Correction :** rechercher soit le
+   nom lisible, soit le préfixe manglé exact
+   `_ZN8ShinoM3P13readFirstLine`. L'absence de
+   fonction dans l'ELF cible continue de provoquer
+   un échec CI ; la vérification n'a pas été supprimée.
+4. **Dernière campagne :** les deux jobs sont PASS,
+   incluant compilation réelle Core3.1.2 avec
+   `ESP8266WebServer::handleClient()`, preuve du
+   symbole en objet **et** dans l'ELF, et vérification
+   des trois fichiers de bibliothèque contre les
+   empreintes source épinglées.
+
+### Mesures réelles sur deux BIN **INERTES**
+
+| Section | Serveur original de test | Avec lecture bornée M3-P | Écart |
+|---|---:|---:|---:|
+| BIN | 286 912 octets | 287 360 octets | **+448** |
+| ELF `.text` | 281 259 octets | 281 711 octets | **+452** |
+| ELF `.data` | 1 552 octets | 1 552 octets | 0 |
+| ELF `.bss` | 25 952 octets | 25 952 octets | **0** |
+
+**OBSERVÉ SUR CI :** l'ajout ne réserve pas de BSS
+supplémentaire dans ce graphe inerte.
+**NON VÉRIFIÉ :** sa consommation transitoire de heap
+à cause de `String` et sa pile/CONT réelle ; des données
+de taille du firmware complet ne peuvent pas être
+déduites de ces mesures. Le rapport JSON téléchargable
+depuis les artefacts de CI contient les empreintes
+SHA calculées à partir des seuls BINs **inertes**.
+
+### Décision
+
+**M3-P : PASS ciblé du laboratoire ; HOLD physique.**
+La prochaine étude doit borner les en-têtes, démontrer
+le respect des anciennes routes et vérifier les
+ressources mémoire du firmware complet avant toute
+possibilité d'activation de l'affichage depuis LINK.
+
+
 ## Règle d'acceptation
 
 **PASS laboratoire limité** seulement si :
