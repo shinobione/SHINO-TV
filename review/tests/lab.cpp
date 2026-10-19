@@ -51,6 +51,18 @@ int main(){
    if(command=="stats"){stats();continue;}
    if(command=="stop"){stop=true;continue;}
    if(command=="mode lan"){WiFi.wifiStatus=WL_CONNECTED;WiFi.sta=IPAddress(10,23,42,82);testLocal=WiFi.sta;testPeer=IPAddress(10,23,42,10);}
+   // Synthetic HOST-only resource failure injection. Never changes the
+   // native admission floors and never touches any ESP/device register.
+   if(command=="resource nominal"){ESP.heap=60000;hostBlock=50000;hostStack=3248;hostFrag=1;
+    std::cout<<"{\\"ok\\":true}"<<std::endl;continue;}
+   if(command=="resource heap-low"){ESP.heap=20479;
+    std::cout<<"{\\"ok\\":true}"<<std::endl;continue;}
+   if(command=="resource block-low"){hostBlock=16383;
+    std::cout<<"{\\"ok\\":true}"<<std::endl;continue;}
+   if(command=="resource cont-low"){hostStack=2044;
+    std::cout<<"{\\"ok\\":true}"<<std::endl;continue;}
+   if(command=="resource frag-high"){hostFrag=26;
+    std::cout<<"{\\"ok\\":true}"<<std::endl;continue;}
    if(command=="heap low")ESP.heap=20479;
    if(command=="heap normal")ESP.heap=60000;
    if(command=="mode ap"){testLocal=IPAddress(192,168,4,1);testPeer=IPAddress(192,168,4,2);}
