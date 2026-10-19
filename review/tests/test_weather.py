@@ -112,6 +112,25 @@ class IntegratedWeather(unittest.TestCase):
    all(d[x] for x in ('cpu','gpu','ram','gpu_temp')),'combined weather + four cards')
   self.assertGreater(frame['operations'],0)
   self.assertEqual(self.command('stats')['flash_writes'],0)
+ def refuse_under_resource(self,case):
+  # Real deferred HTTP handler; all resource injection stays inside HOST.
+  frame=self.sample()
+  self.command('display reset')
+  self.assertTrue(self.command('resource '+case)['ok'])
+  self.assertEqual(self.wire(STATUS+NONCE.hex())[0],503,case)
+  self.assertEqual(self.post(frame)[0],503,case)
+  writes=self.command('stats')
+  self.assertEqual([writes[k] for k in ('sdk_writes','flash_writes','restarts')],[0,0,0],case)
+  screen=self.command('display')
+  self.assertFalse(screen['temp'] or screen['condition'],case)
+ def test_weather_refuses_low_heap_without_flash_or_draw(self):
+  self.refuse_under_resource('heap-low') # native floor 20480
+ def test_weather_refuses_smallest_block_without_flash_or_draw(self):
+  self.refuse_under_resource('block-low') # native floor 16384
+ def test_weather_refuses_low_cont_without_flash_or_draw(self):
+  self.refuse_under_resource('cont-low') # native floor 2048
+ def test_weather_refuses_fragmentation_without_flash_or_draw(self):
+  self.refuse_under_resource('frag-high') # native ceiling 25
  def publisher(self,lost=False):
   owner=self
   class Loopback(pub.LanTransport):
