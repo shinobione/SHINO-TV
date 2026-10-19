@@ -18,6 +18,7 @@ GRAPH = ROOT/"experiments/m9_signed_ota"
 def source_gate():
     from b52_source_compat import NEW_FILE_BLOBS, SCENE, predecessor
     from link_m2_source_identity import LINK_M2_FILE_BLOBS, LINK_PATH, reviewed_link_predecessor
+    from link_83_source_identity import LINK83_BLOBS, reviewed_m2_source
     core = core_root()
     pins = json.loads((ROOT/"tools/m9_signed_core_sources.json").read_text())
     for name, digest in pins.items():
@@ -64,6 +65,7 @@ def source_gate():
     # M1/M2 are new PC-only sources; exact Git blobs, never wildcard bypasses.
     # M2 LINK is also reconstructed against its immutable B5.2 predecessor.
     new_offline_script_pins.update(LINK_M2_FILE_BLOBS)
+    new_offline_script_pins.update(LINK83_BLOBS)
     # The verifier is new tooling outside the legacy firmware/companion set.
     # Anchor its exact bytes too; otherwise editing it could weaken the gate.
     verifier_blob = subprocess.check_output(
@@ -71,12 +73,21 @@ def source_gate():
         cwd=ROOT, text=True,
     ).strip()
     assert verifier_blob == "959ee3c0de07a145f9a4654677c1c5cdf20be8f3", "M2 source verifier changed"
+    # Issue83 verifier is pinned at an exact blob too: no edited wildcards.
+    issue83_verifier = subprocess.check_output(
+        ["git", "hash-object", "--", "tools/link_83_source_identity.py"],
+        cwd=ROOT, text=True,
+    ).strip()
+    assert issue83_verifier == "49b5be9bd0726e3536df8105b167b6d3dac4ac3e", "Issue83 source verifier changed"
     for name in subprocess.check_output(["git","ls-files","firmware","companion","tools/m9_single_attempt*"],cwd=ROOT,text=True).splitlines():
         if name in new_offline_script_pins:
             digest = subprocess.check_output(["git","hash-object","--",name],cwd=ROOT,text=True).strip()
             assert digest == new_offline_script_pins[name], "offline launcher changed: " + name
             if name == LINK_PATH:
-                reviewed_link_predecessor((ROOT/name).read_bytes().replace(b"\r\n", b"\n"))
+                reviewed_link_predecessor(reviewed_m2_source(
+                    (ROOT/name).read_bytes().replace(b"\r\n", b"\n"), name))
+            if name == "companion/link_mode_tray.py":
+                reviewed_m2_source((ROOT/name).read_bytes().replace(b"\r\n", b"\n"), name)
             continue
         # Issue43 adds only these offline installer paths. Every PREEXISTING
         # companion, firmware and physical-writer file retains exact identity.
