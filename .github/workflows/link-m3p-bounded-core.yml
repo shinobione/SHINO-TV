@@ -90,7 +90,9 @@ jobs:
           pre=Path("experiments/link_m3p_parser/use_pinned_overlay.py").read_text()
           assert "volatile bool nativeProbeEnabled=false" in s
           assert "void setup(){}" in s
-          assert "dormant" not in s or True
+          assert "ESP8266WebServer untouchedListener(80);" in s
+          assert "untouchedListener.handleClient();" in s
+          assert "if(nativeProbeEnabled)m3p_link_actual_parser();" in s
           for forbidden in (".begin();","WiFi.begin(", "WiFi.mode(",
                             "Update.begin(", "LittleFS.begin(", "ESP.restart("):
             assert forbidden not in s
