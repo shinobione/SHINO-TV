@@ -1,0 +1,98 @@
+name: LINK M3-N pinned Digest and real B5.3 metrics authorization gate (NO DEVICE)
+on:
+  pull_request:
+    paths:
+      - 'experiments/link_m3n_digest/**'
+      - 'docs/LINK_M3N_NATIVE_DIGEST.md'
+      - 'docs/ROADMAP.md'
+      - '.github/workflows/link-m3n-native-digest.yml'
+permissions:
+  contents: read
+
+jobs:
+  real-digest-host:
+    name: Actual OpenSSL MD5 qop and original FslessMetrics + HomeLan policy tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Verify original unchanged B5.3 code blobs against pinned source
+        run: |
+          python -m unittest discover -s experiments/link_m3g_real -p test_exact_source.py -v
+          python -m unittest discover -s experiments/link_m3e_legacy -p test_b53_source_pins.py -v
+      - name: Fetch pinned real ArduinoJson 7.4.3 for host compilation
+        run: |
+          python -m pip install 'platformio==6.1.18'
+          pio pkg install -d experiments/link_m3g_real -e deps_for_host
+      - name: Compile strict original C++ telemetry with OpenSSL Digest and bounded M3-N state
+        run: |
+          g++ -std=c++17 -O1 -Wall -Wextra -Werror -pedantic \
+            -I tools/host_arduinojson_stubs \
+            -I firmware/include \
+            -I experiments/link_m3n_digest \
+            -I experiments/link_m3g_real/.pio/libdeps/deps_for_host/ArduinoJson/src \
+            experiments/link_m3n_digest/test_real_digest_and_metrics.cpp \
+            firmware/src/boot/FslessMetrics.cpp \
+            -lcrypto -o "${{ runner.temp }}/m3n_real_digest"
+      - name: Execute actual MD5 challenge/nonce/replay/cookie/IP/Origin and FslessMetrics
+        run: "${{ runner.temp }}/m3n_real_digest"
+      - name: Strict native separation of Digest from M3 control HMAC
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path("experiments/link_m3n_digest/M3NMetricsAuthority.h").read_text()
+          bridge=Path("firmware/src/boot/FirstBootBridge.cpp").read_text()
+          assert '"/api/v1/bridge/metrics"' in s
+          assert '"/api/v1/display/mode"' not in s
+          assert 'HomeLan::authority' in s and 'HomeLan::peerOnSubnet' in s
+          assert 'DigestState' in s and 'BrowserReadSessions' in s
+          assert 'ESP8266WebServer server(80)' in bridge
+          assert 'server.handleClient()' in bridge
+          print("M3N_NOT_A_NATIVE_LISTENER_OR_CONTROL_AUTH_PASS")
+          PY
+  pinned-xtensa-a-b:
+    name: Actual Core3.1.2 BearSSL MD5 source link and BSS/flash stack A-B
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Require inert no begin nor credentials before compiling
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          native=Path("experiments/link_m3n_digest/src/main.cpp").read_text()
+          assert "volatile bool probe=false;" in native
+          assert "void setup() {}" in native
+          assert "WiFiServer notListening(80);" in native
+          for forbidden in ("WiFi.begin(", "WiFi.mode(", ".begin();", "Update.begin(", "ESP.restart(", "LittleFS.begin("):
+              assert forbidden not in native
+          print("M3N_XTENSA_NEVER_LISTENS_NEVER_FLASHES_PASS")
+          PY
+      - name: Install pinned PlatformIO
+        run: python -m pip install 'platformio==6.1.18'
+      - name: Build baseline original metrics/handler and M3-L HMAC
+        run: pio run -d experiments/link_m3n_digest -e m3n_metrics_baseline
+      - name: Build real native BearSSL MD5 authorization source without network boot
+        run: pio run -d experiments/link_m3n_digest -e m3n_legacy_digest_gate
+      - name: Measure real source-built ELF/BIN/stack and verify retained symbols
+        run: |
+          python experiments/link_m3n_digest/report_native_delta.py
+          cat experiments/link_m3n_digest/m3n_inert_digest_resource_receipt.json >> "${GITHUB_STEP_SUMMARY}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m3n-inert-digest-xtensa-abc
+          path: experiments/link_m3n_digest/m3n_inert_digest_resource_receipt.json
+          retention-days: 7
+          if-no-files-found: error
