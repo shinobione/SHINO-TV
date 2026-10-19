@@ -1,5 +1,27 @@
 # SHINO // LINK — Issue 83 : vérification du firmware dans le menu Windows
 
+## Réconciliation avec B5.4 postboot (19 octobre 2026)
+
+Depuis le développement HOST de l'issue #83, le [GET postboot de
+Codex dans #81](https://github.com/shinobione/SHINO-TV/issues/81#issuecomment-6275185762)
+a confirmé **P0+Updater512+B5.4 privé (431 920 octets)**, identité
+exactement rapprochée aux preuves privées et boot distinct. **Ce GET
+n'a PAS été déclenché par le menu #83** : le nouveau menu reste
+non installé et les tests de la PR #85 restent HOST/Win32 simulés.
+Le nom B5.4 ne doit toujours être montré au clic que lorsque la
+réponse authentifiée et le vrai couple BIN/manifeste local vérifié
+coïncident ; aucune table taille→version statique.
+
+**HOLD inchangé avant déploiement :** le reçu historique
+`STOP_UNKNOWN_NO_RETRY` et toutes les réservations `.attempt` du
+client OTA one-shot #81 sont **conservés**, même après la preuve de
+postboot. Notre lecture actuelle ne sait pas encore localiser et
+coordonner toutes ces réservations. Ne pas contourner le verrou
+du diagnostic ni effacer les marqueurs pour « faire marcher » le menu.
+Ce chantier est désormais inclus dans la [PR unique M3-R #85](https://github.com/shinobione/SHINO-TV/pull/85) ;
+[#84](https://github.com/shinobione/SHINO-TV/pull/84) est une source historique.
+
+
 19 octobre 2026. Recherche PC seulement. Branche Draft isolée basée sur PR54/M2, aucun GET physique, OTA ou installation Windows.
 
 ## Fonction

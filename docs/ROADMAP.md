@@ -1,5 +1,18 @@
 # SHINO // TV — Roadmap
 
+## PRIORITÉ ACTUELLE — SHINO // TV + SHINO // LINK réunifiés sur M3-R (19 octobre 2026)
+
+**Décision propriétaire : documenter et piloter tous les chantiers convergents sur une seule branche logicielle, sans merge implicite de Codex.**
+[Checkpoint B5.4](PROJECT_STATE.md) | [Plan commun / matrice des PR et portes](SHINO_TV_LINK_UNIFICATION.md) | [Journal M3-R](LINK_M3R_UNIFIED_BRANCH.md) | [PR Draft #85](https://github.com/shinobione/SHINO-TV/pull/85).
+
+- **RÉFÉRENCE MATÉRIELLE ACTUELLE :** B5.4 privée (431 920 o), identité postboot réellement comparée aux artefacts privés lors d'un GET Digest authentifié [#81](https://github.com/shinobione/SHINO-TV/issues/81#issuecomment-6275185762). Le firmware installé n'est plus « P0 seul », ni B5.3. LCD quatre cartes/date/heure observés, météo réelle encore NON VÉRIFIÉE ; VM existante, publication toujours rapportée OFF.
+- **SOURCES À CONCILIER :** #72 graphe B5.4 public, #73 rendu météo HOST, #76 modes Auto/Horloge-Météo ; provenance des vrais artefacts privés auprès de Codex local. **NON FUSIONNÉES dans #85**. M3-A…R + menu Windows #83, eux, sont réunis dans #85 pour essais HOST.
+- **RÈGLE DE PROTECTION :** `STOP_UNKNOWN_NO_RETRY` et réservation OTA consommée demeurent historiques et conservés ; ne pas refaire d'OTA ni nettoyer `.attempt` parce que le postboot a été confirmé. La lecture Windows #83 est HOLD pour distribution jusqu'à coordination avec le client OTA et ses répertoires/locks ; aucun nouveau GET LAN depuis cette branche.
+- **PROCHAINE ÉTAPE UNIQUE :** comparer le point d'insertion contrôlé de M3-O/P→M3-C au vrai graphe B5.4 public (#72) et garantir Digest, télémétrie, clock, météo signée, OTA et ressources, avant tout assemblage privé ou GO matériel.
+
+**Les sections M3-Q/B5.3 ci-dessous restent historiques et propres à leur périmètre, pas l'état du firmware réellement installé.**
+
+
 ## M3-R — Branche unique SHINO // LINK + contrôle HTTP expérimental (19 octobre 2026)
 
 **GO propriétaire : « combine tout ça […] une seule branche en direction de M3-R ».**

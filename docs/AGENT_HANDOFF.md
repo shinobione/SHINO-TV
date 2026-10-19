@@ -1,6 +1,21 @@
 # SHINO // TV — Agent handoff / operational source of truth
 Last owner mandate update: **2026-10-14**; the **2026-10-01** square-scene product contract remains below. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
+## CURRENT checkpoint — 19 octobre 2026 : B5.4 postboot + chantier unique #85
+
+**Cette section PRÉVAUT sur les anciens blocs datés du 14 octobre ci-dessous.**
+[État central](PROJECT_STATE.md) ; [plan de réunification](SHINO_TV_LINK_UNIFICATION.md) ; [journal M3-R](LINK_M3R_UNIFIED_BRANCH.md).
+
+- **OBSERVÉ/RAPPORT CODEX LOCAL** : l'[issue #81](https://github.com/shinobione/SHINO-TV/issues/81#issuecomment-6275185762) atteste une lecture GET postboot Digest 401→200 de la B5.4 privée exacte (431 920 o), identités complète et boot distinct rapprochés des BIN/manifeste/reçu privés. Le propriétaire a vu les quatre cartes de mesures, date et heure sur le LCD après reboot. Ce **n'est pas** un build ou test matériel de la branche M3-R.
+- Au GET postboot : `fs_ok=true`, 24 fichiers/181 402 o, `metrics_fresh=true`, `ota_enabled=true`, `last_update=NONE`, heap libre 28 168, bloc 26 080, CONT 2 180 o, fragmentation 8 %. **Un seul instant**, pas de profil pire cas ni test d'endurance. Publisher météo VM toujours OFF selon rapport et météo réelle non qualifiée.
+- L'ancien `STOP_UNKNOWN_NO_RETRY`, la réservation one-shot consommée et tous les marqueurs/sauvegardes sont **à conserver**, même après la preuve postboot. Le GO OTA et celui du GET postboot sont consommés ; **aucun nouveau GET physique, POST, OTA, flash, reboot, UART, Wi-Fi ou modification VM** n'est autorisé.
+- **PR Draft #85 / M3-R** : une seule branche d'intégration logicielle. Elle réunit l'ascendance M1/M2 + M3-A→Q et les 12 fichiers exacts du menu Windows #83 issus de #84 ; le laboratoire M3-R n'active aucun writer d'affichage et le nouveau menu n'est pas installé. Les branches #72 (graphe B5.4 public), #73 (tests weather/render) et #76 (scène Auto/Horloge-Météo) sont **des sources à rapprocher**, pas des commits déjà fusionnés, et ne prouvent pas l'image B5.4 privée.
+- **Action suivante autorisée :** parité des routes/provenances B5.4 publiques et contrôles M3-R sur banc HOST isolé, sans exposer de secrets, puis budgets mémoire du vrai graphe complet. Revoir en parallèle la coordination des locks/marqueurs OTA #81 avec le bouton Windows #83 **avant** sa diffusion. Aucun GO matériel implicite.
+
+**Archives ci-dessous :** leur terminologie `Current owner mandate` était exacte à leur date de publication. Elle ne décrit pas le firmware ni l'autorisation active du 19 octobre après #81.
+
+---
+
 **Current owner mandate — B5.2 LINK CLOCK PUBLISHER / GITHUB PUBLICATION:**
 Explicit owner GO: commit/push only the13 reviewed PC/HOST files from372d20f
 on codex/b52-link-clock-publisher, no force; create a Draft PR against
