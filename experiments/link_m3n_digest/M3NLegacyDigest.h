@@ -189,6 +189,13 @@ public:
     }
     const char* nonce()const{return active_?nonce_:"";}
     const char* opaque()const{return active_?opaque_:"";}
+    bool challenge(char* out,size_t capacity)const {
+        if(!active_||!out||capacity<154u)return false;
+        const int len=std::snprintf(out,capacity,
+            "Digest realm=\"SHINO-FirstBoot\", qop=\"auth\", "
+            "nonce=\"%s\", opaque=\"%s\"",nonce_,opaque_);
+        return len>0&&static_cast<size_t>(len)<capacity;
+    }
     template<class MD5>
     bool verify(const char* raw,size_t n,const char* method,
                 const char* route,const char* user,const char* password,
