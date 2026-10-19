@@ -9,8 +9,15 @@ Lecteur de headers M3 uniquement, 320 caractères par ligne,
 960 octets cumulés, 11 champs obligatoires, délai absolu 1000 ms,
 un octet par read, rejet de doublons, TE, Origin, framing ambigu ;
 ne consomme jamais le corps. ReadyForAuth n'autorise rien.
-Tests C++ HOST et ASan/UBSan locaux PASS ; attendre CI native de
-ce commit avant tout statut de qualification Xtensa.
+Tests C++ HOST et ASan/UBSan locaux rapportés PASS.
+CI [M3-Q #39279419973](https://github.com/shinobione/SHINO-TV/actions/runs/39279419973) :
+**2/2 ciblés PASS** sur code \`56f0fb671d891c3bf18808fbd05950c75006030e\`.
+Deux images **inertes** donnent : +1 440 B BIN, +1 436 B .text,
++336 B .bss, +0 B .data. Pas de preuve mémoire produit/CONT.
+Architecture suivante M3-R en hypothèse : éviter double parser M3-Q/M3-C
+et prouver l'authentification pré-body sur un seul flux avant activation.
+Résultat global 66 checks : 30 success, 32 skipped, 4 cancelled ;
+conserver ces états sans assimilation à 66 PASS.
 Legacy B5.3 inchangé et en-têtes Core historiques encore non bornés.
 CONT physique : marge précédente 80 B. **HOLD firmware, LINK,
 Wi-Fi, OTA, HMAC et commandes d'affichage**.
