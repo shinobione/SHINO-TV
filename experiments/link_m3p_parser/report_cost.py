@@ -22,7 +22,11 @@ def one(name):
     symbols=tool("xtensa-lx106-elf-nm","-C",elf)
     if "m3p_link_actual_parser" not in symbols:
         raise RuntimeError("Real Core handleClient graph optimized away")
-    has_bound="ShinoM3P::readFirstLine" in symbols
+    # Xtensa GCC -Os may clone the noinline template into a local
+    # `.isra` symbol; GNU nm -C does not always demangle the suffix,
+    # but the exact mangled namespace+function prefix stays in ELF.
+    has_bound=("ShinoM3P::readFirstLine" in symbols or
+               "_ZN8ShinoM3P13readFirstLine" in symbols)
     if has_bound!=(name==VARIANTS[1]):
         raise RuntimeError("HOLD: patched Core parser not really linked in the correct variant")
     frames=[]
