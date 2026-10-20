@@ -134,3 +134,12 @@ Packaging fondé sur les documentations officielles
 [runtime frozen](https://pyinstaller.org/en/stable/runtime-information.html) et
 [mode windowed](https://pyinstaller.org/en/stable/usage.html).
 Livraison puis STOP ; M3-R et coordination OTA #83 demeurent HOLD.
+
+## Correction de fermeture CI
+
+La CI Windows dédiée a reconstruit et testé le vrai EXE avec succès sur
+`d495d2f`. Trois workflows historiques ont révélé les cinq nouveaux fichiers
+PC absents de leur ancien commit de référence. Ajout de leurs cinq blobs Git
+exacts dans les deux tables existantes, avec deux régressions de pins et de
+refus des mutations. Aucun pin historique, source runtime ou EXE modifié.
+La CI finale reste à vérifier sur le commit de cette correction.

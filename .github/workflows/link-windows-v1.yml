@@ -31,6 +31,8 @@ jobs:
             python -m unittest discover -s companion -p $pattern -v
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
+      - name: Preserve exact historical and Windows source pins
+        run: python -m unittest discover -s tools -p test_link_windows_source_pins.py -v
       - name: Build real GUI EXE from allowlisted sources only
         run: python tools/build_link_windows.py --output "${{ runner.temp }}/LINK-V1"
       - name: Test real standalone EXE, Win32 tray, errors, reconnect and instance lock

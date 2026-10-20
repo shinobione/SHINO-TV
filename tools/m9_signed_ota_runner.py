@@ -57,6 +57,12 @@ def source_gate():
         'companion/test_shino_b5_get_diagnostic.py': '07bc1cfc28904206674389c896d1504cd90281d2',
         'companion/shino_b5_partial_preflight.py': 'c4b950a08a6d498a01fa49d86e75f48e3e3c0cc6',
         'companion/test_shino_b5_partial_preflight.py': '84adec2c7ce3ad49c9b0424afaa94af082019cb2',
+        # Windows V1 additions: exact five PC blobs, no historical-source exemption.
+        'companion/link_windows.py': '8be3b68b96dab5b2c61de9a6c9d54da4a7890b90',
+        'companion/link_windows_smoke.py': 'dedaef139c4b9669954d755245bea1efa3bb308a',
+        'companion/requirements-windows-build.txt': 'c0284ba74b219ab08f1ac926c7605d8674919d2a',
+        'companion/shino_link_windows.pyw': '12f443fa32ce3be81fc89eab5808a4d3ee34e1fe',
+        'companion/test_link_windows.py': 'b0bea81656f8cab35d06b9e2a8c8d563b2580b66',
     }
     # Added B5.2 sources did not exist at the frozen signed-graph checkpoint.
     # Every path is pinned to its reviewed blob; SceneEngine still proves its
