@@ -1,0 +1,46 @@
+name: SHINO LINK Windows V1 EXE (OFFLINE)
+on:
+  pull_request:
+    paths:
+      - 'companion/**'
+      - 'tools/build_link_windows.py'
+      - 'tools/test_link_windows_exe.py'
+      - '.github/workflows/link-windows-v1.yml'
+permissions:
+  contents: read
+jobs:
+  windows-exe:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: x64
+      - name: Install pinned build dependencies
+        run: python -m pip install -r companion/requirements-windows-build.txt
+      - name: Existing engine, clock, menu and new Windows entry tests
+        shell: pwsh
+        run: |
+          $patterns = @('test_link_windows.py','test_shino_link.py','test_link_mode_tray.py','test_link_display_modes.py','test_link_clock.py','test_link_clock_loopback.py','test_clock_sync.py','test_push_fsless_metrics.py','test_metrics_server.py','test_shino_digest_coord.py')
+          foreach ($pattern in $patterns) {
+            python -m unittest discover -s companion -p $pattern -v
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+      - name: Build real GUI EXE from allowlisted sources only
+        run: python tools/build_link_windows.py --output "${{ runner.temp }}/LINK-V1"
+      - name: Test real standalone EXE, Win32 tray, errors, reconnect and instance lock
+        run: python tools/test_link_windows_exe.py --exe "${{ runner.temp }}/LINK-V1/SHINO-LINK.exe" --output "${{ runner.temp }}/LINK-V1-TESTS"
+      - name: Retain public build manifest and offline evidence only
+        uses: actions/upload-artifact@v4
+        with:
+          name: link-windows-v1-offline-evidence
+          path: |
+            ${{ runner.temp }}/LINK-V1/BUILD-MANIFEST.json
+            ${{ runner.temp }}/LINK-V1/BUILD.log
+            ${{ runner.temp }}/LINK-V1-TESTS/FROZEN-SMOKE.json
+            ${{ runner.temp }}/LINK-V1-TESTS/EXE-TESTS.json

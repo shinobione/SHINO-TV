@@ -1,5 +1,10 @@
 # SHINO // TV — Roadmap
 
+## Livraison SHINO // LINK Windows V1 — 21 octobre 2026
+
+Décision propriétaire et PR #85 #6303906090 : arrêt des incréments M3-R ; livrer un véritable EXE Windows autonome sans console, tray, worker unique, quatre mesures LINK, reconnexion et exclusion des instances. Packaging et tests Windows/EXE hors ligne uniquement dans un dossier isolé. Configuration privée existante réutilisée ; aucune clé intégrée. Modes = aperçu PC, diagnostic #83 désactivé (coordination OTA HOLD), autostart EXE opt-in sans activation. Préserver intégralement le patch et les preuves HMAC incrément 8 non suivis ; aucun import ou nouveau travail M3-R. Aucun contact SmallTV/VM, installation, remplacement du LINK, modification registre/autostart ou merge. Commit/push ciblés seulement après coordination et tests, CI au SHA exact. Livraison et rapport puis STOP.
+
+
 ## Incrément 4 — faisabilité native B5.4/M3-R inerte (20 octobre 2026)
 
 GO propriétaire : comparaison compilée Xtensa du graphe StageA B5.4 et du
