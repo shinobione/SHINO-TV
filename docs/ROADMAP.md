@@ -1,5 +1,15 @@
 # SHINO // TV — Roadmap
 
+## Incrément 4 — faisabilité native B5.4/M3-R inerte (20 octobre 2026)
+
+GO propriétaire : comparaison compilée Xtensa du graphe StageA B5.4 et du
+handoff importé, Core 3.1.2 épinglé, entrée sans appel à l'application,
+refus 503 systématique et aucun writer d'écran. Aucun contact matériel/VM,
+activation ou candidat privé installable. Les mesures compilées restent
+distinctes du heap/CONT/WDT physique NON VÉRIFIÉ ; seuils inchangés.
+Rapport daté séparé et CI du nouveau SHA requis avant conclusion logicielle.
+
+
 ## Incrément 3 — import HOST du handoff B5.4/M3-R (20 octobre 2026)
 
 GO propriétaire : importer seulement le patch HOST pré-body dans le worktree

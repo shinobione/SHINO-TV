@@ -1,5 +1,15 @@
 # SHINO // TV — Agent handoff / operational source of truth
 
+## 20 octobre — incrément 4 natif B5.4/M3-R strictement inerte
+
+Deux compositions Xtensa Core 3.1.2, StageA B5.4 avec/sans handoff ; entrée
+vide, BIN rendu non amorçable, refus 503 intact, aucun writer/ACK de commande.
+RAM statique +2116 o, BIN +6112 o ; heap/CONT/WDT physiques NON VÉRIFIÉS.
+[Mesures, preuves et limites](B54_M3R_NATIVE_INERT_2026-10-20.md) ; verdict
+conditionné à la CI du SHA exact consignée dans #85. HOLD matériel conservé.
+Météo automatique déjà validée et firmware installé hors périmètre.
+
+
 ## 20 octobre — incrément 3 HOST B5.4/M3-R
 
 Le handoff pré-body est importé comme overlay HOST source-épinglé dans
