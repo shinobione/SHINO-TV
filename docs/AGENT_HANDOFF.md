@@ -1,4 +1,16 @@
 # SHINO // TV — Agent handoff / operational source of truth
+
+## 20 octobre — incrément 3 HOST B5.4/M3-R
+
+Le handoff pré-body est importé comme overlay HOST source-épinglé dans
+`experiments/link_m3r_b54_handoff`, sans remplacer `firmware/` ni importer
+le firmware privé. Une seule Gate sous `httpBusy`, refus 503 même après
+vérification, aucun writer d'écran. Les mesures HOST ne qualifient pas
+ESP8266/heap/CONT. CI exacte requise pour le verdict final ; voir le
+[rapport daté](B54_M3R_SOCKET_HANDOFF_IMPORT_2026-10-20.md) et le bilan #85.
+La météo automatique déjà validée reste inchangée, hors périmètre.
+Les checkpoints physiques et preuves historiques ci-dessous restent datés.
+
 Last owner mandate update: **2026-10-14**; the **2026-10-01** square-scene product contract remains below. This document is primarily for ChatGPT, Codex and successor coding agents, not a short end-user marketing summary. It deliberately points to historical records instead of deleting them. Always check live branch HEAD and exact CI again at execution time.
 
 ## CURRENT checkpoint — 19 octobre 2026 : B5.4 postboot + chantier unique #85

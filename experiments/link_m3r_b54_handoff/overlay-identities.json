@@ -1,0 +1,32 @@
+{
+  "host/M3RB54Lab.inc": {
+    "before": null,
+    "after": "ea0935518a57491c0a0e0a3487c23c26c07ef139fbbf80820b2dcb4f70667eec",
+    "bytes": 3170
+  },
+  "host/normal_host.inc": {
+    "before": "ee47b4c1640866f7765a008eb6f64a66891ef07a85812c082cd2965dd6557e4d",
+    "after": "38a4c977ff87c38d937d646779dc20edab438bad82dab97a3fff7372c745adf4",
+    "bytes": 30132
+  },
+  "host/Parsing-impl.h": {
+    "before": "ab23bd46f76eaaa517e4f68f24a63076286f2b39dbf4d0c0db8432c2c99de6c7",
+    "after": "97fef98755507f20b0e2167aac31018341027ed5de8d50521c1dbde0dac8d83b",
+    "bytes": 21881
+  },
+  "native/http/Parsing-impl.h": {
+    "before": "e582ea0dae222e2491ece009ee4ff9539115cdf8b94b43adbe733cee7c0acb64",
+    "after": "f66e3d5aa96afbb8a6b6fd12d89abf6f3c19d1756caa6243df0281fc27cc001a",
+    "bytes": 21859
+  },
+  "native/src/boot/M9NormalStageA.cpp": {
+    "before": "ee47b4c1640866f7765a008eb6f64a66891ef07a85812c082cd2965dd6557e4d",
+    "after": "38a4c977ff87c38d937d646779dc20edab438bad82dab97a3fff7372c745adf4",
+    "bytes": 30132
+  },
+  "tests/lab.cpp": {
+    "before": "1da08debd9e7337f13e76efeab55fe6cd0c5293fae8bac41129c2725cf560b75",
+    "after": "d448e6103892e8445bbc0b4b49db6b429bbd3827a8267173a17ff56d74ac86db",
+    "bytes": 3965
+  }
+}

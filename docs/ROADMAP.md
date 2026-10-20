@@ -1,5 +1,17 @@
 # SHINO // TV — Roadmap
 
+## Incrément 3 — import HOST du handoff B5.4/M3-R (20 octobre 2026)
+
+GO propriétaire : importer seulement le patch HOST pré-body dans le worktree
+réservé de #85, tester le vrai graphe B5.4, commit/push normal conditionnels et
+CI du SHA exact. Source B5.4 publique #72 épinglée, composants M3 existants
+conservés ; aucun merge/import du firmware privé ou des branches sources.
+Laboratoire uniquement, M3-O deny-only préservé, aucun writer/ACK de mode.
+SmallTV, VM météo automatique déjà qualifiée, EXE installé, sauvegardes et
+marqueurs hors périmètre. Aucun contact matériel, build installable ou activation.
+Résultats de cet incrément : [rapport daté](B54_M3R_SOCKET_HANDOFF_IMPORT_2026-10-20.md).
+
+
 ## PRIORITÉ ACTUELLE — SHINO // TV + SHINO // LINK réunifiés sur M3-R (19 octobre 2026)
 
 **Décision propriétaire : documenter et piloter tous les chantiers convergents sur une seule branche logicielle, sans merge implicite de Codex.**

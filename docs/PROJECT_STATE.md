@@ -1,5 +1,17 @@
 # SHINO // TV — État opérationnel et décisions actives
 
+## 20 octobre — incrément 3 HOST B5.4/M3-R
+
+Le handoff pré-body est importé comme overlay HOST source-épinglé dans
+`experiments/link_m3r_b54_handoff`, sans remplacer `firmware/` ni importer
+le firmware privé. Une seule Gate sous `httpBusy`, refus 503 même après
+vérification, aucun writer d'écran. Les mesures HOST ne qualifient pas
+ESP8266/heap/CONT. CI exacte requise pour le verdict final ; voir le
+[rapport daté](B54_M3R_SOCKET_HANDOFF_IMPORT_2026-10-20.md) et le bilan #85.
+La météo automatique déjà validée reste inchangée, hors périmètre.
+Les checkpoints physiques et preuves historiques ci-dessous restent datés.
+
+
 **Checkpoint actif — 19 octobre 2026, projet SHINO // TV / SHINO // LINK.**
 **Source de coordination GitHub : branche `feature/link-m3r-unified-integration-20261019`, PR [#85](https://github.com/shinobione/SHINO-TV/pull/85) Draft.**
 Cette page décrit des faits rapportés et vérifiés dans les commentaires de l'issue #81 et des états GitHub distincts. Elle ne remplace **ni** les BIN/manifeste/reçus privés **ni** une lecture physique nouvelle. Les SHA publics sont des commits, **pas** les empreintes du firmware installé.

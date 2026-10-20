@@ -1,0 +1,43 @@
+name: B5.4 M3-R imported socket handoff HOST
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/link_m3r_b54_handoff/**'
+      - 'experiments/link_m3c_crypto/**'
+      - 'experiments/link_m3r_single_parser/**'
+      - '.github/workflows/link-m3r-b54-handoff-host.yml'
+      - 'docs/B54_M3R_SOCKET_HANDOFF_IMPORT_2026-10-20.md'
+permissions:
+  contents: read
+
+jobs:
+  imported-b54-host:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: shinobione/SHINO-TV
+          ref: 91969aceb45e0c43d44f93a702a3997b57e8f89e
+          path: experiments/link_m3r_b54_handoff/.build/public-source
+          persist-credentials: false
+      - name: Verify dependency commit and execute exact source overlay
+        run: |
+          test "$(git -C experiments/link_m3r_b54_handoff/.build/public-source rev-parse HEAD)" = "91969aceb45e0c43d44f93a702a3997b57e8f89e"
+          python -B experiments/link_m3r_b54_handoff/run.py \
+            --source-review experiments/link_m3r_b54_handoff/.build/public-source/review \
+            --output experiments/link_m3r_b54_handoff/.build/qualified
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: b54-m3r-host-source-tests-resources
+          path: |
+            experiments/link_m3r_b54_handoff/.build/qualified/*.json
+            experiments/link_m3r_b54_handoff/.build/qualified/*.log
+          if-no-files-found: error
+          retention-days: 7
