@@ -17,6 +17,13 @@ An independent, experimental firmware and PC-companion project for the **GeekMag
 
 The address above is an example of the owner's local device, not a hardcoded firmware setting or internet endpoint.
 
+## UI 240 × 240 — références graphiques (21 octobre 2026)
+
+![Monitoring, horloge/météo et musique](assets/ui/240x240/APERCU_3_ECRANS.png)
+
+Trois maquettes **PNG natives 240 × 240**, avec agrandissements de revue : [références et critères UI](docs/UI_240X240_REFERENCES.md) · [roadmap active](docs/ROADMAP.md).
+**Ce sont des références graphiques, pas des captures du LCD ni la preuve d'un mode musique installé.** Les valeurs sont fictives ; aucune écriture sur appareil n'est autorisée par leur ajout.
+
 ## Goal
 
 Replace the factory application's limitations with an extensible, documented system:
