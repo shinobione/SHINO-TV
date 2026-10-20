@@ -25,6 +25,10 @@
 - **Mode control Windows / musique :** UX et plusieurs laboratoires HOST existent sur PR Draft séparées ; ne pas confondre prévisualisation/menu HOST avec contrôle natif déjà actif sur le SmallTV.
 - **Diagnostics HTTP P0 :** tentative de lecture authentifiée terminée avec `UNEXPECTED_HTTP_STATUS` le 18 octobre. **Cause non établie ; aucun retry automatique**. L'identité HTTP courante et les minima mémoire physiques P0 restent **NON VÉRIFIÉS/HOLD**. Cet échec n'annule pas l'observation écran/LINK.
 
+### Références graphiques 240 × 240 — 21 octobre 2026
+
+**PROUVÉ FICHIER, et non validé sur appareil :** sept PNG de référence (trois natifs 240×240, trois zooms de revue 720×720, un aperçu comparatif) ajoutés sur une branche documentaire isolée. Voir [UI_240X240_REFERENCES.md](UI_240X240_REFERENCES.md) et [ROADMAP.md](ROADMAP.md). Monitoring = 4 mesures, RAM uniquement en Go ; horloge/jour/météo ; musique = pochette carrée, titre/artiste, progression et état Play/Pause. Cette évolution du design **ne change ni le mandat B5.4 actif, ni les HOLD physiques, ni le firmware installé**.
+
 ## 3. Décision propriétaire active et prochaine action
 
 **GO logiciel donné le 19 octobre 2026 : intégrer B5.4 météo LAN dans P0+Updater512.** Périmètre précis :
