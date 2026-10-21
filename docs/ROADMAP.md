@@ -1,5 +1,9 @@
 # SHINO // TV — Roadmap
 
+## Correction interface Windows V1 — 21 octobre 2026
+
+Retour propriétaire PR #85 #6309141360 : OWNER_DESKTOP_SMOKE PARTIAL / UI HOLD, boîte d’état modale non fermable. GO courant : reproduire le vrai callback Win32, remplacer Consulter l’état par un sous-menu natif passif actualisé, tester ouverture/fermeture/sélections/cycles/Quitter et livrer un EXE corrigé dans un nouveau dossier isolé avec taille/SHA et CI exacte. Préserver ancien EXE, patch HMAC, artefacts, quatre aperçus PC, locks et sender. Aucun LIVE, autostart/registre, SmallTV/VM, reprise M3-R ou merge. Livraison puis STOP.
+
 ## Livraison SHINO // LINK Windows V1 — 21 octobre 2026
 
 Décision propriétaire et PR #85 #6303906090 : arrêt des incréments M3-R ; livrer un véritable EXE Windows autonome sans console, tray, worker unique, quatre mesures LINK, reconnexion et exclusion des instances. Packaging et tests Windows/EXE hors ligne uniquement dans un dossier isolé. Configuration privée existante réutilisée ; aucune clé intégrée. Modes = aperçu PC, diagnostic #83 désactivé (coordination OTA HOLD), autostart EXE opt-in sans activation. Préserver intégralement le patch et les preuves HMAC incrément 8 non suivis ; aucun import ou nouveau travail M3-R. Aucun contact SmallTV/VM, installation, remplacement du LINK, modification registre/autostart ou merge. Commit/push ciblés seulement après coordination et tests, CI au SHA exact. Livraison et rapport puis STOP.

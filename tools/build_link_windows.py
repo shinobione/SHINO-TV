@@ -37,7 +37,7 @@ def main():
         sources[name]=hashlib.sha256(source.read_bytes()).hexdigest()
     # Generate the same existing LINK tray motif; no external image dependency.
     sys.path.insert(0,str(stage))
-    from link_windows import tray_picture
+    from link_windows import tray_picture, VERSION
     tray_picture('CONNECTED').save(stage/'link_windows.ico', sizes=[(16,16),(32,32),(48,48),(64,64)])
     command=[sys.executable,'-m','PyInstaller','--noconfirm','--clean','--onefile',
              '--windowed','--noupx','--name','SHINO-LINK','--paths',str(stage),
@@ -51,7 +51,7 @@ def main():
         subprocess.run(command, cwd=stage, stdout=log, stderr=subprocess.STDOUT, check=True)
     exe=output/'SHINO-LINK.exe'
     packages={d.metadata['Name']:d.version for d in importlib.metadata.distributions()}
-    manifest=dict(version='1.0.0',platform=sys.platform,python=sys.version,
+    manifest=dict(version=VERSION,platform=sys.platform,python=sys.version,
                   executable=exe.name,bytes=exe.stat().st_size,
                   sha256=hashlib.sha256(exe.read_bytes()).hexdigest(),
                   sources=sources,dependencies=packages,

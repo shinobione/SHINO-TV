@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import ctypes
 import os
+import math
 from pathlib import Path
 import subprocess
 import sys
@@ -18,7 +19,7 @@ import shino_link as link
 from link_mode_tray import ModeTrayController, build_preview_menu, passive_link_signals
 from link_display_modes import Signals
 
-VERSION = '1.0.0'
+VERSION = '1.0.1'
 HOLD_LABEL = 'Diagnostic firmware #83 indisponible : coordination OTA HOLD'
 
 
@@ -37,6 +38,45 @@ def tray_picture(state):
     return image
 
 
+def status_menu(pystray, engine, status_supplier, clock_host=None):
+    """Read only in-memory LINK data. No dialogs, sampling, IO or worker."""
+    def counter(name):
+        value = getattr(engine, name, None)
+        return str(value) if type(value) is int and 0 <= value <= 10**12 else 'indisponible'
+
+    def ack():
+        stamp = getattr(engine, 'last_success', None)
+        if type(stamp) in (int,float) and math.isfinite(stamp):
+            now = engine.clock()
+            if type(now) in (int,float) and math.isfinite(now) and now >= stamp:
+                return f'Dernier ACK PC : {int((now-stamp)*1000)} ms (TTL 6000 ms)'
+        return 'Dernier ACK PC : indisponible'
+
+    fields = (
+        lambda: 'Connexion : ' + (status_supplier() if status_supplier() in ('CONNECTED','RETRYING','DISCONNECTED') else 'DISCONNECTED'),
+        lambda: 'Windows : ' + VERSION,
+        lambda: 'Télémétrie : aucun envoi, aucun worker' if engine is None else 'Télémétrie : worker LINK unique',
+        lambda: 'Mesures acceptées : ' + counter('accepted') + ' / ' + counter('attempts') if engine is not None else 'Mesures acceptées : sans objet hors ligne',
+        lambda: 'Échecs consécutifs : ' + counter('failures') if engine is not None else 'Échecs : sans objet hors ligne',
+        ack,
+        lambda: 'Mesures : CPU / GPU / RAM / GPU temp',
+        lambda: 'GPU : pilote NVIDIA requis ; indisponibilité signalée par LINK',
+        lambda: 'Horloge : option explicite active' if clock_host and engine is not None else 'Horloge : option désactivée',
+        lambda: 'Modes : aperçu PC uniquement ; aucun changement SmallTV',
+    )
+    return pystray.Menu(*(pystray.MenuItem(lambda item, read=read:read(), lambda *_:None,
+                                          enabled=False) for read in fields))
+
+
+def tray_type(backend):
+    class Tray(backend):
+        def _on_notify(self, wparam, lparam):
+            if lparam == 0x205:  # Win32 WM_RBUTTONUP, before TrackPopupMenuEx.
+                self.update_menu()
+            return super()._on_notify(wparam, lparam)
+    return Tray
+
+
 def run_tray(engine, *, clock_host=None, setup_hook=None):
     import pystray
     offline = engine is None
@@ -53,22 +93,11 @@ def run_tray(engine, *, clock_host=None, setup_hook=None):
         status['value'] = value if value in ('CONNECTED','RETRYING') else 'DISCONNECTED'
         icon.title = title()
         icon.icon = tray_picture(status['value'])
-        icon.update_menu()
+        # Dynamic text is rebuilt on the Win32 thread immediately before open.
 
     def dashboard(icon_, item):
         if engine:
             webbrowser.open('http://' + link.validate_host(engine.host) + '/')
-
-    def details(icon_, item):
-        if engine:
-            data = engine.diagnostics()
-            text = f"{status['value']}\nMesures acceptées : {data['accepted']} / {data['attempts']}\n"
-            text += 'CPU / GPU / RAM / GPU temp : protocole LINK existant.\n'
-            text += 'GPU indisponible si le pilote NVIDIA / nvidia-smi est absent.\n'
-            text += 'Horloge : ' + ('option explicite active' if clock_host else 'option désactivée')
-        else:
-            text = 'DISCONNECTED — aperçu PC hors ligne. Aucun envoi, aucune mesure simulée.'
-        message(text + '\nModes : aperçu PC uniquement.\n' + HOLD_LABEL)
 
     def quit_app(icon_, item):
         stop.set()
@@ -79,9 +108,9 @@ def run_tray(engine, *, clock_host=None, setup_hook=None):
     items = list(base.items)
     # Preserve the existing preview menu and actions; do not instantiate #83.
     items[-2] = pystray.MenuItem('Ouvrir le dashboard SHINO // TV', dashboard, enabled=not offline)
-    items[-1:-1] = [pystray.MenuItem('Consulter l’état', details),
+    items[-1:-1] = [pystray.MenuItem('Consulter l’état', status_menu(pystray, engine, lambda:status['value'], clock_host)),
                     pystray.MenuItem(HOLD_LABEL, lambda *_:None, enabled=False)]
-    icon = pystray.Icon('SHINO_LINK_V1', tray_picture('DISCONNECTED'), title(), pystray.Menu(*items))
+    icon = tray_type(pystray.Icon)('SHINO_LINK_V1', tray_picture('DISCONNECTED'), title(), pystray.Menu(*items))
 
     def work():
         try:
