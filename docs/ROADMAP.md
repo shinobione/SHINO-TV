@@ -1,5 +1,80 @@
 # SHINO // TV — Roadmap
 
+## Correction interface Windows V1 — 21 octobre 2026
+
+Retour propriétaire PR #85 #6309141360 : OWNER_DESKTOP_SMOKE PARTIAL / UI HOLD, boîte d’état modale non fermable. GO courant : reproduire le vrai callback Win32, remplacer Consulter l’état par un sous-menu natif passif actualisé, tester ouverture/fermeture/sélections/cycles/Quitter et livrer un EXE corrigé dans un nouveau dossier isolé avec taille/SHA et CI exacte. Préserver ancien EXE, patch HMAC, artefacts, quatre aperçus PC, locks et sender. Aucun LIVE, autostart/registre, SmallTV/VM, reprise M3-R ou merge. Livraison puis STOP.
+
+## Livraison SHINO // LINK Windows V1 — 21 octobre 2026
+
+Décision propriétaire et PR #85 #6303906090 : arrêt des incréments M3-R ; livrer un véritable EXE Windows autonome sans console, tray, worker unique, quatre mesures LINK, reconnexion et exclusion des instances. Packaging et tests Windows/EXE hors ligne uniquement dans un dossier isolé. Configuration privée existante réutilisée ; aucune clé intégrée. Modes = aperçu PC, diagnostic #83 désactivé (coordination OTA HOLD), autostart EXE opt-in sans activation. Préserver intégralement le patch et les preuves HMAC incrément 8 non suivis ; aucun import ou nouveau travail M3-R. Aucun contact SmallTV/VM, installation, remplacement du LINK, modification registre/autostart ou merge. Commit/push ciblés seulement après coordination et tests, CI au SHA exact. Livraison et rapport puis STOP.
+
+
+## Incrément 4 — faisabilité native B5.4/M3-R inerte (20 octobre 2026)
+
+GO propriétaire : comparaison compilée Xtensa du graphe StageA B5.4 et du
+handoff importé, Core 3.1.2 épinglé, entrée sans appel à l'application,
+refus 503 systématique et aucun writer d'écran. Aucun contact matériel/VM,
+activation ou candidat privé installable. Les mesures compilées restent
+distinctes du heap/CONT/WDT physique NON VÉRIFIÉ ; seuils inchangés.
+Rapport daté séparé et CI du nouveau SHA requis avant conclusion logicielle.
+
+
+## Incrément 3 — import HOST du handoff B5.4/M3-R (20 octobre 2026)
+
+GO propriétaire : importer seulement le patch HOST pré-body dans le worktree
+réservé de #85, tester le vrai graphe B5.4, commit/push normal conditionnels et
+CI du SHA exact. Source B5.4 publique #72 épinglée, composants M3 existants
+conservés ; aucun merge/import du firmware privé ou des branches sources.
+Laboratoire uniquement, M3-O deny-only préservé, aucun writer/ACK de mode.
+SmallTV, VM météo automatique déjà qualifiée, EXE installé, sauvegardes et
+marqueurs hors périmètre. Aucun contact matériel, build installable ou activation.
+Résultats de cet incrément : [rapport daté](B54_M3R_SOCKET_HANDOFF_IMPORT_2026-10-20.md).
+
+
+## PRIORITÉ ACTUELLE — SHINO // TV + SHINO // LINK réunifiés sur M3-R (19 octobre 2026)
+
+**Décision propriétaire : documenter et piloter tous les chantiers convergents sur une seule branche logicielle, sans merge implicite de Codex.**
+[Checkpoint B5.4](PROJECT_STATE.md) | [Plan commun / matrice des PR et portes](SHINO_TV_LINK_UNIFICATION.md) | [Journal M3-R](LINK_M3R_UNIFIED_BRANCH.md) | [PR Draft #85](https://github.com/shinobione/SHINO-TV/pull/85).
+
+- **RÉFÉRENCE MATÉRIELLE ACTUELLE :** B5.4 privée (431 920 o), identité postboot réellement comparée aux artefacts privés lors d'un GET Digest authentifié [#81](https://github.com/shinobione/SHINO-TV/issues/81#issuecomment-6275185762). Le firmware installé n'est plus « P0 seul », ni B5.3. LCD quatre cartes/date/heure observés, météo réelle encore NON VÉRIFIÉE ; VM existante, publication toujours rapportée OFF.
+- **SOURCES À CONCILIER :** #72 graphe B5.4 public, #73 rendu météo HOST, #76 modes Auto/Horloge-Météo ; provenance des vrais artefacts privés auprès de Codex local. **NON FUSIONNÉES dans #85**. M3-A…R + menu Windows #83, eux, sont réunis dans #85 pour essais HOST.
+- **RÈGLE DE PROTECTION :** `STOP_UNKNOWN_NO_RETRY` et réservation OTA consommée demeurent historiques et conservés ; ne pas refaire d'OTA ni nettoyer `.attempt` parce que le postboot a été confirmé. La lecture Windows #83 est HOLD pour distribution jusqu'à coordination avec le client OTA et ses répertoires/locks ; aucun nouveau GET LAN depuis cette branche.
+- **PROCHAINE ÉTAPE UNIQUE :** comparer le point d'insertion contrôlé de M3-O/P→M3-C au vrai graphe B5.4 public (#72) et garantir Digest, télémétrie, clock, météo signée, OTA et ressources, avant tout assemblage privé ou GO matériel.
+
+**Les sections M3-Q/B5.3 ci-dessous restent historiques et propres à leur périmètre, pas l'état du firmware réellement installé.**
+
+
+## M3-R — Branche unique SHINO // LINK + contrôle HTTP expérimental (19 octobre 2026)
+
+**GO propriétaire : « combine tout ça […] une seule branche en direction de M3-R ».**
+Branche GitHub isolée `feature/link-m3r-unified-integration-20261019`
+partant du HEAD de M3-Q PR #82 `7adb17e37c580f7e37d27d6cb02e79dc1ea7045c`,
+avec 12 fichiers **Git blobs exacts** importés du HEAD Windows
+PR #84/issue #83 `47044b61107f55f7bf4c21d7fa947d6d46b75006`.
+Ancêtre commun : M2 PR #54 `88f2163c512429e804e96aabbc8b60b71602936b`.
+Aucune fusion des PR sources, aucune écriture sur leurs branches.
+
+**M3-R LAB (nouveau, non livré)** : réintroduire la première ligne
+strictement validée par le Core M3-P dans **un seul** `M3C::Gate`
+qui parse et authentifie directement les en-têtes lus octet par octet ;
+puis vérification SHA du corps et FIN **sans commande écran**.
+Le second `M3Q::HeaderGuard` est laissé au laboratoire comparatif,
+**non instancié** dans ce chemin. Compiler/tester sur HOST avec vrai
+OpenSSL, puis Core ESP8266 3.1.2/BearSSL sur ELF Xtensa **inerte**.
+Aucun résultat CI de cette nouvelle branche n'est implicite.
+
+**Windows** : menu M2 et GET Digest manuel de l'identité #83
+conservés, mais **HOLD activation** tant que le client OTA #81 et
+le même état de verrou/marqueurs ne sont pas prouvés coordonnés.
+Nom de version uniquement par reçu privé vérifié, sinon « Inconnue ».
+La PR #84 reste source historique, pas branche à poursuivre.
+
+**HOLD strict :** pas de programmation SmallTV, OTA/UART, Wi-Fi,
+modification VM Freebox, LINK installé, fusion GitHub, commande M3
+ou claim de boot. CONT/heap et régression B5.3 sur vrai appareil
+NON VÉRIFIÉS. [Journal et prochaines preuves](LINK_M3R_UNIFIED_BRANCH.md).
+
+
 ## M3-Q — En-têtes bornés après la prise de socket LINK (19 octobre 2026)
 
 **GO propriétaire : logiciel et journal d'observations, aucun GO physique.**

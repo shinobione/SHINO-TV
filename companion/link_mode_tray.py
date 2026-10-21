@@ -86,7 +86,7 @@ class ModeTrayController:
 
 
 def build_preview_menu(pystray, controller: ModeTrayController, *,
-                       status_supplier, open_dashboard, quit_app):
+                       status_supplier, open_dashboard, quit_app, firmware_action=None):
     """Build pystray menu once, with dynamic radio checks and preview text.
 
     Dynamic lambdas are evaluated by pystray on menu refresh. Callbacks
@@ -113,6 +113,25 @@ def build_preview_menu(pystray, controller: ModeTrayController, *,
             radio=True,
         ))
 
+    extra = ()
+    if firmware_action is not None:
+        from link_firmware_identity import LABEL
+        def trigger(icon_, item):
+            firmware_action.start(icon_)
+        details = tuple(pystray.MenuItem(
+            lambda item, field=field: firmware_action.line(field),
+            noop, enabled=False,
+        ) for field in (
+            "version", "build", "sha", "bytes", "checked", "ota",
+            "fs", "last_update",
+        ))
+        extra = (
+            pystray.MenuItem(LABEL, trigger,
+                enabled=lambda item: firmware_action.snapshot()["state"] != "READING"),
+            pystray.MenuItem("Identité lue (détails)",
+                pystray.Menu(*details)),
+        )
+
     return pystray.Menu(
         pystray.MenuItem(lambda item: "LINK : " + status_supplier(),
                          noop, enabled=False),
@@ -122,6 +141,7 @@ def build_preview_menu(pystray, controller: ModeTrayController, *,
                          noop, enabled=False),
         pystray.MenuItem("SmallTV : aucun changement envoyé",
                          noop, enabled=False),
+        *extra,
         pystray.Menu.SEPARATOR,
         pystray.MenuItem("Ouvrir SHINO // TV", open_dashboard),
         pystray.MenuItem("Quitter SHINO // LINK", quit_app),

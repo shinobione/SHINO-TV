@@ -1,0 +1,208 @@
+--- a/host/M3RB54Lab.inc
++++ b/host/M3RB54Lab.inc
+@@ -0,0 +1,54 @@
++// HOST integration overlay only; original M3-O deny-only profile is untouched.
++// Synthetic identity/key; no production writer, ledger, ACK or authority.
++using M3Gate=ShinoM3C::Gate;
++WiFiClient m3Client;
++bool m3Pending=false;
++uint32_t m3Started=0;
++unsigned m3Taken=0,m3Verified=0;
++size_t m3Body=0,m3Headers=0;
++alignas(M3Gate) unsigned char m3Storage[sizeof(M3Gate)];
++uint32_t m3Ip(const IPAddress& ip){return (uint32_t(ip[0])<<24)|(uint32_t(ip[1])<<16)|(uint32_t(ip[2])<<8)|ip[3];}
++bool m3Healthy(){
++    M9NormalResources::Heap h{};core.heap(h);
++    return httpBusy&&configReady&&apReady&&!requestPending&&!responseBusy&&!uploadBusy&&
++        !diagnosticJournal.frozen()&&B5Lan::online()&&m3Client.localIP()!=WiFi.softAPIP()&&
++        WiFi.status()==WL_CONNECTED&&m3Client.localIP()==WiFi.localIP()&&
++        HomeLan::peerOnSubnet(m3Ip(m3Client.remoteIP()),m3Ip(WiFi.localIP()),m3Ip(WiFi.subnetMask()))&&
++        h.free>=20480&&h.largest>=16384&&h.fragmentation<=25&&ESP.getFreeContStack()>=2048&&
++        !server.waitingPeer();
++}
++void m3Install(){
++    server.addHook([](const String& method,const String& uri,WiFiClient* offered,
++        ESP8266WebServer::ContentTypeFunction)->ESP8266WebServer::ClientFuture{
++        using S=ESP8266WebServer;
++        if(uri!=F("/api/v1/display/mode"))return S::CLIENT_REQUEST_CAN_CONTINUE;
++        if(method!=F("POST")||!offered||m3Pending||!httpBusy)return S::CLIENT_MUST_STOP;
++        m3Client=*offered; // retain the same socket context; no network read here
++        if(!m3Healthy()){m3Client=WiFiClient();return S::CLIENT_MUST_STOP;}
++        m3Started=server.requestStarted();m3Pending=true;++m3Taken;
++        return S::CLIENT_IS_GIVEN; // Core must relinquish its handle before service
++    });
++}
++__attribute__((noinline)) void m3Service(){
++    struct Release{
++        ~Release(){
++            m3Client.stop();m3Client=WiFiClient();
++            volatile unsigned char* p=m3Storage;for(size_t i=0;i<sizeof m3Storage;++i)p[i]=0;
++            m3Pending=false;
++        }
++    } release;
++    if(!m3Pending||!m3Healthy())return;
++    const uint8_t key[32]={0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31};
++    auto* gate=new(m3Storage)M3Gate({"10.23.42.82","0123456789abcdef","11111111111111111111111111111111"},0);
++    const auto clock=[](){return millis();};
++    const auto cooperate=[](){if(!m3Healthy())m3Client.stop();ESP.wdtFeed();yield();};
++    auto phase=ShinoM3R::readAuthenticatedHeaders<ShinoM3C::BearSslCrypto>(m3Client,*gate,key,clock,cooperate,m3Started);
++    if(phase==ShinoM3C::Phase::AuthenticatedHeader&&m3Healthy())
++        phase=ShinoM3R::verifyFrameWithoutSideEffect<ShinoM3C::BearSslCrypto>(m3Client,*gate,clock,cooperate,m3Started);
++    m3Body=gate->consumedBody();m3Headers=gate->consumedHeaders();
++    if(phase==ShinoM3C::Phase::VerifiedFrame)++m3Verified;
++    gate->~Gate();
++    // A verified frame is deliberately NOT a successful mode command.
++    static const char refusal[]="HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\nCache-Control: no-store\r\n\r\n";
++    m3Client.write(reinterpret_cast<const uint8_t*>(refusal),sizeof(refusal)-1);
++}
+--- a/host/normal_host.inc
++++ b/host/normal_host.inc
+@@ -27,6 +27,13 @@
+ #if defined(ARDUINO_SIGNING) && ARDUINO_SIGNING
+ #error "This HMAC release profile cannot use global RSA signing"
+ #endif
++#if defined(SHINO_M3R_B54_HOST_HANDOFF) && SHINO_M3R_B54_HOST_HANDOFF == 1
++#ifndef HOST_MOCK
++#error "Increment 2 is HOST-only. No production key, display writer or firmware activation."
++#endif
++#include "experiments/link_m3r_single_parser/M3RSingleParser.h"
++#include "experiments/link_m3c_crypto/M3CBearSslCrypto.h"
++#endif
+ namespace M9NormalDashboard {void render();}
+ namespace M9NormalStageA {
+ namespace {
+@@ -497,6 +504,9 @@
+     }
+     uint8_t digest[32];br_sha256_out(&h,digest);ShinoHttpOta::encode(digest,32,runningSha);return true;
+ }
++#if defined(SHINO_M3R_B54_HOST_HANDOFF) && SHINO_M3R_B54_HOST_HANDOFF == 1
++#include "M3RB54Lab.inc"
++#endif
+ } // namespace
+ void beforeSetup(){observer.beforeSetup();}
+ void begin(ConfigManager& config){
+@@ -506,6 +516,9 @@
+     observer.afterFs();if(configReady)config.setApiToken(SHINO_BOOTSTRAP_API_TOKEN);
+     if(!hashRunning())configReady=false;
+     randomNonce(boot);randomNonce(nonce);
++#if defined(SHINO_M3R_B54_HOST_HANDOFF) && SHINO_M3R_B54_HOST_HANDOFF == 1
++    m3Install(); // Before any legacy allowlist hook; never a second listener.
++#endif
+     apReady=B5Lan::begin("SHINO-TV-StageA",SHINO_SETUP_AP_PSK);if(!apReady)return;
+     B53Sntp::begin();
+     server.collectHeaders("Authorization","Content-Length","Content-Type","Transfer-Encoding","Expect", "X-Shino-SHA256","X-Shino-Build","X-Shino-Nonce","X-Shino-Proof","Origin","X-Shino-Lan-Intent");
+@@ -521,6 +534,9 @@
+     httpBusy=true;
+     diagnosticJournal.enter(micros());
+     if(apReady)server.poll();
++#if defined(SHINO_M3R_B54_HOST_HANDOFF) && SHINO_M3R_B54_HOST_HANDOFF == 1
++    if(m3Pending)m3Service(); // Same non-reentrant httpBusy owner as Legacy.
++#endif
+     if(requestPending)serviceRequest();
+     if(WiFi.status()!=WL_CONNECTED)B53Integrated::critical();
+     B5Lan::poll(uploadBusy);
+--- a/host/Parsing-impl.h
++++ b/host/Parsing-impl.h
+@@ -100,6 +100,12 @@
+   _currentUri = url;
+   _chunked = false;
+ 
++#if defined(SHINO_M3R_B54_HOST_HANDOFF) && SHINO_M3R_B54_HOST_HANDOFF == 1
++  // StageA already bounded/consumed exactly one CRLF line. Do not apply
++  // the stock-Core M3-P replacement here or reset _stageAStarted.
++  if(url==F("/api/v1/display/mode") &&
++     req!=F("POST /api/v1/display/mode HTTP/1.1")) return CLIENT_MUST_STOP;
++#endif
+   if (_hook)
+   {
+     auto whatNow = _hook(methodStr, url, &client, mime::getContentType);
+--- a/native/http/Parsing-impl.h
++++ b/native/http/Parsing-impl.h
+@@ -102,6 +102,12 @@
+   _currentUri = url;
+   _chunked = false;
+ 
++#if defined(SHINO_M3R_B54_HOST_HANDOFF) && SHINO_M3R_B54_HOST_HANDOFF == 1
++  // StageA already bounded/consumed exactly one CRLF line. Do not apply
++  // the stock-Core M3-P replacement here or reset _stageAStarted.
++  if(url==F("/api/v1/display/mode") &&
++     req!=F("POST /api/v1/display/mode HTTP/1.1")) return CLIENT_MUST_STOP;
++#endif
+   if (_hook)
+   {
+     auto whatNow = _hook(methodStr, url, &client, mime::getContentType);
+--- a/native/src/boot/M9NormalStageA.cpp
++++ b/native/src/boot/M9NormalStageA.cpp
+@@ -27,6 +27,13 @@
+ #if defined(ARDUINO_SIGNING) && ARDUINO_SIGNING
+ #error "This HMAC release profile cannot use global RSA signing"
+ #endif
++#if defined(SHINO_M3R_B54_HOST_HANDOFF) && SHINO_M3R_B54_HOST_HANDOFF == 1
++#ifndef HOST_MOCK
++#error "Increment 2 is HOST-only. No production key, display writer or firmware activation."
++#endif
++#include "experiments/link_m3r_single_parser/M3RSingleParser.h"
++#include "experiments/link_m3c_crypto/M3CBearSslCrypto.h"
++#endif
+ namespace M9NormalDashboard {void render();}
+ namespace M9NormalStageA {
+ namespace {
+@@ -497,6 +504,9 @@
+     }
+     uint8_t digest[32];br_sha256_out(&h,digest);ShinoHttpOta::encode(digest,32,runningSha);return true;
+ }
++#if defined(SHINO_M3R_B54_HOST_HANDOFF) && SHINO_M3R_B54_HOST_HANDOFF == 1
++#include "M3RB54Lab.inc"
++#endif
+ } // namespace
+ void beforeSetup(){observer.beforeSetup();}
+ void begin(ConfigManager& config){
+@@ -506,6 +516,9 @@
+     observer.afterFs();if(configReady)config.setApiToken(SHINO_BOOTSTRAP_API_TOKEN);
+     if(!hashRunning())configReady=false;
+     randomNonce(boot);randomNonce(nonce);
++#if defined(SHINO_M3R_B54_HOST_HANDOFF) && SHINO_M3R_B54_HOST_HANDOFF == 1
++    m3Install(); // Before any legacy allowlist hook; never a second listener.
++#endif
+     apReady=B5Lan::begin("SHINO-TV-StageA",SHINO_SETUP_AP_PSK);if(!apReady)return;
+     B53Sntp::begin();
+     server.collectHeaders("Authorization","Content-Length","Content-Type","Transfer-Encoding","Expect", "X-Shino-SHA256","X-Shino-Build","X-Shino-Nonce","X-Shino-Proof","Origin","X-Shino-Lan-Intent");
+@@ -521,6 +534,9 @@
+     httpBusy=true;
+     diagnosticJournal.enter(micros());
+     if(apReady)server.poll();
++#if defined(SHINO_M3R_B54_HOST_HANDOFF) && SHINO_M3R_B54_HOST_HANDOFF == 1
++    if(m3Pending)m3Service(); // Same non-reentrant httpBusy owner as Legacy.
++#endif
+     if(requestPending)serviceRequest();
+     if(WiFi.status()!=WL_CONNECTED)B53Integrated::critical();
+     B5Lan::poll(uploadBusy);
+--- a/tests/lab.cpp
++++ b/tests/lab.cpp
+@@ -11,6 +11,16 @@
+  <<",\"restarts\":"<<ESP.restarts<<",\"nested_calls\":"<<nestedCalls
+  <<",\"samples\":"<<M9NormalStageA::diagnosticJournal.control.word[B53Diagnostic::Samples]
+  <<",\"cpu\":"<<m.cpu<<",\"gpu\":"<<m.gpu<<",\"ram\":"<<m.memoryGb<<",\"temperature\":"<<m.gpuTempC
++
++#if defined(SHINO_M3R_B54_HOST_HANDOFF) && SHINO_M3R_B54_HOST_HANDOFF == 1
++ <<",\"m3_taken\":"<<M9NormalStageA::m3Taken<<",\"m3_verified\":"<<M9NormalStageA::m3Verified
++ <<",\"m3_body\":"<<M9NormalStageA::m3Body<<",\"m3_headers\":"<<M9NormalStageA::m3Headers
++ <<",\"m3_busy\":"<<M9NormalStageA::m3Pending
++ <<",\"m3_client_bytes\":"<<sizeof(WiFiClient)
++ <<",\"http_busy\":"<<M9NormalStageA::httpBusy<<",\"m3_gate_bytes\":"<<sizeof(ShinoM3C::Gate)
++#endif
++ <<",\"bytes_read\":"<<bytesRead<<",\"accepted\":"<<accepted<<",\"live_sockets\":"<<liveSockets
++ <<",\"protected_regions_unchanged\":"<<std::all_of(ESP.flash.begin()+0x200000,ESP.flash.end(),[](uint8_t b){return b==0xff;})
+  <<",\"lcd_operations\":"<<DisplayManager::gfx.operations<<"}"<<std::endl;
+ }
+ int main(){
+@@ -38,6 +48,9 @@
+    if(command=="mode lan"){WiFi.wifiStatus=WL_CONNECTED;WiFi.sta=IPAddress(10,23,42,82);testLocal=WiFi.sta;testPeer=IPAddress(10,23,42,10);}
+    if(command=="heap low")ESP.heap=20479;
+    if(command=="heap normal")ESP.heap=60000;
++   if(command=="config off")M9NormalStageA::configReady=false;
++   if(command=="upload on")M9NormalStageA::uploadBusy=true;
++   if(command=="upload off")M9NormalStageA::uploadBusy=false;
+    if(command=="mode ap"){testLocal=IPAddress(192,168,4,1);testPeer=IPAddress(192,168,4,2);}
+    if(command=="peer foreign")testPeer=IPAddress(192,168,2,10);
+    if(command=="network lost"){WiFi.wifiStatus=0;WiFi.sta=IPAddress();}

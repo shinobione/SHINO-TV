@@ -1,0 +1,38 @@
+name: SHINO LINK issue83 read-only firmware inspector HOST
+on:
+  pull_request:
+    paths:
+      - 'companion/link_firmware_identity.py'
+      - 'companion/test_link_firmware_identity.py'
+      - 'companion/link_mode_tray.py'
+      - 'companion/shino_link.py'
+      - 'docs/LINK_FIRMWARE_INSPECTOR_83.md'
+      - '.github/workflows/link-firmware-inspector-host.yml'
+permissions:
+  contents: read
+jobs:
+  offline-firmware-inspector:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Compile Windows source
+        run: python -m compileall -q companion/link_firmware_identity.py companion/link_mode_tray.py companion/shino_link.py
+      - name: Inspect host-only fake transport and tray
+        run: python -m unittest discover -s companion -p test_link_firmware_identity.py -v
+      - name: Preserve exact M2 and predecessor source identities
+        run: |
+          python -m unittest discover -s tools -p test_link_83_source_identity.py -v
+          python -m unittest discover -s tools -p test_link_m2_source_identity.py -v
+          python -m unittest discover -s tools -p test_m9_b5_offline_source_pins.py -v
+      - name: Retain M1 M2 LINK regressions
+        run: |
+          python -m unittest discover -s companion -p test_link_display_modes.py -v
+          python -m unittest discover -s companion -p test_link_mode_tray.py -v
+          python -m unittest discover -s companion -p test_shino_link.py -v

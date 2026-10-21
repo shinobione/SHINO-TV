@@ -1,0 +1,125 @@
+name: LINK M3-R unified Windows + single M3-C parser (NO DEVICE)
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/link_m3r_single_parser/**'
+      - 'docs/LINK_M3R_UNIFIED_BRANCH.md'
+      - '.github/workflows/link-m3r-unified-lab.yml'
+      - 'docs/ROADMAP.md'
+permissions:
+  contents: read
+
+jobs:
+  m3r-host-single-parser:
+    name: M3-R real OpenSSL signed parser and SHA / FIN HOST
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify Core precondition and no double-buffer parser in M3-R
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          core=Path("experiments/link_m3p_parser/patch_core_parser.py").read_text()
+          adapter=Path("experiments/link_m3r_single_parser/M3RSingleParser.h").read_text()
+          host=Path("companion/link_firmware_identity.py").read_text()
+          assert 'if(req != F("POST /api/v1/display/mode HTTP/1.1"))' in core
+          assert 'POST /api/v1/display/mode HTTP/1.1' in adapter
+          assert 'gate.headerByte<Crypto>' in adapter
+          assert 'gate.bodyByte<Crypto>' in adapter
+          assert 'ShinoM3Q::HeaderGuard' not in adapter.replace('Do NOT allocate ShinoM3Q::HeaderGuard','')
+          assert 'client.read()' in adapter and 'WiFi.begin(' not in adapter
+          assert 'read_firmware_identity' in host and 'B5GetDiagnostic' in host
+          print("M3R_PINNED_FIRST_LINE_AND_SINGLE_M3C_GATE_SOURCE_PASS")
+          PY
+      - name: Compile and run exact real HMAC/SHA, rejection and fragmentation
+        run: |
+          for mode in original incremental; do
+            case "$mode" in
+              original) increment=0 ;;
+              incremental) increment=1 ;;
+            esac
+            g++ -std=c++17 -O2 -Wall -Wextra -Werror -pedantic -fno-exceptions -fno-rtti \
+              -DSHINO_M3C_INCREMENTAL_HMAC=$increment \
+              -DSHINO_M3C_STACK_MEMBER_SCRATCH=0 \
+              experiments/link_m3r_single_parser/test_single_parser.cpp -lcrypto \
+              -o "${{ runner.temp }}/m3r_$mode"
+            "${{ runner.temp }}/m3r_$mode" > "${{ runner.temp }}/m3r_$mode.txt"
+          done
+          diff -u "${{ runner.temp }}/m3r_original.txt" "${{ runner.temp }}/m3r_incremental.txt"
+          cat "${{ runner.temp }}/m3r_original.txt"
+      - name: Retain original M3-C HMAC and Windows lane tests
+        run: |
+          g++ -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \
+            -DSHINO_M3C_INCREMENTAL_HMAC=1 -DSHINO_M3C_STACK_MEMBER_SCRATCH=0 \
+            experiments/link_m3c_crypto/test_crypto_ingress.cpp -lcrypto \
+            -o "${{ runner.temp }}/m3c_existing"
+          "${{ runner.temp }}/m3c_existing"
+          python -m unittest discover -s experiments/link_m3_control_contract -p 'test_*.py' -v
+          python -m unittest discover -s experiments/link_m3e_legacy -p 'test_b53_source_pins.py' -v
+
+  m3r-xtensa-inert:
+    name: M3-R exact Core 3.1.2 + real BearSSL Xtensa INERT
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned offline compiler only
+        run: python -m pip install 'platformio==6.1.18'
+      - name: Compile inert Core WiFiClient BearSSL single parser
+        run: pio run -d experiments/link_m3r_single_parser -e m3r_inert_single_parser
+      - name: Confirm exact M3-P Core clone and native symbols
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, json, subprocess, sys
+          root=Path("experiments/link_m3r_single_parser")
+          sys.path.insert(0,"experiments/link_m3p_parser")
+          from patch_core_parser import PINS,patch_parser
+          original=Path.home()/".platformio/packages/framework-arduinoespressif8266/libraries/ESP8266WebServer/src"
+          cloned=root/".pio/m3r-venv/ESP8266WebServer/src"
+          for name,sha in PINS.items():
+              data=(original/name).read_bytes()
+              assert hashlib.sha256(data).hexdigest()==sha, name
+              expected=patch_parser(data.decode()).encode() if name=="Parsing-impl.h" else data
+              assert (cloned/name).read_bytes()==expected,name
+          build=root/".pio/build/m3r_inert_single_parser"
+          elf=build/"firmware.elf"
+          binary=build/"firmware.bin"
+          tool=Path.home()/".platformio/packages/toolchain-xtensa/bin/"
+          symbols=subprocess.check_output([str(tool/"xtensa-lx106-elf-nm"),"-C",str(elf)],text=True)
+          assert "m3r_link_single_gate" in symbols
+          matching=[line for line in symbols.splitlines()
+                    if "ShinoM3R" in line or "ShinoM3P" in line or "m3r_link_single_gate" in line]
+          print("M3R_NATIVE_SYMBOL_DIAGNOSTIC", "\n".join(matching[:32]))
+          assert "_ZN8ShinoM3R24readAuthenticatedHeadersIN8ShinoM3C13BearSslCrypto" in symbols
+          assert "_ZN8ShinoM3P13readFirstLine" in symbols
+          # GCC Xtensa -Os/LTO may inline Gate::headerByte into the M3-R
+          # templated symbol; independently pin the Gate source call.
+          assert "gate.headerByte<Crypto>" in (root/"M3RSingleParser.h").read_text()
+          assert "gate.bodyByte<Crypto>" in (root/"M3RSingleParser.h").read_text()
+          report={"scope":"INERT_ESP8266_ONLY_NOT_OWNER_FIRMWARE",
+                  "elf_bytes":elf.stat().st_size,
+                  "bin_bytes":binary.stat().st_size,
+                  "bin_sha256":hashlib.sha256(binary.read_bytes()).hexdigest(),
+                  "device_boot_wifi_heap_CONT":"NOT_TESTED",
+                  "firmware_ota_display_writer":"NOT_PRESENT"}
+          (root/"m3r_inert_receipt.json").write_text(json.dumps(report,indent=2)+"\n")
+          print(json.dumps(report,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m3r-inert-xtensa-proof
+          path: experiments/link_m3r_single_parser/m3r_inert_receipt.json
+          if-no-files-found: error
+          retention-days: 7

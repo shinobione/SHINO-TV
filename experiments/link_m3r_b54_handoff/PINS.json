@@ -1,0 +1,10 @@
+{
+  "source_commit": "91969aceb45e0c43d44f93a702a3997b57e8f89e",
+  "overlay_sha256": "43f3d738bc63d2b27448fbbbbefb885a80c5aa0f3e5079b0fad69b36a0392f19",
+  "identities_sha256": "703d79c51a45d3f070d8e243319bf27b98892d5df991a7a4518328a5ed99fc30",
+  "m3_headers": {
+    "experiments/link_m3r_single_parser/M3RSingleParser.h": "5e69a2efbc5292f2461fe9d36b7db581c91bbde054018477e8c9fd6ae3b6a714",
+    "experiments/link_m3c_crypto/M3CAuthenticatedIngress.h": "ab97e945cf871d234ea7ec9836a04aa0b04d2d932cb7a2042480bd81048d5655",
+    "experiments/link_m3c_crypto/M3CBearSslCrypto.h": "581a1141958ab7f89abf9fafca688e86fd5c18539b338c2faec87856f47a4d43"
+  }
+}

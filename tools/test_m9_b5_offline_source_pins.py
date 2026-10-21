@@ -29,7 +29,7 @@ def tracked_gate(module):
     # Include the actual reviewed-overlay import and pin-map update, while
     # continuing to exclude core_root/signing/SDK work before the assignment.
     imports = [node for node in function.body if isinstance(node, ast.ImportFrom)
-               and node.module in ('b52_source_compat', 'link_m2_source_identity')]
+               and node.module in ('b52_source_compat', 'link_m2_source_identity', 'link_83_source_identity')]
     start, end = function.body.index(assignment), function.body.index(loop)
     block = ast.Module(body=imports + function.body[start:end+1], type_ignores=[])
     exec(compile(block, module.__file__, "exec"), {"ROOT": ROOT, "subprocess": subprocess})

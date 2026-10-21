@@ -1,0 +1,67 @@
+name: B5.4 M3-R native INERT feasibility (NO DEVICE)
+on:
+  pull_request:
+    paths:
+      - 'experiments/link_m3r_b54_native_inert/**'
+      - 'experiments/link_m3r_b54_handoff/**'
+      - 'experiments/link_m3r_single_parser/**'
+      - 'experiments/link_m3c_crypto/**'
+      - 'firmware/lib/Logger/**'
+      - '.github/workflows/link-m3r-b54-native-inert.yml'
+permissions:
+  contents: read
+jobs:
+  native-inert-composition:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: shinobione/SHINO-TV
+          ref: 91969aceb45e0c43d44f93a702a3997b57e8f89e
+          path: experiments/link_m3r_b54_native_inert/.build/public-source
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned compiler packages, no build or device
+        run: |
+          python -m pip install 'platformio==6.2.0'
+          mkdir -p experiments/link_m3r_b54_native_inert/.build/bootstrap
+          cat > experiments/link_m3r_b54_native_inert/.build/bootstrap/platformio.ini <<'INI'
+          [env:compiler_packages_only]
+          platform=espressif8266@4.2.1
+          platform_packages=platformio/framework-arduinoespressif8266@3.30102.0
+          board=esp12e
+          framework=arduino
+          INI
+          pio pkg install -d experiments/link_m3r_b54_native_inert/.build/bootstrap
+      - name: Native INERT guard tests
+        run: python -B experiments/link_m3r_b54_native_inert/test_inert_guard.py
+      - name: Verify closed provenance and generate fresh INERT composition
+        run: |
+          test "$(git -C experiments/link_m3r_b54_native_inert/.build/public-source rev-parse HEAD)" = "91969aceb45e0c43d44f93a702a3997b57e8f89e"
+          python -B experiments/link_m3r_b54_native_inert/prepare_native.py \
+            --source-review experiments/link_m3r_b54_native_inert/.build/public-source/review \
+            --core "$HOME/.platformio/packages/framework-arduinoespressif8266" \
+            --output experiments/link_m3r_b54_native_inert/.build/qualified
+      - name: Compile both native INERT environments and measure actual outputs
+        run: |
+          set -o pipefail
+          root=experiments/link_m3r_b54_native_inert/.build/qualified
+          pio run -d "$root/project" -e b54_inert_base 2>&1 | tee "$root/base-build.log"
+          pio run -d "$root/project" -e b54_inert_handoff 2>&1 | tee "$root/handoff-build.log"
+          python -B experiments/link_m3r_b54_native_inert/measure_native.py --output "$root"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: b54-m3r-native-inert-measurements-only
+          path: |
+            experiments/link_m3r_b54_native_inert/.build/qualified/*.json
+            experiments/link_m3r_b54_native_inert/.build/qualified/*.log
+          if-no-files-found: error
+          retention-days: 7
