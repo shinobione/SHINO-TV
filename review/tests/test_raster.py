@@ -25,6 +25,34 @@ def ppm_to_png(ppm,png):
     rows=b''.join(b'\0'+rgb[y*SIZE*3:(y+1)*SIZE*3] for y in range(SIZE))
     ihdr=struct.pack('>IIBBBBB',SIZE,SIZE,8,2,0,0,0)
     png.write_bytes(b'\x89PNG\r\n\x1a\n'+png_chunk(b'IHDR',ihdr)+png_chunk(b'IDAT',zlib.compress(rows,9))+png_chunk(b'IEND',b''))
+    # Inspect PNG structure, CRCs, IHDR and exact decompressed RGB pixels.
+    # Compressed file byte size is NOT a valid rendering gate.
+    result=png.read_bytes()
+    if not result.startswith(b'\x89PNG\r\n\x1a\n'):
+        raise AssertionError('Invalid PNG signature')
+    offset=8
+    chunks=[]
+    encoded=b''
+    while offset<len(result):
+        if offset+12>len(result):
+            raise AssertionError('Truncated PNG chunk')
+        length=struct.unpack('>I',result[offset:offset+4])[0]
+        kind=result[offset+4:offset+8]
+        end=offset+12+length
+        if end>len(result):
+            raise AssertionError('PNG chunk exceeds file')
+        payload=result[offset+8:offset+8+length]
+        crc=struct.unpack('>I',result[end-4:end])[0]
+        if (zlib.crc32(kind+payload)&0xffffffff)!=crc:
+            raise AssertionError('PNG CRC error')
+        chunks.append(kind)
+        if kind==b'IHDR' and payload!=ihdr:
+            raise AssertionError('Incorrect PNG dimensions or pixel format')
+        if kind==b'IDAT':
+            encoded+=payload
+        offset=end
+    if chunks!=[b'IHDR',b'IDAT',b'IEND'] or zlib.decompress(encoded)!=rows:
+        raise AssertionError('PNG pixels differ from rendered RGB output')
     return hashlib.sha256(rgb).hexdigest()
 
 class Raster(unittest.TestCase):
@@ -48,7 +76,6 @@ class Raster(unittest.TestCase):
         hashes={}
         for name in names:
             hashes[name]=ppm_to_png(OUT/(name+'.ppm'),OUT/(name+'.png'))
-            self.assertTrue((OUT/(name+'.png')).stat().st_size>1000)
         self.assertEqual(hashes['02_horloge_meteo'],hashes['03_horloge_meteo_manuel'])
         self.assertNotEqual(hashes['01_monitoring'],hashes['02_horloge_meteo'])
         self.assertNotEqual(hashes['01_monitoring'],hashes['04_monitoring_limites'])
