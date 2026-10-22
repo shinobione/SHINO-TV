@@ -36,6 +36,7 @@ struct WxDrawProbe final : ArtworkPilot::Canvas {
  }
  void text(int x,int y,const char* s,uint16_t,uint8_t scale=1) override {
   assert(x>=0&&x<240&&y>=0&&y<240&&s&&scale>=1);
+  assert(x+int(strlen(s))*6*scale<=240 && y+8*scale<=240);
   labels.push_back({s,x,y,scale});
  }
  uint8_t glyphColumn(uint8_t,unsigned) override {return 0;}
@@ -71,9 +72,19 @@ static void renderWeatherGate(const std::vector<uint8_t>& wire){
  ArtworkPilot::Renderer online;WxDrawProbe lcd;
  online.setClock(clock);online.setMetrics({22,34,8,16,56,true,false});
  online.setWeather(fresh);paintWeatherToIdle(online,lcd,1000);
- for(const char* label:{"CPU","GPU","RAM","GPU temp","18.2","Cloudy","12:34"})
+ for(const char* label:{"CPU","GPU","RAM","GPU temp","18.2","Nuageux","12:34","8.0 Go"})
   assert(lcd.has(label));
  assert(lcd.cardWrites>0);
+ assert(!lcd.has("/16.0 GB")); // Capacity is never printed as a RAM caption.
+ bool ramMeasured=false;
+ for(const auto& label:lcd.labels)if(label.value=="8.0 Go") {
+  ramMeasured=true;
+  assert(label.scale==2);
+  assert(label.x>=B53Layout::CARDS[2].x);
+  assert(label.x+int(label.value.size())*6*label.scale<=
+         B53Layout::CARDS[2].x+B53Layout::CARDS[2].w);
+ }
+ assert(ramMeasured);
 
  // Trust loss: the receiver latches stale; the renderer must erase the
  // temperature and must not overwrite existing metric-card pixels.
@@ -81,7 +92,7 @@ static void renderWeatherGate(const std::vector<uint8_t>& wire){
  assert(!receiver.state().fresh);
  ArtworkPilot::WeatherData stale=fresh;stale.validForMs=0;
  lcd.clear();online.setWeather(stale);paintWeatherToIdle(online,lcd,1002);
- assert(lcd.has("WEATHER STALE")&&!lcd.has("18.2")&&!lcd.has("Cloudy"));
+ assert(lcd.has("METEO PERIMEE")&&!lcd.has("18.2")&&!lcd.has("Nuageux"));
  assert(lcd.cardWrites==0);
 
  // PC absent: autonomous time and weather remain, but stale PC metrics
@@ -89,19 +100,21 @@ static void renderWeatherGate(const std::vector<uint8_t>& wire){
  ArtworkPilot::Renderer offline;WxDrawProbe unplugged;
  offline.setClock(clock);offline.setMetrics({22,34,8,16,56,true,true});
  offline.setWeather(fresh);paintWeatherToIdle(offline,unplugged,1000);
- assert(unplugged.has("12:34")&&unplugged.has("18.2")&&unplugged.has("Cloudy"));
+ assert(unplugged.has("12:34")&&unplugged.has("18.2")&&unplugged.has("Nuageux"));
+ assert(unplugged.has("LUNDI")); // 2026-10-19 in the clock fixture.
+ assert(!unplugged.has("19/10/2026"));
  for(const char* label:{"CPU","GPU","RAM","GPU temp"})
   assert(!unplugged.has(label));
 
  unplugged.clear();offline.setWeather(stale);
  paintWeatherToIdle(offline,unplugged,1002);
- assert(unplugged.has("WEATHER STALE")&&!unplugged.has("18.2"));
+ assert(unplugged.has("METEO PERIMEE")&&!unplugged.has("18.2"));
 
  // No accepted sample must show an explicit unavailable state.
  ArtworkPilot::Renderer noSample;WxDrawProbe empty;
  noSample.setClock(clock);noSample.setMetrics({0,0,0,0,0,false,true});
  paintWeatherToIdle(noSample,empty,1000);
- assert(empty.has("WEATHER --")&&!empty.has("18.2"));
+ assert(empty.has("METEO --")&&!empty.has("18.2"));
 
  // Product mode: owner may request clock/weather even with PC telemetry
  // still fresh. This is a renderer API only, not an unauthenticated HTTP route.
@@ -116,7 +129,8 @@ static void renderWeatherGate(const std::vector<uint8_t>& wire){
  selectable.setDisplayMode(ArtworkPilot::DisplayMode::ClockWeather);
  paintWeatherToIdle(selectable,modes,1001);
  assert(!selectable.telemetryStale()); // Switch must not falsify LINK freshness.
- assert(modes.has("18.2")&&modes.has("Cloudy")&&modes.has("12:34"));
+ assert(modes.has("18.2")&&modes.has("Nuageux")&&modes.has("12:34"));
+ assert(modes.has("LUNDI"));
  for(const char* label:{"CPU","GPU","RAM","GPU temp"}) assert(!modes.has(label));
  modes.clear();
  selectable.setDisplayMode(ArtworkPilot::DisplayMode::Auto);
