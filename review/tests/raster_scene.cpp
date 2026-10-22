@@ -3,6 +3,7 @@
 // No ESP SDK, network, flash, credentials or on-device framebuffer.
 #include <display/SceneEngine.h>
 #include <font/glcdfont.h>
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cstdint>
@@ -111,6 +112,23 @@ Raster capture(const std::filesystem::path& out,const char* name,
             throw std::runtime_error("Stale weather masquerades as current");
     } else if(!canvas.has("Nuageux")||!canvas.has("18.2"))
         throw std::runtime_error("Fresh weather missing");
+    const auto hasColor=[&](uint16_t color) {
+        return std::find(canvas.pixels.begin(),canvas.pixels.end(),color)!=canvas.pixels.end();
+    };
+    // Semantic palette assertions: three colors are *correct* for the
+    // cloud-only autonomous scene; card/track/band belong only to monitoring.
+    for(uint16_t color:{ArtworkPilot::BG,ArtworkPilot::LABEL,ArtworkPilot::WHITE})
+        if(!hasColor(color))throw std::runtime_error("Required scene palette color missing");
+    if(clockOnly) {
+        for(uint16_t color:{ArtworkPilot::CARD,ArtworkPilot::TRACK})
+            if(hasColor(color))throw std::runtime_error("Card paint leaked into clock scene");
+    } else {
+        if(!hasColor(ArtworkPilot::CARD)||!hasColor(ArtworkPilot::TRACK))
+            throw std::runtime_error("Monitoring background/track missing");
+        bool hasBand=false;
+        for(uint16_t color:ArtworkPilot::BARS)hasBand=hasBand||hasColor(color);
+        if(!hasBand)throw std::runtime_error("Monitoring colored bar missing");
+    }
     if(!metrics.stale&&mode==ArtworkPilot::DisplayMode::Auto) {
         bool checked=false;
         for(const auto& l:canvas.labels)if(l.s=="8.0 Go"||l.s=="123.4 Go") {
