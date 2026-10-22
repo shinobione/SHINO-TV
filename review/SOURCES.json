@@ -1759,8 +1759,8 @@
       "sha256": "2c10c0e19dbfc168acd8493e555b0fdbcca37491cde049007d62bdae6f9ef4ee"
     },
     "tests/test_raster.py": {
-      "bytes": 2775,
-      "sha256": "fdecfaa68b1ea500611e325be8a2e3667305548f43f491a172e45cb2e5e4324e"
+      "bytes": 3939,
+      "sha256": "608b0030fcb5be14cb8a17bce87fb96c1b026627b7609cc4f663d4d89b36dbaf"
     },
     "tests/raster_scene.cpp": {
       "bytes": 8040,
