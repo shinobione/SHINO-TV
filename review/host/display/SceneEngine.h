@@ -510,8 +510,8 @@ public:
                     if(p>=0) snprintf(next.number,sizeof next.number,"%.1f Go",m.ramGb);
                 } else if(std::isfinite(m.gpuTempC)) {
                     snprintf(next.number,sizeof next.number,"%.0f C",m.gpuTempC);
-                    // No approved GPU thermal thresholds: neutral track only.
-                    p=-1;
+                    // Preserve legacy visual fill; GPU thresholds still need thermal calibration.
+                    p=DashboardV2::tempPercent(m.gpuTempC);
                 }
                 // Temperature has no approved normalization: neutral track only.
             }
