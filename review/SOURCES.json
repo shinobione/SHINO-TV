@@ -15,8 +15,8 @@
       "sha256": "746fb2f30f0653a3d0b606217d5fd6852dfc2ff3b6cf26825bbe8f77977202ce"
     },
     "run_tests.py": {
-      "bytes": 1584,
-      "sha256": "49bbda2f99e601d2cdfb626390bb02a9a69daeec51ab42311a2b666aef6fd0c7"
+      "bytes": 1598,
+      "sha256": "9e4f93af2e0ea0cd465bd3b9fef59e537e23995453317c8dafd21d8580368037"
     },
     "verify_source.py": {
       "bytes": 1142,
@@ -1757,6 +1757,14 @@
     "vendor/bearssl/src/mac/hmac.c": {
       "bytes": 3360,
       "sha256": "2c10c0e19dbfc168acd8493e555b0fdbcca37491cde049007d62bdae6f9ef4ee"
+    },
+    "tests/test_raster.py": {
+      "bytes": 2935,
+      "sha256": "f5971682aaeddeeaad87c88d38b5618bfcb62a9edf88a5176e4669e26de6ec35"
+    },
+    "tests/raster_scene.cpp": {
+      "bytes": 7001,
+      "sha256": "d902a333d8e7f166a5fb35fe4ac584e2fa477a9861102513aeb9b2fc3ab51727"
     }
   }
 }
