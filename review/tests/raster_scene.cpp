@@ -112,6 +112,17 @@ Raster capture(const std::filesystem::path& out,const char* name,
             throw std::runtime_error("Stale weather masquerades as current");
     } else if(!canvas.has("Nuageux")||!canvas.has("18.2"))
         throw std::runtime_error("Fresh weather missing");
+    if(clockOnly) {
+        const char* expected=weatherStale?"METEO PERIMEE":"Nuageux";
+        bool visible=false;
+        for(const auto& label:canvas.labels)if(label.s==expected) {
+            visible=true;
+            if(label.scale!=2||label.x!=(240-int(label.s.size())*12)/2
+               ||label.y!=(weatherStale?199:201))
+                throw std::runtime_error("Autonomous weather font/placement regression");
+        }
+        if(!visible)throw std::runtime_error("Weather caption not drawn");
+    }
     const auto hasColor=[&](uint16_t color) {
         return std::find(canvas.pixels.begin(),canvas.pixels.end(),color)!=canvas.pixels.end();
     };
