@@ -507,8 +507,8 @@
       "sha256": "45654c7b934c797d3475ea98e61d2c03e6451a00c2a7afff6da73aec1e564f1f"
     },
     "host/display/SceneEngine.h": {
-      "bytes": 30284,
-      "sha256": "3d0f6380d3626b04d383ca5316736e12c2c92bdcc9eca269ee9b461d5e2a18fd"
+      "bytes": 30338,
+      "sha256": "822d5ed6973e766dfd75cc1da0fbb0a179e8c10dd538989eaeacb771389f3889"
     },
     "host/font/glcdfont.h": {
       "bytes": 8894,
@@ -1403,8 +1403,8 @@
       "sha256": "11af066acff8fb1ca4eef16eb287e336084c27437fc8a3021296c9eccae64c4a"
     },
     "native/include/display/SceneEngine.h": {
-      "bytes": 30284,
-      "sha256": "3d0f6380d3626b04d383ca5316736e12c2c92bdcc9eca269ee9b461d5e2a18fd"
+      "bytes": 30338,
+      "sha256": "822d5ed6973e766dfd75cc1da0fbb0a179e8c10dd538989eaeacb771389f3889"
     },
     "native/include/ntp/NTPClient.h": {
       "bytes": 1358,
