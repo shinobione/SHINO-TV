@@ -375,7 +375,7 @@ class Renderer {
         } else if(headerTask==2) {
             c.fill(0,clockOnly()?126:60,240,clockOnly()?16:8,BG);
         } else if(headerTask==3) {
-            c.fill(0,clockOnly()?166:73,240,clockOnly()?40:31,BG);
+            c.fill(0,clockOnly()?160:73,240,clockOnly()?64:31,BG);
         } else if(headerTask==4) {
             c.text(87,10,"SHINO // TV",LABEL);
             if(clock.synthetic || weather.synthetic)
@@ -425,10 +425,20 @@ class Renderer {
                 c.fill(unit,uy+1,1,2,WHITE);c.fill(unit+3,uy+1,1,2,WHITE);
                 c.text(unit+6,uy,"C",WHITE,2);
                 const char* label=weatherLabel();
-                c.text(clockOnly()?100:88,clockOnly()?190:96,label?label:"ICON UNKNOWN",LABEL);
+                const char* description=label?label:"METEO INCONNUE";
+                if(clockOnly()) {
+                    const int x=(240-int(strlen(description))*12)/2;
+                    c.text(x,201,description,LABEL,2);
+                } else {
+                    c.text(88,96,description,LABEL);
+                }
             } else {
                 const char* label=weather.valid?"METEO PERIMEE":"METEO --";
-                c.text((240-int(strlen(label))*6)/2,clockOnly()?180:82,label,LABEL);
+                if(clockOnly()) {
+                    c.text((240-int(strlen(label))*12)/2,199,label,LABEL,2);
+                } else {
+                    c.text((240-int(strlen(label))*6)/2,82,label,LABEL);
+                }
             }
         } else {
             headerDirty=false;
