@@ -15,8 +15,8 @@
       "sha256": "746fb2f30f0653a3d0b606217d5fd6852dfc2ff3b6cf26825bbe8f77977202ce"
     },
     "run_tests.py": {
-      "bytes": 1584,
-      "sha256": "49bbda2f99e601d2cdfb626390bb02a9a69daeec51ab42311a2b666aef6fd0c7"
+      "bytes": 1598,
+      "sha256": "9e4f93af2e0ea0cd465bd3b9fef59e537e23995453317c8dafd21d8580368037"
     },
     "verify_source.py": {
       "bytes": 1142,
@@ -255,16 +255,16 @@
       "sha256": "5f0888a7628fa5cc8f7961aed4ce86ab41713aa9608c75b0624a9207c71007ec"
     },
     "tests/lab.cpp": {
-      "bytes": 5465,
-      "sha256": "9ea1ea490048f340d2911cc72a56b71ac8ba11b86e4281c6d4f92cd94389c774"
+      "bytes": 5464,
+      "sha256": "37bb0321c688e88b40e8c727a74da758ca43c5439fb11de3b9786420b192a1c3"
     },
     "tests/native_http.cpp": {
       "bytes": 6429,
       "sha256": "2f8360cfa86dd096da47d8358766cd2675e73ed0290bd34d5dfb526dcfbe7f70"
     },
     "tests/native_receiver.cpp": {
-      "bytes": 10050,
-      "sha256": "414297386af853581e6d3955cadca8403423999947a09c153d67cd9ce36d5d5a"
+      "bytes": 10647,
+      "sha256": "80a8780391f841a546395f31b2311e015f0c87947bb3d84ed9aecaad0d9f0963"
     },
     "tests/network_lab.cpp": {
       "bytes": 5929,
@@ -507,8 +507,8 @@
       "sha256": "45654c7b934c797d3475ea98e61d2c03e6451a00c2a7afff6da73aec1e564f1f"
     },
     "host/display/SceneEngine.h": {
-      "bytes": 28905,
-      "sha256": "75b5714df04ff901ec46df785444dd1aec9a8ad56671e326f605a32dc07c2edf"
+      "bytes": 30708,
+      "sha256": "d35739a7b7be935b63ff7a6f844ed3e81659080ca98cb2a7d822188caad04274"
     },
     "host/font/glcdfont.h": {
       "bytes": 8894,
@@ -1403,8 +1403,8 @@
       "sha256": "11af066acff8fb1ca4eef16eb287e336084c27437fc8a3021296c9eccae64c4a"
     },
     "native/include/display/SceneEngine.h": {
-      "bytes": 28905,
-      "sha256": "75b5714df04ff901ec46df785444dd1aec9a8ad56671e326f605a32dc07c2edf"
+      "bytes": 30708,
+      "sha256": "d35739a7b7be935b63ff7a6f844ed3e81659080ca98cb2a7d822188caad04274"
     },
     "native/include/ntp/NTPClient.h": {
       "bytes": 1358,
@@ -1757,6 +1757,14 @@
     "vendor/bearssl/src/mac/hmac.c": {
       "bytes": 3360,
       "sha256": "2c10c0e19dbfc168acd8493e555b0fdbcca37491cde049007d62bdae6f9ef4ee"
+    },
+    "tests/test_raster.py": {
+      "bytes": 3939,
+      "sha256": "608b0030fcb5be14cb8a17bce87fb96c1b026627b7609cc4f663d4d89b36dbaf"
+    },
+    "tests/raster_scene.cpp": {
+      "bytes": 8553,
+      "sha256": "66a8f7aee52ffc0231cbb4dbb6348dc6db72ad8e549393f2917e2d3de7a119e8"
     }
   }
 }

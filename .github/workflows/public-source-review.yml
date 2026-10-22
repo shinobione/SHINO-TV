@@ -16,3 +16,13 @@ jobs:
           persist-credentials: false
       - name: Source integrity and complete HOST regression
         run: python3 -B review/run_tests.py
+      - name: Preserve actual 240x240 HOST raster images
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: b54-ui-raster-240x240-host
+          path: |
+            review/.build/raster/*.png
+            review/.build/raster/README.txt
+          if-no-files-found: warn
+          retention-days: 14

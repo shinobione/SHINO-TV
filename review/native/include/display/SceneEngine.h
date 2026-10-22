@@ -193,6 +193,19 @@ class Renderer {
         if (month < 1 || month > 12) return 0;
         return days[month-1] + (month == 2 && year % 4 == 0 && (year % 100 || year % 400 == 0));
     }
+    // Sakamoto Gregorian weekday, Sunday=0; invoked only for valid civil dates.
+    static unsigned dayOfWeek(unsigned y,unsigned m,unsigned d) {
+        static const uint8_t offsets[12]={0,3,2,5,0,3,5,1,4,6,2,4};
+        if(m<1 || m>12)return 0;
+        if(m<3)--y;
+        return (y+y/4-y/100+y/400+offsets[m-1]+d)%7;
+    }
+    static const char* weekdayName(unsigned d) {
+        static const char* const days[7]={
+            "DIMANCHE","LUNDI","MARDI","MERCREDI","JEUDI","VENDREDI","SAMEDI"
+        };
+        return days[d%7];
+    }
     bool clockFresh(uint32_t now) const {
         return clock.valid && clock.validForMs && clock.validForMs <= 86400000 &&
             uint32_t(now - clock.observedMs) <= clock.validForMs &&
@@ -283,8 +296,16 @@ class Renderer {
         const char* value=cards[i].number[0]?cards[i].number:"--";
         // All contracted compact measurements fit at font size 3.
         // Bounds-check even for unexpected source changes.
-        const uint8_t fontSize=strlen(value)*18U<=97U?3:2;
+        const size_t glyphs=strlen(value);
+        const uint8_t fontSize=glyphs<=5?3:(glyphs<=8?2:1);
         c.text(r.x+7,r.y+25,value,WHITE,fontSize);
+        // Draw a tiny degree sign in the spacer before C; ASCII-only font.
+        if(i==3 && glyphs>=2 && value[glyphs-1]=='C' && value[glyphs-2]==' ') {
+            const int dx=r.x+7+int(glyphs-2)*6*fontSize+fontSize;
+            const int dy=r.y+26+fontSize;
+            c.fill(dx+1,dy,3,1,WHITE); c.fill(dx,dy+1,1,3,WHITE);
+            c.fill(dx+4,dy+1,1,3,WHITE); c.fill(dx+1,dy+4,3,1,WHITE);
+        }
         c.fill(r.x+B53Layout::CARD_BAR_OFFSET_X,r.y+B53Layout::CARD_BAR_OFFSET_Y,
                B53Layout::CARD_BAR_WIDTH,B53Layout::CARD_BAR_HEIGHT,TRACK);
         if(cards[i].pixels && cards[i].band>=0)
@@ -296,18 +317,19 @@ class Renderer {
     __attribute__((optimize("no-tree-switch-conversion")))
 #endif
     const char* weatherLabel() const {
+        // ASCII French fits the pinned 5x7 font and the 240px viewport.
         switch(weather.wmoCode) {
-        case 0:return "Clear";case 1:return "Mostly clear";
-        case 2:return "Partly cloudy";case 3:return "Cloudy";
-        case 45:case 48:return "Fog";
-        case 51:case 53:case 55:return "Drizzle";
-        case 56:case 57:return "Icy drizzle";
-        case 61:case 63:case 65:return "Rain";
-        case 66:case 67:return "Freezing rain";
-        case 71:case 73:case 75:return "Snow";case 77:return "Snow grains";
-        case 80:case 81:case 82:return "Showers";
-        case 85:case 86:return "Snow showers";
-        case 95:return "Thunder";case 96:case 99:return "Thunder hail";
+        case 0:return "Ciel clair";case 1:return "Peu nuageux";
+        case 2:return "Eclaircies";case 3:return "Nuageux";
+        case 45:case 48:return "Brouillard";
+        case 51:case 53:case 55:return "Bruine";
+        case 56:case 57:return "Bruine froide";
+        case 61:case 63:case 65:return "Pluie";
+        case 66:case 67:return "Pluie froide";
+        case 71:case 73:case 75:case 77:return "Neige";
+        case 80:case 81:case 82:return "Averses";
+        case 85:case 86:return "Neige";
+        case 95:return "Orage";case 96:case 99:return "Orage grele";
         default:return nullptr;
         }
     }
@@ -353,7 +375,7 @@ class Renderer {
         } else if(headerTask==2) {
             c.fill(0,clockOnly()?126:60,240,clockOnly()?16:8,BG);
         } else if(headerTask==3) {
-            c.fill(0,clockOnly()?166:73,240,clockOnly()?40:31,BG);
+            c.fill(0,clockOnly()?160:73,240,clockOnly()?64:31,BG);
         } else if(headerTask==4) {
             c.text(87,10,"SHINO // TV",LABEL);
             if(clock.synthetic || weather.synthetic)
@@ -378,8 +400,13 @@ class Renderer {
                     if(seconds>=86400U && ++day>monthDays(year,month)) {
                         day=1;if(++month>12){month=1;++year;}
                     }
-                    snprintf(value,sizeof value,"%02u/%02u/%04u",day,month,year);
-                    c.text(clockOnly()?60:90,clockOnly()?126:60,value,LABEL,clockOnly()?2:1);
+                    if(clockOnly()) {
+                        const char* name=weekdayName(dayOfWeek(year,month,day));
+                        c.text((240-int(strlen(name))*12)/2,126,name,LABEL,2);
+                    } else {
+                        snprintf(value,sizeof value,"%02u/%02u/%04u",day,month,year);
+                        c.text(90,60,value,LABEL);
+                    }
                 }
             } else if(headerTask==5)
                 c.text(30,clockOnly()?80:32,"TIME NOT SYNCED",WHITE,2);
@@ -398,10 +425,20 @@ class Renderer {
                 c.fill(unit,uy+1,1,2,WHITE);c.fill(unit+3,uy+1,1,2,WHITE);
                 c.text(unit+6,uy,"C",WHITE,2);
                 const char* label=weatherLabel();
-                c.text(clockOnly()?100:88,clockOnly()?190:96,label?label:"ICON UNKNOWN",LABEL);
+                const char* description=label?label:"METEO INCONNUE";
+                if(clockOnly()) {
+                    const int x=(240-int(strlen(description))*12)/2;
+                    c.text(x,201,description,LABEL,2);
+                } else {
+                    c.text(88,96,description,LABEL);
+                }
             } else {
-                const char* label=weather.valid?"WEATHER STALE":"WEATHER --";
-                c.text((240-int(strlen(label))*6)/2,clockOnly()?180:82,label,LABEL);
+                const char* label=weather.valid?"METEO PERIMEE":"METEO --";
+                if(clockOnly()) {
+                    c.text((240-int(strlen(label))*12)/2,199,label,LABEL,2);
+                } else {
+                    c.text((240-int(strlen(label))*6)/2,82,label,LABEL);
+                }
             }
         } else {
             headerDirty=false;
@@ -474,13 +511,18 @@ public:
             if (!m.stale && (i == 0 || i == 2 || m.gpuAvailable)) {
                 if (i < 2) {
                     const float value = i ? m.gpu : m.cpu;
-                    snprintf(next.number,sizeof next.number,"%.0f%%",value);
-                    p = DashboardV2::clamp100(value);
+                    if(std::isfinite(value)) {
+                        snprintf(next.number,sizeof next.number,"%.0f%%",value);
+                        p = DashboardV2::clamp100(value);
+                    }
                 } else if (i == 2) {
-                    snprintf(next.number,sizeof next.number,"%.1fG",m.ramGb);
                     p = DashboardV2::ramPercent(m.ramGb,m.ramTotalGb);
-                    if (p >= 0) snprintf(next.total,sizeof next.total,"/%.1f GB",m.ramTotalGb);
-                } else { snprintf(next.number,sizeof next.number,"%.0fC",m.gpuTempC); p=DashboardV2::tempPercent(m.gpuTempC); }
+                    if(p>=0) snprintf(next.number,sizeof next.number,"%.1f Go",m.ramGb);
+                } else if(std::isfinite(m.gpuTempC)) {
+                    snprintf(next.number,sizeof next.number,"%.0f C",m.gpuTempC);
+                    // Preserve legacy visual fill; GPU thresholds still need thermal calibration.
+                    p=DashboardV2::tempPercent(m.gpuTempC);
+                }
                 // Temperature has no approved normalization: neutral track only.
             }
             next.band = DashboardV2::stableBand(cards[i].band,p);

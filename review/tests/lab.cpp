@@ -43,9 +43,9 @@ int main(){
    if(command=="display"){
     const auto& gfx=DisplayManager::gfx;
     std::cout<<"{\"temp\":"<<(gfx.has("18.2")?"true":"false")
-             <<",\"condition\":"<<(gfx.has("Cloudy")?"true":"false")
-             <<",\"stale\":"<<(gfx.has("WEATHER STALE")?"true":"false")
-             <<",\"unavailable\":"<<(gfx.has("WEATHER --")?"true":"false")
+             <<",\"condition\":"<<(gfx.has("Nuageux")?"true":"false")
+             <<",\"stale\":"<<(gfx.has("METEO PERIMEE")?"true":"false")
+             <<",\"unavailable\":"<<(gfx.has("METEO --")?"true":"false")
              <<",\"cpu\":"<<(gfx.has("CPU")?"true":"false")
              <<",\"gpu\":"<<(gfx.has("GPU")?"true":"false")
              <<",\"ram\":"<<(gfx.has("RAM")?"true":"false")
