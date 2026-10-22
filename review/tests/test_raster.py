@@ -1,6 +1,5 @@
 """Render the exact HOST SceneEngine into native-size PNGs using only stdlib."""
 import hashlib
-import os
 import shutil
 import struct
 import subprocess
@@ -30,14 +29,18 @@ def ppm_to_png(ppm,png):
 
 class Raster(unittest.TestCase):
     def test_real_renderer_pngs_and_edge_cases(self):
-        compiler=shutil.which('g++')
-        if not compiler:
-            self.skipTest('g++ not installed: do not claim raster validation on this platform')
+        from build_host import compiler_environment
+        compiler,env=compiler_environment()
+        msvc=Path(compiler).name.lower()=='cl.exe'
         OUT.mkdir(parents=True,exist_ok=True)
-        binary=OUT/'raster_scene'
-        cmd=[compiler,'-std=c++20','-O2','-Wall','-Wextra','-Werror',
-             '-I'+str(ROOT/'host'),str(SOURCE),'-o',str(binary)]
-        subprocess.run(cmd,check=True,timeout=90,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        binary=OUT/('raster_scene.exe' if msvc else 'raster_scene')
+        if msvc:
+            cmd=[compiler,'/nologo','/std:c++20','/EHsc','/O2',
+                 '/I'+str(ROOT/'host'),str(SOURCE),'/Fe:'+str(binary)]
+        else:
+            cmd=[compiler,'-std=c++20','-O2','-Wall','-Wextra','-Werror',
+                 '-I'+str(ROOT/'host'),str(SOURCE),'-o',str(binary)]
+        subprocess.run(cmd,check=True,timeout=90,env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         run=subprocess.run([str(binary),str(OUT)],check=True,timeout=45,capture_output=True,text=True)
         self.assertIn('B54_UI_RASTER_HOST_PASS',run.stdout)
         names=('01_monitoring','02_horloge_meteo','03_horloge_meteo_manuel',
