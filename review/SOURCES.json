@@ -1759,12 +1759,12 @@
       "sha256": "2c10c0e19dbfc168acd8493e555b0fdbcca37491cde049007d62bdae6f9ef4ee"
     },
     "tests/test_raster.py": {
-      "bytes": 2935,
-      "sha256": "f5971682aaeddeeaad87c88d38b5618bfcb62a9edf88a5176e4669e26de6ec35"
+      "bytes": 2775,
+      "sha256": "fdecfaa68b1ea500611e325be8a2e3667305548f43f491a172e45cb2e5e4324e"
     },
     "tests/raster_scene.cpp": {
-      "bytes": 7001,
-      "sha256": "d902a333d8e7f166a5fb35fe4ac584e2fa477a9861102513aeb9b2fc3ab51727"
+      "bytes": 8040,
+      "sha256": "1c46ba1515c66f87127c9025d333adebd3d0536f7190951247b18b7d5e9ee656"
     }
   }
 }
