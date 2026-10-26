@@ -1,0 +1,17 @@
+# Private factory backups, owner flash dumps, firmware research inputs and secrets
+research-local/
+backups/
+*.backup.bin
+*.bin
+*.zip
+.env
+.env.*
+!.env.example
+
+# Test and editor artifacts
+__pycache__/
+*.py[cod]
+.venv/
+node_modules/
+.DS_Store
+.vscode/

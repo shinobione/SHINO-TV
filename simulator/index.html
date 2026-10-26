@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SHINO // TV — Simulator</title>
+<style>
+:root{color-scheme:dark;font:15px system-ui,Segoe UI,sans-serif;background:#0d0e12;color:#edeae6}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% 0,#282019,#0d0e12 68%)}
+main{max-width:1040px;margin:0 auto;padding:36px 22px 50px}header{display:flex;justify-content:space-between;gap:15px;align-items:start;flex-wrap:wrap}
+h1{margin:0;font-size:clamp(29px,5vw,47px);letter-spacing:-.05em}h1 span{color:#e2ad63}p{color:#aaa6a2}
+.pill{padding:7px 11px;border:1px solid #534738;color:#e2ad63;border-radius:999px;font-size:11px;letter-spacing:.07em;font-weight:750}
+.layout{display:grid;grid-template-columns:minmax(290px,1fr) minmax(320px,1.05fr);gap:20px;margin-top:28px}
+.panel{border:1px solid #38322c;border-radius:19px;background:#17171b;box-shadow:0 24px 65px #0006;padding:24px}
+.display{display:flex;align-items:center;justify-content:center;min-height:470px;background:radial-gradient(circle,#33302d,#16171b 62%);border-radius:13px}
+.frame{border:13px solid #34363a;border-bottom-width:22px;border-radius:20px;box-shadow:8px 16px 40px #0009;line-height:0}
+canvas{width:min(62vw,320px);height:min(62vw,320px);max-width:320px;max-height:320px;aspect-ratio:1}
+h2{font-size:16px;margin:0 0 13px}.small{font-size:12px;color:#aaa6a2}.tabs{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:18px}
+button{cursor:pointer;background:#252429;color:#eee9e2;border:1px solid #4c4540;border-radius:10px;padding:11px;font:700 12px system-ui}
+button.selected{background:#473525;border-color:#d6a45f;color:#ffe0b7}button:hover{border-color:#d6a45f}
+textarea{resize:vertical;background:#0d0e12;color:#dcd9d5;border:1px solid #4c4540;border-radius:10px;padding:13px;width:100%;min-height:210px;font:12px/1.5 Consolas,monospace}
+.actions{display:flex;gap:8px;margin-top:12px}.actions button:first-child{flex:1;background:#e2ad63;color:#1a130c;border:0}
+#error{min-height:20px;color:#ed9292;margin:8px 0 0;font-size:12px}
+footer{margin-top:18px;color:#aaa6a2;font-size:12px}
+@media(max-width:740px){.layout{grid-template-columns:1fr}.display{min-height:375px}}
+</style></head><body><main>
+<header><div><h1>SHINO <span>// TV</span></h1><p>Firmware-independent 240 × 240 scene simulator · v0</p></div><div class="pill">DEMO · NO DEVICE CONNECTION</div></header>
+<section class="layout"><div class="panel"><h2>DISPLAY PREVIEW</h2><div class="display"><div class="frame"><canvas id="screen" width="240" height="240" role="img" aria-label="240 by 240 device preview"></canvas></div></div><p class="small">Rendered locally on your PC; nothing is sent to the SmallTV.</p></div>
+<div class="panel"><h2>SCENE CONTROL</h2><div class="tabs" id="presets"><button data-kind="metrics">PC HEALTH</button><button data-kind="music">MUSIC</button><button data-kind="agent">CODEX</button><button data-kind="release">RELEASE</button></div>
+<label class="small" for="json">Editable scene JSON</label><textarea id="json" spellcheck="false"></textarea><div class="actions"><button id="apply">APPLY SCENE</button><button id="save">SAVE PNG</button></div><p id="error" role="status" aria-live="polite"></p><footer>All values are illustrative. No real system telemetry or network API is connected yet.</footer></div></section>
+</main><script type="module">
+import {PRESETS, normalizeScene, renderScene} from './scene.mjs';
+const area=document.querySelector('#json'),canvas=document.querySelector('#screen'),ctx=canvas.getContext('2d'),error=document.querySelector('#error');
+function show(scene){const s=normalizeScene(scene);area.value=JSON.stringify(s,null,2);renderScene(ctx,s);error.textContent='';document.querySelectorAll('[data-kind]').forEach(b=>b.classList.toggle('selected',b.dataset.kind===s.kind));}
+document.querySelectorAll('[data-kind]').forEach(b=>b.addEventListener('click',()=>show(PRESETS[b.dataset.kind])));
+document.querySelector('#apply').addEventListener('click',()=>{try{show(JSON.parse(area.value))}catch(e){error.textContent=e.message}});
+document.querySelector('#save').addEventListener('click',()=>{const a=document.createElement('a');a.download='shino-tv-preview.png';a.href=canvas.toDataURL('image/png');a.click()});show(PRESETS.metrics);
+</script></body></html>
