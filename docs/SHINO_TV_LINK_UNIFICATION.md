@@ -1,5 +1,9 @@
 # SHINO // TV × SHINO // LINK — Plan de réunification
 
+## Mise à jour de coordination — 3 novembre 2026
+
+La [publication MUSIC follow](MUSIC_FOLLOW_SYNC_2026-11-03.md) est préparée isolément depuis le SHA publié de #85, sans modifier ses travaux locaux concurrents. Elle expose le runtime terminé et le correctif de découplage pour revue ; les preuves opérationnelles privées restent hors Git. Les statuts d'octobre ci-dessous conservent leur date ; aucune fusion, installation ou nouvelle qualification matérielle n'est déduite de cette synchronisation.
+
 **Document de coordination actif au 19 octobre 2026 sur [PR #85](https://github.com/shinobione/SHINO-TV/pull/85).**
 **Ce document est un plan et un inventaire de preuves, pas un merge ni une livraison.**
 Le SmallTV réel a passé la vérification postboot B5.4 [#81](https://github.com/shinobione/SHINO-TV/issues/81#issuecomment-6275185762) après une OTA unique. Le firmware privé, les codes de fabrication publics, les branches Codex locales, le Windows installé et les laboratoires M3-R sont **cinq objets distincts** jusqu'à rapprochement explicite.

@@ -1,0 +1,92 @@
+--- classified/companion/link_installed_control.py
++++ decoupled/companion/link_installed_control.py
+@@ -278,0 +279,9 @@
++def control_binding(e,identity):
++ """Exact locally proven release, never a menu label or a media health flag."""
++ if getattr(e,'music_cli',None) is not None:
++  from music_cli_recognition import check_identity
++  check_identity(identity,e.music_cli) # Manifest, descriptor, authenticated boot, FS.
++  return identity['device'],identity['build_id']
++ require(e.successor is not None and same(identity,e.future,KEYS),'CONTROL_RELEASE_MISMATCH')
++ return e.future['device'],e.future['build_id']
++
+@@ -280 +289 @@
+- """Per-process capability, only a manual identity check can establish it.
++ """Per-process display capability established by authenticated admission.
+@@ -299 +308,2 @@
+-    if result.get('state')=='READ' and result.get('version')=='B5.4 + Stitch / LINK V2' and seen.get('fs_ok') is True:
++    if result.get('state')=='READ' and result.get('version') in ('B5.4 + Stitch / LINK V2','B5.4 + Stitch / MUSIC V1') and seen.get('fs_ok') is True:
++     device,build=control_binding(e,seen)
+@@ -301 +311 @@
+-     t=transport_factory(host,user,password,expected_device=e.future['device'],expected_build=e.future['build_id'],expected_boot=seen['boot_id'],guard=e.command_guard())
++     t=transport_factory(host,user,password,expected_device=device,expected_build=build,expected_boot=seen['boot_id'],guard=e.command_guard())
+@@ -321 +331 @@
+-    require(e.successor is not None and same(cap['identity'],e.future,KEYS),'CONTROL_RELEASE_MISMATCH')
++    device,build=control_binding(e,cap['identity'])
+@@ -325 +335 @@
+-    t=transport_factory(host,user,password,expected_device=e.future['device'],expected_build=e.future['build_id'],expected_boot=cap['identity']['boot_id'],guard=guard)
++    t=transport_factory(host,user,password,expected_device=device,expected_build=build,expected_boot=cap['identity']['boot_id'],guard=guard)
+--- classified/companion/link_windows.py
++++ decoupled/companion/link_windows.py
+@@ -94,4 +93,0 @@
+-            if music is not None and music.available():
+-                try:return music.apply(mode,command_budget(engine))
+-                finally:
+-                    if engine.opener_factory:engine.opener=None
+@@ -99 +95,4 @@
+-            try:return installed.apply(mode,engine.host,config,link.config_path().parent,budget_seconds=command_budget(engine),**transport_options)
++            try:
++                result=installed.apply(mode,engine.host,config,link.config_path().parent,budget_seconds=command_budget(engine),**transport_options)
++                if result.get('state')=='APPLIED' and music is not None:music.verified_mode=result['mode']
++                return result
+@@ -144 +143 @@
+-                    open_dashboard=dashboard,quit_app=quit_app,offline=offline,windows_version=VERSION+(' â€” SIMULATION HOST' if simulation else ''),control_available=lambda:((music is not None and music.available()) or command_allowed(link.config_path().parent,session=installed)))
++                    open_dashboard=dashboard,quit_app=quit_app,offline=offline,windows_version=VERSION+(' â€” SIMULATION HOST' if simulation else ''),control_available=lambda:command_allowed(link.config_path().parent,session=installed))
+--- classified/companion/music_bootstrap.py
++++ decoupled/companion/music_bootstrap.py
+@@ -9 +9 @@
+-from music_transport import Transport
++from music_transport import Transport,trace_event
+@@ -73,0 +74,10 @@
++  self._admission_phase='IDENTITY_DISPLAY'
++  trace_event(self.music_trace,'ADMISSION_START',phase=self._admission_phase)
++  try:
++   result=self._inspect_impl(reader_factory=reader_factory,transport_factory=transport_factory,media_transport_factory=media_transport_factory)
++   trace_event(self.music_trace,'ADMISSION_READ' if self.service is not None else 'ADMISSION_HOLD',
++    phase=self._admission_phase,to_state=self.service.phase if self.service is not None else 'HOLD')
++   return result
++  except Exception as error:
++   trace_event(self.music_trace,'ADMISSION_HOLD',phase=self._admission_phase,error=error,to_state='HOLD');raise
++ def _inspect_impl(self,*,reader_factory=None,transport_factory=None,media_transport_factory=None):
+@@ -87,0 +98 @@
++  self._admission_phase='RELEASE'
+@@ -100,0 +112 @@
++   self._admission_phase='MEDIA_STATUS'
+@@ -105 +117,2 @@
+-  self.service=Service(transport,Feed());self.engine.music_service=self.service;self.service.feed.start()
++  self.service=Service(transport,Feed(trace=self.music_trace));self.engine.music_service=self.service;self.service.feed.start()
++  self._admission_phase='READY'
+@@ -110,17 +123,6 @@
+-  if not self.available():return {'state':'HOLD','reason':'MUSIC_IDENTITY_UNVERIFIED'}
+-  if type(budget_seconds) not in (int,float) or not .25<=budget_seconds<=1.5:return {'state':'HOLD','reason':'TELEMETRY_PRIORITY'}
+-  from link_display_control import Transport as Modes
+-  t=self.service.transport;until=time.monotonic()+budget_seconds;command=None
+-  try:
+-   with t.lease() as guard:
+-    remaining=until-time.monotonic()
+-    if remaining<.25:return {'state':'HOLD','reason':'TELEMETRY_PRIORITY'}
+-    command=(self.mode_transport_factory or Modes)(t.host,t.user,t.password,expected_device=t.identity['device'],expected_build=t.identity['build'],expected_boot=t.identity['boot'],guard=guard)
+-    result=command.execute(mode,budget_seconds=min(remaining,1.5))
+-   if time.monotonic()>=until:raise TimeoutError('control proof lease expired')
+-   if result.get('state')!='APPLIED':self.close()
+-   else:self.verified_mode=result.get('mode')
+-   return result
+-  except Exception:
+-   self.close()
+-   return {'state':'UNKNOWN' if command is not None and command.posts else 'HOLD','reason':'CONTROL_PROOF_OR_DEADLINE_HOLD'}
++  # Legacy callers also use the independent display capability and its own
++  # authenticated status/boot/ACK checks. Never clear an uncertain media send.
++  options={'transport_factory':self.mode_transport_factory} if self.mode_transport_factory is not None else {}
++  result=self.installed.apply(mode,self.engine.host,self.config,self.directory,budget_seconds=budget_seconds,**options)
++  if result.get('state')=='APPLIED':self.verified_mode=result['mode']
++  return result

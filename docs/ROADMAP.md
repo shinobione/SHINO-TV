@@ -1,5 +1,9 @@
 # SHINO // TV — Roadmap
 
+## Mandat du 3 novembre 2026 — synchronisation GitHub assainie
+
+Autorisation propriétaire : auditer et publier les travaux pertinents terminés de cette conversation sur une branche isolée, préserver les changements parallèles et privés, exécuter les validations pertinentes et lire la CI du SHA publié. Aucun matériel, OTA, installation, firmware ou autostart. La [sélection MUSIC follow](MUSIC_FOLLOW_SYNC_2026-11-03.md) conserve l'admission liée au propriétaire hors Git et distingue HOST, observations physiques et HOLD. Les mandats antérieurs ci-dessous restent datés, sans réutilisation de leurs GO.
+
 ## Correction interface Windows V1 — 21 octobre 2026
 
 Retour propriétaire PR #85 #6309141360 : OWNER_DESKTOP_SMOKE PARTIAL / UI HOLD, boîte d’état modale non fermable. GO courant : reproduire le vrai callback Win32, remplacer Consulter l’état par un sous-menu natif passif actualisé, tester ouverture/fermeture/sélections/cycles/Quitter et livrer un EXE corrigé dans un nouveau dossier isolé avec taille/SHA et CI exacte. Préserver ancien EXE, patch HMAC, artefacts, quatre aperçus PC, locks et sender. Aucun LIVE, autostart/registre, SmallTV/VM, reprise M3-R ou merge. Livraison puis STOP.

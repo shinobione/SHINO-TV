@@ -1,0 +1,61 @@
+{
+  "schema": 1,
+  "purpose": "SANITIZED_SOURCE_REVIEW_NOT_OPERATIONAL_RELEASE",
+  "parent_commit": "1e27cec7b95c19fdc93651800f83524cb2583e93",
+  "files": {
+    "runtime/media_sessions.py": {
+      "original_sha256": "d33c63e530f2b6cbd2feee5da78870f079c8d16735fee9e49c21b0fc5439d6c3",
+      "published_sha256": "558de7c8a0e896f737b72c675cbbe1498f8ec64244669fa64cf9ecf4e38a3ef9",
+      "transformation": "LF normalization only"
+    },
+    "runtime/media_music.py": {
+      "original_sha256": "044fd785f987ca4fd11554c5b7ca86b4ee3250809088a56c6fc712563e0f61dc",
+      "published_sha256": "98b6ee2bdbef37386b6586ff2fad7f275a3ff65183673f0f9786a91de452d046",
+      "transformation": "LF normalization only"
+    },
+    "runtime/music_service.py": {
+      "original_sha256": "368bec876c7636c16c9b0d3b90901af015ba697d3861cc0d0b7ed5b7dc14e867",
+      "published_sha256": "f649985eae59236698ba466fd6b87ee247fa8c16bfa400f951721b760748f082",
+      "transformation": "LF normalization only"
+    },
+    "runtime/music_transport.py": {
+      "original_sha256": "8dc8be0d85f612bffc02ce153b0a340f3918cafe3ea75ef21cce0f263c266866",
+      "published_sha256": "94b94da4e2f4350933ef34dff87c844c6f5f9d43ee19c821f95c6fcc73cd8bcc",
+      "transformation": "LF normalization only"
+    },
+    "runtime/link_display_control.py": {
+      "original_sha256": "f708ade27661f7cc12700b40af6afa5cef1c1d1da046648bd09b6128037aac40",
+      "published_sha256": "f708ade27661f7cc12700b40af6afa5cef1c1d1da046648bd09b6128037aac40",
+      "transformation": "LF normalization only"
+    },
+    "runtime/shino_link.py": {
+      "original_sha256": "7b94ee489e7f06ec5a6f44a1cb4673d59eea51e4579f3a9b3a139cd9d31dff68",
+      "published_sha256": "07bf2d5c96509d32ef1b72f8767680f0af25a67b2aade6eb0b8b70a01bb1781d",
+      "transformation": "LF normalization only"
+    },
+    "tests/test_postack.py": {
+      "published_sha256": "dbaaab09facc720ff83ef45d13d2147b840dd1bee139aba0f6589d249203af7d",
+      "origin": "existing test_postack.py",
+      "transformation": "public import paths; existing case selection; AST formatting; HOST guard-fault fixture for postack only"
+    },
+    "tests/test_network.py": {
+      "published_sha256": "dfed30f748c4e36385bd5944f08edc0ca777e8043c4dc02dd0c0455bbcdfb122",
+      "origin": "existing test_classification.py",
+      "transformation": "public import paths; existing case selection; AST formatting; HOST guard-fault fixture for postack only"
+    },
+    "tests/test_follow.py": {
+      "published_sha256": "7251ced9228069db4be982a491529e7c497af2d12800c44f9b9a3301cfdf3a7a",
+      "origin": "existing test_follow.py",
+      "transformation": "public import paths; existing case selection; AST formatting; HOST guard-fault fixture for postack only"
+    },
+    "tests/test_trace.py": {
+      "published_sha256": "ed3424cb5253bb3121f232a93068c4dbecf93133320c44964ebd084e94801610",
+      "origin": "existing test_decoupled.Trace",
+      "transformation": "public imports; omit private admission test; AST formatting"
+    },
+    "display-admission-review.patch": {
+      "published_sha256": "3c4474b6de6e4665dc895c760613f7c136e776819fc06196456830a3bc545622",
+      "transformation": "exact changed lines from existing decoupling; zero-context review diff; owner-bound file bodies/evidence excluded"
+    }
+  }
+}

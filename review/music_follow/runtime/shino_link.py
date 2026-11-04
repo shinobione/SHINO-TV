@@ -1,0 +1,594 @@
+"""SHINO // LINK — opt-in Windows tray companion for the already-installed V2.1.
+
+PC-side ONLY. Uses the existing validated per-build Digest RAM telemetry sender.
+No OTA, media/image upload, Windows Wi-Fi switching, device scanning,
+registry modification except a *separately requested* per-user auto-start action.
+Neither a config command nor a dry run contacts the SmallTV.
+"""
+from __future__ import annotations
+
+import argparse
+from collections import deque
+from contextlib import contextmanager
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import threading
+import time
+import webbrowser
+
+from metrics_server import collect_metrics, query_nvidia
+from clock_sync import ClockTransport
+from link_clock import LinkClockPublisher
+from shino_digest_coord import CoordinationBusy, HttpDiagnostics, digest_exchange, exception_outcome
+from push_fsless_metrics import (
+    SenderError, SendStatus, encode_sample, make_opener, read_credentials, send_sample, validate_host,
+)
+
+APP_NAME = "SHINO // LINK"
+DEFAULT_HOST = "192.168.4.1"
+RUN_VALUE = "SHINO_LINK"
+RUN_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
+CONFIG_SCHEMA = 1
+CONNECTED_INTERVAL_SECONDS = 2.0
+MAX_RETRY_SECONDS = 30.0
+MAX_CONFIG_BYTES = 2048
+METRICS_TTL_MS = 6000
+
+
+class LinkError(ValueError):
+    """A deliberately sanitized user-facing error (never include credentials)."""
+
+
+def config_path() -> Path:
+    # No files, password values or configuration are placed inside the Git repo.
+    local = os.environ.get("LOCALAPPDATA")
+    return (Path(local) if local else Path.home() / "AppData" / "Local") / "SHINO-TV" / "link.json"
+
+
+@contextmanager
+def link_instance(*, directory=None):
+    """One LINK sender across targets/processes, including the default clock-off mode.
+
+    Reuse the existing OS-lock primitive in a separate, fixed worker namespace.
+    DEFAULT_HOST is only the common lock identifier here; this performs no HTTP.
+    Never remove a lock file: the OS releases ownership on process exit.
+    """
+    root = Path(directory) if directory is not None else config_path().parent / 'worker-instance'
+    try:
+        with digest_exchange(DEFAULT_HOST, wait_seconds=0, directory=root):
+            yield
+    except CoordinationBusy as exc:
+        raise LinkError('LINK already running or instance lock unavailable') from exc
+
+
+def private_config(path: Path) -> Path:
+    path = Path(path).expanduser()
+    if path.is_symlink():
+        raise LinkError("Configuration symlinks are forbidden")
+    return path
+
+
+def exact_keys(pairs: list[tuple[str, object]]) -> dict:
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise LinkError("Duplicate configuration field")
+        result[key] = value
+    return result
+
+
+def load_config(path: Path) -> dict[str, str]:
+    path = private_config(path)
+    if not path.is_file() or path.stat().st_size > MAX_CONFIG_BYTES:
+        raise LinkError("No valid local SHINO // LINK configuration. Run --configure first.")
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=exact_keys)
+    except (UnicodeError, ValueError) as exc:
+        raise LinkError("Local configuration is not valid JSON") from exc
+    if not isinstance(data, dict) or set(data) != {"schema", "host", "credentials_file"}:
+        raise LinkError("Unexpected local configuration format")
+    if type(data["schema"]) is not int or data["schema"] != CONFIG_SCHEMA:
+        raise LinkError("Unsupported configuration version")
+    if type(data["host"]) is not str or type(data["credentials_file"]) is not str:
+        raise LinkError("Invalid local target or credential path")
+    host = validate_host(data["host"])
+    creds = Path(data["credentials_file"])
+    if not creds.is_absolute() or creds.is_symlink():
+        raise LinkError("Credentials must be an existing private regular absolute path")
+    return {"host": host, "credentials_file": str(creds)}
+
+
+def save_config(path: Path, host: str, credentials: Path) -> None:
+    path = private_config(path)
+    host = validate_host(host)
+    credentials = Path(credentials).expanduser().absolute()
+    # Existing sender validates the exact matching-format credential file.
+    read_credentials(credentials)
+    if path.exists() and not path.is_file():
+        raise LinkError("Configuration destination must be a regular file")
+    parent = path.parent
+    if parent.is_symlink():
+        raise LinkError("Configuration parent must not be a symlink")
+    parent.mkdir(parents=True, exist_ok=True)
+    data = {"schema": CONFIG_SCHEMA, "host": host,
+            "credentials_file": str(credentials)}
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=parent,
+                                         prefix=".shino-link-", suffix=".tmp",
+                                         delete=False) as stream:
+            temporary = Path(stream.name)
+            json.dump(data, stream, ensure_ascii=True, indent=2)
+            stream.write("\n")
+        os.chmod(temporary, 0o600)
+        os.replace(temporary, path)
+        temporary = None
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
+class ObservedOpener:
+    """Opt-in error types before send_sample sanitizes them; same Digest opener."""
+    def __init__(self, opener):
+        self.opener = opener
+        self.outcome = None
+        self.status = None
+
+    @contextmanager
+    def open(self, request, timeout):
+        try:
+            with self.opener.open(request, timeout=timeout) as response:
+                self.status = response.getcode()
+                yield response
+        except Exception as error:
+            self.outcome = exception_outcome(error)
+            self.status = getattr(error, "code", self.status)
+            raise
+
+
+def coordinated_link_sender(host, opener, sample, timeout=3.0, *, diagnostics=None):
+    """Complete Digest POST serialized with other cooperating SHINO clients."""
+    timing = {}
+    outcome, status = "client_error", None
+    observed = ObservedOpener(opener) if diagnostics is not None else None
+    try:
+        with digest_exchange(host, timing=timing):
+            result = send_sample(host, observed or opener, sample, timeout=timeout)
+            outcome = (observed.outcome if observed is not None else None) or result.value
+            status = observed.status if observed is not None else None
+            return result
+    except CoordinationBusy as error:
+        outcome = error.code
+        return SendStatus.CLIENT_ERROR
+    except OSError:
+        # No unsafe send outside the lock. Preserve LINK's natural backoff.
+        return SendStatus.CLIENT_ERROR
+    finally:
+        if diagnostics is not None:
+            diagnostics.record("POST_LINK_METRICS", outcome, timing, status)
+
+
+class LinkEngine:
+    """Purely PC-side rate-limited state machine; no startup network side effects."""
+
+    def __init__(self, host: str, opener, sampler, sender=send_sample,
+                 clock=time.monotonic, opener_factory=None, http_diagnostics=None, clock_publisher=None):
+        self.host = validate_host(host)
+        self.opener = opener
+        self.sampler = sampler
+        self.sender = sender
+        self.clock = clock
+        self.opener_factory = opener_factory
+        self.generation = 1
+        self.attempts = 0
+        self.accepted = 0
+        self.last_result = None
+        self.history = deque(maxlen=64)
+        self.next_due = 0.0
+        self.failures = 0
+        self.state = "WAITING"
+        self.http_diagnostics = http_diagnostics
+        self.last_success = None
+        self.last_completed = None
+        self.live_clock = True
+        self.ttl_overruns = 0
+        self.ttl_episode_active = False
+        self.max_success_interval_ms = None
+        self.clock_publisher = clock_publisher
+        self._worker_guard = threading.Lock()
+
+    def retarget(self, host: str) -> None:
+        host=validate_host(host)
+        if host==self.host: return
+        self.host=host
+        self.opener=None
+        self.failures=0
+        self.next_due=0
+        self.state="WAITING"
+        self.last_success=None
+        self.ttl_episode_active=False
+        if self.clock_publisher is not None:
+            self.clock_publisher.retarget()
+
+    def observe_success_age(self, now):
+        age = None if self.last_success is None else max(0, now - self.last_success) * 1000
+        if age is not None and age > METRICS_TTL_MS and not self.ttl_episode_active:
+            self.ttl_overruns += 1
+            self.ttl_episode_active = True
+        return age
+
+    def step(self, now: float | None = None, *, stop=None) -> str:
+        use_live_clock = now is None
+        now = self.clock() if use_live_clock else now
+        if now < self.next_due:
+            return self.state
+        started = self.clock()
+        try:
+            sample = self.sampler()
+            encode_sample(sample)  # Do not send invalid, stale or unbounded readings.
+        except Exception:
+            result = SendStatus.INVALID_SAMPLE
+            collection_ms = max(0, self.clock() - started) * 1000
+        else:
+            collection_ms = max(0, self.clock() - started) * 1000
+            try:
+                if self.opener is None:
+                    self.opener = self.opener_factory()
+                    self.generation += 1
+                sent = self.sender(self.host, self.opener, sample, timeout=3.0)
+                # Existing injected bool senders stay supported; enum truthiness is not success.
+                result = sent if isinstance(sent, SendStatus) else SendStatus.ACCEPTED if sent is True else SendStatus.CLIENT_ERROR
+            except Exception:
+                result = SendStatus.CLIENT_ERROR
+        self.last_result = result
+        self.attempts += 1
+        accepted = result is SendStatus.ACCEPTED
+        if accepted:
+            self.accepted += 1
+            self.failures = 0
+            self.state = "CONNECTED"
+            delay = CONNECTED_INTERVAL_SECONDS
+        else:
+            self.failures += 1
+            self.state = "RETRYING"
+            delay = min(MAX_RETRY_SECONDS, 2.0 * (2 ** min(self.failures - 1, 4)))
+            if self.opener_factory and (result in (
+                    SendStatus.NO_ROUTE_TIMEOUT, SendStatus.CONNECTION, SendStatus.NETWORK_ERROR,
+                    SendStatus.HTTP_401, SendStatus.HTTP_403, SendStatus.CLIENT_ERROR) or
+                    (result is SendStatus.MALFORMED and self.failures % 3 == 0)):
+                # Fresh state on NEXT scheduled attempt. No immediate POST/retry loop.
+                self.opener = None
+        # Delay is measured AFTER collection/HTTP completes, so a 3s timeout
+        # cannot accidentally turn a 2s retry into an immediate retry storm.
+        completed = self.clock() if use_live_clock else now
+        self.live_clock = use_live_clock
+        self.last_completed = completed
+        age = self.observe_success_age(completed)
+        interval = age if accepted else None
+        if accepted:
+            if interval is not None:
+                self.max_success_interval_ms = max(self.max_success_interval_ms or 0, interval)
+            self.last_success = completed
+            self.ttl_episode_active = False
+        self.next_due = completed + delay
+        self.history.append({'attempt': self.attempts, 'result': result.value,
+                             'http_status': 200 if accepted else 401 if result is SendStatus.HTTP_401 else 403 if result is SendStatus.HTTP_403 else None,
+                             'generation': self.generation, 'failures': self.failures,
+                             'completed_monotonic': completed, 'retry_seconds': delay,
+                             'success_interval_ms': None if interval is None else round(interval, 3),
+                             'success_age_ms': None if age is None else round(age, 3),
+                             'success_gap_exceeds_ttl': age is not None and age > METRICS_TTL_MS,
+                             'collection_ms': round(collection_ms, 3),
+                             'duration_ms': round(max(0, self.clock() - started) * 1000, 3)})
+        if self.clock_publisher is not None:
+            if not accepted:
+                self.clock_publisher.disconnected()
+            elif self.clock_publisher.after_metrics(self.host, self.next_due, stop=stop):
+                # The Core has one mutable Digest challenge. Clock GET may rotate
+                # it: acquire a fresh telemetry challenge at its next scheduled send.
+                if self.opener_factory is not None:
+                    self.opener = None
+        return self.state
+
+    def diagnostics(self) -> dict:
+        age = self.observe_success_age(self.clock() if self.live_clock else self.last_completed or 0)
+        result = {'state': self.state, 'attempts': self.attempts, 'accepted': self.accepted,
+                'generation': self.generation, 'failures': self.failures,
+                'ttl_ms': METRICS_TTL_MS, 'ttl_overruns': self.ttl_overruns,
+                'success_age_ms': None if age is None else round(age, 3),
+                'max_success_interval_ms': self.max_success_interval_ms,
+                'freshness_source': 'WINDOWS_ACK_INTERVAL_ONLY',
+                'history': list(self.history)}
+        if self.http_diagnostics is not None:
+            result['http'] = self.http_diagnostics.snapshot()
+        result['clock'] = (self.clock_publisher.snapshot() if self.clock_publisher is not None
+                           else dict(enabled=False, state='CLOCK_DISABLED'))
+        return result
+
+    def run(self, stop: threading.Event, report, observe=None, target_supplier=None) -> None:
+        if not self._worker_guard.acquire(blocking=False):
+            raise LinkError('LINK worker already active')
+        try:
+            self._run(stop, report, observe, target_supplier)
+        finally:
+            self._worker_guard.release()
+
+    def _run(self, stop, report, observe, target_supplier):
+        last_state = None
+        last_attempt = 0
+        while not stop.is_set():
+            if target_supplier:
+                try: self.retarget(target_supplier())
+                except (OSError,ValueError): pass
+            state = self.step(stop=stop)
+            if state != last_state:
+                report(state)
+                last_state = state
+            if observe and self.attempts != last_attempt:
+                last_attempt = self.attempts
+                try:
+                    observe(self.diagnostics())
+                except OSError:
+                    pass # Diagnostics must not stop telemetry or expose local paths.
+            # A single network worker: telemetry remains first. Media consumes
+            # only its idle budget; WinRT collection never runs on this worker.
+            music=getattr(self,'music_service',None)
+            if music is not None and state=='CONNECTED':
+                while not stop.is_set() and music.pump(self):
+                    pass
+            # Never spin or immediately retry on a network/collection failure.
+            stop.wait(max(0.01, self.next_due - self.clock()))
+
+
+def make_engine(config: dict[str, str], *, diagnostics=False, clock_b52_host=None) -> LinkEngine:
+    # Lazy import: --dry-run/configure/autostart status never need to read secrets
+    # or contact the device. The credentials file is never copied into link.json.
+    if clock_b52_host is not None and validate_host(clock_b52_host) != config['host']:
+        raise LinkError('Clock B5.2 assertion must match the configured target')
+    user, password = read_credentials(Path(config["credentials_file"]))
+    factory = lambda: make_opener(config["host"], user, password)
+    opener = factory()
+    import psutil
+    psutil.cpu_percent(interval=None)  # Prime nonblocking first CPU sample.
+    http = HttpDiagnostics() if diagnostics else None
+    engine=LinkEngine(config["host"], opener,
+                      lambda: collect_metrics(psutil, query_nvidia),
+                      sender=lambda *args, **kwargs: coordinated_link_sender(*args, **kwargs, diagnostics=http),
+                       opener_factory=factory, http_diagnostics=http,
+                       clock_publisher=(LinkClockPublisher(clock_b52_host,
+                           lambda host: ClockTransport(host, user, password))
+                           if clock_b52_host is not None else None))
+    engine.opener_factory=lambda: make_opener(engine.host,user,password)
+    return engine
+
+
+def diagnostics_writer(path: Path):
+    """Opt-in bounded sanitized snapshot, never a raw HTTP/credential log."""
+    path = Path(path)
+    if path.is_symlink() or path.exists():
+        raise LinkError("Diagnostics require a new local file; existing evidence is immutable")
+    # Reserve this run's destination before credentials/network. Subsequent
+    # snapshots replace only the file created by this invocation.
+    with path.open("x", encoding="utf-8") as stream:
+        json.dump(dict(status="WINDOWS_DIAGNOSTICS_RESERVED"), stream)
+    def write(data):
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile('w', encoding='utf-8', dir=path.parent,
+                                             prefix='.shino-diag-', suffix='.tmp', delete=False) as stream:
+                temporary = Path(stream.name)
+                json.dump(data, stream, allow_nan=False)
+            os.replace(temporary, path)
+            temporary = None
+        finally:
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)
+    return write
+
+
+def run_tray(config: dict[str, str], observe=None, *, clock_b52_host=None) -> int:
+    try:
+        import pystray
+        from PIL import Image, ImageDraw
+    except ImportError as exc:
+        raise LinkError("Tray dependencies missing. Install companion/requirements-link.txt") from exc
+    from link_mode_tray import ModeTrayController, build_preview_menu, passive_link_signals
+    from link_firmware_identity import FirmwareMenuAction, read_firmware_identity
+    engine = make_engine(config, diagnostics=observe is not None, clock_b52_host=clock_b52_host)
+    # M2 is a HOST preview only. Do not add a second sender or device POST.
+    mode_controller = ModeTrayController(
+        lambda: passive_link_signals(engine, ttl_ms=METRICS_TTL_MS)
+    )
+    stop = threading.Event()
+    firmware_action = FirmwareMenuAction(lambda: read_firmware_identity(
+        engine.host, Path(config["credentials_file"]), config_path().parent,
+    ))
+    status = {"value": "WAITING"}
+    picture = Image.new("RGB", (64, 64), "#141820")
+    draw = ImageDraw.Draw(picture)
+    draw.rounded_rectangle((5, 5, 58, 58), radius=12,
+                           fill="#242e3a", outline="#c4a779", width=3)
+    draw.line([(15, 42), (24, 22), (32, 34), (41, 17), (49, 24)],
+              fill="#80d9aa", width=5, joint="curve")
+
+    def state_changed(value: str) -> None:
+        status["value"] = value
+        icon.title = APP_NAME + " · " + value
+        icon.update_menu()
+
+    def open_dashboard(icon_, item) -> None:
+        # Only the explicitly configured and validated private host is opened.
+        webbrowser.open("http://" + engine.host + "/")
+
+    def quit_app(icon_, item) -> None:
+        firmware_action.close()
+        stop.set()
+        icon_.stop()
+
+    menu = build_preview_menu(
+        pystray, mode_controller, status_supplier=lambda: status["value"],
+        open_dashboard=open_dashboard, quit_app=quit_app,
+        firmware_action=firmware_action,
+    )
+    icon = pystray.Icon("SHINO_LINK", picture, APP_NAME + " · WAITING", menu)
+    worker = threading.Thread(target=engine.run, args=(stop, state_changed, observe, lambda: load_config(config_path())["host"]),
+                              name="SHINO-LINK-metrics", daemon=True)
+    worker.start()
+    try:
+        icon.run()
+    finally:
+        firmware_action.close()
+        stop.set()
+        # Keep the process/instance lock until its one worker has really stopped.
+        # No replacement sender can overlap an in-flight metric/clock request.
+        worker.join()
+    return 0
+
+
+def autostart_command() -> str:
+    if os.name != "nt":
+        raise LinkError("Per-user auto-start is Windows-only")
+    windowed = Path(sys.executable).with_name("pythonw.exe")
+    if not windowed.is_file():
+        raise LinkError("pythonw.exe not found next to the active Python interpreter")
+    return subprocess.list2cmdline([str(windowed), str(Path(__file__).resolve()), "--tray"])
+
+
+def autostart(action: str, path: Path) -> str:
+    if os.name != "nt":
+        raise LinkError("Per-user auto-start is Windows-only")
+    import winreg
+    if action == "enable":
+        load_config(path)
+        try:
+            import pystray
+            from PIL import Image
+        except ImportError as exc:
+            raise LinkError("Install companion/requirements-link.txt before enabling auto-start") from exc
+    command = autostart_command() if action == "enable" else None
+    access = winreg.KEY_QUERY_VALUE | (winreg.KEY_SET_VALUE if action != "status" else 0)
+    # Status / disable must not silently CREATE any registry key.
+    try:
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY, 0, access)
+    except FileNotFoundError:
+        if action == "status":
+            return "Disabled"
+        if action == "disable":
+            return "Already disabled"
+        key = winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, RUN_KEY, 0, access)
+    with key:
+        try:
+            existing, kind = winreg.QueryValueEx(key, RUN_VALUE)
+        except FileNotFoundError:
+            existing, kind = None, None
+        if action == "status":
+            return "Enabled" if existing is not None else "Disabled"
+        if action == "enable":
+            if existing is not None and (kind != winreg.REG_SZ or existing != command):
+                raise LinkError("Auto-start entry differs: refuse to overwrite an unexpected value")
+            winreg.SetValueEx(key, RUN_VALUE, 0, winreg.REG_SZ, command)
+            return "Enabled for current Windows user only"
+        if action == "disable":
+            if existing is None:
+                return "Already disabled"
+            # Explicitly owned value, not an arbitrary startup application.
+            # Avoid logging the registry contents because they can contain paths.
+            expected_script = str(Path(__file__).resolve()).lower()
+            if (kind != winreg.REG_SZ or expected_script not in existing.lower()
+                    or not existing.endswith(' --tray')):
+                raise LinkError("Unexpected auto-start entry: refuse automatic deletion")
+            winreg.DeleteValue(key, RUN_VALUE)
+            return "Disabled for current Windows user"
+    raise LinkError("Unsupported auto-start action")
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    actions = parser.add_mutually_exclusive_group(required=True)
+    actions.add_argument("--dry-run", action="store_true",
+                         help="Local PC schema validation only, NO secrets or network")
+    actions.add_argument("--configure", action="store_true",
+                         help="Save local host and private credential FILE PATH, never password values")
+    actions.add_argument("--set-target",action="store_true",help="Change existing sender's LAN IP without starting another sender")
+    actions.add_argument("--recovery-target",action="store_true",help="Retarget existing sender to private AP; does not change Windows Wi-Fi")
+    actions.add_argument("--once", action="store_true",
+                         help="One explicitly initiated RAM telemetry sample to configured SHINO")
+    actions.add_argument("--run", action="store_true",
+                         help="Foreground 2s sampling with bounded reconnect backoff")
+    actions.add_argument("--tray", action="store_true",
+                         help="Opt-in Windows system tray companion, same RAM-only protocol")
+    actions.add_argument("--autostart", choices=("enable", "disable", "status"),
+                         help="Explicit per-user HKCU Run change; never enabled by configure")
+    parser.add_argument("--host", default=DEFAULT_HOST,
+                        help="Private IPv4 destination for --configure (default 192.168.4.1)")
+    parser.add_argument("--credentials-file", type=Path,
+                        help="Private matching-build file; used ONLY for --configure, no password on CLI")
+    parser.add_argument('--diagnostics-file', type=Path,
+                        help='Optional bounded sanitized status snapshot for --run/--tray')
+    parser.add_argument('--clock-b52-host',
+                        help='Opt-in ONLY for --run/--tray: owner-verified B5.2 IPv4 matching configured host')
+    args = parser.parse_args(argv)
+    if args.clock_b52_host is not None and not (args.run or args.tray):
+        parser.error('--clock-b52-host requires --run or --tray; no configuration or auto-start changes')
+    try:
+        if args.dry_run:
+            import psutil
+            psutil.cpu_percent(interval=None)
+            data = collect_metrics(psutil, query_nvidia)
+            encoded = encode_sample(data)
+            print("OFFLINE ONLY | validated bounded PC telemetry | bytes=" + str(len(encoded)))
+            return 0
+        path = config_path()
+        if args.set_target or args.recovery_target:
+            current=load_config(path)
+            save_config(path,DEFAULT_HOST if args.recovery_target else args.host,Path(current["credentials_file"]))
+            print("Existing sender target updated locally; no device contacted or new sender started.")
+            return 0
+        if args.configure:
+            if args.credentials_file is None:
+                parser.error("--configure requires --credentials-file")
+            save_config(path, args.host, args.credentials_file)
+            print("Local SHINO // LINK configuration saved. No password copied; no device contacted.")
+            print("Auto-start remains opt-in and unchanged.")
+            return 0
+        if args.autostart:
+            print("SHINO // LINK auto-start:", autostart(args.autostart, path))
+            return 0
+        config = load_config(path)
+        if args.clock_b52_host is not None and validate_host(args.clock_b52_host) != config['host']:
+            raise LinkError('Clock B5.2 assertion must match the configured target')
+        with link_instance():
+            observe = diagnostics_writer(args.diagnostics_file) if args.diagnostics_file else None
+            if args.tray:
+                return run_tray(config, observe, clock_b52_host=args.clock_b52_host)
+            engine = make_engine(config, diagnostics=observe is not None, clock_b52_host=args.clock_b52_host)
+            if args.once:
+                state = engine.step()
+                print("One RAM-only sample:", state)
+                return 0 if state == "CONNECTED" else 1
+            stop = threading.Event()
+            print("SHINO // LINK started (RAM-only metrics, Ctrl+C to stop).")
+            try:
+                engine.run(stop, lambda state: print("SHINO // LINK:", state, flush=True), observe,
+                           lambda: load_config(path)["host"])
+            except KeyboardInterrupt:
+                stop.set()
+                print("\nSHINO // LINK stopped; device metrics expire after six seconds.")
+            return 0
+    except (LinkError, SenderError) as exc:
+        # These are deliberately sanitized errors; never print raw credentials,
+        # HTTP challenges, config content or third-party tracebacks.
+        print("SHINO // LINK STOP:", exc, file=sys.stderr)
+        return 1
+    except OSError:
+        print('SHINO // LINK STOP: local file unavailable', file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
