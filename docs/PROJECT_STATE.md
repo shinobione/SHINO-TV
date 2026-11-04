@@ -1,5 +1,11 @@
 # SHINO // TV — État opérationnel et décisions actives
 
+## Checkpoint public du 3 novembre 2026 — MUSIC follow
+
+La [synchronisation assainie de cette conversation](MUSIC_FOLLOW_SYNC_2026-11-03.md) publie les sources Windows terminées et leurs tests ciblés. MUSIC V1 a fait l'objet d'une confirmation postboot indépendante et de constats propriétaires dans cette conversation ; le diagnostic musical DECOUPLED du 27 octobre a terminé en HOLD. Le candidat POSTACK est qualifié HOST uniquement. La capture de dernière lecture historique fournie le 3 novembre n'identifie pas l'EXE courant.
+
+Les preuves d'unité, binaires, installateur opérationnel et historiques UNKNOWN restent privés. Le runtime public est une source de revue, avec admission opérationnelle complète en HOLD de publication. Aucun appareil, VM ou Windows installé n'est synchronisé par ce commit. Les sections datées ci-dessous conservent leur statut historique.
+
 ## 20 octobre — incrément 4 natif B5.4/M3-R strictement inerte
 
 Deux compositions Xtensa Core 3.1.2, StageA B5.4 avec/sans handoff ; entrée

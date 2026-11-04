@@ -1,5 +1,9 @@
 # SHINO // TV — Agent handoff / operational source of truth
 
+## Reprise du 3 novembre 2026 — sources musicales publiques
+
+Lire le [checkpoint MUSIC follow](MUSIC_FOLLOW_SYNC_2026-11-03.md) et PROJECT_STATE avant les jalons historiques ci-dessous. Le correctif post-ACK final reste HOST ; la dernière qualification physique conservée a arrêté la musique en UNKNOWN. Les sources publiques ne fournissent pas les preuves privées d'admission ni une nouvelle autorité d'installation. Ne relancer aucun firmware, compagnon ou VM depuis ce checkpoint.
+
 ## 20 octobre — incrément 4 natif B5.4/M3-R strictement inerte
 
 Deux compositions Xtensa Core 3.1.2, StageA B5.4 avec/sans handoff ; entrée
